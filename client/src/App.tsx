@@ -18,7 +18,8 @@ export default function App() {
     setHealthStatus(null);
 
     try {
-      const response = await fetch("http://localhost:3000/api/health");
+      const apiBaseUrl = import.meta.env.VITE_API_URL || "/api";
+      const response = await fetch(`${apiBaseUrl}/health`);
 
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}: ${response.statusText}`);
