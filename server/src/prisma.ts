@@ -6,7 +6,15 @@ import { PrismaClient } from "@prisma/client";
 let client: PrismaClient | null = null;
 
 export function getPrisma(): PrismaClient {
-  if (!client) client = new PrismaClient();
+  if (!client) {
+    client = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+    });
+  }
   return client;
 }
 
