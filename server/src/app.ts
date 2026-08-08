@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import { getPrisma } from "./prisma.js";
+import { router } from "./module.js";
 
 void getPrisma;
 
@@ -10,5 +11,8 @@ export const app = express();
 
 app.use(cors());          // already wired: lets the Vite dev server call this API
 app.use(express.json());
+
+// Mount API routes
+app.use("/api", router);
 
 export default app;
