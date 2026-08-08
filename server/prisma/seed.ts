@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const categories = ['Account', 'Access', 'Hardware', 'Software', 'Network'];
+  const categories = ['Account and Access', 'Hardware', 'Software', 'Network'];
 
   for (const name of categories) {
     // Upsert ensures the seed is safe to run multiple times without duplicates
