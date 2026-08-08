@@ -8,7 +8,9 @@ describe("Health Check - Real Database Connection", () => {
     await disconnectPrisma();
   });
 
-  it.skip("should return 200 when database is connected", async () => {
+  const itIfDb = process.env.DATABASE_URL ? it : it.skip;
+
+  itIfDb("should return 200 when database is connected", async () => {
     const response = await request(app).get("/api/health");
 
     expect(response.status).toBe(200);
