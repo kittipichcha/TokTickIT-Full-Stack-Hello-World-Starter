@@ -18,18 +18,14 @@ export default function App() {
     setHealthStatus(null);
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_URL || "/api";
-      const response = await fetch(`${apiBaseUrl}/health`);
-
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-      }
+      const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const response = await fetch(new URL("/api/health", apiBaseUrl));
 
       const data: HealthStatus = await response.json();
       setHealthStatus(data);
 
-      if (data.status === "fail") {
-        setError(data.error || "Backend is unavailable");
+      if (!response.ok || data.status === "fail") {
+        setError(data.error || `Server returned ${response.status}: ${response.statusText}`);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to connect to backend";
