@@ -1,3 +1,5 @@
+import { getPrisma } from "./prisma.js";
+
 export interface HealthCheckResponse {
   status: "ok" | "fail";
   error: string | null;
@@ -6,8 +8,10 @@ export interface HealthCheckResponse {
 
 export async function checkHealth(): Promise<HealthCheckResponse> {
   try {
-    // Simulate health check logic
-    // In a real application, you might check database connection, etc.
+    // Check database connection using Prisma
+    const prisma = getPrisma();
+    await prisma.$queryRaw`SELECT 1`;
+    
     return {
       status: "ok",
       error: null,
