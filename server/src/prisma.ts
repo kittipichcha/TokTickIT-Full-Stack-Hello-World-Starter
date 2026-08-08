@@ -7,11 +7,14 @@ let client: PrismaClient | null = null;
 
 export function getPrisma(): PrismaClient {
   if (!client) {
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      throw new Error("DATABASE_URL is not set. Please configure server/.env (or the environment) before using Prisma.");
+    }
+
     client = new PrismaClient({
       datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
+        db: { url },
       },
     });
   }
