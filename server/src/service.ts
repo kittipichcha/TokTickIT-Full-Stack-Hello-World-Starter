@@ -18,10 +18,9 @@ export async function checkHealth(): Promise<HealthCheckResponse> {
       service: "TokTickIT API",
     };
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return {
       status: "fail",
-      error: errorMessage,
+      error: "Database connection failed",
       service: "TokTickIT API",
     };
   }
