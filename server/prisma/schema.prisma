@@ -2,7 +2,6 @@
 // Your DATABASE_URL lives in server/.env (copy it from .env.example).
 
 generator client {
-  db = env("DATABASE_URL")
   provider = "prisma-client-js"
 }
 
