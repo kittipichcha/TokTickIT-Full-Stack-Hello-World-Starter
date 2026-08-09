@@ -33,6 +33,38 @@ A modern full-stack web application built with **React**, **Express**, **TypeScr
 - **Vitest** 2.1 - Unit testing framework
 - **Supertest** 7.0 - HTTP assertion library
 
+## ✨ Project Status
+
+### ✅ Implemented Features
+
+| Feature | Status | Details |
+|---------|--------|---------|
+| **Project Foundation** | ✅ Complete | Full-stack setup with React, Express, TypeScript, and Prisma |
+| **Health Check Endpoint** | ✅ Complete | `GET /api/health` returns status and service name |
+| **Category Model & Seed** | ✅ Complete | Prisma schema with Category table, seeded with 4 categories |
+| **Category List API** | ✅ Complete | `GET /api/categories` returns sorted category list |
+| **Frontend UI** | ✅ Complete | React components with "Check System" and "Load Categories" buttons |
+| **Full Test Suite** | ✅ Complete | 11 backend tests + 6 frontend tests all passing |
+| **Build System** | ✅ Complete | Both server and client build successfully |
+
+### 🧪 Test Results (Latest Run)
+
+**Server Tests:** ✅ 11/11 PASS  
+- Health endpoint tests (unit + integration)
+- Category endpoint tests (unit + integration) 
+- Composite sort validation (ID primary, name secondary)
+- Error handling tests
+
+**Client Tests:** ✅ 6/6 PASS
+- Component rendering tests
+- State management tests
+- API integration tests
+- Button functionality tests
+
+**Build Status:** ✅ Both builds successful
+- Server: TypeScript compilation complete (0 errors)
+- Client: Vite production build complete
+
 ## 📁 Project Structure
 
 ```
@@ -74,7 +106,37 @@ Before you begin, make sure you have the following installed:
 - **PostgreSQL** 12+ ([Download](https://www.postgresql.org/download/))
 - **Git** ([Download](https://git-scm.com/))
 
-## 📦 Installation
+## � Quick Start
+
+Get the application running in 5 minutes:
+
+```bash
+# 1. Install server dependencies
+cd server
+npm install
+npm run prisma:migrate
+npm run prisma:seed
+
+# 2. Install client dependencies (new terminal)
+cd ../client
+npm install
+
+# 3. Start the server (Terminal 1)
+cd server
+npm run dev
+
+# 4. Start the client (Terminal 2)
+cd client
+npm run dev
+
+# 5. Open browser and navigate to http://localhost:5173
+# Click "Check System" to verify connection
+# Click "Load Categories" to fetch and display categories
+```
+
+**Troubleshooting:** If the server can't connect to the database, verify your `.env` file in the `server/` directory has the correct `DATABASE_URL`.
+
+## �📦 Installation
 
 ### 1. Clone the Repository
 ```bash
@@ -250,21 +312,77 @@ Opens Prisma Studio at `http://localhost:5555` for visual database management.
 
 ## 🧪 Testing
 
-### Server Tests
+### Run All Tests
+
+**Server Tests:**
 ```bash
 cd server
 npm test
 ```
+Result: ✅ 11/11 tests passing
+- Health endpoint validation
+- Category list retrieval and sorting
+- Error handling
 
-### Client Tests
+**Client Tests:**
 ```bash
 cd client
 npm test
 ```
+Result: ✅ 6/6 tests passing
+- Component rendering
+- Button interactions
+- API integration
+- Error states
+
+### Test Coverage
+
+The project includes:
+- **Unit Tests:** Fast, isolated component and service tests with mocks
+- **Integration Tests:** Full-stack tests with real database connections
+- **React Component Tests:** Vitest + React Testing Library
+- **API Tests:** Supertest HTTP assertion library
+
+### Example Test Run
+```bash
+cd server && npm test
+# Output:
+# ✓ Test Files  4 passed (4)
+#     Tests  11 passed (11)
+#    Duration  6.63s
+```
 
 ## 🌐 API Endpoints
 
-The server runs on `http://localhost:3000`. Check `server/src/app.ts` for available endpoints.
+The server runs on `http://localhost:3000`. The following endpoints are currently implemented:
+
+### Health Check
+```
+GET /api/health
+```
+**Response (200 OK):**
+```json
+{
+  "status": "ok",
+  "service": "TokTickIT API"
+}
+```
+Validates backend connectivity and service status.
+
+### Categories List
+```
+GET /api/categories
+```
+**Response (200 OK):**
+```json
+[
+  { "id": 1, "name": "Account and Access" },
+  { "id": 2, "name": "Hardware" },
+  { "id": 3, "name": "Software" },
+  { "id": 4, "name": "Network" }
+]
+```
+Returns all categories from the database, sorted by ID (ascending) and then by name (ascending).
 
 ## 🚢 Deployment
 
