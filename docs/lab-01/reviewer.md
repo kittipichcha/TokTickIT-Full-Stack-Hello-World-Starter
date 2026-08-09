@@ -25,8 +25,51 @@ Reviewer comment I received: All five acceptance criteria are satisfied by the i
 How I responded: 
 
 **Issue 4** 
-Reviewer comment I received: 
-How I responded: 
+Reviewer comment I received: Request changes: the category ordering does not fully satisfy the acceptance criteria.
+
+The Prisma query currently orders only by id ASC, but the requirement explicitly says the API response must be in a predictable ascending order for both ID and name.
+
+Please update the query to order by both fields, for example:
+
+orderBy: [
+  { id: "asc" },
+  { name: "asc" },
+]
+Also update the Supertest coverage so it verifies the required ordering, not only the ID order.
+
+All acceptance criteria must be completed before this PR can be approved.
+
+How I responded: I've fixed the function according to the criteria and change the function 
+
+Reviewer comment I recieved: Request changes: the Prisma ordering fix is now correct, but the test coverage still does not fully address the previous review.
+
+The API now orders by both id ASC and name ASC, but the Supertest tests only verify ID ordering. Please update the backend test coverage to also verify the required name ordering.
+
+Since all acceptance criteria and prior review comments must be completed before approval, this remains blocking.
+
+How I responded: I've edited the test case according to the feedback and push again.
+
+Reviewer comment I recieved : Request changes: the previous test-coverage issue is fixed, but the ordering logic and the test expectation are still inconsistent.
+
+orderBy: [{ id: "asc" }, { name: "asc" }] guarantees ID ascending, with name only used as a tie-breaker. Since id is unique, this does not guarantee that the entire name column is also globally ascending.
+
+However, the new tests independently assert that both IDs and names are globally sorted, which can fail for valid database data.
+
+Please align the implementation and tests with the intended acceptance criterion—either sort primarily by name, sort primarily by ID, or test the actual compound id ASC, name ASC ordering correctly.
+
+This remains blocking until the ordering behavior and test expectation match.
+
+How I responded : I've fix the testcase and push it again.
+
+Reviewer comment I recieved : Request changes: the ordering issue is fixed, but the latest frontend changes introduced a new acceptance-criteria regression.
+
+The requirement explicitly asks for a dedicated React button to load categories. The current implementation replaces the previous category-loading button with a generic Check System button that runs the health check first and only then fetches categories.
+
+Please restore a dedicated category-loading action/button and make sure the Vitest coverage verifies that behavior directly.
+
+This remains blocking because all acceptance criteria must be satisfied before approval. 
+
+How I response : I said accidentally alter the issue from its actual criteria, so please accept my request.  
 
 ## Pull Requests I reviewed for my partner
 **Issue #1**
@@ -45,5 +88,5 @@ My comment: It can run correctly and no conflict & critical vulnerability, good 
 Partner's response: 
 
 **Issue #4**
-My comment: <...>
-Partner's response: <...>
+My comment: url should have not been deleted in here, I could not run npm run prisma:migrate. If this is intentional, you needt to tell me how to migrate and test the prisma connection
+Partner's response: He has fixed it and push fixed code for me to check it.
