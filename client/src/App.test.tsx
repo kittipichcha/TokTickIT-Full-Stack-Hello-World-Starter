@@ -25,7 +25,7 @@ describe("Categories UI", () => {
       vi.mocked(api.checkHealth).mockImplementation(
         () =>
           new Promise((resolve) => {
-            setTimeout(() => resolve({ status: "ok" }), 100);
+            setTimeout(() => resolve({ status: "ok", service: "TokTickIT API" }), 100);
           })
       );
       vi.mocked(api.fetchCategories).mockResolvedValue([]);
@@ -43,7 +43,7 @@ describe("Categories UI", () => {
         { id: 2, name: "Hardware" },
       ];
 
-      vi.mocked(api.checkHealth).mockResolvedValue({ status: "ok" });
+      vi.mocked(api.checkHealth).mockResolvedValue({ status: "ok", service: "TokTickIT API" });
       vi.mocked(api.fetchCategories).mockResolvedValue(mockCategories);
 
       render(<App />);
@@ -78,7 +78,7 @@ describe("Categories UI", () => {
 
     it("should show error when categories fail to load after health check", async () => {
       const errorMessage = "Failed to fetch categories: 500 Internal Server Error";
-      vi.mocked(api.checkHealth).mockResolvedValue({ status: "ok" });
+      vi.mocked(api.checkHealth).mockResolvedValue({ status: "ok", service: "TokTickIT API" });
       vi.mocked(api.fetchCategories).mockRejectedValue(new Error(errorMessage));
 
       render(<App />);
@@ -92,8 +92,8 @@ describe("Categories UI", () => {
 
     it("should not load categories if health check returns error status", async () => {
       vi.mocked(api.checkHealth).mockResolvedValue({
-        status: "error",
-        message: "System health check failed",
+        status: "fail",
+        service: "TokTickIT API",
       });
 
       render(<App />);
