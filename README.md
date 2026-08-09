@@ -43,7 +43,7 @@ A modern full-stack web application built with **React**, **Express**, **TypeScr
 | **Health Check Endpoint** | ✅ Complete | `GET /api/health` returns status and service name |
 | **Category Model & Seed** | ✅ Complete | Prisma schema with Category table, seeded with 4 categories |
 | **Category List API** | ✅ Complete | `GET /api/categories` returns sorted category list |
-| **Frontend UI** | ✅ Complete | React components with "Check System" and "Load Categories" buttons |
+| **Frontend UI** | ✅ Complete | React components with "Check System" button that verifies backend connection and loads categories |
 | **Full Test Suite** | ✅ Complete | 11 backend tests + 6 frontend tests all passing |
 | **Build System** | ✅ Complete | Both server and client build successfully |
 
@@ -71,28 +71,47 @@ A modern full-stack web application built with **React**, **Express**, **TypeScr
 toktickit/
 ├── client/                          # React frontend application
 │   ├── src/
-│   │   ├── App.tsx                 # Root component
+│   │   ├── App.tsx                 # Root component (categories UI)
+│   │   ├── App.css                 # Component styling
+│   │   ├── App.test.tsx            # React component tests
 │   │   ├── main.tsx                # React entry point
-│   │   ├── api.ts                  # API client utilities
+│   │   ├── api.ts                  # API client utilities (health & categories)
 │   │   └── vite-env.d.ts           # Vite type definitions
 │   ├── index.html                  # HTML entry point
 │   ├── package.json                # Client dependencies
 │   ├── tsconfig.json               # TypeScript configuration
 │   ├── vite.config.ts              # Vite configuration
+│   ├── vitest.config.ts            # Vitest test runner config
 │   └── .env.example                # Environment variables template
 │
 ├── server/                          # Express backend application
 │   ├── src/
-│   │   ├── index.ts                # Server entry point
-│   │   ├── app.ts                  # Express app configuration
-│   │   └── prisma.ts               # Prisma client setup
+│   │   ├── index.ts                # Server entry point & startup
+│   │   ├── app.ts                  # Express app configuration (middleware, routes)
+│   │   ├── module.ts               # Route definitions (router setup)
+│   │   ├── controller.ts           # HTTP request handlers (getHealth, getCategoriesHandler)
+│   │   ├── service.ts              # Business logic layer (checkHealth, getCategories)
+│   │   └── prisma.ts               # Prisma client singleton
+│   ├── tests/
+│   │   ├── health.test.ts          # Health endpoint unit tests
+│   │   ├── health.integration.test.ts # Health endpoint integration tests
+│   │   ├── categories.test.ts      # Categories endpoint unit tests
+│   │   └── categories.integration.test.ts # Categories endpoint integration tests
 │   ├── prisma/
-│   │   ├── schema.prisma           # Database schema
-│   │   └── seed.ts                 # Database seeding script
+│   │   ├── schema.prisma           # Database schema (Category model)
+│   │   ├── seed.ts                 # Database seeding script (4 categories)
+│   │   └── migrations/             # Database migration history
 │   ├── package.json                # Server dependencies
 │   ├── tsconfig.json               # TypeScript configuration
-│   ├── vitest.config.ts            # Vitest configuration
+│   ├── vitest.config.ts            # Vitest test runner config
 │   └── .env.example                # Environment variables template
+│
+├── docs/
+│   └── lab-01/
+│       ├── ai_use.md               # AI assistant usage log
+│       ├── tests.md                # Test plan and evidence
+│       ├── reviewer.md             # Code review notes
+│       └── CONFLICTS_FOUND.md      # Documentation conflict analysis
 │
 └── README.md                        # This file
 ```
@@ -130,8 +149,7 @@ cd client
 npm run dev
 
 # 5. Open browser and navigate to http://localhost:5173
-# Click "Check System" to verify connection
-# Click "Load Categories" to fetch and display categories
+# Click "Check System" to verify backend connection and load categories
 ```
 
 **Troubleshooting:** If the server can't connect to the database, verify your `.env` file in the `server/` directory has the correct `DATABASE_URL`.
