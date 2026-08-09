@@ -118,6 +118,19 @@ Type: Feature implementation (API endpoint + React UI)
 | 8 | Frontend React component test: Loading state | ✅ PASS | Test "should show loading state when fetching categories" mocks fetchCategories() with a delayed promise, clicks the button, and verifies button text changes to "Loading...". Confirms loading state UX works as expected. |
 | 9 | Frontend React component test: Success state with data | ✅ PASS | Test "should display categories after successful fetch" mocks api.fetchCategories with array of 3 categories, clicks button, waits for "Available Categories" heading, then verifies each category name appears in the DOM. Confirms successful fetch flow works end-to-end in component. |
 | 10 | Frontend React component test: Category order | ✅ PASS | Test "should display categories in the expected order" verifies list items are rendered in the correct sequence. Gets all <li> elements, confirms count matches category count, and checks first list item contains first category name and second list item contains second category name. Confirms DOM order matches expected order. |
+
+## Issue 5: Fix Copilot PR Code Review Issues
+Type: Bug fixes + code quality improvements
+
+| # | Test | Result | Evidence |
+|---|------|--------|----------|
+| 1 | Client TypeScript mocks: `npm test` | ✅ PASS | All 6 App.test.tsx tests pass. Fixed mocks missing required `service` field from HealthCheckResponse type. All instances now include `{ status: "ok", service: "TokTickIT API" }`. |
+| 2 | Client API response handling: App.tsx | ✅ PASS | Fixed error message from `health.message` (undefined) to `health.service`. TypeScript compilation succeeds with `npx tsc --noEmit`. |
+| 3 | Client CSS structure: App.css | ✅ PASS | Fixed missing `.health-box` selector and added `.error-box` with proper error styling. Error messages now render with red background and correct formatting. |
+| 4 | Health check status validation | ✅ PASS | Fixed test mock from invalid `status: "error"` to correct `status: "fail"`. |
+| 5 | Server code formatting: service.ts | ✅ PASS | Fixed `orderBy` array formatting with trailing comma and proper indentation. |
+| 6 | Server composite sort test | ✅ PASS | Improved test to verify actual composite sort order (ID primary, name secondary) instead of just checking pre-sorted mock data. |
+| 7 | Full test suite execution | ✅ PASS | Client: 6/6 tests pass. Server: 11/11 tests pass. TypeScript: 0 errors in both. All Copilot review issues resolved. |
 | 11 | Frontend React component test: Error state | ✅ PASS | Test "should show error state when fetch fails" mocks fetchCategories() to reject with error, clicks button, waits for error message in DOM. Confirms error handling displays user-friendly error communication. |
 | 12 | Frontend React component test: ID and name display | ✅ PASS | Test "should display category IDs and names together" verifies that category ID (e.g., 42) and name (e.g., "Test Category") both appear together in the rendered output. Example: text contains "ID 42:" and "Test Category". Confirms ID and name are co-displayed as specified. |
 | 13 | Integration test: Full-stack flow (optional manual verification) | ✅ PASS | Start backend (`cd server && npm run dev`), start frontend (`cd client && npm run dev`), open http://localhost:5173, click "Load Categories" button, verify categories list appears with all database records in ascending order. Confirm no errors in browser console or server logs. This validates the complete user flow from button click → API call → database query → React re-render. |
