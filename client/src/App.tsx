@@ -1,36 +1,35 @@
 import { useState } from "react";
 import "./App.css";
-
-interface HealthStatus {
-  status: "ok" | "fail";
-  error: string | null;
-  service: string;
-}
+import { checkHealth, fetchCategories, type Category } from "./api";
 
 export default function App() {
-  const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
+  const [categories, setCategories] = useState<Category[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [healthStatus, setHealthStatus] = useState<string | null>(null);
 
-  const checkHealth = async () => {
+  const checkSystem = async () => {
     setLoading(true);
     setError(null);
     setHealthStatus(null);
+    setCategories(null);
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-      const response = await fetch(new URL("/api/health", apiBaseUrl));
-
-      const data: HealthStatus = await response.json();
-      setHealthStatus(data);
-
-      if (!response.ok || data.status === "fail") {
-        setError(data.error || `Server returned ${response.status}: ${response.statusText}`);
+      // First check system health
+      const health = await checkHealth();
+      if (health.status === "ok") {
+        setHealthStatus("✓ Connection successful");
+        // Then load categories
+        const categoriesData = await fetchCategories();
+        setCategories(categoriesData);
+      } else {
+        throw new Error(health.service ? `System health check failed: ${health.service}` : "System health check failed");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to connect to backend";
+      const errorMessage = err instanceof Error ? err.message : "Failed to check system";
       setError(errorMessage);
       setHealthStatus(null);
+      setCategories(null);
     } finally {
       setLoading(false);
     }
@@ -38,25 +37,39 @@ export default function App() {
 
   return (
     <div className="app-container">
-      <h1>TokTickIT Health Check</h1>
+      <h1>TokTickIT Categories</h1>
       
-      <button onClick={checkHealth} disabled={loading}>
-        {loading ? "Checking..." : "Check Backend Status"}
+      <button onClick={checkSystem} disabled={loading}>
+        {loading ? "Checking..." : "Check System"}
       </button>
 
       {healthStatus && (
-        <div className={`status-box ${healthStatus.status}`}>
-          <h2>Status: {healthStatus.status.toUpperCase()}</h2>
-          <p>Service: {healthStatus.service}</p>
-          {healthStatus.error && <p className="error-message">Error: {healthStatus.error}</p>}
+        <div className="health-box">
+          <p>{healthStatus}</p>
+        </div>
+      )}
+
+      {categories && (
+        <div className="categories-box">
+          <h3>Available Categories</h3>
+          {categories.length > 0 ? (
+            <ul>
+              {categories.map((category) => (
+                <li key={category.id}>
+                  <strong>ID {category.id}:</strong> {category.name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No categories found.</p>
+          )}
         </div>
       )}
 
       {error && (
         <div className="error-box">
-          <h2>⚠️ Connection Error</h2>
+          <h2>⚠️ Failed to Load Categories</h2>
           <p>{error}</p>
-          <p className="hint">Make sure the backend server is running on http://localhost:3000</p>
         </div>
       )}
     </div>
