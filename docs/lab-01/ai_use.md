@@ -8,9 +8,7 @@
 | 1 |  Check dependencies collision and version for this project | I read the suggestion and saw volunerbility warning which it suggest to update the package with `npm audit fix --force` |
 | 2 |  Should I commit package-lock.json | It say it need for compatibility accross team and I believe it |
 | 3 |  can you explain how frontend code work, how it connect with each other and lastly how config and main connect to each other | It has suggest how each flow work and I try to understand it |
-| 4 | fix this fix this te.config.ts 
-error during build:
-Error: config must export or return an object. | It has found out that config file in frontend did not return any value cause the error and suggest the fix |
+| 4 | fix this fix this te.config.ts | error during build: Error: config must export or return an object.  It has found out that config file in frontend did not return any value cause the error and suggest the fix |
 | 5 | Error: P1013: The provided database string is invalid. invalid port number in database URL. Please refer to the documentation in | It explain that this cause by wrong postgres server link (wrong password and db name) I used to have in .env file then I let it correct it which make it functional again.
 | 6 | Issue 2: Implement the API health check<br/>Type: Feature<br/>Required branch: feature/2-health-check<br/>Acceptance criteria:<br/>• GET /api/health returns HTTP 200.<br/>• The JSON response contains status = ok and service = TokTickIT API.<br/>• A Supertest test verifies the endpoint.<br/>• The React page displays the backend status based on a real API call.<br/>• A useful error message appears when the backend is unavailable. | I read the code file and try to understand what's happening |
 | 7 | Can you make it check the real connection to the database and explain what you will do, and how to test it | I read the explaination and accept the code |
