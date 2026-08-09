@@ -13,7 +13,6 @@ describe("Health Check Endpoint", () => {
   it("should return HTTP 200 with ok status", async () => {
     vi.mocked(service.checkHealth).mockResolvedValue({
       status: "ok",
-      error: null,
       service: "TokTickIT API",
     });
 
@@ -21,17 +20,14 @@ describe("Health Check Endpoint", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("status");
-    expect(response.body).toHaveProperty("error");
     expect(response.body).toHaveProperty("service");
     expect(response.body.status).toBe("ok");
-    expect(response.body.error).toBeNull();
     expect(response.body.service).toBe("TokTickIT API");
   });
 
   it("should return HTTP 503 with fail status when health check fails", async () => {
     vi.mocked(service.checkHealth).mockResolvedValue({
       status: "fail",
-      error: "Database connection failed",
       service: "TokTickIT API",
     });
 
@@ -39,10 +35,8 @@ describe("Health Check Endpoint", () => {
 
     expect(response.status).toBe(503);
     expect(response.body).toHaveProperty("status");
-    expect(response.body).toHaveProperty("error");
     expect(response.body).toHaveProperty("service");
     expect(response.body.status).toBe("fail");
-    expect(response.body.error).not.toBeNull();
     expect(response.body.service).toBe("TokTickIT API");
   });
 });
