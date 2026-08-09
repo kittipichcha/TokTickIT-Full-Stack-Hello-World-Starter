@@ -23,7 +23,7 @@ export default function App() {
         const categoriesData = await fetchCategories();
         setCategories(categoriesData);
       } else {
-        throw new Error(health.message || "System health check failed");
+        throw new Error(health.service ? `System health check failed: ${health.service}` : "System health check failed");
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to check system";
