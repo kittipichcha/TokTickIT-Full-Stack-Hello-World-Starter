@@ -32,6 +32,8 @@ button:disabled {
   background-color: #6c757d;
   cursor: not-allowed;
 }
+
+.health-box {
   margin-top: 20px;
   padding: 15px;
   background-color: #d4edda;
@@ -81,6 +83,26 @@ button:disabled {
   margin: 0;
   color: #666;
   font-style: italic;
+}
+
+.error-box {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 5px;
+  color: #721c24;
+  animation: slideIn 0.3s ease-in;
+}
+
+.error-box h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.error-box p {
+  margin: 0;
 }
 
 @keyframes slideIn {
