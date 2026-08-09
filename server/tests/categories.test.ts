@@ -58,6 +58,16 @@ describe("Categories Endpoint", () => {
     const response = await request(app).get("/api/categories");
 
     expect(response.status).toBe(200);
+    // Verify sort order: categories should be sorted by ID first, then by name
+    for (let i = 0; i < response.body.length - 1; i++) {
+      const current = response.body[i];
+      const next = response.body[i + 1];
+      if (current.id === next.id) {
+        expect(current.name.localeCompare(next.name)).toBeLessThanOrEqual(0);
+      } else {
+        expect(current.id).toBeLessThanOrEqual(next.id);
+      }
+    }
     
     // Verify composite sort: ID first, then name within same ID
     for (let i = 1; i < response.body.length; i++) {
