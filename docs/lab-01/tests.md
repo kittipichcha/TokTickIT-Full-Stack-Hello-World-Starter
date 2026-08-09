@@ -6,7 +6,7 @@
 **Tool:** Supertest  
 **Description:** Health endpoint returns 200 and expected JSON
 
-```
+```json
 GET /api/health
 200 OK
 {
@@ -24,7 +24,7 @@ GET /api/health
 **Tool:** Supertest  
 **Description:** Categories endpoint returns the four seeded categories
 
-```
+```json
 GET /api/categories
 200 OK
 [
@@ -110,14 +110,13 @@ Type: Feature implementation (API endpoint + React UI)
 | 1 | Backend unit test: `npm test` (categories.test.ts) | ✅ PASS | Mocked service tests verify the GET /api/categories endpoint: (1) Returns HTTP 200 with categories array, (2) Validates response structure with id (number) and name (string) fields, (3) **Validates composite sort**: categories sorted by ID first, then by name within same ID using test data with duplicate IDs [id:1 (Account/Billing), id:2 (Hardware/Network), id:3 (Software)], (4) Handles HTTP 500 errors gracefully, (5) Returns empty array when no categories exist. Composite sort validation checks: `prev.id < curr.id OR (prev.id === curr.id AND prev.name <= curr.name)`. All 5 unit tests pass. |
 | 2 | Backend integration test: `npm test` (categories.integration.test.ts) | ✅ PASS | Real database connection tests verify the GET /api/categories endpoint: (1) Returns HTTP 200 with categories from PostgreSQL, (2) Each category has id (number) and name (string) fields, (3) **Validates composite sort**: Categories sorted by ID primary, then name secondary using logic: `prev.id < curr.id OR (prev.id === curr.id AND prev.name <= curr.name)`. This ensures if database contains items with same ID, they are ordered by name. These tests require DATABASE_URL and run against the real database, confirming the full service → controller → Prisma → database flow works end-to-end. |
 | 3 | Backend endpoint verification: `curl http://localhost:3000/api/categories` | ✅ PASS | Manual HTTP request returns JSON array with all categories from database, sorted by ID (primary) then name (secondary). Example response: `[{"id":1,"name":"Account and Access"},{"id":1,"name":"Billing"},{"id":2,"name":"Hardware"},{"id":2,"name":"Network"},{"id":3,"name":"Software"}]`. Confirms the GET /api/categories endpoint is properly wired and returns data in expected composite sort order (Prisma `orderBy: [{id: "asc"}, {name: "asc"}]`). |
-
 | 4 | Frontend UI: Error state display | ✅ PASS | If fetchCategories() throws an error, an error-box div is displayed with title "⚠️ Failed to Load Categories" and the error message text. Example: network timeout shows "Failed to connect...", API error shows HTTP status text. Confirms error handling prevents silent failures and communicates problems to user. |
-| 5 | Frontend UI: Success state - categories list display | ✅ PASS | After successful fetch, App.tsx displays section with heading "Available Categories" and renders an unordered list (<ul>) with each category as a list item (<li>). Each item shows "ID {id}: {name}" format. Example: "ID 1: Account and Access". Confirms data is properly rendered in expected format. |
+| 5 | Frontend UI: Success state - categories list display | ✅ PASS | After successful fetch, App.tsx displays section with heading "Available Categories" and renders an unordered list (`<ul>`) with each category as a list item (`<li>`). Each item shows "ID {id}: {name}" format. Example: "ID 1: Account and Access". Confirms data is properly rendered in expected format. |
 | 6 | Frontend UI: Category order preservation | ✅ PASS | Categories are displayed in list in the exact order returned from API (sorted by ID primary, name secondary). If backend returns [{id:1,name:"Account"},{id:1,name:"Billing"},{id:2,name:"Hardware"}], frontend renders them in that composite sort order. No client-side resorting occurs. |
 | 7 | Frontend React component test: Button presence | ✅ PASS | App.test.tsx includes test "should render the Check System button" which uses React Testing Library to render App component and verify button with text "Check System" is present. Test passes, confirming button is in component. |
 | 8 | Frontend React component test: Loading state | ✅ PASS | Test "should show loading state when checking system" mocks checkHealth() and fetchCategories() with delayed promises, clicks the "Check System" button, and verifies button text changes to "Checking...". Confirms loading state UX works as expected. |
 | 9 | Frontend React component test: Success state with data | ✅ PASS | Test "should display health status and categories after successful system check" mocks checkHealth() and fetchCategories() with mock data, clicks "Check System" button, waits for "Available Categories" heading, then verifies each category name appears in the DOM. Confirms successful check system flow works end-to-end in component. |
-| 10 | Frontend React component test: Category order | ✅ PASS | Test "should display categories in the expected order" verifies list items are rendered in the correct sequence. Gets all <li> elements, confirms count matches category count, and checks first list item contains first category name and second list item contains second category name. Confirms DOM order matches expected order. |
+| 10 | Frontend React component test: Category order | ✅ PASS | Test "should display categories in the expected order" verifies list items are rendered in the correct sequence. Gets all `<li>` elements, confirms count matches category count, and checks first list item contains first category name and second list item contains second category name. Confirms DOM order matches expected order. |
 
 ## Bugfix 
 Type: Bug fixes + code quality improvements
