@@ -37,8 +37,9 @@ export async function getCategories(): Promise<Category[]> {
         name: true,
       },
       orderBy: [
-    { id: "asc" },
-    { name: "asc" },]
+        { id: "asc" },
+        { name: "asc" },
+      ],
     });
     return categories;
   } catch (err) {
