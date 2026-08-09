@@ -44,7 +44,7 @@ describe("Categories Endpoint", () => {
     });
   });
 
-  it("should return categories in ascending order by ID", async () => {
+  it("should return categories in ascending order by ID and name", async () => {
     const mockCategories = [
       { id: 1, name: "Account and Access" },
       { id: 2, name: "Hardware" },
@@ -56,8 +56,16 @@ describe("Categories Endpoint", () => {
     const response = await request(app).get("/api/categories");
 
     expect(response.status).toBe(200);
+    
+    // Check ID ascending order
     const ids = response.body.map((cat: { id: number }) => cat.id);
-    expect(ids).toEqual([1, 2, 3]);
+    const sortedIds = [...ids].sort((a, b) => a - b);
+    expect(ids).toEqual(sortedIds);
+    
+    // Check name ascending order
+    const names = response.body.map((cat: { name: string }) => cat.name);
+    const sortedNames = [...names].sort();
+    expect(names).toEqual(sortedNames);
   });
 
   it("should return HTTP 500 when service throws an error", async () => {

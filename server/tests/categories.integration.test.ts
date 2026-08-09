@@ -27,12 +27,19 @@ describe("Categories API - Real Database Connection", () => {
     });
   });
 
-  itIfDb("should return categories sorted by ID in ascending order", async () => {
+  itIfDb("should return categories sorted by ID and name in ascending order", async () => {
     const response = await request(app).get("/api/categories");
 
     expect(response.status).toBe(200);
+    
+    // Check ID ascending order
     const ids = response.body.map((cat: { id: number }) => cat.id);
     const sortedIds = [...ids].sort((a, b) => a - b);
     expect(ids).toEqual(sortedIds);
+    
+    // Check name ascending order
+    const names = response.body.map((cat: { name: string }) => cat.name);
+    const sortedNames = [...names].sort();
+    expect(names).toEqual(sortedNames);
   });
 });
