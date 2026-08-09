@@ -44,10 +44,12 @@ describe("Categories Endpoint", () => {
     });
   });
 
-  it("should return categories in ascending order by ID and name", async () => {
+  it("should return categories in ascending order by ID then name (composite sort)", async () => {
     const mockCategories = [
       { id: 1, name: "Account and Access" },
+      { id: 1, name: "Billing" },
       { id: 2, name: "Hardware" },
+      { id: 2, name: "Network" },
       { id: 3, name: "Software" },
     ];
 
@@ -57,15 +59,15 @@ describe("Categories Endpoint", () => {
 
     expect(response.status).toBe(200);
     
-    // Check ID ascending order
-    const ids = response.body.map((cat: { id: number }) => cat.id);
-    const sortedIds = [...ids].sort((a, b) => a - b);
-    expect(ids).toEqual(sortedIds);
-    
-    // Check name ascending order
-    const names = response.body.map((cat: { name: string }) => cat.name);
-    const sortedNames = [...names].sort();
-    expect(names).toEqual(sortedNames);
+    // Verify composite sort: ID first, then name within same ID
+    for (let i = 1; i < response.body.length; i++) {
+      const prev = response.body[i - 1];
+      const curr = response.body[i];
+      const isOrdered = 
+        prev.id < curr.id || 
+        (prev.id === curr.id && prev.name <= curr.name);
+      expect(isOrdered).toBe(true);
+    }
   });
 
   it("should return HTTP 500 when service throws an error", async () => {
