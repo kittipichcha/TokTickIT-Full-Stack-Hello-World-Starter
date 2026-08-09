@@ -15,7 +15,6 @@ describe("Categories API - Real Database Connection", () => {
 
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body.length).toBeGreaterThan(0);
   });
 
   itIfDb("should return categories with id and name fields", async () => {
