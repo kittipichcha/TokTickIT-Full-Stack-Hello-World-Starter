@@ -1,23 +1,34 @@
 import { useState } from "react";
 import "./App.css";
-import { fetchCategories, type Category } from "./api";
+import { checkHealth, fetchCategories, type Category } from "./api";
 
 export default function App() {
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [healthStatus, setHealthStatus] = useState<string | null>(null);
 
-  const loadCategories = async () => {
+  const checkSystem = async () => {
     setLoading(true);
     setError(null);
+    setHealthStatus(null);
     setCategories(null);
 
     try {
-      const categoriesData = await fetchCategories();
-      setCategories(categoriesData);
+      // First check system health
+      const health = await checkHealth();
+      if (health.status === "ok") {
+        setHealthStatus("✓ Connection successful");
+        // Then load categories
+        const categoriesData = await fetchCategories();
+        setCategories(categoriesData);
+      } else {
+        throw new Error(health.message || "System health check failed");
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to load categories";
+      const errorMessage = err instanceof Error ? err.message : "Failed to check system";
       setError(errorMessage);
+      setHealthStatus(null);
       setCategories(null);
     } finally {
       setLoading(false);
@@ -28,9 +39,15 @@ export default function App() {
     <div className="app-container">
       <h1>TokTickIT Categories</h1>
       
-      <button onClick={loadCategories} disabled={loading}>
-        {loading ? "Loading..." : "Load Categories"}
+      <button onClick={checkSystem} disabled={loading}>
+        {loading ? "Checking..." : "Check System"}
       </button>
+
+      {healthStatus && (
+        <div className="health-box">
+          <p>{healthStatus}</p>
+        </div>
+      )}
 
       {categories && (
         <div className="categories-box">

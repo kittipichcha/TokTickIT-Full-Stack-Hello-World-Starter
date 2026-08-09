@@ -32,70 +32,55 @@ button:disabled {
   background-color: #6c757d;
   cursor: not-allowed;
 }
-
-.status-box {
   margin-top: 20px;
   padding: 15px;
-  border-radius: 5px;
-  text-align: left;
-  animation: slideIn 0.3s ease-in;
-}
-
-.status-box.ok {
   background-color: #d4edda;
   border: 1px solid #c3e6cb;
+  border-radius: 5px;
   color: #155724;
-}
-
-.status-box.fail {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
-}
-
-.status-box h2 {
-  margin-top: 0;
-  margin-bottom: 10px;
-}
-
-.status-box p {
-  margin: 8px 0;
-}
-
-.error-message {
-  color: #721c24;
   font-weight: bold;
-  margin-top: 10px;
+  animation: slideIn 0.3s ease-in;
 }
 
-.error-box {
+.health-box p {
+  margin: 0;
+}
+
+.categories-box {
   margin-top: 20px;
   padding: 15px;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
+  background-color: #e7f3ff;
+  border: 1px solid #b3d9ff;
   border-radius: 5px;
-  color: #721c24;
+  color: #004085;
   text-align: left;
   animation: slideIn 0.3s ease-in;
 }
 
-.error-box h2 {
+.categories-box h3 {
   margin-top: 0;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+  color: #004085;
 }
 
-.error-box p {
-  margin: 8px 0;
+.categories-box ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 
-.hint {
-  font-size: 14px;
-  font-style: italic;
-  color: #856404;
-  background-color: #fff3cd;
-  padding: 10px;
+.categories-box li {
+  padding: 8px;
+  margin: 5px 0;
+  background-color: #fff;
+  border-left: 4px solid #007bff;
   border-radius: 3px;
-  margin-top: 10px;
+}
+
+.categories-box p {
+  margin: 0;
+  color: #666;
+  font-style: italic;
 }
 
 @keyframes slideIn {
