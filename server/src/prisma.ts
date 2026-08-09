@@ -1,8 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-// Lazy singleton: the client is created on first use, not at import time.
-// This keeps route modules and tests that don't touch the DB (e.g. /api/health)
-// free of database side effects.
+// connect to the database only once, and reuse the same client instance across the app
 let client: PrismaClient | null = null;
 
 export function getPrisma(): PrismaClient {
