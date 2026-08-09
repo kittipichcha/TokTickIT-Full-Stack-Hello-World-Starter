@@ -16,7 +16,7 @@ GET /api/health
 ```
 
 **Result:** ✅ PASS  
-**Evidence:** The `/api/health` endpoint returns HTTP 200 status with correct response structure containing `status: "ok"` and `service: "TokTickIT API"`.
+**Evidence:** The `/api/health` endpoint returns HTTP 200 status with correct response structure containing two fields: `status: "ok"` and `service: "TokTickIT API"`. Tests verify both properties exist and have the correct values.
 
 ---
 
