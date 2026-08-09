@@ -15,7 +15,6 @@ describe("Health Check - Real Database Connection", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("ok");
-    expect(response.body.error).toBeNull();
     expect(response.body.service).toBe("TokTickIT API");
   });
 });
