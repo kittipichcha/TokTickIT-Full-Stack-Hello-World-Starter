@@ -1,6 +1,77 @@
 # Lab 1 — Test Plan and Evidence
 
-## Issue 1: Set up the TokTickIT project foundation
+## API Tests
+
+### API-01: Health Endpoint
+**Tool:** Supertest  
+**Description:** Health endpoint returns 200 and expected JSON
+
+```
+GET /api/health
+200 OK
+{
+  "status": "ok",
+  "service": "TokTickIT API"
+}
+```
+
+**Result:** ✅ PASS  
+**Evidence:** The `/api/health` endpoint returns HTTP 200 status with correct response structure containing `status: "ok"` and `service: "TokTickIT API"`.
+
+---
+
+### API-02: Categories Endpoint
+**Tool:** Supertest  
+**Description:** Categories endpoint returns the four seeded categories
+
+```
+GET /api/categories
+200 OK
+[
+  { "id": 1, "name": "Account and Access" },
+  { "id": 2, "name": "Hardware" },
+  { "id": 3, "name": "Software" },
+  { "id": 4, "name": "Network" }
+]
+```
+
+**Result:** ✅ PASS  
+**Evidence:** The `/api/categories` endpoint returns HTTP 200 status with a JSON array containing exactly four categories from the seeded database, each with correct id and name fields.
+
+---
+
+## UI Tests
+
+### UI-01: TokTickIT Heading
+**Tool:** Vitest  
+**Description:** TokTickIT heading renders
+
+**Result:** ✅ PASS  
+**Evidence:** App.tsx renders the TokTickIT heading successfully using React Testing Library. The heading element is present and displays the expected text.
+
+---
+
+### UI-02: Loading State Changes to Category List
+**Tool:** Vitest  
+**Description:** Loading state changes to category list
+
+**Result:** ✅ PASS  
+**Evidence:** When the "Load Categories" button is clicked, the button text transitions from "Load Categories" to "Loading...", then after the API response, the "Available Categories" heading and category list are displayed. The component properly manages state transitions during data fetching.
+
+---
+
+### UI-03: API Failure Displays Error Message
+**Tool:** Vitest  
+**Description:** API failure displays a useful error message
+
+**Result:** ✅ PASS  
+**Evidence:** When fetchCategories() throws an error (e.g., network timeout, 5xx server error), the App component displays an error-box div with the title "⚠️ Failed to Load Categories" and the error message text, providing clear feedback to the user.
+
+---
+
+## Historical Test Results (Archive)
+
+### Issue 1: Set up the TokTickIT project foundation
 Type: Technical setup
 
 | # | Test | Result | Evidence |
