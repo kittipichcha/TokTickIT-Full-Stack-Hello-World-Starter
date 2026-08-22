@@ -37,7 +37,15 @@ E2E/Responsive/Keyboard (planned):
 | DB-02 | Integration | Existing Lab 1 Category rows survive the Lab 2 migration | Existing Category `id`, `name`, and `createdAt` values remain unchanged and `isActive` is backfilled to `true`. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Planned |
 | SEED-01 | Integration | Seed is idempotent when run twice | Running the seed twice creates no duplicate Requesters, Categories, or Related Systems and does not replace existing required Categories. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Planned |
 | SEED-02 | Integration | Seed contains the required reference and requester records | Seed contains exactly four required Categories, at least six Related Systems, at least four active Requesters, and at least one inactive Requester. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Planned |
-| API-TKT-01 | API | Create ticket success returns generated ticket number | A valid create request creates exactly one ticket and returns the official backend-generated ticket number. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 | Planned |
+| API-REF-01 | API | GET /api/categories returns only active Categories with correct response shape | The endpoint returns an array of active Category objects with Lab 1 raw-array response shape (no `{ data: [...] }` envelope). | `server/tests/lab-02/reference-data.api.test.ts` | — | BR-07 | — | Planned |
+| API-REF-02 | API | GET /api/related-systems returns only active Related Systems with standard envelope | The endpoint returns `{ data: [...] }` with only active Related System objects. | `server/tests/lab-02/reference-data.api.test.ts` | — | BR-07 | — | Planned |
+| UI-REQ-03 | UI | Requester Selection loading state shows skeleton/spinner | The loading state displays while fetching active requesters from the API. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-04 | — | Planned |
+| UI-REQ-04 | UI | Requester Selection empty state for zero active requesters | When no active requesters exist, a clear empty-state message is shown instead of a blank dropdown. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-15 | BR-04 | — | Planned |
+| UI-REQ-05 | UI | Requester Selection API failure shows error with manual Retry button | API failure shows an error message and a Retry action; Continue remains disabled until selection succeeds. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | — | — | Planned |
+| UI-REQ-06 | UI | Requester Selection stores selected requester in sessionStorage and sends X-Dev-Requester-Id header | The client directly demonstrates that `X-Dev-Requester-Id` header is sent on API calls and the requester ID is persisted in sessionStorage. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-21 | — | Planned |
+| API-TKT-NOR-01 | API | Summary/Description trimming and boundary behavior | Summary and Description are trimmed before validation; trimmed values are validated and persisted. Boundary: 5/4/120/121 chars for summary; 10/9/2000/2001 chars for description (inclusive/exclusive). Whitespace-only input rejected. | `server/tests/lab-02/create-ticket-normalization.api.test.ts` | FR-02 | BR-08, BR-09 | — | Planned |
+| API-TKT-NOR-02 | API | CategoryId/RelatedSystemId validation with malformed, nonexistent, and inactive cases | Malformed (non-integer) → 400; well-formed but nonexistent → 409; existing but inactive → 409. | `server/tests/lab-02/create-ticket-normalization.api.test.ts` | FR-02 | BR-07 | — | Planned |
+| API-TKT-01 | API | Create ticket success: returns generated ticket number matching TKT-{YYYY}-{6-digit} format, verifies uniqueness | A valid create request creates exactly one ticket, returns the official backend-generated ticket number matching the format pattern, and verifies two tickets receive different numbers. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 | Planned |
 | API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation and cannot be changed by the client | The server assigns ownership from the caller header and ignores any client-provided mismatch. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | — | Planned |
 | API-TKT-05 | API | Requester-created tickets keep IT Priority and Ticket Owner null | `itPriority` and `ticketOwnerId` remain `null` on requester-created tickets. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-11 | — | Planned |
 | UI-TKT-07 | UI | Requested Priority control is required and defaults to MEDIUM | The field defaults to `MEDIUM` and blocks submission if the value is missing from the form model. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-10 | — | Planned |
@@ -55,8 +63,15 @@ E2E/Responsive/Keyboard (planned):
 | API-MY-04 | API | Deterministic sort order with tie-breakers and priority ordering | Sort order is deterministic using selected field/direction and then `createdAt desc`, `id desc` as tie-breakers. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-07 | BR-22 | AC-19 | Planned |
 | API-MY-05 | API | Pagination returns correct page metadata and slices | Page and pageSize metadata are returned accurately and the correct slice of results is delivered. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-08 | BR-22 | AC-20 | Planned |
 | API-MY-06 | API | Default list values and invalid parameter fallback | Omitted list params use `page=1`, `pageSize=10`, `sort=createdAt`, `order=desc`; invalid values fall back to the safe documented defaults. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05, FR-06, FR-07, FR-08 | BR-22 | AC-17, AC-18, AC-19, AC-20 | Planned |
-| UI-MY-01 | UI | Empty state shown for requester with zero tickets ever | A requester with no tickets ever sees the Empty state and a Create Ticket call to action. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-21 | Planned |
-| UI-MY-02 | UI | No-results state shown for active filters yielding zero rows | Filters/search with zero matches show the No-Results state and Clear Filters action. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-22 | Planned |
+| API-MY-07 | API | Invalid filter parameter values: malformed categoryId, invalid enums, out-of-range pagination | Malformed categoryId (non-integer) → 400; invalid requestedPriority/status enums → 400; out-of-range page → 200 with empty data array and accurate pagination metadata. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05, FR-06, FR-08 | BR-22, BR-23-FILTER-INVALID | — | Planned |
+| API-MY-08 | API | Search normalization: trimming, blank-after-trim, and Empty vs No-Results | Search is trimmed; blank-after-trim search is treated as no filter active. Results with no filters = Empty state; results with active filters = No-Results. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05 | BR-23-SEARCH, BR-23-STATES | — | Planned |
+| API-ATT-09 | API | Attachment list ordering is deterministic (uploadedAt asc, id asc) | Attachment listing returns results in deterministic order for stable pagination and reproducible tests. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | — | — | Planned |
+| API-ATT-10 | API | Removal reason normalization and boundary behavior | Omitted/blank-after-trim reason → null; 200-char reason → accepted; 201-char reason → rejected; non-string → 400 validation error. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-19 | — | Planned |
+| API-ATT-11 | API | Multi-file attachment partial success: sequential upload, failure isolation, continuation, per-file reporting | When uploading multiple files, failed attachments do not roll back successful ones; remaining files continue; failures are reported per file. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-17-MULTI-ATTACH | — | Planned |
+| API-ATT-12 | API | Soft-remove idempotency: removing twice returns 409 Conflict on second attempt | A removed attachment cannot be removed again; second DELETE returns 409 rather than silently succeeding. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | Planned |
+| API-ATT-13 | API | Removal sets removedByRequesterId to the current requester | When soft-removing an attachment, `removedByRequesterId` is set to the `X-Dev-Requester-Id` of the caller. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | Planned |
+| UI-MY-01 | UI | Empty state shown for requester with zero tickets ever | A requester with no tickets ever sees the Empty state and a Create Ticket call to action. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23-STATES | AC-21 | Planned |
+| UI-MY-02 | UI | No-results state shown for active filters yielding zero rows | Filters/search with zero matches show the No-Results state and Clear Filters action. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23-STATES | AC-22 | Planned |
 | UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | Switching Requester clears the previous list and reloads the current Requester's tickets. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 | Planned |
 | UI-MY-04 | UI | My Tickets loading and API failure states show skeleton/error with manual Retry | The list shows loading and failure states and requires a manual retry action instead of automatic reload. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04, FR-17 | — | — | Planned |
 | API-ATT-01 | API | Attachment type/content validation matrix | Allowed extension + invalid content is rejected; disallowed extension + valid content is rejected; allowed extension + matching content is accepted. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12, BR-13 | AC-07 | Planned |
@@ -65,7 +80,7 @@ E2E/Responsive/Keyboard (planned):
 | UNIT-ATT-01 | Unit | Attachment size boundary validator: 4,999,999 / 5,000,000 accepted, 5,000,001 rejected | Boundary validation accepts 4,999,999 and 5,000,000 bytes and rejects 5,000,001. | `server/tests/lab-02/attachment-validation.unit.test.ts` | FR-10 | BR-12 | AC-09 | Planned |
 | API-ATT-03 | API | Oversized attachment upload rejected by server with 413 | An over-limit file is rejected by the API with the correct status and no storage. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-09 | Planned |
 | UI-ATT-03 | UI | Selecting an oversized file shows size error immediately and prevents upload (client-side rejection) | Oversized files are rejected before upload with a size message and no network request. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12 | AC-09 | Planned |
-| API-ATT-04 | API | Soft remove marks removed metadata and disables access | A soft delete sets `isRemoved`, `removedAt`, and optional removal reason, and blocks preview/download. | `server/tests/lab-02/attachments.api.test.ts` | FR-11, FR-13 | BR-18, BR-19, BR-20 | AC-12, AC-13 | Planned |
+| API-ATT-04 | API | Soft remove marks removed metadata and disables access | A soft delete sets `isRemoved`, `removedAt`, `removalReason`, and `removedByRequesterId` and blocks preview/download. | `server/tests/lab-02/attachments.api.test.ts` | FR-11, FR-13 | BR-18, BR-19 | AC-12, AC-13 | Planned |
 | API-ATT-05 | API | Preview/download endpoint behavior for active vs removed files | Active attachments preview/download normally; removed attachments are denied and return error responses. | `server/tests/lab-02/attachments.api.test.ts` | FR-12, FR-13 | BR-18, BR-28 | AC-13, AC-24 | Planned |
 | API-ATT-08 | API | Removal reason validation | An omitted reason is accepted, a 200-character reason is accepted, and a 201-character reason is rejected. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-19 | — | Planned |
 | UI-ATT-04 | UI | Removal confirmation dialog and cancel behavior | Remove opens a confirmation dialog; Cancel closes it without sending a DELETE request; Confirm sends the removal request. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-11 | BR-19 | — | Planned |
@@ -90,6 +105,67 @@ E2E/Responsive/Keyboard (planned):
 - `5,000,000` bytes → accepted
 - `5,000,001` bytes → rejected
 
+### Summary and Description trimming boundary assertions (BR-08, BR-09, API-TKT-NOR-01)
+**Summary (5–120 chars after trim):**
+- 4 chars after trim → rejected
+- 5 chars after trim → accepted
+- 120 chars after trim → accepted
+- 121 chars after trim → rejected
+- Whitespace-only input → rejected
+
+**Description (10–2,000 chars after trim):**
+- 9 chars after trim → rejected
+- 10 chars after trim → accepted
+- 2,000 chars after trim → accepted
+- 2,001 chars after trim → rejected
+- Whitespace-only input → rejected
+
+### Removal reason normalization boundary assertions (BR-19, API-ATT-10)
+- Omitted field → stored as null
+- Empty string (`""`) → trimmed, stored as null
+- Whitespace-only string (e.g., `"     "`) → trimmed, stored as null
+- Non-string value (e.g., `123` or `true`) → 400 validation error
+- 200-char string after trim → accepted and persisted
+- 201-char string after trim → rejected with 400 validation error
+
+### My Tickets invalid filter and pagination behavior (BR-22, BR-23-FILTER-INVALID, BR-23-SEARCH, API-MY-07, API-MY-08)
+**Invalid filter parameters:**
+- Malformed `categoryId` (e.g., `categoryId=abc` or `categoryId=0.5`) → 400 validation error
+- Well-formed but nonexistent `categoryId` → 409 Conflict (referenced record doesn't exist)
+- Existing but inactive `categoryId` → 409 Conflict (referenced record is inactive)
+- Invalid `requestedPriority` enum (e.g., `requestedPriority=URGENT`) → 400 validation error
+- Invalid `status` enum (e.g., `status=CLOSED`) → 400 validation error
+- Invalid `sort` field → fallback to default (`createdAt`)
+- Invalid `order` value → fallback to default (`desc`)
+
+**Pagination edge cases:**
+- `page=0` or negative → fallback to 1
+- `page=999` when totalPages=3 → 200 with empty data array; totalPages=3 in metadata
+- `pageSize=0` → fallback to 10
+- `pageSize=51` → fallback to 10 (max is 50)
+- `pageSize=-1` → fallback to 10
+
+**Search normalization:**
+- `?search=` (empty string) → treated as no search filter active
+- `?search=     ` (whitespace only) → trimmed, treated as no search filter active
+- `?search=%20laptop%20` (trimmed to "laptop") → substring match on "laptop"
+- Empty result with no filters → Empty state (totalItems=0, no filters active)
+- Empty result with filters → No-Results state (totalItems=0, filters active)
+
+### Ticket Number format validation (BR-01, API-TKT-01, API-TKT-NOR-01)
+- Must match pattern: `TKT-{YYYY}-{6-digit sequence}` (e.g., `TKT-2026-000001`)
+- Two created tickets must have different ticket numbers
+- Year in format must match the current calendar year
+- Sequence must be exactly 6 digits, zero-padded
+
+### Create Ticket reference validation error matrix (BR-07, API-TKT-NOR-02)
+**For `categoryId` and `relatedSystemId`:**
+- Missing field → 400 validation error
+- Non-integer value (e.g., `"abc"` or `3.14`) → 400 validation error
+- Negative or zero value → 400 validation error (or 409, depending on DB constraint)
+- Positive integer but ID doesn't exist → 409 Conflict (`INACTIVE_REFERENCE`)
+- Existing ID but record is inactive (`isActive: false`) → 409 Conflict
+
 ### BR-17 partial-success failure cases (must be tested separately)
 The UI and tests must distinguish two failure cases — they are **not** the same flow:
 
@@ -105,7 +181,13 @@ The UI and tests must distinguish two failure cases — they are **not** the sam
 - Report the attachment failure separately.
 - Provide a View Ticket / retry-attachment path from Ticket Detail.
 
-Planned coverage: `UI-TKT-06`, `API-ATT-06`, `E2E-04`.
+**Case C — Multi-file attachment partial success (BR-17-MULTI-ATTACH, API-ATT-11)**
+- File A uploads successfully → stored, not rolled back
+- File B upload fails → reported separately
+- File C continues to upload (does not stop after B's failure)
+- Failed File B can be retried from Ticket Detail without affecting File A or C
+
+Planned coverage: `UI-TKT-06`, `API-ATT-06`, `E2E-04`, `API-ATT-11`.
 
 ### UI Style / Visual coverage note
 Per the Lab 2 handout, planned testing must cover Unit, API/Integration, UI Component,
@@ -147,6 +229,20 @@ Template:
   - Skipped/Disabled:
 - Notes and follow-up:
 ```
+
+### 2026-08-23 - Lab 2 decision-free agent contract tightening
+- Scope: Tightened the requirement contract so a future agent cannot invent product behavior outside the approved Lab 2 scope and must follow explicit precedence rules.
+- Tests added/updated: Updated documentation-only contract language in `AGENT.md` and `docs/lab-02/specification.md`; no executable tests changed.
+- Command(s) run:
+  - `git diff --check`
+- Result:
+  - Passed: 1
+  - Failed: 0
+  - Skipped/Disabled: 0
+- Notes and follow-up:
+  - Added a Decision-Free Execution Contract and requirement precedence order to reduce implementation drift.
+  - Clarified that missing or contradictory requirements require stopping and requesting approval instead of choosing a design.
+  - This keeps the Lab 2 documents aligned to the PDF handout and prevents future agents from improvising beyond the contract.
 
 ### 2026-08-22 - PR #16 re-review alignment pass
 - Scope: Resolved the remaining Lab 2 contract gaps around migration ownership, seed evidence, attachment confirmation coverage, traceability, UI attachment states, and audit relationships.
