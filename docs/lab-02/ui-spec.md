@@ -108,7 +108,7 @@ right-aligned).
 ### 5.5 Requester Ticket Detail (View Mode)
 - Header row: Ticket Number + Current Status badge, "← Back to My Tickets" link.
 - Read-only info grid (2–3 columns desktop, stacked mobile): Ticket Date, Category,
-  Related System, Requester (name + Inactive badge if applicable), Requested Priority
+  Related System, Requester (name), Requested Priority
   badge, IT Priority badge (shows "Not yet triaged" placeholder styling when null), Ticket
   Owner (shows "Unassigned" when null), Summary, Description (full width, read-only
   textarea styling).
@@ -131,7 +131,6 @@ right-aligned).
 |---|---|
 | Requested/IT Priority | `LOW` = pale green pill; `MEDIUM` = amber/warning pill; `HIGH` = red-bordered pill. Never color-only — text label always present. |
 | Current Status | `New` = secondary-green pill. (Only value reachable in Lab 2; other status styles reserved for later labs.) |
-| Requester Inactive | Gray outline pill, "Inactive" label, placed next to requester name |
 | Attachment Removed | Gray pill, "Removed" label, placed next to filename |
 
 ## 7. Responsive Rules
