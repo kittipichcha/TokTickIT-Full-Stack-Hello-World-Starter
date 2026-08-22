@@ -64,6 +64,12 @@ The following conditions are explicitly enumerated and must not be reinterpreted
 
 ## 5. Test Traceability Matrix (Planned Contract)
 
+`Final` describes evidence status, not the expected behavior: `Planned` means the test row
+is specified but its automated test is not implemented; `Implemented` means the test exists
+but has not yet passed in the current evidence log; `Passed` means the test exists and passed;
+`Failed` means the latest run failed; and `Blocked` means it cannot run because its documented
+prerequisite is unavailable. A row must not be marked `Passed` based on this plan alone.
+
 | Test ID | Type | What It Tests | Expected Result | Automated Test File | FR | BR | Requirement / AC | Final |
 |---|---|---|---|---|---|---|---|---|
 | API-REQ-01 | API | Selector returns only active development requesters | Returns only active requesters and excludes inactive ones from the selector payload. | `server/tests/lab-02/dev-requesters.api.test.ts` | FR-01, FR-15 | BR-03, BR-04 | AC-15 | Planned |

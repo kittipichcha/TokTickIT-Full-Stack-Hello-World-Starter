@@ -101,7 +101,8 @@ right-aligned).
 - On success: replace form with a success panel showing the generated Ticket Number
   (from the API response, not client-guessed) and a "View Ticket" / "Create Another" action.
 - After success, Ticket Date is rendered from the backend `createdAt` returned in the
-  persisted Ticket response; the client never submits or generates this value.
+  persisted Ticket response; the client never submits or generates this value. Display the
+  timestamp in UTC using the exact format `YYYY-MM-DD HH:mm:ss UTC`.
 - On failure — **Case A: ticket creation fails** (BR-16): inline error banner above the
   form; **all field values remain populated**; Submit re-enables for manual retry. No
   ticket exists yet, so retrying the full create flow is correct.

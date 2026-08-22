@@ -121,6 +121,12 @@ If a legal execution path is not explicitly listed here or in the functional/bus
 - **BR-16** On a ticket-creation API failure, all entered form values are preserved, an inline error is shown, and the system does **not** auto-retry. The user must manually resubmit.
 - **BR-17** If a ticket is created successfully but a subsequent attachment upload fails, the ticket is **not** rolled back. For multiple selected files, the client uploads sequentially: a failed file does not roll back prior successes, remaining files continue, and failures are reported per file. Failed files may be retried from Ticket Detail. The attachment failure is separate from ticket creation, so the client must not recreate or duplicate the ticket.
 
+Create-ticket orchestration is fixed: the client first sends the ticket as a JSON request,
+then uploads each valid selected file through the attachment endpoint, one file per request.
+Files are never included in the ticket JSON request. If the ticket request succeeds, no later
+attachment failure may cause the ticket request to be retried automatically or as part of a
+manual attachment retry.
+
 **Attachment upload, download, and soft removal**
 - **BR-12** Attachments are optional. Limits: ≤5 active attachments per ticket, max `5,000,000` bytes per file, types JPG/JPEG/PNG/WEBP/PDF only. The count check and metadata insert share one database transaction/lock scope, so concurrent uploads cannot exceed the limit.
 - **BR-13** File type is validated both by extension and by server-side content sniffing using the exact extension/MIME/signature table in `api-spec.md`; files failing either check are rejected and never stored.
@@ -153,8 +159,15 @@ at desktop (≥992px) / tablet (768–991px) / mobile (<768px).
 
 **Ticket Date contract:** Ticket Date is the backend-authoritative `Ticket.createdAt`
 timestamp. It is read-only, and the client does not submit or generate it. Before creation,
-the UI may show a placeholder/current-date presentation; after successful creation, the
-displayed value must come from the persisted `createdAt` returned by the backend.
+the UI shows the literal placeholder `assigned after submit` for Ticket Number and `now`
+for Ticket Date. After successful creation, the displayed date must come from the persisted
+`createdAt` returned by the backend. The UI formats timestamps in UTC using
+`YYYY-MM-DD HH:mm:ss UTC`.
+
+**Normalization and comparison semantics:** Character limits count Unicode code points after
+trimming, not UTF-16 code units or grapheme clusters. Case-insensitive search and textual
+sorting use Unicode-aware case folding. Search remains a substring match on the normalized
+ticket number and summary; stored ticket text is not lowercased.
 
 ## 7. Data Changes
 Models: `DevRequester`, `Category`, `RelatedSystem`, `Ticket`, `Attachment`.
@@ -345,5 +358,6 @@ See `api-spec.md` for the full endpoint list, request/response shapes, and statu
    anticipating Lab 3's IT Staff features without requiring a later migration.
 9. **Ticket Number format** `TKT-{YYYY}-{6-digit sequence}` chosen for readability and
    year-scoped uniqueness; sequence resets per calendar year.
-10. **Validation limits** (Summary 5–120 chars, Description 10–2,000 chars) are the
-    student's chosen bounds, not specified by the handout — open to revision.
+10. **Validation limits are frozen for Lab 2:** Summary is 5–120 characters and
+  Description is 10–2,000 characters after trimming. These values must not be changed
+  during implementation without an explicit specification revision.

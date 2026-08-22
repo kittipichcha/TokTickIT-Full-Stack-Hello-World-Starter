@@ -21,6 +21,7 @@
 | 14 | Re-review PR #16 for full contract consistency | Synchronized numeric BR IDs, page normalization, Empty/No-Results semantics, attachment UI/test layering, inherited API errors, evidence paths, seed preservation, and attachment compensation decisions. |
 | 15 | Review Lab 2 as a no-context implementation agent, then close the discovered contract gaps | Resolved contradictory Empty/No-Results semantics with unfiltered metadata; defined canonical API errors/parsing, attachment signature and filename rules, deterministic attachment ordering, and concurrent-write behavior; expanded planned test coverage. |
 | 16 | Apply the second PR #16 re-review's remaining contract/test-evidence fixes | Merged the duplicate `BR-23` into `BR-23`/`BR-30`, froze Ticket Number sequence semantics and a canonical `error.code` table, froze the attachment storage-access/persistence-compensation invariant as `BR-31`, added cross-requester attachment ownership and exact `410`/preview test evidence, closed the BR-02/BR-10/BR-25 Test-DD gaps, and split API vs UI responsibility for Empty/No-Results proof. |
+| 17 | Review whether the request/response contract and planned tests still leave implementation decisions open | Froze the validation bounds, UTC Ticket Date display format, Unicode comparison semantics, create-then-upload orchestration, attachment-list response shape, download filename headers, `400` field behavior, DELETE parsing, and planned-versus-passing test evidence status. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
@@ -34,3 +35,4 @@
 9. Cross-document contract reviews must verify identifiers, edge cases, test layers, and evidence records together; a locally correct addition can still leave contradictory downstream wording.
 10. A closed implementation contract needs explicit parsing, error-body, concurrency, and state-disambiguation rules; otherwise different correct-looking implementations and test suites still diverge.
 11. Reusing the same rule ID for two different rules is as dangerous as an outright contradiction, since every citing test row silently inherits the ambiguity until the ID collision itself is fixed.
+12. A closed contract must define exact response envelopes and transport headers, not only endpoint intent; planned test rows must also distinguish specified coverage from executed evidence.
