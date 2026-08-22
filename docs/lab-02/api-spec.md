@@ -35,6 +35,26 @@ expose stack traces, database errors, storage paths, or parser details. `fields`
 only submitted field names to a human-readable validation message and is required for
 every `400` response.
 
+**Canonical status/condition → `error.code` table (frozen; implementations must not invent alternatives):**
+| HTTP status | Condition | `error.code` |
+|---|---|---|
+| 400 | Field/body/query validation failure | `VALIDATION_ERROR` |
+| 400 | Attachment upload rejected only for exceeding the 5-active-attachment limit | `ATTACHMENT_LIMIT_REACHED` |
+| 404 | Resource missing or not owned by the caller (Ticket or Attachment) | `NOT_FOUND` |
+| 409 | Referenced `categoryId`/`relatedSystemId` well-formed but nonexistent | `INACTIVE_REFERENCE` |
+| 409 | Referenced `categoryId`/`relatedSystemId` exists but is inactive | `INACTIVE_REFERENCE` |
+| 409 | Ticket sequence exhausted for the UTC year | `TICKET_SEQUENCE_EXHAUSTED` |
+| 409 | Attachment already removed (soft-delete idempotency guard) | `CONFLICT` |
+| 410 | Attachment exists but is soft-removed | `ATTACHMENT_REMOVED` |
+| 413 | Uploaded file exceeds the byte limit | `FILE_TOO_LARGE` |
+| 415 | Uploaded file type/signature not permitted | `UNSUPPORTED_MEDIA_TYPE` |
+| 422 | `X-Dev-Requester-Id` missing, malformed, unknown, or inactive | `REQUESTER_CONTEXT_INVALID` |
+| 500 | Unexpected server error | `INTERNAL_ERROR` |
+
+The "nonexistent" and "inactive" `409` reference-validation cases intentionally share the
+same `INACTIVE_REFERENCE` code, since both mean "this reference cannot currently be used";
+the human-readable `message` text differentiates the two cases for the caller.
+
 **Request parsing:** JSON endpoints require `Content-Type: application/json`; a malformed
 JSON document, a non-object JSON value, or a wrong content type returns `400
 VALIDATION_ERROR`. Unknown JSON properties are ignored unless this contract lists them as
@@ -140,6 +160,14 @@ additional validation or conflict cases specific to that capability.
 Bootstrap and reference-data endpoints do not require requester context, but they return `500`
 with the same safe generic error for unexpected failures.
 
+**Attachment storage & access boundary (frozen):** uploaded attachment files are never served
+through a public/static file route. The only way to retrieve file bytes is via
+`GET /api/attachments/:attachmentId/download` and `GET /api/attachments/:attachmentId/preview`,
+both of which re-validate ownership (the ticket's `requesterId` matches the caller's
+`X-Dev-Requester-Id`) and `isRemoved` status before returning bytes. A soft-removed
+attachment's file remains on disk for audit purposes but is unreachable through any endpoint
+once `isRemoved=true`.
+
 ---
 
 ## 1. GET /api/categories
@@ -199,7 +227,7 @@ Create a Ticket owned by the requester in `X-Dev-Requester-Id`.
 ```
 
 **Validation**
-- `categoryId`, `relatedSystemId`: required, must reference an **active** record. Error matrix: missing/non-integer → `400` validation error (`VALIDATION_ERROR`); well-formed but nonexistent ID → `409` Conflict (`INACTIVE_REFERENCE`); existing but inactive record → `409` Conflict.
+- `categoryId`, `relatedSystemId`: required, must reference an **active** record. Error matrix: missing/non-integer → `400` validation error (`VALIDATION_ERROR`); well-formed but nonexistent ID → `409` Conflict (`INACTIVE_REFERENCE`); existing but inactive record → `409` Conflict (`INACTIVE_REFERENCE`).
 - `summary`: required, trimmed, 5–120 chars after trim; whitespace-only rejected → else `400` (`VALIDATION_ERROR`)
 - `description`: required, trimmed, 10–2000 chars after trim; whitespace-only rejected → else `400` (`VALIDATION_ERROR`)
 - `requestedPriority`: required, one of `LOW|MEDIUM|HIGH` → else `400` (`VALIDATION_ERROR`)
@@ -228,7 +256,7 @@ Create a Ticket owned by the requester in `X-Dev-Requester-Id`.
 **Error cases**
 - `422` — header missing / requester unknown / requester inactive
 - `400` — validation failure (see `fields`)
-- `409` — `categoryId` or `relatedSystemId` is well-formed but nonexistent or refers to an inactive record
+- `409` — `categoryId` or `relatedSystemId` is well-formed but nonexistent, **or** refers to an existing but inactive record (both use `INACTIVE_REFERENCE`)
 - `500` — unexpected error; ticket is not partially created (all-or-nothing)
 
 ---
@@ -242,7 +270,7 @@ Retrieve the selected Requester's own Tickets — search, filter, sort, paginate
 | Param | Type | Default | Notes |
 |---|---|---|---|
 | `search` | string | — | Case-insensitive substring match on `ticketNumber` or `summary`. Trimmed; blank-after-trim treated as no search active. |
-| `categoryId` | int | — | Filter by category. Malformed (non-integer) → 400; nonexistent but well-formed → 409; stale/inactive → 409. |
+| `categoryId` | int | — | Filter by category. Malformed (non-integer) → 400; nonexistent but well-formed → 409 (`INACTIVE_REFERENCE`); stale/inactive → 409 (`INACTIVE_REFERENCE`). |
 | `requestedPriority` | `LOW\|MEDIUM\|HIGH` | — | Filter by requested priority. Invalid enum value (e.g., "URGENT") → 400. |
 | `status` | `NEW` | — | Filter by status. Invalid enum value (e.g., "CLOSED") → 400. (Only `NEW` possible in Lab 2.) |
 | `sort` | `createdAt\|ticketNumber\|summary\|requestedPriority` | `createdAt` | Sort field. Invalid value → fallback to default. |
@@ -433,4 +461,4 @@ Soft-remove an owned attachment.
 
 **Error cases**
 - `404` — attachment/ticket not found or not owned
-- `409` — attachment is already removed (idempotency guard; removing twice is not silently accepted)
+- `409` — attachment is already removed (idempotency guard; removing twice is not silently accepted; code `CONFLICT`)
