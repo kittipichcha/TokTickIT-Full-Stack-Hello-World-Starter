@@ -10,7 +10,7 @@ requester-owned data requires the header:
 X-Dev-Requester-Id: <integer>
 ```
 Bootstrap/reference endpoints are exempt (`GET /api/dev-requesters`, `GET /api/categories`,
-`GET /api/related-systems`). This is a Lab 2 testing convenience (BR-03a). The backend still
+`GET /api/related-systems`). This is a Lab 2 testing convenience (BR-21). The backend still
 validates the header value against active `DevRequester` records on every requester-scoped call
 — it is never trusted blindly.
 
