@@ -121,6 +121,21 @@ displayed value must come from the persisted `createdAt` returned by the backend
 ## 7. Data Changes
 Models: `DevRequester`, `Category`, `RelatedSystem`, `Ticket`, `Attachment`.
 
+### 7.1 Migration and seed decisions
+Lab 2 uses a forward migration from the existing Lab 1 schema. The migration and seed
+process must preserve existing data rather than resetting the database to reach the final
+schema shape.
+
+- Existing `Category` rows are preserved.
+- Existing `Category.id`, `Category.name`, and `Category.createdAt` values are not rewritten.
+- `Category.isActive` is added as a non-null field and existing rows are backfilled to `true`.
+- `DevRequester`, `RelatedSystem`, `Ticket`, and `Attachment` are created as new tables.
+- The migration must not drop or recreate the Lab 1 database as a shortcut.
+- Seed logic is idempotent and must not duplicate, replace, or rewrite the four required
+  existing Categories.
+- Seed data must include exactly the four required Categories, at least six Related Systems,
+  at least four active Requesters, and at least one inactive Requester.
+
 ```prisma
 enum Priority {
   LOW
@@ -139,6 +154,8 @@ model DevRequester {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   tickets   Ticket[]
+  uploadedAttachments Attachment[] @relation("AttachmentUploader")
+  removedAttachments Attachment[] @relation("AttachmentRemover")
 }
 
 model Category {
@@ -185,6 +202,7 @@ model Attachment {
   ticketId            Int
   ticket              Ticket       @relation(fields: [ticketId], references: [id])
   uploaderRequesterId Int
+  uploaderRequester   DevRequester @relation("AttachmentUploader", fields: [uploaderRequesterId], references: [id])
   originalFilename    String
   storedFilename      String       @unique
   mimeType            String
@@ -194,6 +212,7 @@ model Attachment {
   removedAt           DateTime?
   removalReason        String?
   removedByRequesterId Int?
+  removedByRequester   DevRequester? @relation("AttachmentRemover", fields: [removedByRequesterId], references: [id])
 
   @@index([ticketId])
 }
@@ -208,6 +227,9 @@ model Attachment {
   ownership filter, status filter, and default sort without a full scan.
 - `itPriority` and `ticketOwnerId` exist now (nullable) so Lab 3's IT Staff features don't
   require a schema migration — but Lab 2 never writes to them.
+- Attachment upload/removal requester IDs are real foreign keys to `DevRequester`, using
+  named relations so the two audit roles remain unambiguous. The uploader relation is
+  required; the remover relation is nullable until soft removal occurs.
 
 ## 8. API Contract
 See `api-spec.md` for the full endpoint list, request/response shapes, and status codes.

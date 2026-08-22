@@ -81,6 +81,19 @@ right-aligned).
   name/size/type-icon and a per-file remove (×) before submit; running count "`n`/5"; a
   file that fails type/size validation shows an inline red message next to that file
   without blocking the others.
+- Attachment states are explicit and reusable in both Create Ticket and Ticket Detail:
+  - **Uploading:** filename and metadata remain visible, a per-file spinner or progress
+    indicator is shown, and that file's upload action is disabled until the request ends;
+    duplicate submission is prevented.
+  - **Unavailable:** filename and available metadata remain visible, Preview and Download
+    are disabled, and a clear unavailable/error label is shown. A Retry action appears only
+    when the API contract permits retry, such as the BR-17 partial-success path.
+  - **Invalid:** the file remains identifiable with an inline type/size validation message
+    and is not submitted.
+  - **Active:** Preview, Download, and Remove are available subject to ownership and
+    attachment limits.
+  - **Removed:** metadata remains visible with a Removed badge while Preview and Download
+    are visible but disabled.
 - Submit button: primary, shows busy state while in flight (BR-15), disabled if any field
   is currently invalid.
 - On success: replace form with a success panel showing the generated Ticket Number
@@ -125,6 +138,9 @@ right-aligned).
 - Clearly separated **Attachments** section below the info grid (visually distinct panel,
   not blended into ticket fields):
   - List of attachments: filename, size, type icon, uploaded date, status.
+  - Each row supports the explicit active, uploading, invalid, removed, and unavailable
+    presentations defined in Create Ticket. Uploading rows prevent duplicate submission;
+    unavailable rows retain any known metadata and expose Retry only when allowed by the API.
   - Active attachment row actions: Preview (opens modal/subpage — image inline or PDF
     first page), Download, Remove (destructive style).
   - Removed attachment row: de-emphasized (reduced opacity), "Removed" badge, Preview/
@@ -175,5 +191,7 @@ artifacts/lab-02/screenshots/
 ├── requester-selection/   (loading, empty, failure, populated)
 ├── create-ticket/         (initial, validation-error, submitting, success, api-failure, partial-success-attachment-failure)
 ├── my-tickets/            (desktop, tablet, mobile, empty, no-results, filtered)
-└── ticket-detail/         (desktop, mobile, attachment-active, attachment-removed, preview-modal)
+└── ticket-detail/         (desktop, mobile, attachment-active, attachment-uploading,
+                            attachment-invalid, attachment-removed, attachment-unavailable,
+                            preview-modal)
 ```

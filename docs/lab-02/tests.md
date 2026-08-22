@@ -32,10 +32,14 @@ E2E/Responsive/Keyboard (planned):
 | UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | Missing requester context redirects to the selector screen without crashing. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-21, BR-05 | AC-02 | Planned |
 | UI-REQ-02 | UI | Stale/inactive requester context clears sessionStorage and shows explanatory message | Stored requester is cleared, the app redirects to selector, and the user sees a clear inactive-requester message. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-15 | BR-05, BR-21 | AC-02, AC-15 | Planned |
 | API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Planned |
-| API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | AC-15 | Planned |
+| API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | — | Planned |
+| DB-01 | Integration | Fresh database migrates to the Lab 2 schema | Forward migration creates all required tables, fields, constraints, relations, and indexes without resetting the database. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Planned |
+| DB-02 | Integration | Existing Lab 1 Category rows survive the Lab 2 migration | Existing Category `id`, `name`, and `createdAt` values remain unchanged and `isActive` is backfilled to `true`. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Planned |
+| SEED-01 | Integration | Seed is idempotent when run twice | Running the seed twice creates no duplicate Requesters, Categories, or Related Systems and does not replace existing required Categories. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Planned |
+| SEED-02 | Integration | Seed contains the required reference and requester records | Seed contains exactly four required Categories, at least six Related Systems, at least four active Requesters, and at least one inactive Requester. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Planned |
 | API-TKT-01 | API | Create ticket success returns generated ticket number | A valid create request creates exactly one ticket and returns the official backend-generated ticket number. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 | Planned |
-| API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation and cannot be changed by the client | The server assigns ownership from the caller header and ignores any client-provided mismatch. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | AC-01, AC-03 | Planned |
-| API-TKT-05 | API | Requester-created tickets keep IT Priority and Ticket Owner null | `itPriority` and `ticketOwnerId` remain `null` on requester-created tickets. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-11 | AC-01 | Planned |
+| API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation and cannot be changed by the client | The server assigns ownership from the caller header and ignores any client-provided mismatch. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | — | Planned |
+| API-TKT-05 | API | Requester-created tickets keep IT Priority and Ticket Owner null | `itPriority` and `ticketOwnerId` remain `null` on requester-created tickets. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-11 | — | Planned |
 | UI-TKT-07 | UI | Requested Priority control is required and defaults to MEDIUM | The field defaults to `MEDIUM` and blocks submission if the value is missing from the form model. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-10 | — | Planned |
 | UI-TKT-01 | UI | Empty summary blocks submit and shows field error | The summary field shows a direct validation error and no API call is sent. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-04 | Planned |
 | UI-TKT-02 | UI | Summary over 120 chars blocks submit with length error | A summary longer than 120 chars is rejected with a field-level message. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-05 | Planned |
@@ -63,10 +67,11 @@ E2E/Responsive/Keyboard (planned):
 | UI-ATT-03 | UI | Selecting an oversized file shows size error immediately and prevents upload (client-side rejection) | Oversized files are rejected before upload with a size message and no network request. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12 | AC-09 | Planned |
 | API-ATT-04 | API | Soft remove marks removed metadata and disables access | A soft delete sets `isRemoved`, `removedAt`, and optional removal reason, and blocks preview/download. | `server/tests/lab-02/attachments.api.test.ts` | FR-11, FR-13 | BR-18, BR-19, BR-20 | AC-12, AC-13 | Planned |
 | API-ATT-05 | API | Preview/download endpoint behavior for active vs removed files | Active attachments preview/download normally; removed attachments are denied and return error responses. | `server/tests/lab-02/attachments.api.test.ts` | FR-12, FR-13 | BR-18, BR-28 | AC-13, AC-24 | Planned |
-| API-ATT-08 | API | Removal confirmation, reason validation, and cancel behavior | Confirmation is required, a 200-character reason is accepted, a 201-character reason is rejected, and cancel leaves the attachment active. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-19 | AC-12 | Planned |
+| API-ATT-08 | API | Removal reason validation | An omitted reason is accepted, a 200-character reason is accepted, and a 201-character reason is rejected. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-19 | — | Planned |
+| UI-ATT-04 | UI | Removal confirmation dialog and cancel behavior | Remove opens a confirmation dialog; Cancel closes it without sending a DELETE request; Confirm sends the removal request. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-11 | BR-19 | — | Planned |
 | UI-ATT-02 | UI | Removed attachment row shows Removed badge and disabled controls | A removed attachment remains listed with a de-emphasized Removed badge and disabled Download/Preview actions. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-11 | BR-20 | AC-12 | Planned |
 | API-ATT-06 | API | BR-17 partial success: ticket POST succeeds, attachment upload fails, ticket persists and is not rolled back | The ticket remains persisted after attachment failure and no duplicate ticket is created. | `server/tests/lab-02/attachments.api.test.ts` | FR-02, FR-10 | BR-17 | AC-26 | Planned |
-| API-ATT-07 | API | Attachment metadata is persisted and stored filename is generated safely with validated extension | Metadata is saved and the stored filename is generated using a sanitized UUID+extension pattern. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-26, BR-27 | AC-07 | Planned |
+| API-ATT-07 | API | Attachment metadata is persisted and stored filename is generated safely with validated extension | Metadata is saved and the stored filename is generated using a sanitized UUID+extension pattern. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-26, BR-27 | — | Planned |
 | UI-DETAIL-01 | UI | Ticket Detail renders read-only fields, loading/failure/not-found states, active and removed attachments, Preview/Download/Remove, and Add Attachment controls | The detail screen shows read-only ticket data, attachment state, and the correct controls for active vs removed attachments. | `client/src/lab-02-tests/RequesterTicketDetail.test.tsx` | FR-09, FR-10, FR-11, FR-12, FR-13, FR-17 | BR-18, BR-20, BR-24, BR-28 | AC-03, AC-12, AC-13, AC-24 | Planned |
 | E2E-01 | E2E | Requester creates ticket and later finds it in My Tickets | The full requester flow ends with a visible ticket in the requester's My Tickets list. | `e2e/lab-02/requester-ticket-flow.spec.ts` | FR-02, FR-04 | BR-01, BR-22 | AC-01, AC-17 | Planned |
 | E2E-02 | E2E | Ownership isolation across two requester contexts | Requester A and B cannot see each other's tickets and ownership enforcement works end-to-end. | `e2e/lab-02/ownership.spec.ts` | FR-09 | BR-24 | AC-03 | Planned |
@@ -74,7 +79,7 @@ E2E/Responsive/Keyboard (planned):
 | E2E-04 | E2E | BR-17 partial success: ticket created, attachment upload fails, ticket persists, no duplicate, retry from Ticket Detail | Ticket creation succeeds, attachment failure is reported separately, and the user can retry the attachment without creating a duplicate. | `e2e/lab-02/partial-success-attachment.spec.ts` | FR-02, FR-10, FR-17 | BR-17 | AC-26 | Planned |
 | E2E-05 | E2E | Keyboard-only create-ticket flow with visible focus indicators | Keyboard users can complete the flow with visible focus and no inaccessible inputs. | `e2e/lab-02/keyboard-access.spec.ts` | — | — | AC-25 | Planned |
 | UI-ERR-01 | UI | Case A — ticket create API failure preserves form state and requires manual retry | A create failure leaves all form values populated and requires manual retry rather than auto-retrying. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 | Planned |
-| UI-STYLE-01 | UI Style | Editable/read-only/invalid/disabled/busy field and button styles match Zen Green tokens | The visual system consistently distinguishes valid, invalid, disabled, busy, and read-only states. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | — | AC-23 | Planned |
+| UI-STYLE-01 | UI Style | Editable/read-only/invalid/disabled/busy field and button styles match Zen Green tokens | The visual system consistently distinguishes valid, invalid, disabled, busy, and read-only states. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | — | — | Planned |
 | UI-STYLE-02 | UI Style | Required-field labels show red asterisk; validation messages render directly under fields | Required labels and inline validation match the accessibility and UI contract. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-08, BR-09 | AC-04, AC-06 | Planned |
 | UI-STYLE-03 | UI Style | Priority/Status/Removed badge styling and non-color-reliant labels | Badges are styled with accessible labels and are understandable without relying on color alone. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-20 | AC-12 | Planned |
 | VISUAL-01 | Visual | Zen Green screenshots across all Lab 2 screens at desktop/tablet/mobile viewports | Screenshots across all required screens demonstrate the required responsive visual style. | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | Planned |
@@ -142,6 +147,22 @@ Template:
   - Skipped/Disabled:
 - Notes and follow-up:
 ```
+
+### 2026-08-22 - PR #16 re-review alignment pass
+- Scope: Resolved the remaining Lab 2 contract gaps around migration ownership, seed evidence, attachment confirmation coverage, traceability, UI attachment states, and audit relationships.
+- Tests added/updated: Updated planned Test-DD rows and documentation contract only; no executable test files changed.
+- Command(s) run:
+  - `git diff --check`
+  - targeted marker validation for the updated specification
+- Result:
+  - Passed: 1
+  - Failed: 0
+  - Skipped/Disabled: 0
+- Notes and follow-up:
+  - Added DB-01/DB-02 and SEED-01/SEED-02 with concrete planned test paths.
+  - Split API-ATT-08 from UI-ATT-04 and removed unrelated AC mappings from BR-only rows.
+  - Added explicit Uploading and Unavailable attachment states and visual evidence paths.
+  - GitHub Issue #11 now delegates the final release gate to Issue #18, the dedicated integration/release issue.
 
 ### 2026-08-22 - Lab 2 handout alignment audit
 - Scope: Verified the Lab 2 engineering-contract documents against `Lab_02_labsheet.pdf` and aligned the planned-test table terminology with the required handout format.
