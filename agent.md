@@ -66,13 +66,14 @@ Examples:
 Agent may commit only after explicit user approval.
 
 ## 7. Branch and Worktree Policy
-Branching strategy must follow main requirement functions.
-Suggested branch names:
-- `feature/lab2-requirement-ai`
-- `feature/lab2-requester-selection`
-- `feature/lab2-ticket-creation`
-- `feature/lab2-my-tickets`
-- `feature/lab2-attachments`
+Branching strategy must follow main requirement functions:
+- Staging branch: `lab2-staging` is created from the current head of `main` as the integration target.
+- Feature branches branch off and target `lab2-staging`:
+  - `feature/lab2-requirement-ai` (or `doc/requirment_and_agent`)
+  - `feature/lab2-requester-selection`
+  - `feature/lab2-ticket-creation`
+  - `feature/lab2-my-tickets`
+  - `feature/lab2-attachments`
 
 If a bugfix outside current branch scope is needed:
 1. Explain why it is out of scope.
@@ -82,7 +83,7 @@ If a bugfix outside current branch scope is needed:
 ## 8. PR and Kanban Policy
 When branch scope meets issue acceptance criteria:
 1. Summarize completion evidence (including tests).
-2. Ask user approval to open PR to `main`.
+2. Ask user approval to open PR targeting `lab2-staging` (all feature PRs go to `lab2-staging`; the final release PR moves `lab2-staging` into `main`).
 3. After PR approval/workflow confirmation, ask user approval to move issue card in Kanban.
 
 No autonomous PR creation or Kanban state changes without user approval.
@@ -97,7 +98,7 @@ No autonomous PR creation or Kanban state changes without user approval.
 7. Update `docs/lab-02/ai_use.md` in Lab 1 style.
 8. Ask approval for commit.
 9. Commit function-by-function.
-10. Ask approval for PR and board updates.
+10. Ask approval for PR targeting `lab2-staging` and board updates.
 
 ## 10. Stop Conditions
 The agent must stop and ask the user when:
