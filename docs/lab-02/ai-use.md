@@ -15,6 +15,7 @@
 | 8 | Address PR #16 peer/Copilot review findings and reconcile specifications, tests, and naming | Completed AC-to-test traceability matrix in `tests.md`, resolved AC-16 inactive requester lifecycle, scoped `X-Dev-Requester-Id` header, froze 5,000,000 byte attachment limit, defined deterministic sorting, renamed `ai-use.md`, and added worktree policy to `agent.md`. |
 | 9 | Fix the remaining PR #16 review findings and check related agent/issue contracts | Reconciled the commit approval policy, added explicit Ticket Date authority, expanded Test-DD BR and Ticket Detail UI coverage, and synchronized downstream issue ownership and mappings. |
 | 10 | Apply the final PR #16 re-review contract fixes to the Lab 2 baseline docs | Updated the planned-test table to include `Expected Result` and `Final`, preserved the Category `createdAt` migration contract, added the missing direct BR scenarios, and cleaned the traceability mappings that were still conflicting with the create-ticket rule. |
+| 11 | Compare the Lab 2 project contract with the Lab 02 handout and correct formatting gaps | Verified the documents against the handout, retained the already-complete assumptions section, renamed Test-DD headings to match the required table terminology, recorded factual PR #16 review evidence, and removed the local PDF-text extraction artifact. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
@@ -22,3 +23,4 @@
 3. Splitting Lab 2 into focused issues with explicit prerequisite links improves branch discipline and review quality.
 4. Resolving contract edge cases and establishing complete AC-to-test traceability during specification prevents downstream implementation churn.
 5. Checking the process agreement and downstream issue mappings alongside the feature contracts prevents a local documentation fix from creating conflicting delivery rules.
+6. A handout-alignment audit is most useful when it distinguishes present contract evidence from future implementation and final-submission evidence instead of implying unfinished work has passed.
