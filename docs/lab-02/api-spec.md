@@ -33,7 +33,12 @@ All errors use this object shape. `error.code` is one of `VALIDATION_ERROR`,
 only `INTERNAL_ERROR` and the message `An unexpected error occurred.`; they must not
 expose stack traces, database errors, storage paths, or parser details. `fields` maps
 only submitted field names to a human-readable validation message and is required for
-every `400` response.
+every `400` response. For a `400` error with no specific submitted field, `fields` is an
+empty object. For `ATTACHMENT_LIMIT_REACHED`, `fields` is
+`{ "file": "The ticket already has the maximum number of active attachments." }`.
+For other multipart parsing errors, `fields` identifies the relevant part when one exists;
+otherwise it is `{}`. Error messages may vary except for the frozen `500` message;
+automated tests must assert the HTTP status, `error.code`, and required `fields` keys.
 
 **Canonical status/condition → `error.code` table (frozen; implementations must not invent alternatives):**
 | HTTP status | Condition | `error.code` |
@@ -64,6 +69,10 @@ or duplicate `X-Dev-Requester-Id` returns `422 REQUESTER_CONTEXT_INVALID`. Malfo
 `attachmentId` or `ticketNumber` path parameters return `404 NOT_FOUND`; malformed query
 parameters follow the endpoint-specific rules below. Duplicate query parameters use the
 first occurrence only.
+
+`DELETE /api/attachments/:attachmentId` accepts an omitted body with no content type, or a
+JSON body with `Content-Type: application/json`. If a body is present with another content
+type, it returns `400 VALIDATION_ERROR`.
 
 **Standard pagination metadata (list endpoints):**
 ```json
@@ -413,13 +422,36 @@ List attachment metadata (active and removed) for an owned Ticket. Results are o
 **Response 200** — same shape as the `attachments` array in Section 6, including removed
 entries with `isRemoved: true`, `removedAt`, `removalReason`, `removedByRequesterId`.
 
+The response is a raw JSON array, not a `{ "data": [...] }` envelope:
+```json
+[
+  {
+    "id": 9001,
+    "ticketId": 501,
+    "originalFilename": "battery-report.pdf",
+    "mimeType": "application/pdf",
+    "fileSizeBytes": 214532,
+    "uploadedAt": "2026-08-21T09:15:00.000Z",
+    "isRemoved": false,
+    "removedAt": null,
+    "removalReason": null,
+    "removedByRequesterId": null
+  }
+]
+```
+
 ## 9. GET /api/attachments/:attachmentId/download
 Download the raw file bytes of an **active** attachment on an owned ticket.
 
 **Headers:** `X-Dev-Requester-Id: <int>` (required)
 
 **Response 200** — binary stream, `Content-Type` set from stored `mimeType`,
-`Content-Disposition: attachment; filename="<originalFilename>"`.
+`Content-Disposition` containing both a sanitized ASCII fallback and an RFC 5987 UTF-8
+filename value, for example:
+`attachment; filename="battery-report.pdf"; filename*=UTF-8''battery-report.pdf`.
+The fallback replaces control characters, path separators, and non-ASCII characters with
+`_`; `filename*` contains the original display filename after percent encoding. Neither
+value may expose the generated stored filename or an on-disk path.
 
 **Error cases**
 - `404` — attachment/ticket not found or not owned
