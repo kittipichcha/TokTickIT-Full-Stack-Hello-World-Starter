@@ -1,6 +1,6 @@
 # Lab 2 - AI Use and Reflection
 
-**LLM/agent used:** <GitHub Copilot (GPT-5.3-Codex)>
+**LLM/agent used:** GitHub Copilot (GPT-5.3-Codex)
 
 ## Selected key prompts (6-10)
 | # | Prompt (summarised) | What I did with the result |
@@ -12,8 +12,10 @@
 | 5 | Create five GitHub issues with requirement mapping | Created issues #11 to #15 for requirement+AI baseline, user login surrogate, ticket creation, my tickets, and attachment lifecycle, each with FR/BR/AC traceability and acceptance criteria. |
 | 6 | Refine documentation, review issue text for complete correctness, and prepare baseline commit | Audited doc files, fixed Lab 2 header in reviewer.md, cross-linked issues #11-#15 with prerequisite chains and FR/BR/AC criteria, updated tests.md results log, and committed baseline function-by-function. |
 | 7 | Update agent.md PR target branch policy | Updated agent.md to specify that `lab2-staging` (created from current head of `main`) is the PR target for feature branches, and `main` is reserved for final release PR. |
+| 8 | Address PR #16 peer/Copilot review findings and reconcile specifications, tests, and naming | Completed AC-to-test traceability matrix in `tests.md`, resolved AC-16 inactive requester lifecycle, scoped `X-Dev-Requester-Id` header, froze 5,000,000 byte attachment limit, defined deterministic sorting, renamed `ai-use.md`, and added worktree policy to `agent.md`. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
 2. Aligning test documentation to real folder/tooling early prevents command drift and broken CI expectations later.
 3. Splitting Lab 2 into focused issues with explicit prerequisite links improves branch discipline and review quality.
+4. Resolving contract edge cases and establishing complete AC-to-test traceability during specification prevents downstream implementation churn.

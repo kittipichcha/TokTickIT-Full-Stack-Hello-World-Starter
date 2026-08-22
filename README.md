@@ -51,7 +51,7 @@ Not yet implemented for Lab 2:
 |- docs/
 |  |- lab-01/
 |  |- lab-02/
-|     |- ai_use.md
+|     |- ai-use.md
 |     |- api-spec.md
 |     |- reviewer.md
 |     |- specification.md
@@ -191,4 +191,4 @@ Response example:
 ## 10. Notes
 - Lab 2 uses development requester identity only, not real authentication.
 - Keep ownership enforcement server-side for all requester-owned resources.
-- Keep `docs/lab-02/tests.md` and `docs/lab-02/ai_use.md` updated as work progresses.
+- Keep `docs/lab-02/tests.md` and `docs/lab-02/ai-use.md` updated as work progresses.

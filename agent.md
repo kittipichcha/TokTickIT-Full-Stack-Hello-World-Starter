@@ -46,10 +46,10 @@ Each entry must include:
 
 ## 5. AI Usage Log Requirement
 After each completed task, update:
-- `docs/lab-02/ai_use.md`
+- `docs/lab-02/ai-use.md`
 
 Format must match Lab 1 style in:
-- `docs/lab-01/ai_use.md`
+- `docs/lab-01/ai_use.md` (legacy Lab 1 filename)
 
 Minimum content to update each time:
 - prompt summary
@@ -75,6 +75,13 @@ Branching strategy must follow main requirement functions:
   - `feature/lab2-my-tickets`
   - `feature/lab2-attachments`
 
+Worktree rules:
+- One active feature branch per worktree.
+- Do not reuse a dirty worktree for another issue.
+- New worktrees must branch from the latest `lab2-staging` baseline.
+- Out-of-scope fixes require a separate branch/worktree after explicit approval.
+- Remove completed worktrees only after their branch is merged or intentionally preserved.
+
 If a bugfix outside current branch scope is needed:
 1. Explain why it is out of scope.
 2. Ask user permission.
@@ -95,7 +102,7 @@ No autonomous PR creation or Kanban state changes without user approval.
 4. Run tests for changed behavior.
 5. Report results.
 6. Update `docs/lab-02/tests.md` (newest log entry).
-7. Update `docs/lab-02/ai_use.md` in Lab 1 style.
+7. Update `docs/lab-02/ai-use.md` in Lab 1 style.
 8. Ask approval for commit.
 9. Commit function-by-function.
 10. Ask approval for PR targeting `lab2-staging` and board updates.
