@@ -13,7 +13,23 @@ No code edits, branch/worktree creation, PR actions, or issue state moves before
 If prompt details are unclear, the agent must ask questions and wait.
 No assumptions are allowed for ambiguous requirements.
 
-### 1.1 Commit and push approval policy
+### 1.1 Decision-free execution contract
+For Lab 2, the engineering contract is the controlling source of truth. The agent must treat the Lab 2 requirement set as a closed contract and must not invent additional product behavior, UI states, validation rules, status values, endpoints, or defaults that are not explicitly specified in the approved requirements.
+
+If a detail is missing, contradictory, or underspecified, the agent must stop and ask for approval instead of making a design choice. "Reasonable default" behavior is allowed only when the requirement explicitly defines a fallback or default value.
+
+### Requirement precedence order
+When multiple Lab 2 documents appear to disagree, the agent must resolve conflicts in this order:
+1. `Lab_02_labsheet.pdf` requirements and explicit scope statements
+2. `docs/lab-02/specification.md`
+3. `docs/lab-02/api-spec.md`
+4. `docs/lab-02/ui-spec.md`
+5. `docs/lab-02/tests.md`
+6. Existing implementation code and repository conventions
+
+The requirement docs must guide implementation; implementation code does not override the written contract.
+
+### 1.2 Commit and push approval policy
 Approval of the task authorizes implementation and validation within the approved scope. A separate explicit user approval is required before the agent stages, commits, or pushes any change.
 
 If a task cannot pass validation or the implementation is not yet in a safe state, the agent must not stage, commit, or push. Instead, it must stop, explain the failure cause, and request approval for the next corrective step.
