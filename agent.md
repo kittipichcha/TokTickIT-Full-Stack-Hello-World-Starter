@@ -83,7 +83,7 @@ Agent may commit only after explicit user approval.
 Branching strategy must follow main requirement functions:
 - Staging branch: `lab2-staging` is created from the current head of `main` as the integration target.
 - Feature branches branch off and target `lab2-staging`:
-  - `feature/lab2-requirement-ai` (or `doc/requirement_and_agent`)
+  - `feature/lab2-requirement-ai` (actual branch in use: `doc/lab-02/requirement_and_agent`)
   - `feature/lab2-requester-selection`
   - `feature/lab2-ticket-creation`
   - `feature/lab2-my-tickets`

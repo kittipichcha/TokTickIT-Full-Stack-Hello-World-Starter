@@ -84,9 +84,11 @@ right-aligned).
   - **Uploading:** filename and metadata remain visible, a per-file spinner or progress
     indicator is shown, and that file's upload action is disabled until the request ends;
     duplicate submission is prevented.
-  - **Unavailable:** filename and available metadata remain visible, Preview and Download
-    are disabled, and a clear unavailable/error label is shown. A Retry action appears only
-    when the API contract permits retry, such as the BR-17 partial-success path.
+  - **Unavailable:** entered only when the multipart upload request for that file itself failed (BR-17 partial-success: a non-2xx response) or when a Preview/Download request against an otherwise-active attachment returns an unexpected server error. It is never used for ordinary loading delays (see Uploading) or confirmed soft removal (see Removed). Filename and available metadata remain visible, Preview and
+    Download are disabled, and a clear unavailable/error label is shown. A Retry action appears only
+    when the API contract permits retry, such as the BR-17 partial-success path (Retry re-submits that
+    single file and clears the Unavailable state on success); a Preview/Download-serving failure has no
+    retry action and clears only when the page reloads and attachment metadata is refetched.
   - **Invalid:** the file remains identifiable with an inline type/size validation message
     and is not submitted.
   - **Active:** Preview, Download, and Remove are available subject to ownership and
@@ -154,6 +156,10 @@ right-aligned).
   - Add Attachment control (same validation/limits as Create Ticket's panel).
   - Remove action opens a confirmation dialog with an optional reason textarea before
     calling the soft-delete endpoint (BR-19).
+- **Screen-level states (frozen):**
+  - *Loading:* a read-only skeleton for the info grid and an empty/skeleton Attachments panel; no action buttons are interactive yet.
+  - *Not found / not owned (`404`):* a safe "Ticket not found" message that does not reveal whether the ticket exists for another Requester; a "← Back to My Tickets" action is shown; no partial ticket data is rendered.
+  - *Unexpected failure (`500`/network):* an inline error banner with a manual Retry button; no automatic retry; no partial/stale ticket data is rendered underneath the banner.
 - Explicitly **not present**: comments, internal notes, actions-taken log, status-change
   controls (out of scope per specification.md §3).
 
