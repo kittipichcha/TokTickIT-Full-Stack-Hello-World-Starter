@@ -18,6 +18,7 @@
 | 11 | Compare the Lab 2 project contract with the Lab 02 handout and correct formatting gaps | Verified the documents against the handout, retained the already-complete assumptions section, renamed Test-DD headings to match the required table terminology, recorded factual PR #16 review evidence, and removed the local PDF-text extraction artifact. |
 | 12 | Fix the PR #16 re-review findings for migration/seed ownership, attachment UI/API evidence, traceability, and audit relations | Updated the specification with forward-migration and idempotent-seed decisions, added concrete DB/seed test paths, split API reason validation from UI confirmation/cancel coverage, corrected BR-only AC mappings, defined all Attachment states, and moved the final release gate to dedicated GitHub Issue #18. |
 | 13 | Tighten the Lab 2 contract into a decision-free agent specification and formalize requirement precedence | Added explicit no-invention and precedence rules to the agent contract and specification so a future agent must follow the Lab 2 requirement order instead of making unsupported design decisions. |
+| 14 | Re-review PR #16 for full contract consistency | Synchronized numeric BR IDs, page normalization, Empty/No-Results semantics, attachment UI/test layering, inherited API errors, evidence paths, seed preservation, and attachment compensation decisions. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
@@ -28,3 +29,4 @@
 6. A handout-alignment audit is most useful when it distinguishes present contract evidence from future implementation and final-submission evidence instead of implying unfinished work has passed.
 7. A requirement baseline should freeze migration decisions and evidence ownership explicitly; a final release gate belongs to an integration issue that can remain open across downstream implementation work.
 8. A decision-free requirement contract is essential for future agent work: when the contract is closed and precedence is explicit, the agent no longer needs to improvise behavior outside the approved scope.
+9. Cross-document contract reviews must verify identifiers, edge cases, test layers, and evidence records together; a locally correct addition can still leave contradictory downstream wording.

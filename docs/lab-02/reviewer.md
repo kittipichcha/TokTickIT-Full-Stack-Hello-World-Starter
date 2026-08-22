@@ -14,7 +14,7 @@
 |---|---|---|
 | @oangsa — initial review | Complete AC-to-test traceability, resolve the inactive-requester contradiction, and align downstream issue requirements. | Addressed in the Lab 2 specification and Test-DD matrix: AC-16 was retired, historical inactive-requester tickets remain preserved but unreachable through requester flows, and traceability was expanded. |
 | @oangsa — re-reviews | Align `ai-use.md` naming, attachment byte limits, deterministic sorting, worktree rules, Ticket Date authority, test-table evidence, and required Ticket Detail planning coverage. | Addressed in successive PR commits. The current specification, API contract, UI specification, and planned-test matrix include these decisions and traceability. |
-| Copilot Pull Request Reviewer | Correct API status coverage, Category response shape, README setup guidance, reviewer-record placeholders, and branch-name typo. | Addressed in the current contract documents and README. The remaining unresolved Copilot thread is outdated and concerns the earlier API-status summary; the current API contract includes `410 Gone`. |
+| Copilot Pull Request Reviewer | Correct API status coverage, Category response shape, README setup guidance, reviewer-record placeholders, and branch-name typo. | Addressed in the current contract documents and README. All current Copilot review threads are resolved; the API contract includes `410 Gone`. |
 
 ## Review Evidence
 - Review comments and discussions: [PR #16 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/16)

@@ -57,12 +57,12 @@ The Lab 2 contract is intentionally closed. The implementation may not invent ad
 - `search` is trimmed; blank-after-trim means no active search filter.
 - Invalid `requestedPriority` or `status` values are `400 VALIDATION_ERROR`.
 - Invalid `sort` or `order` values fall back to default values (`createdAt`, `desc`).
-- Out-of-range `page` values are valid requests that yield `200 OK` with an empty `data` array and accurate pagination metadata; they are not treated as validation failures.
+- Missing, malformed, non-integer, or non-positive `page` values use `page=1`; a valid page beyond `totalPages` yields `200 OK` with an empty `data` array and accurate pagination metadata.
 - `pageSize` is clamped/fallback to safe defaults for invalid values: values outside `1..50` fall back to `10`.
 - Attachment removal reason is optional; omitted or blank-after-trim is stored as `null`; non-string values are `400 VALIDATION_ERROR`; 1–200 chars after trim is accepted; more than 200 is rejected.
 - Multi-file attachment upload is sequential; failed file(s) do not roll back prior successes; later files continue uploading; failures are reported per file.
 - Ticket creation success and attachment failure are separate flows; a failed attachment upload does not re-create or duplicate the ticket.
-- `Empty` and `No Results` are distinguished by whether the request had active filters/search, not by whether the raw query string was present.
+- `Empty` and `No Results` are distinguished by normalized active filters/search, not by whether the raw query string was present.
 
 If a legal execution path is not explicitly listed here or in the functional/business rules, the correct action is to stop and request clarification rather than choose a design.
 
@@ -104,10 +104,9 @@ If a legal execution path is not explicitly listed here or in the functional/bus
 - **BR-24** All ticket and attachment endpoints enforce ownership server-side by comparing the ticket's `requesterId` to the requesting `X-Dev-Requester-Id`. A mismatch returns `404 Not Found` (not `403`), so a non-owner cannot even confirm the ticket exists.
 
 **Search, filtering, sorting, pagination, and reference validation**
-- **BR-22** My Tickets defaults: `page=1`, `pageSize=10` (max `50`), `sort=createdAt`, `order=desc`. Invalid or omitted parameters fall back to safe defaults; out-of-range pages return 200 with empty `data` array and accurate pagination metadata (totalPages=0 if no results).
-- **BR-23-SEARCH** Search is case-insensitive substring matching on ticketNumber and summary. Normalization: search is trimmed; blank-after-trim search is treated as no search filter active. Empty result set with no active filters/search is "Empty"; empty result set with active filters/search is "No-Results".
+- **BR-22** My Tickets defaults: `page=1`, `pageSize=10` (max `50`), `sort=createdAt`, `order=desc`. Missing, malformed, non-integer, or non-positive `page` values use `page=1`; a valid page beyond `totalPages` returns `200` with an empty `data` array and accurate pagination metadata (totalPages=0 if no results). Invalid or omitted `pageSize`, `sort`, and `order` values use their documented safe defaults.
+- **BR-23** Search is case-insensitive substring matching on ticketNumber and summary. Search is trimmed; blank-after-trim search is treated as no active search filter. Invalid filter values are deterministic: malformed categoryId → 400; unknown or inactive categoryId → 409; invalid requestedPriority or status → 400. Empty result set with no normalized active filters/search is "Empty"; empty result set with normalized active filters/search is "No-Results".
 - **BR-07** Category and Related System selections must reference an active record; validation: well-formed but nonexistent ID → 409 Conflict; malformed/non-integer ID → 400 validation error; a stale/inactive ID is rejected server-side even if it briefly appeared client-side.
-- **BR-23-FILTER-INVALID** Invalid filter parameter values are handled deterministically: malformed categoryId (non-integer) → 400 validation error; unknown but well-formed categoryId → 409 Conflict (per BR-07); invalid requestedPriority enum (e.g., "URGENT") → 400 validation error; invalid status enum (e.g., "CLOSED") → 400 validation error.
 
 **Validation & duplicate-submission prevention**
 - **BR-08** Ticket Summary is required. Normalization: trimmed before validation, trimmed value is validated and persisted. Limits: 5–120 characters after trim. Whitespace-only input is rejected as invalid.
@@ -117,8 +116,7 @@ If a legal execution path is not explicitly listed here or in the functional/bus
 
 **Failure behavior & data retained after errors**
 - **BR-16** On a ticket-creation API failure, all entered form values are preserved, an inline error is shown, and the system does **not** auto-retry. The user must manually resubmit.
-- **BR-17-MULTI-ATTACH** Multi-file attachment upload behavior: Attachments are uploaded sequentially. A failed attachment does not roll back successful uploads. Remaining files continue to upload. Failures are reported per file. Failed files can be retried from Ticket Detail.
-- **BR-17** If a ticket is created successfully but a subsequent attachment upload fails, the ticket is **not** rolled back. The attachment failure is reported separately, and the user may retry the attachment upload from Ticket Detail.
+- **BR-17** If a ticket is created successfully but a subsequent attachment upload fails, the ticket is **not** rolled back. For multiple selected files, the client uploads sequentially: a failed file does not roll back prior successes, remaining files continue, and failures are reported per file. Failed files may be retried from Ticket Detail. The attachment failure is separate from ticket creation, so the client must not recreate or duplicate the ticket.
 
 **Attachment upload, download, and soft removal**
 - **BR-12** Attachments are optional. Limits: ≤5 active attachments per ticket, max `5,000,000` bytes per file, types JPG/JPEG/PNG/WEBP/PDF only.
@@ -134,7 +132,7 @@ If a legal execution path is not explicitly listed here or in the functional/bus
 - **BR-29** If a Requester who owns existing tickets is later marked inactive, those tickets remain in the database with the historical requester foreign key unchanged. Because inactive requesters cannot establish requester context (BR-04/BR-05), these historical tickets are not reachable through Lab 2 requester-facing flows.
 
 **Empty and no-results states**
-- **BR-23-STATES** "Empty" (the Requester has zero tickets ever) and "No results" (filters/search matched zero of an otherwise non-empty list) use distinct messaging and distinct calls to action (Create Ticket vs. Clear Filters). This determination uses normalized active filters/search, not raw query-string presence.
+- **BR-23** "Empty" (the Requester has zero tickets ever) and "No results" (filters/search matched zero of an otherwise non-empty list) use distinct messaging and distinct calls to action (Create Ticket vs. Clear Filters). This determination uses normalized active filters/search, not raw query-string presence.
 
 **Ticket Detail access**
 - Covered under Ticket Ownership (BR-06, BR-24) above.
@@ -169,7 +167,7 @@ schema shape.
 - The migration must not drop or recreate the Lab 1 database as a shortcut.
 - Seed logic is idempotent and must not duplicate, replace, or rewrite the four required
   existing Categories.
-- Seed data must include exactly the four required Categories, at least six Related Systems,
+- Seed data must include each of the four required Category names exactly once, preserve unrelated pre-existing Category rows, include at least six Related Systems,
   at least four active Requesters, and at least one inactive Requester.
 
 ```prisma
@@ -259,8 +257,15 @@ model Attachment {
   human-facing number format can evolve independently of storage.
 - Soft removal lives directly on `Attachment` (no separate audit table) since Lab 2 only
   needs "is it currently downloadable," not a full history — acceptable per BR-18/BR-20.
-- Indexes on `requesterId`, `currentStatus`, `createdAt` support the required My Tickets
-  ownership filter, status filter, and default sort without a full scan.
+- Indexes on `requesterId`, `currentStatus`, and `createdAt` support the required My Tickets
+  ownership filter, status filter, and default sort. Category and requestedPriority filters,
+  plus ticketNumber and summary search/sort, are intentionally not separately indexed for
+  the expected small Lab 2 dataset; this documents the fields considered by My Tickets
+  without adding speculative indexes.
+- Attachment persistence uses a compensating strategy: write the physical file first, then
+  persist its metadata row; if metadata persistence fails, delete the newly written file. If
+  a later request fails, no Active attachment row is exposed for an unusable file. A successful
+  metadata row is never reported unless its physical file is available.
 - `itPriority` and `ticketOwnerId` exist now (nullable) so Lab 3's IT Staff features don't
   require a schema migration — but Lab 2 never writes to them.
 - Attachment upload/removal requester IDs are real foreign keys to `DevRequester`, using
@@ -305,7 +310,7 @@ See `api-spec.md` for the full endpoint list, request/response shapes, and statu
 - [ ] All active AC entries (AC-01…AC-27, excluding retired AC-16) have passing, traceable automated test evidence (see `tests.md`)
 - [ ] No required test skipped, disabled, or commented out
 - [ ] Data model matches Section 7; migrations applied cleanly on a fresh database
-- [ ] Seed data is idempotent (safe to re-run) and includes ≥4 active + ≥1 inactive Requester, 4 Categories, ≥6 Related Systems
+- [ ] Seed data is idempotent (safe to re-run) and includes ≥4 active + ≥1 inactive Requester, each of the 4 required Category names exactly once while preserving unrelated Categories, and ≥6 Related Systems
 - [ ] API responses match `api-spec.md` exactly (shapes, status codes, error format)
 - [ ] UI matches `ui-spec.md` at desktop/tablet/mobile, verified via screenshots
 - [ ] Success, validation, loading, empty, no-results, and failure states all implemented and screenshotted
