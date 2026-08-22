@@ -14,6 +14,7 @@
 | 7 | Update agent.md PR target branch policy | Updated agent.md to specify that `lab2-staging` (created from current head of `main`) is the PR target for feature branches, and `main` is reserved for final release PR. |
 | 8 | Address PR #16 peer/Copilot review findings and reconcile specifications, tests, and naming | Completed AC-to-test traceability matrix in `tests.md`, resolved AC-16 inactive requester lifecycle, scoped `X-Dev-Requester-Id` header, froze 5,000,000 byte attachment limit, defined deterministic sorting, renamed `ai-use.md`, and added worktree policy to `agent.md`. |
 | 9 | Fix the remaining PR #16 review findings and check related agent/issue contracts | Reconciled the commit approval policy, added explicit Ticket Date authority, expanded Test-DD BR and Ticket Detail UI coverage, and synchronized downstream issue ownership and mappings. |
+| 10 | Apply the final PR #16 re-review contract fixes to the Lab 2 baseline docs | Updated the planned-test table to include `Expected Result` and `Final`, preserved the Category `createdAt` migration contract, added the missing direct BR scenarios, and cleaned the traceability mappings that were still conflicting with the create-ticket rule. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.

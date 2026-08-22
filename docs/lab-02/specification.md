@@ -142,10 +142,11 @@ model DevRequester {
 }
 
 model Category {
-  id       Int      @id @default(autoincrement())
-  name     String   @unique
-  isActive Boolean  @default(true)
-  tickets  Ticket[]
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  tickets   Ticket[]
 }
 
 model RelatedSystem {
