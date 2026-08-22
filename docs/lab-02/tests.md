@@ -1,152 +1,88 @@
 # Lab 2 Test Plan and Results - TokTickIT Requester Ticketing MVP
 
 ## 1. Purpose
-This file is the Lab 2 testing contract for:
+This document is the Lab 2 testing contract for:
 - `docs/lab-02/specification.md`
 - `docs/lab-02/api-spec.md`
 
-It has been adjusted to match the current repository state:
-- Current project has only Lab 1 implemented behavior (`health`, `categories`).
-- Lab 2 tests below are planned targets and should be created incrementally.
-
-## 2. Current Test Tooling and Real Paths
-
-Backend (already configured):
+## 2. Current Tooling and Paths
+Backend (configured now):
 - Runner: Vitest
 - Existing folder: `server/tests/`
+- Planned Lab 2 folder: `server/tests/lab-02/`
 
-Frontend (already configured):
+Frontend (configured now):
 - Runner: Vitest + React Testing Library
-- Existing tests: `client/src/App.test.tsx`
+- Existing folder: `client/src/`
+- Planned Lab 2 folder: `client/src/lab-02-tests/`
 
-Not yet present in repository:
-- `e2e/` Playwright project and config
-- `server/tests/lab-02/` folder
-- `client/src/lab-02-tests/` folder
-- Root `package.json` with `test:lab02` pipeline
+E2E/Responsive/Keyboard (planned):
+- Runner: Playwright
+- Planned folder: `e2e/lab-02/`
 
-Decision for alignment:
-- Use Vitest commands for server/client now.
-- Introduce Playwright only when e2e scaffolding is added.
+## 3. AC Retirement Note
+- **AC-16 was retired** due to requester-context contract conflict.
+- Historical tickets for inactive requesters are preserved in data but not reachable in Lab 2 requester-facing flows.
 
-## 3. Execution Strategy
-Test-first per issue:
-1. Add or update tests for one issue scope.
-2. Run tests and capture fail reason.
-3. Implement minimal code.
-4. Re-run tests to green.
-5. Log results in Section 8 of this file.
+## 4. Test Traceability Matrix (Planned Contract)
 
-## 4. Planned Lab 2 Tests
+| Test ID | Level | Scenario | Test File Path | FR | BR | AC |
+|---|---|---|---|---|---|---|
+| API-REQ-01 | API | Selector returns only active development requesters | `server/tests/lab-02/dev-requesters.api.test.ts` | FR-01, FR-15 | BR-03, BR-04 | AC-15 |
+| UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-03a, BR-05 | AC-02 |
+| API-TKT-01 | API | Create ticket success returns generated ticket number | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 |
+| UI-TKT-01 | UI | Empty summary blocks submit and shows field error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-04 |
+| UI-TKT-02 | UI | Summary over 120 chars blocks submit with length error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-05 |
+| UI-TKT-03 | UI | Description under 10 chars blocks submit with field error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-09 | AC-06 |
+| UI-TKT-04 | UI | Submit busy state prevents duplicate submission | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-15 | AC-10 |
+| UI-TKT-05 | UI | Failed create keeps entered values and shows inline error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 |
+| API-TKT-02 | API | Inactive/stale category or related-system ID rejected | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-07 | AC-01 |
+| API-TKT-03 | API | Ticket detail returns 404 for non-owner access | `server/tests/lab-02/ticket-detail.api.test.ts` | FR-09 | BR-24 | AC-03 |
+| API-MY-01 | API | My Tickets returns only current requester-owned tickets | `server/tests/lab-02/my-tickets.api.test.ts` | FR-04 | BR-24 | AC-14 |
+| API-MY-02 | API | Search by ticket number/summary substring | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05 | BR-22 | AC-17 |
+| API-MY-03 | API | Category/Priority/Status filters are conjunctive | `server/tests/lab-02/my-tickets.api.test.ts` | FR-06 | BR-22 | AC-18 |
+| API-MY-04 | API | Deterministic sort order with tie-breakers and priority ordering | `server/tests/lab-02/my-tickets.api.test.ts` | FR-07 | BR-22 | AC-19 |
+| API-MY-05 | API | Pagination returns correct page metadata and slices | `server/tests/lab-02/my-tickets.api.test.ts` | FR-08 | BR-22 | AC-20 |
+| UI-MY-01 | UI | Empty state shown for requester with zero tickets ever | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-21 |
+| UI-MY-02 | UI | No-results state shown for active filters yielding zero rows | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-22 |
+| UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 |
+| API-ATT-01 | API | Disallowed attachment type rejected server-side | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12, BR-13 | AC-07 |
+| UI-ATT-01 | UI | Disallowed attachment type rejected client-side | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12, BR-13 | AC-07 |
+| API-ATT-02 | API | Sixth active attachment rejected by server limit | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-08 |
+| API-ATT-03 | API | Attachment size boundaries in bytes are enforced | `server/tests/lab-02/attachment-validation.unit.test.ts` | FR-10 | BR-12 | AC-09 |
+| API-ATT-04 | API | Soft remove marks removed metadata and disables access | `server/tests/lab-02/attachments.api.test.ts` | FR-11, FR-13 | BR-18, BR-19, BR-20 | AC-12, AC-13 |
+| API-ATT-05 | API | Preview/download endpoint behavior for active vs removed files | `server/tests/lab-02/attachments.api.test.ts` | FR-12, FR-13 | BR-18, BR-Attach-preview | AC-13, AC-24 |
+| UI-ATT-02 | UI | Removed attachment row shows Removed badge and disabled controls | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-11 | BR-20 | AC-12 |
+| E2E-01 | E2E | Requester creates ticket and later finds it in My Tickets | `e2e/lab-02/requester-ticket-flow.spec.ts` | FR-02, FR-04 | BR-01, BR-22 | AC-01, AC-17 |
+| E2E-02 | E2E | Ownership isolation across two requester contexts | `e2e/lab-02/ownership.spec.ts` | FR-09 | BR-24 | AC-03 |
+| E2E-03 | E2E | Full attachment lifecycle (upload/preview/download/remove) | `e2e/lab-02/attachment-lifecycle.spec.ts` | FR-10, FR-11, FR-12, FR-13 | BR-12, BR-18, BR-Attach-preview | AC-07, AC-12, AC-13, AC-24 |
+| E2E-04 | E2E | Mobile layout has no horizontal scroll and stacked controls | `e2e/lab-02/responsive-create-ticket.spec.ts` | — | — | AC-23 |
+| E2E-05 | E2E | Keyboard-only create-ticket flow with visible focus indicators | `e2e/lab-02/keyboard-access.spec.ts` | — | — | AC-25 |
+| UI-ERR-01 | UI | API failure preserves form state and requires manual retry | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16, BR-17 | AC-11 |
 
-### 4.1 Backend Unit and API (to be created)
-Target folder:
-- `server/tests/lab-02/`
+### Required boundary assertions for `MAX_ATTACHMENT_BYTES = 5,000,000`
+- `4,999,999` bytes → accepted
+- `5,000,000` bytes → accepted
+- `5,000,001` bytes → rejected
 
-Planned files:
-- `server/tests/lab-02/ticket-number.unit.test.ts`
-- `server/tests/lab-02/validators.unit.test.ts`
-- `server/tests/lab-02/attachment-validation.unit.test.ts`
-- `server/tests/lab-02/create-ticket.api.test.ts`
-- `server/tests/lab-02/ticket-detail.api.test.ts`
-- `server/tests/lab-02/my-tickets.api.test.ts`
-- `server/tests/lab-02/attachments.api.test.ts`
-- `server/tests/lab-02/dev-requesters.api.test.ts`
+## 5. Commands
 
-### 4.2 Frontend Component Tests (to be created)
-Target folder:
-- `client/src/lab-02-tests/`
-
-Planned files:
-- `client/src/lab-02-tests/CreateTicket.test.tsx`
-- `client/src/lab-02-tests/AttachmentSection.test.tsx`
-- `client/src/lab-02-tests/MyTickets.test.tsx`
-- `client/src/lab-02-tests/RequesterTicketDetail.test.tsx`
-- `client/src/lab-02-tests/RequesterSelection.test.tsx`
-- `client/src/lab-02-tests/AppShell.test.tsx`
-- `client/src/lab-02-tests/Badges.test.tsx`
-- `client/src/lab-02-tests/Buttons.test.tsx`
-- `client/src/lib/__tests__/requesterSession.unit.test.ts`
-
-### 4.3 E2E, Responsive, Visual (to be created)
-Target folder:
-- `e2e/lab-02/`
-
-Planned files:
-- `e2e/lab-02/create-ticket.spec.ts`
-- `e2e/lab-02/requester-ticket-flow.spec.ts`
-- `e2e/lab-02/ownership.spec.ts`
-- `e2e/lab-02/attachment-lifecycle.spec.ts`
-- `e2e/lab-02/requester-switch.spec.ts`
-- `e2e/lab-02/keyboard-access.spec.ts`
-- `e2e/lab-02/create-ticket-failure.spec.ts`
-- `e2e/lab-02/selector-guard.spec.ts`
-- `e2e/lab-02/responsive-create-ticket.spec.ts`
-- `e2e/lab-02/responsive-my-tickets.spec.ts`
-- `e2e/lab-02/responsive-ticket-detail.spec.ts`
-- `e2e/lab-02/visual-tokens.spec.ts`
-
-## 5. Coverage Matrix (FR/BR/AC)
-The detailed AC matrix from the previous version remains valid as target intent.
-For implementation order, map tests by issue:
-
-- Issue 1 Requirement + AI process:
-  - Documentation gates, traceability updates in this file, AI usage logs.
-- Issue 2 User login surrogate (dev requester selection):
-  - BR-03, BR-03a, BR-04, BR-05, FR-01, AC-02, AC-15
-- Issue 3 Ticket creation:
-  - FR-02, FR-03, BR-01, BR-02, BR-07, BR-08, BR-09, BR-10, BR-15, BR-16, AC-01, AC-04, AC-05, AC-06, AC-10, AC-11
-- Issue 4 My Tickets:
-  - FR-04, FR-05, FR-06, FR-07, FR-08, FR-14, FR-16, BR-14, BR-22, BR-23, AC-14, AC-17, AC-18, AC-19, AC-20, AC-21, AC-22
-- Issue 5 Attachment:
-  - FR-10, FR-11, FR-12, FR-13, BR-12, BR-13, BR-18, BR-19, BR-20, BR-Attach-preview, AC-07, AC-08, AC-09, AC-12, AC-13, AC-24
-
-Cross-cutting ownership:
-- BR-24 and AC-03 must be covered in ticket detail and attachment APIs.
-
-## 6. Commands
-
-Current working commands:
-
+Current commands:
 ```bash
-# backend tests
 cd server && npm test
-
-# frontend tests
 cd client && npm test
 ```
 
-Future commands (after Lab 2 test scaffolding exists):
-
+Planned Lab 2 subset commands:
 ```bash
-# backend Lab 2 subset (example pattern)
 cd server && npx vitest run tests/lab-02
-
-# frontend Lab 2 subset
 cd client && npx vitest run src/lab-02-tests
-
-# e2e/responsive/visual (after Playwright setup)
 npx playwright test e2e/lab-02
 ```
 
-Root pipeline target (to add later):
-- `npm run test:lab02`
+## 6. Results Log (Newest First)
 
-## 7. Responsive and Visual Checklist
-Per screen (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at 1280, 820, 375:
-- [ ] Zen Green tokens applied consistently
-- [ ] Editable vs read-only field styling distinct
-- [ ] Required marker and inline validation placements correct
-- [ ] Button hierarchy and disabled/busy states correct
-- [ ] No clipping or overlap
-- [ ] No horizontal scrolling
-- [ ] Badges readable without color-only meaning
-- [ ] Loading, empty, no-results, and error states distinct
-
-## 8. Results Log (Newest First)
-
-Use one entry per completed work item:
-
+Template:
 ```md
 ### YYYY-MM-DD - <issue/branch>
 - Scope:
@@ -160,7 +96,7 @@ Use one entry per completed work item:
 ```
 
 ### 2026-08-22 - issue-1 requirement baseline docs
-- Scope: Documentation/process baseline updates for Lab 2 (README, tests plan, agent workflow).
+- Scope: Documentation/process baseline updates for Lab 2.
 - Tests added/updated: No executable test files changed.
 - Command(s) run:
   - static validation of edited markdown files
@@ -170,18 +106,8 @@ Use one entry per completed work item:
   - Skipped/Disabled: 0
 - Notes and follow-up:
   - This was a documentation alignment step only.
-  - Functional test runs begin when implementation issues (2-5) start.
 
-Current status:
-- No Lab 2 tests implemented yet.
-- Existing Lab 1 baseline tests still pass on current branch when environment is configured.
-
-## 9. Known Gaps and Risks
-- No Playwright scaffolding yet, so AC-23 and AC-25 cannot be automatically verified yet.
-- No root-level test orchestrator exists yet.
-- Lab 2 models and endpoints are not implemented yet, so all API/UI/E2E rows for Lab 2 remain planned.
-
-## 10. Definition of Done for this Document
-- Every completed Lab 2 branch updates this file with concrete command output summary.
-- No silent test skips for required acceptance criteria.
-- AC-to-test traceability remains explicit and current.
+## 7. Known Gaps and Risks
+- Playwright scaffolding is not yet in this starter branch.
+- Root-level `test:lab02` orchestration script is not yet added.
+- Lab 2 models/endpoints are not yet implemented, so matrix rows are contractual planning rows.
