@@ -24,7 +24,7 @@ validates the header value against active `DevRequester` records on every reques
   }
 }
 ```
-`fields` is present only for `400` validation errors and omitted otherwise.
+`fields` is present for every `400` response and omitted for non-`400` responses.
 
 All errors use this object shape. `error.code` is one of `VALIDATION_ERROR`,
 `NOT_FOUND`, `CONFLICT`, `INACTIVE_REFERENCE`, `ATTACHMENT_LIMIT_REACHED`,
@@ -33,8 +33,8 @@ All errors use this object shape. `error.code` is one of `VALIDATION_ERROR`,
 only `INTERNAL_ERROR` and the message `An unexpected error occurred.`; they must not
 expose stack traces, database errors, storage paths, or parser details. `fields` maps
 only submitted field names to a human-readable validation message and is required for
-every `400` response. For a `400` error with no specific submitted field, `fields` is an
-empty object. For `ATTACHMENT_LIMIT_REACHED`, `fields` is
+every `400` response, including `ATTACHMENT_LIMIT_REACHED`. For a `400` error with no
+specific submitted field, `fields` is an empty object. For `ATTACHMENT_LIMIT_REACHED`, `fields` is
 `{ "file": "The ticket already has the maximum number of active attachments." }`.
 For other multipart parsing errors, `fields` identifies the relevant part when one exists;
 otherwise it is `{}`. Error messages may vary except for the frozen `500` message;
@@ -64,11 +64,12 @@ the human-readable `message` text differentiates the two cases for the caller.
 JSON document, a non-object JSON value, or a wrong content type returns `400
 VALIDATION_ERROR`. Unknown JSON properties are ignored unless this contract lists them as
 stored data. All integer values accept only the decimal grammar `0|[1-9][0-9]*` with no
-sign, decimal point, whitespace, exponent, or duplicate query/header value. A malformed
-or duplicate `X-Dev-Requester-Id` returns `422 REQUESTER_CONTEXT_INVALID`. Malformed
+sign, decimal point, whitespace, or exponent. A malformed or duplicate
+`X-Dev-Requester-Id` returns `422 REQUESTER_CONTEXT_INVALID`. Malformed
 `attachmentId` or `ticketNumber` path parameters return `404 NOT_FOUND`; malformed query
-parameters follow the endpoint-specific rules below. Duplicate query parameters use the
-first occurrence only.
+parameters follow the endpoint-specific rules below. Duplicate
+`X-Dev-Requester-Id` headers are invalid and return `422 REQUESTER_CONTEXT_INVALID`;
+duplicate query parameters use the first occurrence only.
 
 `DELETE /api/attachments/:attachmentId` accepts an omitted body with no content type, or a
 JSON body with `Content-Type: application/json`. If a body is present with another content

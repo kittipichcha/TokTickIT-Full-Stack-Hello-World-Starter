@@ -208,7 +208,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 - Requester with ticket history and filters yielding zero rows → No-Results state (`totalItems=0`, `unfilteredTotalItems>0`)
 
 ### Canonical parsing and error assertions (API-CONTRACT-01)
-- Every non-2xx response matches `{ error: { code, message } }`; only `400` includes `fields`.
+- Every non-2xx response matches `{ error: { code, message } }`; every `400` includes `fields`, including `fields.file` for `ATTACHMENT_LIMIT_REACHED`; non-`400` responses omit `fields`.
 - `500` is exactly `INTERNAL_ERROR` with the safe generic message and no internal details.
 - Requester headers: missing, `abc`, `1.0`, `+1`, whitespace-padded, duplicate, unknown, and inactive all return `422 REQUESTER_CONTEXT_INVALID`.
 - Path parameters: malformed attachment IDs and ticket numbers return `404 NOT_FOUND` without resource data.
