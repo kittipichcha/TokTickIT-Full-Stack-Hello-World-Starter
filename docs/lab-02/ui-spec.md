@@ -122,13 +122,15 @@ right-aligned).
 - Pagination footer: "Showing X–Y of Z tickets" + Previous/Next + page numbers.
 - When the API returns a valid but out-of-range page with `totalPages > 0`, the UI must not
   show Empty or No-Results; it navigates to and reloads the last valid page. `totalPages = 0`
-  uses Empty or No-Results according to normalized active filters/search.
+  uses `unfilteredTotalItems`: `0` means Empty and a positive value means No-Results.
 - Loading: skeleton rows/cards.
-- **Empty state** (zero tickets ever): centered illustration/icon + "You haven't created
-  any tickets yet" + Create Ticket primary button. No filter controls implied as the fix.
-- **No-results state** (filters/search active, zero matches): "No tickets match your
-  filters" + Clear Filters primary action. Visually distinct from Empty (different icon/
-  copy) so a Requester never confuses "I have nothing" with "my filter is too narrow."
+- **Empty state** (`unfilteredTotalItems = 0`): centered illustration/icon + "You haven't
+  created any tickets yet" + Create Ticket primary button. This state applies even if a
+  normalized filter/search was submitted, because the Requester has no ticket history.
+- **No-results state** (`unfilteredTotalItems > 0` and filtered `totalItems = 0`): "No
+  tickets match your filters" + Clear Filters primary action. Visually distinct from Empty
+  (different icon/copy) so a Requester never confuses "I have nothing" with "my filter is
+  too narrow."
 - Failure state: inline error banner + Retry (manual).
 
 ### 5.5 Requester Ticket Detail (View Mode)
