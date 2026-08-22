@@ -96,7 +96,7 @@ npm install
 Create `server/.env` (based on `.env.example` if present) with:
 
 ```env
-DATABASE_URL="postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public"
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/toktickit?schema=public"
 PORT=3000
 ```
 
