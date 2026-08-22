@@ -13,9 +13,11 @@
 | 6 | Refine documentation, review issue text for complete correctness, and prepare baseline commit | Audited doc files, fixed Lab 2 header in reviewer.md, cross-linked issues #11-#15 with prerequisite chains and FR/BR/AC criteria, updated tests.md results log, and committed baseline function-by-function. |
 | 7 | Update agent.md PR target branch policy | Updated agent.md to specify that `lab2-staging` (created from current head of `main`) is the PR target for feature branches, and `main` is reserved for final release PR. |
 | 8 | Address PR #16 peer/Copilot review findings and reconcile specifications, tests, and naming | Completed AC-to-test traceability matrix in `tests.md`, resolved AC-16 inactive requester lifecycle, scoped `X-Dev-Requester-Id` header, froze 5,000,000 byte attachment limit, defined deterministic sorting, renamed `ai-use.md`, and added worktree policy to `agent.md`. |
+| 9 | Fix the remaining PR #16 review findings and check related agent/issue contracts | Reconciled the commit approval policy, added explicit Ticket Date authority, expanded Test-DD BR and Ticket Detail UI coverage, and synchronized downstream issue ownership and mappings. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
 2. Aligning test documentation to real folder/tooling early prevents command drift and broken CI expectations later.
 3. Splitting Lab 2 into focused issues with explicit prerequisite links improves branch discipline and review quality.
 4. Resolving contract edge cases and establishing complete AC-to-test traceability during specification prevents downstream implementation churn.
+5. Checking the process agreement and downstream issue mappings alongside the feature contracts prevents a local documentation fix from creating conflicting delivery rules.

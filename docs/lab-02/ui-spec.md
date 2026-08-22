@@ -71,8 +71,8 @@ Required elements (per handout §8.1):
 
 ### 5.3 Create Ticket
 Layout (desktop, top→bottom): system-generated/read-only fields (Ticket Number placeholder
-"assigned after submit", Ticket Date "now", Requester name — read-only, sourced from
-selection) → classification row (Category, Related System, Requested Priority selects) →
+"assigned after submit", Ticket Date placeholder "now" before creation, Requester name —
+read-only, sourced from selection) → classification row (Category, Related System, Requested Priority selects) →
 Summary (single-line, full width) → Description (textarea, resizable vertically only,
 min-height 120px) → Attachments panel → action row (Cancel secondary, Submit primary,
 right-aligned).
@@ -85,6 +85,8 @@ right-aligned).
   is currently invalid.
 - On success: replace form with a success panel showing the generated Ticket Number
   (from the API response, not client-guessed) and a "View Ticket" / "Create Another" action.
+- After success, Ticket Date is rendered from the backend `createdAt` returned in the
+  persisted Ticket response; the client never submits or generates this value.
 - On failure — **Case A: ticket creation fails** (BR-16): inline error banner above the
   form; **all field values remain populated**; Submit re-enables for manual retry. No
   ticket exists yet, so retrying the full create flow is correct.

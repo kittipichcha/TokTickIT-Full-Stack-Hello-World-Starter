@@ -113,6 +113,11 @@ Ticket Detail (read-only fields + attachment panel with preview), badges (Reques
 Priority, Current Status), loading/empty/no-results/error states, and responsive rules
 at desktop (≥992px) / tablet (768–991px) / mobile (<768px).
 
+**Ticket Date contract:** Ticket Date is the backend-authoritative `Ticket.createdAt`
+timestamp. It is read-only, and the client does not submit or generate it. Before creation,
+the UI may show a placeholder/current-date presentation; after successful creation, the
+displayed value must come from the persisted `createdAt` returned by the backend.
+
 ## 7. Data Changes
 Models: `DevRequester`, `Category`, `RelatedSystem`, `Ticket`, `Attachment`.
 

@@ -31,6 +31,9 @@ E2E/Responsive/Keyboard (planned):
 | API-REQ-01 | API | Selector returns only active development requesters | `server/tests/lab-02/dev-requesters.api.test.ts` | FR-01, FR-15 | BR-03, BR-04 | AC-15 |
 | UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-21, BR-05 | AC-02 |
 | API-TKT-01 | API | Create ticket success returns generated ticket number | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 |
+| API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation and cannot be changed by the client | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | AC-01, AC-03 |
+| API-TKT-05 | API | Requester-created tickets keep IT Priority and Ticket Owner null | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-11 | AC-01 |
+| UI-TKT-07 | UI | Requested Priority control is required and defaults to MEDIUM | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-10 | AC-01 |
 | UI-TKT-01 | UI | Empty summary blocks submit and shows field error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-04 |
 | UI-TKT-02 | UI | Summary over 120 chars blocks submit with length error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-05 |
 | UI-TKT-03 | UI | Description under 10 chars blocks submit with field error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-09 | AC-06 |
@@ -47,6 +50,8 @@ E2E/Responsive/Keyboard (planned):
 | UI-MY-01 | UI | Empty state shown for requester with zero tickets ever | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-21 |
 | UI-MY-02 | UI | No-results state shown for active filters yielding zero rows | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-22 |
 | UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 |
+| UI-MY-04 | UI | My Tickets loading and API failure states show skeleton/error with manual Retry | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04, FR-17 | BR-16 | AC-21, AC-22 |
+| API-REQ-02 | API | Inactive requester context is rejected while historical tickets remain persisted and unreachable through requester flows | `server/tests/lab-02/dev-requesters.api.test.ts` | FR-15 | BR-04, BR-05, BR-29 | AC-15 |
 | API-ATT-01 | API | Disallowed attachment type rejected server-side | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12, BR-13 | AC-07 |
 | UI-ATT-01 | UI | Disallowed attachment type rejected client-side | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12, BR-13 | AC-07 |
 | API-ATT-02 | API | Sixth active attachment rejected by server limit | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-08 |
@@ -57,6 +62,8 @@ E2E/Responsive/Keyboard (planned):
 | API-ATT-05 | API | Preview/download endpoint behavior for active vs removed files | `server/tests/lab-02/attachments.api.test.ts` | FR-12, FR-13 | BR-18, BR-28 | AC-13, AC-24 |
 | UI-ATT-02 | UI | Removed attachment row shows Removed badge and disabled controls | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-11 | BR-20 | AC-12 |
 | API-ATT-06 | API | BR-17 partial success: ticket POST succeeds, attachment upload fails, ticket persists and is not rolled back | `server/tests/lab-02/attachments.api.test.ts` | FR-02, FR-10 | BR-17 | AC-26 |
+| API-ATT-07 | API | Attachment metadata is persisted and stored filename is generated safely with validated extension | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-26, BR-27 | AC-07 |
+| UI-DETAIL-01 | UI | Ticket Detail renders read-only fields, loading/failure/not-found states, active and removed attachments, Preview/Download/Remove, and Add Attachment controls | `client/src/lab-02-tests/RequesterTicketDetail.test.tsx` | FR-09, FR-10, FR-11, FR-12, FR-13, FR-17 | BR-16, BR-18, BR-20, BR-24, BR-28 | AC-03, AC-12, AC-13, AC-24 |
 | E2E-01 | E2E | Requester creates ticket and later finds it in My Tickets | `e2e/lab-02/requester-ticket-flow.spec.ts` | FR-02, FR-04 | BR-01, BR-22 | AC-01, AC-17 |
 | E2E-02 | E2E | Ownership isolation across two requester contexts | `e2e/lab-02/ownership.spec.ts` | FR-09 | BR-24 | AC-03 |
 | E2E-03 | E2E | Full attachment lifecycle (upload/preview/download/remove) | `e2e/lab-02/attachment-lifecycle.spec.ts` | FR-10, FR-11, FR-12, FR-13 | BR-12, BR-18, BR-28 | AC-07, AC-12, AC-13, AC-24 |
@@ -129,6 +136,20 @@ Template:
   - Skipped/Disabled:
 - Notes and follow-up:
 ```
+
+### 2026-08-22 - PR #16 follow-up review fixes
+- Scope: Reconciled agent approval policy, Ticket Date ownership, Test-DD BR coverage, and required Ticket Detail UI planning coverage.
+- Tests added/updated: Updated planned traceability rows only; no executable test files changed.
+- Command(s) run:
+  - markdown structure and required-string validation
+- Result:
+  - Passed: 1
+  - Failed: 0
+  - Skipped/Disabled: 0
+- Notes and follow-up:
+  - Added `RequesterTicketDetail.test.tsx` coverage for read-only, loading, failure/not-found, attachment, and control states.
+  - Added explicit scenarios for BR-06, BR-10, BR-11, BR-26, BR-27, BR-29, My Tickets loading/failure, and Ticket Date authority.
+  - Commit and push still require separate explicit user approval.
 
 ### 2026-08-22 - issue-1 review fixes (PR #16)
 - Scope: Addressed reviewer findings on `tests.md` traceability, UI-style/visual coverage, BR-17 partial-success flow, and BR ID normalization.

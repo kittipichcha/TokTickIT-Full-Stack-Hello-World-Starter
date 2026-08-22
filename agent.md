@@ -13,14 +13,10 @@ No code edits, branch/worktree creation, PR actions, or issue state moves before
 If prompt details are unclear, the agent must ask questions and wait.
 No assumptions are allowed for ambiguous requirements.
 
-### 1.1 Autonomous commit and push policy
-Once the task is approved and the relevant code slice passes its targeted validation, the agent may automatically stage and commit the change in the current feature branch and push it to the remote branch if all of the following are true:
-- the work is limited to the approved feature/task scope;
-- the relevant tests pass for the changed behavior;
-- the change is traceable to the mapped FR/BR/AC; and
-- no explicit user stop condition was triggered.
+### 1.1 Commit and push approval policy
+Approval of the task authorizes implementation and validation within the approved scope. A separate explicit user approval is required before the agent stages, commits, or pushes any change.
 
-If a task cannot pass validation or the implementation is not yet in a safe state, the agent must not auto-commit or push. Instead, it must stop, explain the failure cause, and request approval for the next corrective step.
+If a task cannot pass validation or the implementation is not yet in a safe state, the agent must not stage, commit, or push. Instead, it must stop, explain the failure cause, and request approval for the next corrective step.
 ## 2. Requirement Traceability Discipline
 For every task, the agent must map work to requirement IDs:
 - FR (Functional Requirement)
@@ -125,9 +121,9 @@ No autonomous PR creation or Kanban state changes without user approval.
 6. Report results.
 7. Update `docs/lab-02/tests.md` (newest log entry).
 8. Update `docs/lab-02/ai-use.md` in Lab 1 style.
-9. If the relevant slice passes tests and remains in scope, automatically stage and commit the change in the feature branch.
-10. Push to the feature branch when the branch is clean and the user-approved scope is satisfied.
-11. Ask approval for PR targeting `lab2-staging` and board updates once issue acceptance criteria are satisfied.
+9. Report the validated change and request explicit approval to stage, commit, and push.
+10. After approval, stage, commit, and push only the validated changes within scope.
+11. Ask separate approval for a PR targeting `lab2-staging` and for board updates once issue acceptance criteria are satisfied.
 
 ## 10. Stop Conditions
 The agent must stop and ask the user when:
