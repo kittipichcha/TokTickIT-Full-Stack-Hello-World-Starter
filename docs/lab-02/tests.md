@@ -26,7 +26,7 @@ E2E/Responsive/Keyboard (planned):
 
 ## 4. Test Traceability Matrix (Planned Contract)
 
-| Test ID | Level | Scenario | Expected Result | Test File Path | FR | BR | AC | Final |
+| Test ID | Type | What It Tests | Expected Result | Automated Test File | FR | BR | Requirement / AC | Final |
 |---|---|---|---|---|---|---|---|---|
 | API-REQ-01 | API | Selector returns only active development requesters | Returns only active requesters and excludes inactive ones from the selector payload. | `server/tests/lab-02/dev-requesters.api.test.ts` | FR-01, FR-15 | BR-03, BR-04 | AC-15 | Planned |
 | UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | Missing requester context redirects to the selector screen without crashing. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-21, BR-05 | AC-02 | Planned |
@@ -142,6 +142,20 @@ Template:
   - Skipped/Disabled:
 - Notes and follow-up:
 ```
+
+### 2026-08-22 - Lab 2 handout alignment audit
+- Scope: Verified the Lab 2 engineering-contract documents against `Lab_02_labsheet.pdf` and aligned the planned-test table terminology with the required handout format.
+- Tests added/updated: Updated Test-DD table headings only; no executable test files changed.
+- Command(s) run:
+  - `pdftotext -layout Lab_02_labsheet.pdf Lab_02_labsheet.txt`
+  - static markdown structure validation of Lab 2 documents
+- Result:
+  - Passed: 1
+  - Failed: 0
+  - Skipped/Disabled: 0
+- Notes and follow-up:
+  - The table now explicitly uses `Type`, `What It Tests`, `Automated Test File`, and `Requirement / AC` while retaining FR/BR traceability.
+  - Product implementation, executable Lab 2 tests, screenshots, and the final Answer Part 1-9 PDF remain future delivery work.
 
 ### 2026-08-22 - PR #16 re-review contract fixes
 - Scope: Restored the Category migration contract, extended the planned-test table to the handout-required shape, and added the remaining direct BR coverage needed for the Lab 2 baseline.
