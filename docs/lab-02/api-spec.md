@@ -45,6 +45,7 @@ against active `DevRequester` records on every call — it is never trusted blin
 | 400 | Invalid input (validation) |
 | 404 | Resource not found **or** not owned by the requesting `X-Dev-Requester-Id` |
 | 409 | Conflict (e.g., referenced Category/RelatedSystem is inactive) |
+| 410 | Resource existed but has been intentionally removed (e.g., soft-deleted attachment) |
 | 413 | Uploaded file exceeds 5 MB |
 | 415 | Uploaded file type not permitted |
 | 422 | Requester in `X-Dev-Requester-Id` is missing, unknown, or inactive |
@@ -59,7 +60,7 @@ Retrieve active Categories for the Create Ticket form.
 
 **Response 200**
 ```json
-{ "data": [ { "id": 1, "name": "Hardware" }, { "id": 2, "name": "Software" } ] }
+[ { "id": 1, "name": "Hardware" }, { "id": 2, "name": "Software" } ]
 ```
 
 ## 2. GET /api/related-systems
