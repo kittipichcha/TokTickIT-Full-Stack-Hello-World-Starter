@@ -104,6 +104,7 @@ describe("Categories UI", () => {
         expect(screen.getByText(/system health check failed/i)).toBeDefined();
       });
 
+      expect(screen.queryByText(/toktickit api/i)).toBeNull();
       expect(vi.mocked(api.fetchCategories)).not.toHaveBeenCalled();
     });
   });
