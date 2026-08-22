@@ -21,7 +21,7 @@ E2E/Responsive/Keyboard (planned):
 - Planned folder: `e2e/lab-02/`
 
 ## 3. AC Retirement Note
-- **AC-16 was retired** due requester-context contract conflict.
+- **AC-16 was retired** due to requester-context contract conflict.
 - Historical tickets for inactive requesters are preserved in data but not reachable in Lab 2 requester-facing flows.
 
 ## 4. Test Traceability Matrix (Planned Contract)

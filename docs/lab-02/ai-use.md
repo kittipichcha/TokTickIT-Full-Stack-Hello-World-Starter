@@ -1,6 +1,6 @@
 # Lab 2 - AI Use and Reflection
 
-**LLM/agent used:** <GitHub Copilot (GPT-5.3-Codex)>
+**LLM/agent used:** GitHub Copilot (GPT-5.3-Codex)
 
 ## Selected key prompts (6-10)
 | # | Prompt (summarised) | What I did with the result |

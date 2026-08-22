@@ -66,7 +66,9 @@ Retrieve active Categories for the Create Ticket form.
 ```
 
 Compatibility note: Lab 2 preserves the existing Lab 1 raw-array response shape for
-`GET /api/categories` (no `{ "data": [...] }` envelope for this endpoint).
+`GET /api/categories` (no `{ "data": [...] }` envelope for this endpoint). In contrast,
+`GET /api/related-systems` and `GET /api/dev-requesters` use the standard `{ "data": [...] }`
+envelope by design.
 
 ## 2. GET /api/related-systems
 Retrieve active Related Systems.

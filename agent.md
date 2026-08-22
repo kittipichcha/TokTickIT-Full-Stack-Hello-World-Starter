@@ -49,7 +49,7 @@ After each completed task, update:
 - `docs/lab-02/ai-use.md`
 
 Format must match Lab 1 style in:
-- `docs/lab-01/ai_use.md`
+- `docs/lab-01/ai_use.md` (legacy Lab 1 filename)
 
 Minimum content to update each time:
 - prompt summary
