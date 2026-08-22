@@ -103,6 +103,7 @@ PORT=3000
 Run migration and seed:
 
 ```bash
+cd server
 npm run prisma:migrate
 npm run prisma:seed
 ```
