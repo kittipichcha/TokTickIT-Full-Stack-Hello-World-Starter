@@ -4,13 +4,15 @@
 
 **Base path:** `/api`
 
-**Requester identity (not authentication):** Every endpoint that reads or writes
+**Requester identity (not authentication):** Every requester-scoped endpoint that reads or writes
 requester-owned data requires the header:
 ```
 X-Dev-Requester-Id: <integer>
 ```
-This is a Lab 2 testing convenience (BR-03a). The backend still validates the header value
-against active `DevRequester` records on every call — it is never trusted blindly.
+Bootstrap/reference endpoints are exempt (`GET /api/dev-requesters`, `GET /api/categories`,
+`GET /api/related-systems`). This is a Lab 2 testing convenience (BR-03a). The backend still
+validates the header value against active `DevRequester` records on every requester-scoped call
+— it is never trusted blindly.
 
 **Standard error shape:**
 ```json
@@ -46,7 +48,7 @@ against active `DevRequester` records on every call — it is never trusted blin
 | 404 | Resource not found **or** not owned by the requesting `X-Dev-Requester-Id` |
 | 409 | Conflict (e.g., referenced Category/RelatedSystem is inactive) |
 | 410 | Resource existed but has been intentionally removed (e.g., soft-deleted attachment) |
-| 413 | Uploaded file exceeds 5 MB |
+| 413 | Uploaded file exceeds 5,000,000 bytes |
 | 415 | Uploaded file type not permitted |
 | 422 | Requester in `X-Dev-Requester-Id` is missing, unknown, or inactive |
 | 500 | Unexpected server error (safe generic message only) |
@@ -62,6 +64,11 @@ Retrieve active Categories for the Create Ticket form.
 ```json
 [ { "id": 1, "name": "Hardware" }, { "id": 2, "name": "Software" } ]
 ```
+
+Compatibility note: Lab 2 preserves the existing Lab 1 raw-array response shape for
+`GET /api/categories` (no `{ "data": [...] }` envelope for this endpoint). In contrast,
+`GET /api/related-systems` and `GET /api/dev-requesters` use the standard `{ "data": [...] }`
+envelope by design.
 
 ## 2. GET /api/related-systems
 Retrieve active Related Systems.
@@ -156,6 +163,12 @@ Retrieve the selected Requester's own Tickets — search, filter, sort, paginate
 | `page` | int ≥1 | `1` | page number |
 | `pageSize` | int 1–50 | `10` | page size |
 
+Deterministic ordering rules:
+- Primary sort: requested `sort` field + requested `order`
+- Secondary sort: `createdAt desc`
+- Tertiary sort: `id desc`
+- When `sort=requestedPriority`, logical order is `LOW < MEDIUM < HIGH` (not alphabetical)
+
 Invalid `page`/`pageSize`/`sort`/`order` values fall back to their defaults rather than
 erroring, so a bad query string never breaks the list (documented safe behavior).
 
@@ -244,7 +257,7 @@ Upload a permitted attachment to an owned Ticket. `multipart/form-data`, field n
 - Ticket must exist and be owned by requester → else `404`
 - Ticket must have <5 active attachments → else `400` (`ATTACHMENT_LIMIT_REACHED`)
 - File type must be JPG/JPEG/PNG/WEBP/PDF, verified by extension **and** content sniffing → else `415`
-- File size ≤5 MB → else `413`
+- File size must be ≤ `5,000,000` bytes (`4,999,999` and `5,000,000` accepted; `5,000,001` rejected) → else `413`
 
 **Response 201**
 ```json
