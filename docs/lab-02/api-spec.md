@@ -39,6 +39,39 @@ validates the header value against active `DevRequester` records on every reques
 }
 ```
 
+### Normative edge-case matrices
+The following cases are mandatory and part of the implemented contract; the implementation must not choose a different behavior.
+
+**Summary / Description normalization**
+- Trim first, then validate.
+- Persist the trimmed value.
+- Whitespace-only strings are invalid.
+- Summary: 5–120 chars after trim accepted; 4 or fewer rejected; 121 or more rejected.
+- Description: 10–2000 chars after trim accepted; 9 or fewer rejected; 2001 or more rejected.
+
+**Reference ID validation**
+- `categoryId` / `relatedSystemId` missing → `400 VALIDATION_ERROR`
+- non-integer value → `400 VALIDATION_ERROR`
+- negative or zero value → `400 VALIDATION_ERROR`
+- positive but nonexistent ID → `409 Conflict`
+- active but stale/inactive record → `409 Conflict`
+
+**List endpoint query validation**
+- `search`: trim then compare case-insensitive substring; blank-after-trim is treated as no active filter.
+- `categoryId`: malformed → `400`; well-formed nonexistent/inactive → `409`.
+- `requestedPriority` / `status`: invalid enum → `400`.
+- `sort`: invalid field → fallback to `createdAt`.
+- `order`: invalid direction → fallback to `desc`.
+- `page`: invalid or out-of-range → `200` with empty `data` array and correct pagination metadata.
+- `pageSize`: invalid or out-of-range → fallback to `10`.
+
+**Attachment multi-file partial success**
+- Files are processed sequentially.
+- A failed file does not roll back previous successful files.
+- Remaining files continue to upload.
+- Failures are reported per file.
+- Failed files may be retried later from Ticket Detail.
+
 **Status code usage across this API**
 | Code | Meaning here |
 |---|---|
@@ -112,10 +145,10 @@ Create a Ticket owned by the requester in `X-Dev-Requester-Id`.
 ```
 
 **Validation**
-- `categoryId`, `relatedSystemId`: required, must reference an **active** record → else `409`
-- `summary`: required, trimmed, 5–120 chars → else `400`
-- `description`: required, trimmed, 10–2000 chars → else `400`
-- `requestedPriority`: required, one of `LOW|MEDIUM|HIGH` → else `400`
+- `categoryId`, `relatedSystemId`: required, must reference an **active** record. Error matrix: missing/non-integer → `400` validation error (`VALIDATION_ERROR`); well-formed but nonexistent ID → `409` Conflict (`INACTIVE_REFERENCE`); existing but inactive record → `409` Conflict.
+- `summary`: required, trimmed, 5–120 chars after trim; whitespace-only rejected → else `400` (`VALIDATION_ERROR`)
+- `description`: required, trimmed, 10–2000 chars after trim; whitespace-only rejected → else `400` (`VALIDATION_ERROR`)
+- `requestedPriority`: required, one of `LOW|MEDIUM|HIGH` → else `400` (`VALIDATION_ERROR`)
 
 **Response 201**
 ```json
@@ -154,23 +187,24 @@ Retrieve the selected Requester's own Tickets — search, filter, sort, paginate
 **Query parameters**
 | Param | Type | Default | Notes |
 |---|---|---|---|
-| `search` | string | — | matches `ticketNumber` or `summary` (case-insensitive substring) |
-| `categoryId` | int | — | filter |
-| `requestedPriority` | `LOW\|MEDIUM\|HIGH` | — | filter |
-| `status` | `NEW` | — | filter (only value possible in Lab 2) |
-| `sort` | `createdAt\|ticketNumber\|summary\|requestedPriority` | `createdAt` | sort field |
-| `order` | `asc\|desc` | `desc` | sort direction |
-| `page` | int ≥1 | `1` | page number |
-| `pageSize` | int 1–50 | `10` | page size |
+| `search` | string | — | Case-insensitive substring match on `ticketNumber` or `summary`. Trimmed; blank-after-trim treated as no search active. |
+| `categoryId` | int | — | Filter by category. Malformed (non-integer) → 400; nonexistent but well-formed → 409; stale/inactive → 409. |
+| `requestedPriority` | `LOW\|MEDIUM\|HIGH` | — | Filter by requested priority. Invalid enum value (e.g., "URGENT") → 400. |
+| `status` | `NEW` | — | Filter by status. Invalid enum value (e.g., "CLOSED") → 400. (Only `NEW` possible in Lab 2.) |
+| `sort` | `createdAt\|ticketNumber\|summary\|requestedPriority` | `createdAt` | Sort field. Invalid value → fallback to default. |
+| `order` | `asc\|desc` | `desc` | Sort direction. Invalid value → fallback to default. |
+| `page` | int ≥1 | `1` | Page number. Out-of-range (beyond totalPages) or invalid → return 200 with empty data array; totalPages set correctly. |
+| `pageSize` | int 1–50 | `10` | Page size. Invalid/out-of-range → fallback to default (10). |
+
+**Pagination behavior for out-of-range pages:**
+- If `page > totalPages` (e.g., requesting page 999 when totalPages=3), return `200 OK` with `data: []` and accurate metadata showing `totalPages: 3`.
+- Frontend must not confuse empty array with normal Empty state; the `pagination.totalPages` value disambiguates.
 
 Deterministic ordering rules:
 - Primary sort: requested `sort` field + requested `order`
 - Secondary sort: `createdAt desc`
 - Tertiary sort: `id desc`
 - When `sort=requestedPriority`, logical order is `LOW < MEDIUM < HIGH` (not alphabetical)
-
-Invalid `page`/`pageSize`/`sort`/`order` values fall back to their defaults rather than
-erroring, so a bad query string never breaks the list (documented safe behavior).
 
 **Example**
 ```
@@ -275,12 +309,12 @@ Upload a permitted attachment to an owned Ticket. `multipart/form-data`, field n
 ```
 
 ## 8. GET /api/tickets/:ticketNumber/attachments
-List attachment metadata (active and removed) for an owned Ticket.
+List attachment metadata (active and removed) for an owned Ticket. Results are ordered deterministically by `uploadedAt asc, id asc` for stable pagination and test reproducibility.
 
 **Headers:** `X-Dev-Requester-Id: <int>` (required)
 
 **Response 200** — same shape as the `attachments` array in Section 6, including removed
-entries with `isRemoved: true`, `removedAt`, `removalReason`.
+entries with `isRemoved: true`, `removedAt`, `removalReason`, `removedByRequesterId`.
 
 ## 9. GET /api/attachments/:attachmentId/download
 Download the raw file bytes of an **active** attachment on an owned ticket.
@@ -313,7 +347,7 @@ Soft-remove an owned attachment.
 ```json
 { "removalReason": "Wrong file, replaced by a clearer screenshot." }
 ```
-`removalReason` is optional, ≤200 chars if provided.
+`removalReason` is optional. Normalization: trimmed; omitted or blank-after-trim → persisted as null; non-string → 400 validation error; 1–200 chars after trim → accepted and persisted; >200 chars after trim → rejected with 400 validation error.
 
 **Response 200**
 ```json

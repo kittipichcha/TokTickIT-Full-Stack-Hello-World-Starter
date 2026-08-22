@@ -49,6 +49,23 @@ When Lab 2 documents conflict, the agent must resolve them in this order:
 
 Implementations must follow the written contract; they do not define the contract.
 
+### Closed-contract edge-case policy
+The Lab 2 contract is intentionally closed. The implementation may not invent additional behavior for missing or ambiguous cases. The following decisions are normative and binding for all implementation and tests:
+
+- `summary` and `description` are trimmed before validation; the trimmed value is what is validated and persisted; whitespace-only input is invalid.
+- `categoryId` and `relatedSystemId` must be plain integers; malformed values are `400 VALIDATION_ERROR`; well-formed values that do not exist or are inactive are `409 Conflict`.
+- `search` is trimmed; blank-after-trim means no active search filter.
+- Invalid `requestedPriority` or `status` values are `400 VALIDATION_ERROR`.
+- Invalid `sort` or `order` values fall back to default values (`createdAt`, `desc`).
+- Out-of-range `page` values are valid requests that yield `200 OK` with an empty `data` array and accurate pagination metadata; they are not treated as validation failures.
+- `pageSize` is clamped/fallback to safe defaults for invalid values: values outside `1..50` fall back to `10`.
+- Attachment removal reason is optional; omitted or blank-after-trim is stored as `null`; non-string values are `400 VALIDATION_ERROR`; 1–200 chars after trim is accepted; more than 200 is rejected.
+- Multi-file attachment upload is sequential; failed file(s) do not roll back prior successes; later files continue uploading; failures are reported per file.
+- Ticket creation success and attachment failure are separate flows; a failed attachment upload does not re-create or duplicate the ticket.
+- `Empty` and `No Results` are distinguished by whether the request had active filters/search, not by whether the raw query string was present.
+
+If a legal execution path is not explicitly listed here or in the functional/business rules, the correct action is to stop and request clarification rather than choose a design.
+
 ## 4. Functional Requirements
 - **FR-01** The system shall require selection of an active Development Requester before any ticket screen is reachable.
 - **FR-02** The system shall allow the selected Requester to create a ticket with category, related system, summary, description, requested priority, and optional attachments.
