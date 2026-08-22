@@ -22,7 +22,7 @@ export default function App() {
                 setCategories(categoriesData);
             }
             else {
-                throw new Error(health.service ? `System health check failed: ${health.service}` : "System health check failed");
+                throw new Error("System health check failed");
             }
         }
         catch (err) {
