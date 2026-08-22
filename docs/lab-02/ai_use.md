@@ -11,6 +11,7 @@
 | 4 | Create `agent.md` with strict working rules | Added workflow policy covering approval gates, FR/BR/AC mapping, test logging, AI-use updates, branch/worktree and PR approval requirements, and function-level commit strategy. |
 | 5 | Create five GitHub issues with requirement mapping | Created issues #11 to #15 for requirement+AI baseline, user login surrogate, ticket creation, my tickets, and attachment lifecycle, each with FR/BR/AC traceability and acceptance criteria. |
 | 6 | Refine documentation, review issue text for complete correctness, and prepare baseline commit | Audited doc files, fixed Lab 2 header in reviewer.md, cross-linked issues #11-#15 with prerequisite chains and FR/BR/AC criteria, updated tests.md results log, and committed baseline function-by-function. |
+| 7 | Update agent.md PR target branch policy | Updated agent.md to specify that `lab2-staging` (created from current head of `main`) is the PR target for feature branches, and `main` is reserved for final release PR. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
