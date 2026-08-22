@@ -24,7 +24,37 @@ E2E/Responsive/Keyboard (planned):
 - **AC-16 was retired** due to requester-context contract conflict.
 - Historical tickets for inactive requesters are preserved in data but not reachable in Lab 2 requester-facing flows.
 
-## 4. Test Traceability Matrix (Planned Contract)
+## 4. Coverage Completeness Gate
+This test plan is intended to be a closed-contract test suite: every FR, BR, and AC must be traceable to at least one planned automated test, and all explicit edge-case permutations are enumerated in the requirements and planned tests. No implementation or future agent may add a hidden runtime decision when the behavior is already specified here.
+
+### 4.1 FR coverage summary
+- FR-01: covered by Requester Selection and requester-context tests (`UI-REQ-01`, `UI-REQ-02`, `API-REQ-02`, `API-REQ-03`).
+- FR-02: covered by Create Ticket and validation tests (`API-TKT-NOR-01`, `API-TKT-NOR-02`, `API-TKT-01`, `UI-TKT-01..07`, `UI-ERR-01`).
+- FR-03: covered by generated ticket number tests (`API-TKT-01`).
+- FR-04 / FR-05 / FR-06 / FR-07 / FR-08: covered by My Tickets tests (`API-MY-01..08`, `UI-MY-01..04`).
+- FR-09: covered by owner isolation and detail tests (`API-TKT-03`, `API-MY-01`, `UI-DETAIL-01`).
+- FR-10 / FR-11 / FR-12 / FR-13: covered by Attachment tests (`API-ATT-01..13`, `UI-ATT-01..04`, `UI-DETAIL-01`).
+- FR-14 / FR-15: covered by requester switching and inactive-requester tests (`UI-REQ-02`, `API-REQ-02`, `UI-MY-03`).
+- FR-16: covered by Empty/No-Results tests (`UI-MY-01`, `UI-MY-02`, `API-MY-08`).
+- FR-17: covered by create failure and state-preservation tests (`UI-TKT-05`, `UI-ERR-01`, `E2E-04`).
+
+### 4.2 BR coverage summary
+All BR rules are represented either directly in a corresponding planned test or by a closed requirement statement in the specification and API contract. The contract explicitly freezes the behaviors for summary/description trimming, invalid IDs, filters, search, pagination, requester enforcement, attachment removal metadata, and multi-file partial success.
+
+### 4.3 AC coverage summary
+Each acceptance criterion is mapped into the planned test matrix. The implementation must not treat any AC as “informal” because each AC is tied to a concrete API/UI test or a specified business rule.
+
+### 4.4 Decision-free boundaries and invalid permutations
+The following conditions are explicitly enumerated and must not be reinterpreted:
+- Empty/blank/whitespace-only input for summary, description, search, and removal reason
+- Malformed, nonexistent, inactive, and negative reference IDs
+- Invalid enums for requestedPriority, status, sort, and order
+- Valid but out-of-range pagination requests
+- Multi-file partial success sequences and per-file reporting
+- Empty vs No-Results logic based on active filters/search state
+- Soft-delete metadata and `removedByRequesterId` enforcement
+
+## 5. Test Traceability Matrix (Planned Contract)
 
 | Test ID | Type | What It Tests | Expected Result | Automated Test File | FR | BR | Requirement / AC | Final |
 |---|---|---|---|---|---|---|---|---|
