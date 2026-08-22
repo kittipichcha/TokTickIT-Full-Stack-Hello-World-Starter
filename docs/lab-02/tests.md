@@ -33,7 +33,7 @@ E2E/Responsive/Keyboard (planned):
 | API-TKT-01 | API | Create ticket success returns generated ticket number | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 |
 | API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation and cannot be changed by the client | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | AC-01, AC-03 |
 | API-TKT-05 | API | Requester-created tickets keep IT Priority and Ticket Owner null | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-11 | AC-01 |
-| UI-TKT-07 | UI | Requested Priority control is required and defaults to MEDIUM | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-10 | AC-01 |
+| UI-TKT-07 | UI | Requested Priority control is required and defaults to MEDIUM | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-10 | — |
 | UI-TKT-01 | UI | Empty summary blocks submit and shows field error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-04 |
 | UI-TKT-02 | UI | Summary over 120 chars blocks submit with length error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-05 |
 | UI-TKT-03 | UI | Description under 10 chars blocks submit with field error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-09 | AC-06 |
@@ -50,8 +50,8 @@ E2E/Responsive/Keyboard (planned):
 | UI-MY-01 | UI | Empty state shown for requester with zero tickets ever | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-21 |
 | UI-MY-02 | UI | No-results state shown for active filters yielding zero rows | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-22 |
 | UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 |
-| UI-MY-04 | UI | My Tickets loading and API failure states show skeleton/error with manual Retry | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04, FR-17 | BR-16 | AC-21, AC-22 |
-| API-REQ-02 | API | Inactive requester context is rejected while historical tickets remain persisted and unreachable through requester flows | `server/tests/lab-02/dev-requesters.api.test.ts` | FR-15 | BR-04, BR-05, BR-29 | AC-15 |
+| UI-MY-04 | UI | My Tickets loading and API failure states show skeleton/error with manual Retry | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04, FR-17 | BR-16 | — |
+| API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-04, BR-05, BR-29 | AC-15 |
 | API-ATT-01 | API | Disallowed attachment type rejected server-side | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12, BR-13 | AC-07 |
 | UI-ATT-01 | UI | Disallowed attachment type rejected client-side | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12, BR-13 | AC-07 |
 | API-ATT-02 | API | Sixth active attachment rejected by server limit | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-08 |
@@ -121,6 +121,8 @@ cd server && npx vitest run tests/lab-02
 cd client && npx vitest run src/lab-02-tests
 npx playwright test e2e/lab-02
 ```
+
+Playwright note: run the E2E command only after Playwright scaffolding/dependencies are added for this branch.
 
 ## 6. Results Log (Newest First)
 
