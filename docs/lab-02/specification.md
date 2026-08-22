@@ -61,7 +61,7 @@ testing only.
 
 **Requester selection & switching**
 - **BR-03** Lab 2 uses a Development Requester selector instead of login. The selected identity is for testing only and is not authentication.
-- **BR-03a** The selected `requesterId` is persisted client-side in `sessionStorage` only (cleared when the tab/browser closes) and is sent explicitly on every requester-scoped API call via an `X-Dev-Requester-Id` header. Bootstrap endpoints such as `GET /api/dev-requesters` and reference-data endpoints such as `GET /api/categories` are exempt. It is never inferred server-side from a cookie or session, to keep it visibly distinct from real authentication.
+- **BR-21** The selected `requesterId` is persisted client-side in `sessionStorage` only (cleared when the tab/browser closes) and is sent explicitly on every requester-scoped API call via an `X-Dev-Requester-Id` header. Bootstrap endpoints such as `GET /api/dev-requesters` and reference-data endpoints such as `GET /api/categories` are exempt. It is never inferred server-side from a cookie or session, to keep it visibly distinct from real authentication.
 - **BR-04** Only active Development Requesters appear in the selector dropdown.
 - **BR-05** If the `requesterId` held client-side refers to a Requester who has since become inactive (or no longer exists), the app clears it and redirects to the Selector screen with an explanatory message.
 - **BR-14** Switching the selected Requester (via "Change Requester") clears cached ticket state and reloads My Tickets from scratch for the new identity.
@@ -87,15 +87,15 @@ testing only.
 **Attachment upload, download, and soft removal**
 - **BR-12** Attachments are optional. Limits: ≤5 active attachments per ticket, max `5,000,000` bytes per file, types JPG/JPEG/PNG/WEBP/PDF only.
 - **BR-13** File type is validated both by extension and by server-side content sniffing (magic bytes/MIME detection); files failing either check are rejected and never stored.
-- **BR-Attach-metadata** Each attachment records: `originalFilename`, `storedFilename` (sanitized/generated), `mimeType`, `fileSizeBytes`, `uploaderRequesterId`, `uploadedAt`.
-- **BR-Attach-storage** Uploaded files are renamed to a generated safe storage name (UUID + validated extension); the original filename is retained only as display metadata, never used as the on-disk path.
 - **BR-18** Attachment removal is soft delete only: sets `isRemoved=true`, `removedAt`, `removalReason`. The underlying file is retained in storage but is no longer downloadable or previewable.
 - **BR-19** Removing an attachment requires explicit confirmation in a dialog. A removal reason is optional free text, ≤200 characters.
 - **BR-20** A removed attachment remains visible in the attachment list as metadata (visually de-emphasized, "Removed" badge), but its Download and Preview actions are disabled.
-- **BR-Attach-preview** Attachment preview is available only for active (non-removed) attachments: images render inline; PDFs render their first page only. Preview is a Lab 2 enhancement beyond the minimum handout requirement — see Section 11.
+- **BR-26** Each attachment records: `originalFilename`, `storedFilename` (sanitized/generated), `mimeType`, `fileSizeBytes`, `uploaderRequesterId`, `uploadedAt`.
+- **BR-27** Uploaded files are renamed to a generated safe storage name (UUID + validated extension); the original filename is retained only as display metadata, never used as the on-disk path.
+- **BR-28** Attachment preview is available only for active (non-removed) attachments: images render inline; PDFs render their first page only. Preview is a Lab 2 enhancement beyond the minimum handout requirement — see Section 11.
 
 **Inactive Requesters**
-- **BR-inactive** If a Requester who owns existing tickets is later marked inactive, those tickets remain in the database with the historical requester foreign key unchanged. Because inactive requesters cannot establish requester context (BR-04/BR-05), these historical tickets are not reachable through Lab 2 requester-facing flows.
+- **BR-29** If a Requester who owns existing tickets is later marked inactive, those tickets remain in the database with the historical requester foreign key unchanged. Because inactive requesters cannot establish requester context (BR-04/BR-05), these historical tickets are not reachable through Lab 2 requester-facing flows.
 
 **Empty and no-results states**
 - **BR-23** "Empty" (the Requester has zero tickets ever) and "No results" (filters/search matched zero of an otherwise non-empty list) use distinct messaging and distinct calls to action (Create Ticket vs. Clear Filters).
@@ -229,14 +229,16 @@ See `api-spec.md` for the full endpoint list, request/response shapes, and statu
 - **AC-21** Given the current Requester has zero tickets ever, when My Tickets loads, then an Empty state with a Create Ticket call-to-action is shown (not the No-Results state). *(FR-16, BR-23)*
 - **AC-22** Given filters/search match zero of an otherwise non-empty list, when My Tickets loads, then a No-Results state with a Clear Filters action is shown. *(FR-16, BR-23)*
 - **AC-23** Given a mobile viewport (<768px), when any Lab 2 screen is viewed, then fields stack vertically, buttons remain touch-friendly, and no horizontal page scrolling occurs. *(UI spec)*
-- **AC-24** Given an active image or PDF attachment, when Preview is opened, then the image renders inline or the PDF's first page renders, respectively. *(BR-Attach-preview)*
+- **AC-24** Given an active image or PDF attachment, when Preview is opened, then the image renders inline or the PDF's first page renders, respectively. *(BR-28)*
 - **AC-25** Given keyboard-only navigation, when a user completes the full Create Ticket flow, then all controls are reachable and operable via keyboard with visible focus indicators. *(Accessibility)*
+- **AC-26** Given a ticket is created successfully but a subsequent attachment upload fails, then the ticket is not rolled back, no duplicate ticket is created, the generated Ticket Number is shown, the attachment failure is reported separately, and the user can retry the attachment from Ticket Detail. *(BR-17)*
+- **AC-27** Given a create request referencing an inactive or stale Category or Related System ID, when submitted, then the server rejects it with `409 Conflict` and no ticket is created. *(BR-07)*
 
 ## 10. Definition of Done
 **Product**
 - [ ] All FR-01…FR-17 implemented and demonstrable
 - [ ] All BR rules enforced server-side where applicable (not just client-side)
-- [ ] All active AC entries (AC-01…AC-25, excluding retired AC-16) have passing, traceable automated test evidence (see `tests.md`)
+- [ ] All active AC entries (AC-01…AC-27, excluding retired AC-16) have passing, traceable automated test evidence (see `tests.md`)
 - [ ] No required test skipped, disabled, or commented out
 - [ ] Data model matches Section 7; migrations applied cleanly on a fresh database
 - [ ] Seed data is idempotent (safe to re-run) and includes ≥4 active + ≥1 inactive Requester, 4 Categories, ≥6 Related Systems
@@ -256,10 +258,10 @@ See `api-spec.md` for the full endpoint list, request/response shapes, and statu
    comment-section Issue; per the handout's explicit exclusion and confirmed with the
    student, no comment feature ships in Lab 2.
 2. **Attachment preview included as an enhancement.** Not required by the handout, but
-   added at the student's request (BR-Attach-preview): image inline, PDF first-page-only.
+   added at the student's request (BR-28): image inline, PDF first-page-only.
 3. **Requester identity persistence:** `sessionStorage` + explicit `X-Dev-Requester-Id`
    header per request, chosen over cookies/localStorage specifically to avoid resembling a
-   real session (BR-03a).
+   real session (BR-21).
 4. **Duplicate-submission prevention is frontend-only** (disable/busy Submit button); no
    server-side dedup heuristic, since no reliable natural key exists at creation time.
 5. **Manual retry, not auto-retry**, on ticket-creation failure, with form values preserved.

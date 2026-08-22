@@ -29,16 +29,17 @@ E2E/Responsive/Keyboard (planned):
 | Test ID | Level | Scenario | Test File Path | FR | BR | AC |
 |---|---|---|---|---|---|---|
 | API-REQ-01 | API | Selector returns only active development requesters | `server/tests/lab-02/dev-requesters.api.test.ts` | FR-01, FR-15 | BR-03, BR-04 | AC-15 |
-| UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-03a, BR-05 | AC-02 |
+| UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-21, BR-05 | AC-02 |
 | API-TKT-01 | API | Create ticket success returns generated ticket number | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 |
 | UI-TKT-01 | UI | Empty summary blocks submit and shows field error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-04 |
 | UI-TKT-02 | UI | Summary over 120 chars blocks submit with length error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-05 |
 | UI-TKT-03 | UI | Description under 10 chars blocks submit with field error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-09 | AC-06 |
 | UI-TKT-04 | UI | Submit busy state prevents duplicate submission | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-15 | AC-10 |
-| UI-TKT-05 | UI | Failed create keeps entered values and shows inline error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 |
-| API-TKT-02 | API | Inactive/stale category or related-system ID rejected | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-07 | AC-01 |
+| UI-TKT-05 | UI | Case A — failed create keeps entered values and shows inline error | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 |
+| UI-TKT-06 | UI | Case B — partial success: ticket created but attachment upload failed shows Ticket Number, separate attachment error, and blocks ticket resubmission | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02, FR-10, FR-17 | BR-17 | AC-26 |
+| API-TKT-02 | API | Inactive/stale category or related-system ID rejected with 409 | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-07 | AC-27 |
 | API-TKT-03 | API | Ticket detail returns 404 for non-owner access | `server/tests/lab-02/ticket-detail.api.test.ts` | FR-09 | BR-24 | AC-03 |
-| API-MY-01 | API | My Tickets returns only current requester-owned tickets | `server/tests/lab-02/my-tickets.api.test.ts` | FR-04 | BR-24 | AC-14 |
+| API-MY-01 | API | My Tickets returns only current requester-owned tickets (ownership isolation) | `server/tests/lab-02/my-tickets.api.test.ts` | FR-04 | BR-24 | AC-03 |
 | API-MY-02 | API | Search by ticket number/summary substring | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05 | BR-22 | AC-17 |
 | API-MY-03 | API | Category/Priority/Status filters are conjunctive | `server/tests/lab-02/my-tickets.api.test.ts` | FR-06 | BR-22 | AC-18 |
 | API-MY-04 | API | Deterministic sort order with tie-breakers and priority ordering | `server/tests/lab-02/my-tickets.api.test.ts` | FR-07 | BR-22 | AC-19 |
@@ -49,21 +50,55 @@ E2E/Responsive/Keyboard (planned):
 | API-ATT-01 | API | Disallowed attachment type rejected server-side | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12, BR-13 | AC-07 |
 | UI-ATT-01 | UI | Disallowed attachment type rejected client-side | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12, BR-13 | AC-07 |
 | API-ATT-02 | API | Sixth active attachment rejected by server limit | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-08 |
-| API-ATT-03 | API | Attachment size boundaries in bytes are enforced | `server/tests/lab-02/attachment-validation.unit.test.ts` | FR-10 | BR-12 | AC-09 |
+| UNIT-ATT-01 | Unit | Attachment size boundary validator: 4,999,999 / 5,000,000 accepted, 5,000,001 rejected | `server/tests/lab-02/attachment-validation.unit.test.ts` | FR-10 | BR-12 | AC-09 |
+| API-ATT-03 | API | Oversized attachment upload rejected by server with 413 | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-09 |
+| UI-ATT-03 | UI | Selecting an oversized file shows size error immediately and prevents upload (client-side rejection) | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12 | AC-09 |
 | API-ATT-04 | API | Soft remove marks removed metadata and disables access | `server/tests/lab-02/attachments.api.test.ts` | FR-11, FR-13 | BR-18, BR-19, BR-20 | AC-12, AC-13 |
-| API-ATT-05 | API | Preview/download endpoint behavior for active vs removed files | `server/tests/lab-02/attachments.api.test.ts` | FR-12, FR-13 | BR-18, BR-Attach-preview | AC-13, AC-24 |
+| API-ATT-05 | API | Preview/download endpoint behavior for active vs removed files | `server/tests/lab-02/attachments.api.test.ts` | FR-12, FR-13 | BR-18, BR-28 | AC-13, AC-24 |
 | UI-ATT-02 | UI | Removed attachment row shows Removed badge and disabled controls | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-11 | BR-20 | AC-12 |
+| API-ATT-06 | API | BR-17 partial success: ticket POST succeeds, attachment upload fails, ticket persists and is not rolled back | `server/tests/lab-02/attachments.api.test.ts` | FR-02, FR-10 | BR-17 | AC-26 |
 | E2E-01 | E2E | Requester creates ticket and later finds it in My Tickets | `e2e/lab-02/requester-ticket-flow.spec.ts` | FR-02, FR-04 | BR-01, BR-22 | AC-01, AC-17 |
 | E2E-02 | E2E | Ownership isolation across two requester contexts | `e2e/lab-02/ownership.spec.ts` | FR-09 | BR-24 | AC-03 |
-| E2E-03 | E2E | Full attachment lifecycle (upload/preview/download/remove) | `e2e/lab-02/attachment-lifecycle.spec.ts` | FR-10, FR-11, FR-12, FR-13 | BR-12, BR-18, BR-Attach-preview | AC-07, AC-12, AC-13, AC-24 |
-| E2E-04 | E2E | Mobile layout has no horizontal scroll and stacked controls | `e2e/lab-02/responsive-create-ticket.spec.ts` | — | — | AC-23 |
+| E2E-03 | E2E | Full attachment lifecycle (upload/preview/download/remove) | `e2e/lab-02/attachment-lifecycle.spec.ts` | FR-10, FR-11, FR-12, FR-13 | BR-12, BR-18, BR-28 | AC-07, AC-12, AC-13, AC-24 |
+| E2E-04 | E2E | BR-17 partial success: ticket created, attachment upload fails, ticket persists, no duplicate, retry from Ticket Detail | `e2e/lab-02/partial-success-attachment.spec.ts` | FR-02, FR-10, FR-17 | BR-17 | AC-26 |
 | E2E-05 | E2E | Keyboard-only create-ticket flow with visible focus indicators | `e2e/lab-02/keyboard-access.spec.ts` | — | — | AC-25 |
-| UI-ERR-01 | UI | API failure preserves form state and requires manual retry | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16, BR-17 | AC-11 |
+| UI-ERR-01 | UI | Case A — ticket create API failure preserves form state and requires manual retry | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 |
+| UI-STYLE-01 | UI Style | Editable/read-only/invalid/disabled/busy field and button styles match Zen Green tokens | `client/src/lab-02-tests/UiStyles.test.tsx` | — | — | AC-23 |
+| UI-STYLE-02 | UI Style | Required-field labels show red asterisk; validation messages render directly under fields | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-08, BR-09 | AC-04, AC-06 |
+| UI-STYLE-03 | UI Style | Priority/Status/Removed badge styling and non-color-reliant labels | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-20 | AC-12 |
+| VISUAL-01 | Visual | Zen Green screenshots across all Lab 2 screens at desktop/tablet/mobile viewports | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 |
+| E2E-06 | E2E | Responsive layout across all Lab 2 screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile — no horizontal scroll, stacked controls on mobile | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 |
 
 ### Required boundary assertions for `MAX_ATTACHMENT_BYTES = 5,000,000`
 - `4,999,999` bytes → accepted
 - `5,000,000` bytes → accepted
 - `5,000,001` bytes → rejected
+
+### BR-17 partial-success failure cases (must be tested separately)
+The UI and tests must distinguish two failure cases — they are **not** the same flow:
+
+**Case A — Ticket creation fails (BR-16, AC-11)**
+- No ticket exists.
+- Keep all entered form data.
+- Show inline error.
+- Allow Submit again (manual retry of the full create flow).
+
+**Case B — Ticket creation succeeds but attachment upload fails (BR-17, AC-26)**
+- The ticket already exists — do **not** resubmit the ticket (no duplicate).
+- Show the generated Ticket Number.
+- Report the attachment failure separately.
+- Provide a View Ticket / retry-attachment path from Ticket Detail.
+
+Planned coverage: `UI-TKT-06`, `API-ATT-06`, `E2E-04`.
+
+### UI Style / Visual coverage note
+Per the Lab 2 handout, planned testing must cover Unit, API/Integration, UI Component,
+**UI Style**, Responsive, and E2E levels. UI Style rows (`UI-STYLE-01..03`) assert required
+CSS classes, field states, labels, required asterisks, validation messages, button states,
+and badge styling. Visual rows (`VISUAL-01`, `E2E-06`) capture Playwright screenshots at
+desktop (≥992px), tablet (768–991px), and mobile (<768px) for every Lab 2 screen
+(Requester Selection, Create Ticket, My Tickets, Ticket Detail), satisfying AC-23's
+"any Lab 2 screen" requirement.
 
 ## 5. Commands
 
@@ -94,6 +129,20 @@ Template:
   - Skipped/Disabled:
 - Notes and follow-up:
 ```
+
+### 2026-08-22 - issue-1 review fixes (PR #16)
+- Scope: Addressed reviewer findings on `tests.md` traceability, UI-style/visual coverage, BR-17 partial-success flow, and BR ID normalization.
+- Tests added/updated: No executable test files changed (planning rows only).
+- Command(s) run:
+  - static validation of edited markdown files
+- Result:
+  - Passed: 0
+  - Failed: 0
+  - Skipped/Disabled: 0
+- Notes and follow-up:
+  - Added UI-STYLE-01..03, VISUAL-01, E2E-06 (responsive across all screens), UI-TKT-06 / API-ATT-06 / E2E-04 (BR-17 partial success), UI-ATT-03 (client-side oversized rejection for AC-09).
+  - Corrected API-TKT-02 → AC-27, API-MY-01 → AC-03, split API-ATT-03 into UNIT-ATT-01 + API-ATT-03.
+  - Normalized BR-03a→BR-21, BR-Attach-metadata→BR-26, BR-Attach-storage→BR-27, BR-Attach-preview→BR-28, BR-inactive→BR-29.
 
 ### 2026-08-22 - issue-1 requirement baseline docs
 - Scope: Documentation/process baseline updates for Lab 2.

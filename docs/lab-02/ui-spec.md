@@ -85,8 +85,16 @@ right-aligned).
   is currently invalid.
 - On success: replace form with a success panel showing the generated Ticket Number
   (from the API response, not client-guessed) and a "View Ticket" / "Create Another" action.
-- On failure: inline error banner above the form; **all field values remain populated**
-  (BR-16); Submit re-enables for manual retry.
+- On failure — **Case A: ticket creation fails** (BR-16): inline error banner above the
+  form; **all field values remain populated**; Submit re-enables for manual retry. No
+  ticket exists yet, so retrying the full create flow is correct.
+- On failure — **Case B: ticket created but attachment upload fails** (BR-17, partial
+  success): the ticket already exists, so the UI must **not** re-enable or resubmit the
+  full create flow (that would create a duplicate ticket). Instead:
+  - show the generated Ticket Number (ticket is saved, not rolled back);
+  - report the attachment failure separately with an explanatory message;
+  - provide "View Ticket" (to retry the attachment from Ticket Detail) and "Create
+    Another" actions; the Submit button stays disabled/hidden in this state.
 
 ### 5.4 My Tickets
 - Toolbar: search input (ticket number/summary), Category filter, Requested Priority
@@ -163,7 +171,7 @@ right-aligned).
 ```
 artifacts/lab-02/screenshots/
 ├── requester-selection/   (loading, empty, failure, populated)
-├── create-ticket/         (initial, validation-error, submitting, success, api-failure)
+├── create-ticket/         (initial, validation-error, submitting, success, api-failure, partial-success-attachment-failure)
 ├── my-tickets/            (desktop, tablet, mobile, empty, no-results, filtered)
 └── ticket-detail/         (desktop, mobile, attachment-active, attachment-removed, preview-modal)
 ```
