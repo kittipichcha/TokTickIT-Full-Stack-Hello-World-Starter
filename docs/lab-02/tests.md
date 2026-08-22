@@ -28,12 +28,12 @@ E2E/Responsive/Keyboard (planned):
 This test plan is intended to be a closed-contract test suite: every FR, BR, and AC must be traceable to at least one planned automated test, and all explicit edge-case permutations are enumerated in the requirements and planned tests. No implementation or future agent may add a hidden runtime decision when the behavior is already specified here.
 
 ### 4.1 FR coverage summary
-- FR-01: covered by Requester Selection and requester-context tests (`UI-REQ-01`, `UI-REQ-02`, `API-REQ-02`, `API-REQ-03`).
+- FR-01: covered by Requester Selection and requester-context tests (`UI-REQ-01`, `UI-REQ-02`, `API-REQ-02`, `API-REQ-03`, `API-CONTRACT-01`).
 - FR-02: covered by Create Ticket and validation tests (`API-TKT-NOR-01`, `API-TKT-NOR-02`, `API-TKT-01`, `UI-TKT-01..07`, `UI-ERR-01`).
-- FR-03: covered by generated ticket number tests (`API-TKT-01`).
+- FR-03: covered by generated ticket number tests and concurrent allocation tests (`API-TKT-01`, `API-TKT-06`).
 - FR-04 / FR-05 / FR-06 / FR-07 / FR-08: covered by My Tickets tests (`API-MY-01..08`, `UI-MY-01..05`).
 - FR-09: covered by owner isolation and detail tests (`API-TKT-03`, `API-MY-01`, `UI-DETAIL-01`).
-- FR-10 / FR-11 / FR-12 / FR-13: covered by Attachment tests (`API-ATT-01..10`, `API-ATT-12..13`, `UI-ATT-01..05`, `UI-DETAIL-01`).
+- FR-10 / FR-11 / FR-12 / FR-13: covered by Attachment tests (`API-ATT-01..10`, `API-ATT-12..14`, `UI-ATT-01..05`, `UI-DETAIL-01`).
 - FR-14 / FR-15: covered by requester switching and inactive-requester tests (`UI-REQ-02`, `API-REQ-02`, `UI-MY-03`).
 - FR-16: covered by Empty/No-Results tests (`UI-MY-01`, `UI-MY-02`, `API-MY-08`).
 - FR-17: covered by create failure and state-preservation tests (`UI-TKT-05`, `UI-ERR-01`, `E2E-04`).
@@ -51,8 +51,10 @@ The following conditions are explicitly enumerated and must not be reinterpreted
 - Invalid enums for requestedPriority, status, sort, and order
 - Valid but out-of-range pagination requests
 - Multi-file partial success sequences and per-file reporting
-- Empty vs No-Results logic based on active filters/search state
+- Empty vs No-Results logic based on `unfilteredTotalItems`
 - Soft-delete metadata and `removedByRequesterId` enforcement
+- Canonical error shape/codes and malformed header/path/body/query behavior
+- Ticket-number and attachment-limit concurrent-write invariants
 
 ## 5. Test Traceability Matrix (Planned Contract)
 
@@ -63,6 +65,7 @@ The following conditions are explicitly enumerated and must not be reinterpreted
 | UI-REQ-02 | UI | Stale/inactive requester context clears sessionStorage and shows explanatory message | Stored requester is cleared, the app redirects to selector, and the user sees a clear inactive-requester message. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-15 | BR-05, BR-21 | AC-02, AC-15 | Planned |
 | API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Planned |
 | API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | — | Planned |
+| API-CONTRACT-01 | API | Canonical error body and request parsing matrix for every endpoint class | Each requester-scoped endpoint rejects missing, malformed, duplicate, unknown, and inactive requester headers with the canonical `422` body; malformed route IDs/numbers return canonical `404`; JSON endpoints reject malformed JSON, non-object bodies, and wrong content type with canonical `400`; duplicate query keys use the first value; all `500` responses are safe. | `server/tests/lab-02/api-contract.api.test.ts` | FR-01, FR-09 | BR-21, BR-24 | AC-02, AC-03 | Planned |
 | DB-01 | Integration | Fresh database migrates to the Lab 2 schema | Forward migration creates all required tables, fields, constraints, relations, and indexes without resetting the database. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Planned |
 | DB-02 | Integration | Existing Lab 1 Category rows survive the Lab 2 migration | Existing Category `id`, `name`, and `createdAt` values remain unchanged and `isActive` is backfilled to `true`. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Planned |
 | SEED-01 | Integration | Seed is idempotent when run twice | Running the seed twice creates no duplicate Requesters, Categories, or Related Systems and does not replace existing required Categories. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Planned |
@@ -77,6 +80,7 @@ The following conditions are explicitly enumerated and must not be reinterpreted
 | API-TKT-NOR-01 | API | Summary/Description trimming and boundary behavior | Summary and Description are trimmed before validation; trimmed values are validated and persisted. Boundary: 5/4/120/121 chars for summary; 10/9/2000/2001 chars for description (inclusive/exclusive). Whitespace-only input rejected. | `server/tests/lab-02/create-ticket-normalization.api.test.ts` | FR-02 | BR-08, BR-09 | — | Planned |
 | API-TKT-NOR-02 | API | CategoryId/RelatedSystemId validation with malformed, nonexistent, and inactive cases | Malformed (non-integer) → 400; well-formed but nonexistent → 409; existing but inactive → 409. | `server/tests/lab-02/create-ticket-normalization.api.test.ts` | FR-02 | BR-07 | — | Planned |
 | API-TKT-01 | API | Create ticket success: returns generated ticket number matching TKT-{YYYY}-{6-digit} format, verifies uniqueness | A valid create request creates exactly one ticket, returns the official backend-generated ticket number matching the format pattern, and verifies two tickets receive different numbers. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 | Planned |
+| API-TKT-06 | Integration | Ticket-number UTC allocation, concurrent uniqueness, and sequence exhaustion | Frozen UTC boundary timestamps produce the correct year; concurrent creates all receive distinct numbers; an exhausted yearly sequence returns `409 TICKET_SEQUENCE_EXHAUSTED` and creates no ticket. | `server/tests/lab-02/ticket-number-concurrency.integration.test.ts` | FR-03 | BR-01 | AC-01 | Planned |
 | API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation | The server persists ownership from the validated caller header; the test does not introduce an undocumented `requesterId` request field. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | — | Planned |
 | API-TKT-05 | API | Requester-created tickets keep IT Priority and Ticket Owner null | `itPriority` and `ticketOwnerId` remain `null` on requester-created tickets. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-11 | — | Planned |
 | UI-TKT-07 | UI | Requested Priority control is required and defaults to MEDIUM | The field defaults to `MEDIUM` and blocks submission if the value is missing from the form model. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-10 | — | Planned |
@@ -96,12 +100,13 @@ The following conditions are explicitly enumerated and must not be reinterpreted
 | API-MY-05 | API | Pagination returns correct page metadata and slices | Page and pageSize metadata are returned accurately and the correct slice of results is delivered. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-08 | BR-22 | AC-20 | Planned |
 | API-MY-06 | API | Default list values and invalid parameter fallback | Omitted list params use `page=1`, `pageSize=10`, `sort=createdAt`, `order=desc`; invalid values fall back to the safe documented defaults. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05, FR-06, FR-07, FR-08 | BR-22 | AC-17, AC-18, AC-19, AC-20 | Planned |
 | API-MY-07 | API | Invalid filter parameter values and pagination | Malformed categoryId → 400; invalid requestedPriority/status enums → 400; page missing/malformed/non-positive uses page 1; valid out-of-range page → 200 with empty data and accurate metadata. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05, FR-06, FR-08 | BR-22, BR-23 | — | Planned |
-| API-MY-08 | API | Search normalization: trimming, blank-after-trim, and Empty vs No-Results | Search is trimmed; blank-after-trim is inactive. Empty uses no normalized active filters/search; No-Results uses normalized active filters/search, regardless of raw query presence. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05 | BR-23 | — | Planned |
+| API-MY-08 | API | Search normalization and Empty vs No-Results metadata | Search is trimmed; blank-after-trim is inactive. Every response includes `unfilteredTotalItems`; a requester with no ticket history has `0` even with an active filter, while a filtered-zero requester with ticket history has a positive value. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05, FR-16 | BR-22, BR-23 | AC-21, AC-22 | Planned |
 | API-ATT-09 | API | Attachment list ordering is deterministic (uploadedAt asc, id asc) | Attachment listing returns results in deterministic order for stable display ordering and reproducible tests. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | — | — | Planned |
 | API-ATT-10 | API | Removal reason normalization and boundary behavior | Omitted/blank-after-trim reason → null; 200-char reason → accepted; 201-char reason → rejected; non-string → 400 validation error. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-19 | — | Planned |
 | UI-ATT-05 | UI | Multi-file attachment partial success orchestration | The Create Ticket UI uploads A, B, and C sequentially; after B fails it continues to C, keeps A/C successful, reports B separately, and offers B retry from Ticket Detail. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10, FR-17 | BR-17 | — | Planned |
 | API-ATT-12 | API | Soft-remove idempotency: removing twice returns 409 Conflict on second attempt | A removed attachment cannot be removed again; second DELETE returns 409 rather than silently succeeding. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | Planned |
 | API-ATT-13 | API | Removal sets removedByRequesterId to the current requester | When soft-removing an attachment, `removedByRequesterId` is set to the `X-Dev-Requester-Id` of the caller. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | Planned |
+| API-ATT-14 | Integration | Attachment signature/filename and concurrent-limit matrix | Fixed valid/corrupt fixtures verify the extension-to-signature matrix, case-insensitive extension handling, no/double extension rejection, safe stored/download filenames, and PDF-preview failure behavior. Concurrent uploads when four attachments are active yield exactly one success and never expose more than five active rows. | `server/tests/lab-02/attachment-concurrency.integration.test.ts` | FR-10, FR-12, FR-13 | BR-12, BR-13, BR-26, BR-27, BR-28 | AC-07, AC-08, AC-13, AC-24 | Planned |
 | UI-MY-01 | UI | Empty state shown for requester with zero tickets ever | A requester with no tickets ever sees the Empty state and a Create Ticket call to action. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-21 | Planned |
 | UI-MY-02 | UI | No-results state shown for active filters yielding zero rows | Filters/search with zero matches show the No-Results state and Clear Filters action. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-23 | AC-22 | Planned |
 | UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | Switching Requester clears the previous list and reloads the current Requester's tickets. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 | Planned |
@@ -182,14 +187,25 @@ The following conditions are explicitly enumerated and must not be reinterpreted
 - `?search=` (empty string) → treated as no search filter active
 - `?search=     ` (whitespace only) → trimmed, treated as no search filter active
 - `?search=%20laptop%20` (trimmed to "laptop") → substring match on "laptop"
-- Empty result with no filters → Empty state (totalItems=0, no filters active)
-- Empty result with filters → No-Results state (totalItems=0, filters active)
+- Requester with zero tickets ever, with or without normalized filters → Empty state (`totalItems=0`, `unfilteredTotalItems=0`)
+- Requester with ticket history and filters yielding zero rows → No-Results state (`totalItems=0`, `unfilteredTotalItems>0`)
+
+### Canonical parsing and error assertions (API-CONTRACT-01)
+- Every non-2xx response matches `{ error: { code, message } }`; only `400` includes `fields`.
+- `500` is exactly `INTERNAL_ERROR` with the safe generic message and no internal details.
+- Requester headers: missing, `abc`, `1.0`, `+1`, whitespace-padded, duplicate, unknown, and inactive all return `422 REQUESTER_CONTEXT_INVALID`.
+- Path parameters: malformed attachment IDs and ticket numbers return `404 NOT_FOUND` without resource data.
+- JSON endpoints reject malformed JSON, `null`, arrays, scalar JSON, and non-JSON content type with `400 VALIDATION_ERROR`.
+- Duplicate query parameters use the first occurrence; query parsing tests cover zero/negative IDs and duplicate values.
 
 ### Ticket Number format validation (BR-01, API-TKT-01, API-TKT-NOR-01)
 - Must match pattern: `TKT-{YYYY}-{6-digit sequence}` (e.g., `TKT-2026-000001`)
 - Two created tickets must have different ticket numbers
 - Year in format must match the current calendar year
 - Sequence must be exactly 6 digits, zero-padded
+- Year is based on a frozen UTC clock at a year boundary
+- Concurrent creates must each receive a distinct ticket number
+- Sequence exhaustion returns `409 TICKET_SEQUENCE_EXHAUSTED` and persists no ticket
 
 ### Create Ticket reference validation error matrix (BR-07, API-TKT-NOR-02)
 **For `categoryId` and `relatedSystemId`:**
@@ -222,6 +238,13 @@ The UI and tests must distinguish two failure cases — they are **not** the sam
 
 Planned coverage: `UI-TKT-06`, `UI-TKT-08`, `API-ATT-06`, `E2E-04`, `UI-ATT-05`.
 
+### Attachment signature, filename, and concurrency assertions (API-ATT-14)
+- Valid fixtures use the exact extension/signature pairs in `api-spec.md`; corrupt or mismatched fixtures return `415 UNSUPPORTED_MEDIA_TYPE` and persist neither storage nor metadata.
+- Uppercase allowed extensions are accepted; no extension and an unsupported final extension are rejected.
+- Stored names use the generated safe name; original names with path separators/control characters are sanitized before persistence and download disposition.
+- A failed PDF first-page render returns the canonical safe `500` response.
+- With four active attachments, two concurrent valid uploads yield exactly one `201` and one `400 ATTACHMENT_LIMIT_REACHED`; the final active count is five.
+
 ### UI Style / Visual coverage note
 Per the Lab 2 handout, planned testing must cover Unit, API/Integration, UI Component,
 **UI Style**, Responsive, and E2E levels. UI Style rows (`UI-STYLE-01..03`) assert required
@@ -249,6 +272,20 @@ npx playwright test e2e/lab-02
 Playwright note: run the E2E command only after Playwright scaffolding/dependencies are added for this branch.
 
 ## 6. Results Log (Newest First)
+
+### 2026-08-23 - Lab 2 implementation-contract closure
+- Scope: Resolved the Empty/No-Results contradiction; standardized API errors and request parsing; specified attachment signatures, filename handling, ordering, and preview failure; and documented ticket/attachment concurrent-write invariants.
+- Tests added/updated: Added planned rows `API-CONTRACT-01`, `API-TKT-06`, and `API-ATT-14`; expanded My Tickets, ticket-number, parser, attachment-signature, and concurrency assertions.
+- Command(s) run:
+  - `git diff --check -- docs/lab-02/api-spec.md docs/lab-02/specification.md docs/lab-02/ui-spec.md docs/lab-02/tests.md`
+  - stale-contract phrase scan with `grep`
+- Result:
+  - Passed: 2
+  - Failed: 0
+  - Skipped/Disabled: 0
+- Notes and follow-up:
+  - This branch contains documentation and planned-test contract changes only; the listed automated test files remain future implementation work.
+  - The initial stale-phrase command attempted `rg`, which is unavailable in this shell; the equivalent `grep` scan completed successfully.
 
 Template:
 ```md

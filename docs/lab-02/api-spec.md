@@ -26,6 +26,25 @@ validates the header value against active `DevRequester` records on every reques
 ```
 `fields` is present only for `400` validation errors and omitted otherwise.
 
+All errors use this object shape. `error.code` is one of `VALIDATION_ERROR`,
+`NOT_FOUND`, `CONFLICT`, `INACTIVE_REFERENCE`, `ATTACHMENT_LIMIT_REACHED`,
+`ATTACHMENT_REMOVED`, `TICKET_SEQUENCE_EXHAUSTED`, `REQUESTER_CONTEXT_INVALID`,
+`FILE_TOO_LARGE`, `UNSUPPORTED_MEDIA_TYPE`, or `INTERNAL_ERROR`. `500` responses use
+only `INTERNAL_ERROR` and the message `An unexpected error occurred.`; they must not
+expose stack traces, database errors, storage paths, or parser details. `fields` maps
+only submitted field names to a human-readable validation message and is required for
+every `400` response.
+
+**Request parsing:** JSON endpoints require `Content-Type: application/json`; a malformed
+JSON document, a non-object JSON value, or a wrong content type returns `400
+VALIDATION_ERROR`. Unknown JSON properties are ignored unless this contract lists them as
+stored data. All integer values accept only the decimal grammar `0|[1-9][0-9]*` with no
+sign, decimal point, whitespace, exponent, or duplicate query/header value. A malformed
+or duplicate `X-Dev-Requester-Id` returns `422 REQUESTER_CONTEXT_INVALID`. Malformed
+`attachmentId` or `ticketNumber` path parameters return `404 NOT_FOUND`; malformed query
+parameters follow the endpoint-specific rules below. Duplicate query parameters use the
+first occurrence only.
+
 **Standard pagination metadata (list endpoints):**
 ```json
 {
@@ -34,10 +53,14 @@ validates the header value against active `DevRequester` records on every reques
     "page": 1,
     "pageSize": 10,
     "totalItems": 42,
-    "totalPages": 5
+    "totalPages": 5,
+    "unfilteredTotalItems": 57
   }
 }
 ```
+`totalItems` and `totalPages` describe the current normalized search/filter result.
+`unfilteredTotalItems` is the selected requester's ticket count before search/filtering;
+sorting and pagination do not affect it.
 
 ### Normative edge-case matrices
 The following cases are mandatory and part of the implemented contract; the implementation must not choose a different behavior.
@@ -65,12 +88,34 @@ The following cases are mandatory and part of the implemented contract; the impl
 - `page`: missing, malformed, non-integer, or non-positive → use `1`; valid but beyond `totalPages` → `200` with empty `data` array and correct pagination metadata.
 - `pageSize`: invalid or out-of-range → fallback to `10`.
 
+**Ticket numbers and concurrent writes**
+- The `{YYYY}` portion uses the server's UTC calendar year.
+- Creation allocates the next sequence in a database transaction that serializes allocations
+  for the UTC year. Concurrent creates must receive distinct numbers.
+- If all `000001` through `999999` sequences are allocated for a year, creation returns
+  `409 TICKET_SEQUENCE_EXHAUSTED` and creates no ticket.
+
 **Attachment multi-file partial success**
 - Files are processed sequentially.
 - A failed file does not roll back previous successful files.
 - Remaining files continue to upload.
 - Failures are reported per file.
 - Failed files may be retried later from Ticket Detail.
+
+**Attachment filename and content rules**
+| Extension (case-insensitive) | Stored MIME type | Required leading bytes |
+|---|---|---|
+| `.jpg`, `.jpeg` | `image/jpeg` | `FF D8 FF` |
+| `.png` | `image/png` | `89 50 4E 47 0D 0A 1A 0A` |
+| `.webp` | `image/webp` | `RIFF` at bytes 0-3 and `WEBP` at bytes 8-11 |
+| `.pdf` | `application/pdf` | `%PDF-` |
+
+Files with no extension, multiple terminal extensions whose final extension is not listed,
+or a mismatch between the terminal extension and required signature return `415
+UNSUPPORTED_MEDIA_TYPE`. The request-supplied MIME type is never trusted. Original
+filenames are display metadata only; control characters and path separators are replaced
+with `_` before persistence. Downloads use a sanitized ASCII `filename` fallback plus an
+RFC 5987 UTF-8 `filename*` value in `Content-Disposition`.
 
 **Status code usage across this API**
 | Code | Meaning here |
@@ -183,7 +228,7 @@ Create a Ticket owned by the requester in `X-Dev-Requester-Id`.
 **Error cases**
 - `422` — header missing / requester unknown / requester inactive
 - `400` — validation failure (see `fields`)
-- `409` — `categoryId` or `relatedSystemId` refers to an inactive record
+- `409` — `categoryId` or `relatedSystemId` is well-formed but nonexistent or refers to an inactive record
 - `500` — unexpected error; ticket is not partially created (all-or-nothing)
 
 ---
@@ -205,9 +250,12 @@ Retrieve the selected Requester's own Tickets — search, filter, sort, paginate
 | `page` | int ≥1 | `1` | Missing, malformed, non-integer, or non-positive → use 1. Valid but beyond totalPages → 200 with empty data array; totalPages set correctly. |
 | `pageSize` | int 1–50 | `10` | Page size. Invalid/out-of-range → fallback to default (10). |
 
-**Pagination behavior for out-of-range pages:**
+**Pagination behavior for out-of-range pages and UI states:**
 - If `page > totalPages` (e.g., requesting page 999 when totalPages=3), return `200 OK` with `data: []` and accurate metadata showing `totalPages: 3`.
-- Frontend must not confuse empty array with normal Empty state; the `pagination.totalPages` value disambiguates.
+- Frontend must not confuse an out-of-range empty array with a normal empty state: when
+  `totalPages > 0`, it reloads the last valid page.
+- When `totalPages = 0`, display **Empty** only when `unfilteredTotalItems = 0`; otherwise
+  display **No-Results**, including when the current normalized filters are active.
 
 Deterministic ordering rules:
 - Primary sort: requested `sort` field + requested `order`
@@ -237,12 +285,13 @@ GET /api/tickets?search=laptop&categoryId=2&sort=createdAt&order=desc&page=1&pag
       "updatedAt": "2026-08-21T09:14:00.000Z"
     }
   ],
-  "pagination": { "page": 1, "pageSize": 10, "totalItems": 1, "totalPages": 1 }
+  "pagination": { "page": 1, "pageSize": 10, "totalItems": 1, "totalPages": 1, "unfilteredTotalItems": 1 }
 }
 ```
-An empty `data` array with `totalItems: 0` covers **both** the Empty and No-Results UI
-states (BR-23). The frontend distinguishes them by normalized active filters/search, not raw
-query-parameter presence; for example, blank or whitespace-only `search` is inactive.
+An empty `data` array with `totalItems: 0` covers both the Empty and No-Results UI states.
+The frontend uses `unfilteredTotalItems` to distinguish them: zero means Empty; a positive
+value means No-Results. Normalized search/filter values determine the current result set;
+blank or whitespace-only `search` is inactive.
 
 **Additional errors:** `400` for malformed filter values, `409` for unknown or inactive
 Category filters, and the inherited `422`/`500` requester-context and unexpected-error responses.
@@ -251,6 +300,10 @@ Category filters, and the inherited `422`/`500` requester-context and unexpected
 
 ## 6. GET /api/tickets/:ticketNumber
 Retrieve one owned Ticket's full detail, including its active + removed attachment list.
+
+`ticketNumber` must exactly match `TKT-{4-digit year}-{6 digits}`. Any other value is treated
+as not found. The embedded `attachments` array uses the same `uploadedAt asc, id asc`
+ordering as the dedicated attachment-list endpoint.
 
 **Headers:** `X-Dev-Requester-Id: <int>` (required)
 
@@ -303,7 +356,9 @@ VALIDATION_ERROR` and does not create metadata or storage.
 
 **Validation**
 - Ticket must exist and be owned by requester → else `404`
-- Ticket must have <5 active attachments → else `400` (`ATTACHMENT_LIMIT_REACHED`)
+- Ticket must have <5 active attachments → else `400` (`ATTACHMENT_LIMIT_REACHED`). The
+  count check and metadata insert occur in one database transaction/lock scope, so concurrent
+  uploads cannot create more than five active attachments.
 - File type must be JPG/JPEG/PNG/WEBP/PDF, verified by extension **and** content sniffing → else `415`
 - File size must be ≤ `5,000,000` bytes (`4,999,999` and `5,000,000` accepted; `5,000,001` rejected) → else `413`
 
