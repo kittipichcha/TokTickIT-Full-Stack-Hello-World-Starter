@@ -51,8 +51,7 @@ controls (e.g., a table-row "…" menu) require `aria-label` and a tooltip.
 
 ### 5.1 Application Shell
 - Header: TokTickIT wordmark/icon (left), primary nav — **My Tickets**, **Create Ticket**
-  (center/left-aligned), current Development Requester name + Change Requester + Profile
-  menu (right).
+  (center/left-aligned), current Development Requester name + Change Requester (right).
 - Active nav item shown with `--color-secondary` underline/background, not color alone
   (also bold weight) for non-color-reliant indication.
 - Mobile (<768px): nav collapses to a hamburger menu; requester identity remains visible
@@ -79,8 +78,8 @@ right-aligned).
 
 - Attachments panel: drag-and-drop + "Browse files" button, shows selected files with
   name/size/type-icon and a per-file remove (×) before submit; running count "`n`/5"; a
-  file that fails type/size validation shows an inline red message next to that file
-  without blocking the others.
+  file that fails type/size validation shows an inline red message next to that file,
+  remains excluded from submission, and does not block valid files from being submitted.
 - Attachment states are explicit and reusable in both Create Ticket and Ticket Detail:
   - **Uploading:** filename and metadata remain visible, a per-file spinner or progress
     indicator is shown, and that file's upload action is disabled until the request ends;
@@ -94,8 +93,9 @@ right-aligned).
     attachment limits.
   - **Removed:** metadata remains visible with a Removed badge while Preview and Download
     are visible but disabled.
-- Submit button: primary, shows busy state while in flight (BR-15), disabled if any field
-  is currently invalid.
+- Submit button: primary, shows busy state while in flight (BR-15), disabled when a required
+  ticket field is invalid or a submission is in flight. Invalid attachment rows are excluded
+  and do not by themselves disable submission of the ticket and valid files.
 - On success: replace form with a success panel showing the generated Ticket Number
   (from the API response, not client-guessed) and a "View Ticket" / "Create Another" action.
 - After success, Ticket Date is rendered from the backend `createdAt` returned in the
@@ -120,6 +120,9 @@ right-aligned).
 - Mobile (<768px): each ticket renders as a stacked card (Ticket No. + Status badge on top
   row, Summary below, secondary details collapsed) — no horizontal table scrolling.
 - Pagination footer: "Showing X–Y of Z tickets" + Previous/Next + page numbers.
+- When the API returns a valid but out-of-range page with `totalPages > 0`, the UI must not
+  show Empty or No-Results; it navigates to and reloads the last valid page. `totalPages = 0`
+  uses Empty or No-Results according to normalized active filters/search.
 - Loading: skeleton rows/cards.
 - **Empty state** (zero tickets ever): centered illustration/icon + "You haven't created
   any tickets yet" + Create Ticket primary button. No filter controls implied as the fix.
@@ -189,9 +192,10 @@ right-aligned).
 ```
 artifacts/lab-02/screenshots/
 ├── requester-selection/   (loading, empty, failure, populated)
-├── create-ticket/         (initial, validation-error, submitting, success, api-failure, partial-success-attachment-failure)
-├── my-tickets/            (desktop, tablet, mobile, empty, no-results, filtered)
-└── ticket-detail/         (desktop, mobile, attachment-active, attachment-uploading,
-                            attachment-invalid, attachment-removed, attachment-unavailable,
-                            preview-modal)
+├── create-ticket/         (initial, validation-error, submitting, success, api-failure,
+                            invalid-attachment, partial-success-attachment-failure)
+├── my-tickets/            (desktop, tablet, mobile, loading, empty, no-results, filtered, failure)
+└── ticket-detail/         (desktop, mobile, loading, failure-or-not-found, attachment-active,
+                            attachment-uploading, attachment-invalid, attachment-removed,
+                            attachment-unavailable, preview-modal)
 ```

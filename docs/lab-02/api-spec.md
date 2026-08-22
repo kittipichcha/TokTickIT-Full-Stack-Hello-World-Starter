@@ -62,7 +62,7 @@ The following cases are mandatory and part of the implemented contract; the impl
 - `requestedPriority` / `status`: invalid enum → `400`.
 - `sort`: invalid field → fallback to `createdAt`.
 - `order`: invalid direction → fallback to `desc`.
-- `page`: invalid or out-of-range → `200` with empty `data` array and correct pagination metadata.
+- `page`: missing, malformed, non-integer, or non-positive → use `1`; valid but beyond `totalPages` → `200` with empty `data` array and correct pagination metadata.
 - `pageSize`: invalid or out-of-range → fallback to `10`.
 
 **Attachment multi-file partial success**
@@ -85,6 +85,15 @@ The following cases are mandatory and part of the implemented contract; the impl
 | 415 | Uploaded file type not permitted |
 | 422 | Requester in `X-Dev-Requester-Id` is missing, unknown, or inactive |
 | 500 | Unexpected server error (safe generic message only) |
+
+**Inherited error matrix:** All requester-scoped endpoints require a valid active requester
+context and return `422` for a missing, unknown, or inactive `X-Dev-Requester-Id`, and `500`
+with the standard safe generic error for an unexpected failure. Owned-resource endpoints also
+return the same `404` shape for a missing or non-owned resource. Each endpoint below lists only
+additional validation or conflict cases specific to that capability.
+
+Bootstrap and reference-data endpoints do not require requester context, but they return `500`
+with the same safe generic error for unexpected failures.
 
 ---
 
@@ -193,7 +202,7 @@ Retrieve the selected Requester's own Tickets — search, filter, sort, paginate
 | `status` | `NEW` | — | Filter by status. Invalid enum value (e.g., "CLOSED") → 400. (Only `NEW` possible in Lab 2.) |
 | `sort` | `createdAt\|ticketNumber\|summary\|requestedPriority` | `createdAt` | Sort field. Invalid value → fallback to default. |
 | `order` | `asc\|desc` | `desc` | Sort direction. Invalid value → fallback to default. |
-| `page` | int ≥1 | `1` | Page number. Out-of-range (beyond totalPages) or invalid → return 200 with empty data array; totalPages set correctly. |
+| `page` | int ≥1 | `1` | Missing, malformed, non-integer, or non-positive → use 1. Valid but beyond totalPages → 200 with empty data array; totalPages set correctly. |
 | `pageSize` | int 1–50 | `10` | Page size. Invalid/out-of-range → fallback to default (10). |
 
 **Pagination behavior for out-of-range pages:**
@@ -232,8 +241,11 @@ GET /api/tickets?search=laptop&categoryId=2&sort=createdAt&order=desc&page=1&pag
 }
 ```
 An empty `data` array with `totalItems: 0` covers **both** the Empty and No-Results UI
-states (BR-23) — the frontend distinguishes them by whether any `search`/filter query
-params were present on the request that returned zero results.
+states (BR-23). The frontend distinguishes them by normalized active filters/search, not raw
+query-parameter presence; for example, blank or whitespace-only `search` is inactive.
+
+**Additional errors:** `400` for malformed filter values, `409` for unknown or inactive
+Category filters, and the inherited `422`/`500` requester-context and unexpected-error responses.
 
 ---
 
@@ -284,6 +296,8 @@ than the one in `X-Dev-Requester-Id` (BR-24: identical response either way).
 
 ## 7. POST /api/tickets/:ticketNumber/attachments
 Upload a permitted attachment to an owned Ticket. `multipart/form-data`, field name `file`.
+The required `file` part must be present; when it is missing, the endpoint returns `400
+VALIDATION_ERROR` and does not create metadata or storage.
 
 **Headers:** `X-Dev-Requester-Id: <int>` (required)
 
@@ -309,7 +323,7 @@ Upload a permitted attachment to an owned Ticket. `multipart/form-data`, field n
 ```
 
 ## 8. GET /api/tickets/:ticketNumber/attachments
-List attachment metadata (active and removed) for an owned Ticket. Results are ordered deterministically by `uploadedAt asc, id asc` for stable pagination and test reproducibility.
+List attachment metadata (active and removed) for an owned Ticket. Results are ordered deterministically by `uploadedAt asc, id asc` for stable display ordering and reproducible tests.
 
 **Headers:** `X-Dev-Requester-Id: <int>` (required)
 
