@@ -38,6 +38,7 @@ export async function getCategories(): Promise<Category[]> {
   try {
     const prisma = getPrisma();
     const categories = await prisma.category.findMany({
+      where: { isActive: true },
       select: {
         id: true,
         name: true,
