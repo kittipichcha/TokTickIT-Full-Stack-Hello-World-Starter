@@ -8,16 +8,27 @@ vi.mock("./api");
 describe("Categories UI", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.setItem("toktickit.requesterId", "1");
+    vi.mocked(api.fetchDevRequesters).mockResolvedValue([
+      { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
+    ]);
+    vi.mocked(api.getStoredRequesterId).mockImplementation(() => {
+      const stored = sessionStorage.getItem("toktickit.requesterId");
+      return stored ? Number(stored) : null;
+    });
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
   });
 
   afterEach(() => {
     cleanup();
+    sessionStorage.clear();
   });
 
   describe("Check System Button", () => {
-    it("should render the Check System button", () => {
+    it("should render the Check System button", async () => {
       render(<App />);
-      const button = screen.getByRole("button", { name: /check system/i });
+      const button = await screen.findByRole("button", { name: /check system/i });
       expect(button).toBeDefined();
     });
 
@@ -31,7 +42,7 @@ describe("Categories UI", () => {
       vi.mocked(api.fetchCategories).mockResolvedValue([]);
 
       render(<App />);
-      const button = screen.getByRole("button", { name: /check system/i });
+      const button = await screen.findByRole("button", { name: /check system/i });
       fireEvent.click(button);
 
       expect(screen.getByRole("button", { name: /checking/i })).toBeDefined();
@@ -47,7 +58,7 @@ describe("Categories UI", () => {
       vi.mocked(api.fetchCategories).mockResolvedValue(mockCategories);
 
       render(<App />);
-      const button = screen.getByRole("button", { name: /check system/i });
+      const button = await screen.findByRole("button", { name: /check system/i });
       fireEvent.click(button);
 
       await waitFor(() => {
@@ -68,7 +79,7 @@ describe("Categories UI", () => {
       vi.mocked(api.checkHealth).mockRejectedValue(new Error(errorMessage));
 
       render(<App />);
-      const button = screen.getByRole("button", { name: /check system/i });
+      const button = await screen.findByRole("button", { name: /check system/i });
       fireEvent.click(button);
 
       await waitFor(() => {
@@ -82,7 +93,7 @@ describe("Categories UI", () => {
       vi.mocked(api.fetchCategories).mockRejectedValue(new Error(errorMessage));
 
       render(<App />);
-      const button = screen.getByRole("button", { name: /check system/i });
+      const button = await screen.findByRole("button", { name: /check system/i });
       fireEvent.click(button);
 
       await waitFor(() => {
@@ -97,7 +108,7 @@ describe("Categories UI", () => {
       });
 
       render(<App />);
-      const button = screen.getByRole("button", { name: /check system/i });
+      const button = await screen.findByRole("button", { name: /check system/i });
       fireEvent.click(button);
 
       await waitFor(() => {
