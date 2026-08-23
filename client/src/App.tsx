@@ -143,7 +143,20 @@ export default function App() {
         <h1>System Overview</h1>
         <button className="primary-button" onClick={() => void checkSystem()} disabled={loading}>{loading ? "Checking..." : "Check System"}</button>
         {healthStatus && <div className="health-box" role="status"><p>{healthStatus}</p></div>}
-        {categories && <div className="categories-box"><h2>Available Categories</h2><ul>{categories.map((category) => <li key={category.id}>{category.name}</li>)}</ul></div>}
+        {categories && (
+          <div className="categories-box">
+            <h2>Available Categories</h2>
+            {categories.length > 0 ? (
+              <ul>
+                {categories.map((category) => (
+                  <li key={category.id}>{category.name}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>No categories found.</p>
+            )}
+          </div>
+        )}
         {error && <div className="error-box" role="alert"><p>{error}</p></div>}
       </main>
     </div>
