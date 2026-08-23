@@ -22,6 +22,8 @@
 | 15 | Review Lab 2 as a no-context implementation agent, then close the discovered contract gaps | Resolved contradictory Empty/No-Results semantics with unfiltered metadata; defined canonical API errors/parsing, attachment signature and filename rules, deterministic attachment ordering, and concurrent-write behavior; expanded planned test coverage. |
 | 16 | Apply the second PR #16 re-review's remaining contract/test-evidence fixes | Merged the duplicate `BR-23` into `BR-23`/`BR-30`, froze Ticket Number sequence semantics and a canonical `error.code` table, froze the attachment storage-access/persistence-compensation invariant as `BR-31`, added cross-requester attachment ownership and exact `410`/preview test evidence, closed the BR-02/BR-10/BR-25 Test-DD gaps, and split API vs UI responsibility for Empty/No-Results proof. |
 | 17 | Review whether the request/response contract and planned tests still leave implementation decisions open | Froze the validation bounds, UTC Ticket Date display format, Unicode comparison semantics, create-then-upload orchestration, attachment-list response shape, download filename headers, `400` field behavior, DELETE parsing, and planned-versus-passing test evidence status. |
+| 18 | Check codebase against Kanban & Lab 2 spec and remove Lab 1 health check leftovers | Checked Kanban alignment for Issue #12, confirmed Lab 1 `/api/health` and "System Overview" / "Check System" UI were leftovers, removed them, and updated test suites to test the Application Shell and Requester Selection. |
+| 19 | Fix REQUESTER_STORAGE_KEY undefined error, update agent.md working agreement, and create DB/UI integration tests | Added missing `REQUESTER_STORAGE_KEY` export to `client/src/api.ts`, updated `agent.md` with real DB and UI integration rules, created server database integration test and client storage integration test. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
@@ -36,9 +38,16 @@
 10. A closed implementation contract needs explicit parsing, error-body, concurrency, and state-disambiguation rules; otherwise different correct-looking implementations and test suites still diverge.
 11. Reusing the same rule ID for two different rules is as dangerous as an outright contradiction, since every citing test row silently inherits the ambiguity until the ID collision itself is fixed.
 12. A closed contract must define exact response envelopes and transport headers, not only endpoint intent; planned test rows must also distinguish specified coverage from executed evidence.
+13. Combining unit testing with live database integration tests and explicit UI storage persistence tests ensures end-to-end reliability across both backend database queries and frontend state transitions.
 
 ## Issue #12 Implementation Entry
 
 - Prompt summary: Implement Lab 2 Issue #12, Development Requester Selection and Context Switching, from the documented FR/BR/API/UI/test contract in a new worktree.
 - What was done with output: Inspected the refreshed `lab2-staging` baseline, added the `DevRequester` schema/migration/seed data and active-requester API, implemented strict requester-context middleware and client session handling, built the selector and shell switching flow, and added focused API/UI tests.
 - Reflection: The baseline has no requester-owned ticket endpoints yet, so context validation was implemented as a reusable boundary and tested through a protected fixture route. The evidence log distinguishes fully exercised selector behavior from context behavior awaiting downstream ticket resources.
+
+## Issue #12 Integration & Reference Fix Entry
+
+- Prompt summary: Fix `REQUESTER_STORAGE_KEY is not defined` error, update `agent.md` with integration testing rules, and create database & UI integration tests.
+- What was done with output: Defined `REQUESTER_STORAGE_KEY` export in `client/src/api.ts`, added section 3.2 to `agent.md`, created `server/tests/lab-02/requester-selection.integration.test.ts` for live PostgreSQL assertions, created `client/src/lab-02-tests/RequesterSelection.integration.test.tsx` for component storage integration, and updated test logs.
+- Reflection: Having explicit rules in `agent.md` for live DB integration tests and UI storage persistence ensures all agents follow identical validation standards without breaking test seed data or mocking critical client storage.

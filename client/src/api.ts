@@ -3,29 +3,17 @@ export interface Category {
   name: string;
 }
 
-export interface HealthCheckResponse {
-  status: "ok" | "fail";
-  service: string;
-}
-
 export interface DevRequester {
   id: number;
   name: string;
   email: string;
 }
 
-interface DevRequesterResponse {
+export interface DevRequesterResponse {
   data: DevRequester[];
 }
 
 export const REQUESTER_STORAGE_KEY = "toktickit.requesterId";
-
-export async function checkHealth(): Promise<HealthCheckResponse> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/health", apiBaseUrl));
-  if (!response.ok) throw new Error(`Health check failed: ${response.status} ${response.statusText}`);
-  return response.json();
-}
 
 export async function fetchCategories(): Promise<Category[]> {
   const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
