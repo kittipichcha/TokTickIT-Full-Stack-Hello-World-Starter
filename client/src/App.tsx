@@ -104,11 +104,28 @@ export default function App() {
         {selectorState === "ready" && (
           <div className="selector-form">
             <label htmlFor="requester">Development Requester</label>
-            <select id="requester" value={selectedId ?? ""} onChange={(event) => setSelectedId(Number(event.target.value))}>
+            <select
+              id="requester"
+              value={selectedId ?? ""}
+              onChange={(event) => {
+                const value = event.target.value;
+                setSelectedId(value ? Number(value) : null);
+              }}
+            >
               <option value="">Select a requester</option>
-              {requesters.map((requester) => <option key={requester.id} value={requester.id}>{requester.name}</option>)}
+              {requesters.map((requester) => (
+                <option key={requester.id} value={requester.id}>
+                  {requester.name}
+                </option>
+              ))}
             </select>
-            <button className="primary-button" disabled={selectedId === null} onClick={continueToApp}>Continue</button>
+            <button
+              className="primary-button"
+              disabled={selectedId === null || !requesters.some((r) => r.id === selectedId)}
+              onClick={continueToApp}
+            >
+              Continue
+            </button>
           </div>
         )}
       </main>
