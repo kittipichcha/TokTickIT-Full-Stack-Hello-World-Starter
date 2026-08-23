@@ -5,6 +5,7 @@ import {
   clearStoredRequesterId,
   fetchCategories,
   fetchDevRequesters,
+  fetchRequesterContext,
   getStoredRequesterId,
   setStoredRequesterId,
   type Category,
@@ -51,12 +52,24 @@ export default function App() {
     void loadRequesters();
   }, []);
 
-  const continueToApp = () => {
+  const continueToApp = async () => {
     const requester = requesters.find((candidate) => candidate.id === selectedId);
     if (!requester) return;
-    setStoredRequesterId(requester.id);
-    setActiveRequester(requester);
-    setMessage(null);
+
+    try {
+      await fetchRequesterContext(requester.id);
+      setStoredRequesterId(requester.id);
+      setActiveRequester(requester);
+      setMessage(null);
+      setError(null);
+    } catch {
+      clearStoredRequesterId();
+      setActiveRequester(null);
+      setSelectedId(null);
+      setMessage("Selected requester is no longer active. Please select an active requester.");
+      setError(null);
+      setSelectorState("ready");
+    }
   };
 
   const changeRequester = () => {
@@ -122,7 +135,7 @@ export default function App() {
             <button
               className="primary-button"
               disabled={selectedId === null || !requesters.some((r) => r.id === selectedId)}
-              onClick={continueToApp}
+              onClick={() => void continueToApp()}
             >
               Continue
             </button>

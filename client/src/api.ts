@@ -58,3 +58,13 @@ export function clearStoredRequesterId(): void {
 export function requesterHeaders(id: number): HeadersInit {
   return { "X-Dev-Requester-Id": String(id) };
 }
+
+export async function fetchRequesterContext(id: number): Promise<{ requesterId: number }> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const response = await fetch(new URL("/api/requester-context", apiBaseUrl), {
+    headers: requesterHeaders(id),
+  });
+  if (!response.ok) throw new Error(`Failed to validate requester context: ${response.status} ${response.statusText}`);
+  const payload = (await response.json()) as { data: { requesterId: number } };
+  return payload.data;
+}

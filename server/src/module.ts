@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { getHealth, getCategoriesHandler, getDevRequestersHandler } from "./controller.js";
+import { getHealth, getCategoriesHandler, getDevRequestersHandler, getRequesterContextHandler } from "./controller.js";
+import { requireDevRequesterContext } from "./requester-context.js";
 
 export const router = Router();
 
@@ -10,3 +11,5 @@ router.get("/health", getHealth);
 router.get("/categories", getCategoriesHandler);
 
 router.get("/dev-requesters", getDevRequestersHandler);
+
+router.get("/requester-context", requireDevRequesterContext, getRequesterContextHandler);

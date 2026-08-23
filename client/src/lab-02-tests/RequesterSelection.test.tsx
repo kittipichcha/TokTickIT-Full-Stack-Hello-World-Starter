@@ -20,6 +20,7 @@ describe("Requester Selection", () => {
     });
     vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
     vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
   });
 
   afterEach(() => {
@@ -70,9 +71,24 @@ describe("Requester Selection", () => {
     fireEvent.keyDown(continueButton, { key: "Enter" });
     fireEvent.click(continueButton);
     expect(await screen.findByText("Grace Hopper")).toBeTruthy();
+    expect(api.fetchRequesterContext).toHaveBeenCalledWith(2);
     expect(sessionStorage.getItem("toktickit.requesterId")).toBe("2");
     fireEvent.click(screen.getByRole("button", { name: "Change Requester" }));
     expect(await screen.findByLabelText("Development Requester")).toBeTruthy();
+    expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
+  });
+
+  it("shows an explanatory message when selected requester context is rejected", async () => {
+    vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
+    vi.mocked(api.fetchRequesterContext).mockRejectedValue(new Error("Requester inactive"));
+
+    render(<App />);
+    const select = await screen.findByLabelText("Development Requester");
+    fireEvent.change(select, { target: { value: "1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(await screen.findByText(/no longer active/i)).toBeTruthy();
+    expect(screen.getByLabelText("Development Requester")).toBeTruthy();
     expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
   });
 });

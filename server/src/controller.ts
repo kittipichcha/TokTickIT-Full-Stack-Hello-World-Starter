@@ -31,3 +31,7 @@ export async function getDevRequestersHandler(req: Request, res: Response): Prom
     });
   }
 }
+
+export function getRequesterContextHandler(req: Request, res: Response): void {
+  res.status(200).json({ data: { requesterId: res.locals.devRequesterId as number } });
+}
