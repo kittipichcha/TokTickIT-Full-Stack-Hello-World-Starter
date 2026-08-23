@@ -290,20 +290,40 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
+### 2026-08-23 - Real database connection, migrations, seed, and active-category contract
+- Scope: Verified the configured PostgreSQL connection, applied the pending forward migrations, regenerated Prisma Client, verified active-category filtering against the real database, and checked seed write access and idempotency.
+- Tests added/updated: Added `server/tests/categories.service.test.ts` to assert the active-category query includes `where: { isActive: true }`. Existing real-database tests in `server/tests/categories.integration.test.ts` and `server/tests/health.integration.test.ts` were used for connection/API verification.
+- Command(s) run:
+  - `npx prisma generate`
+  - `npx prisma migrate deploy`
+  - `npm run prisma:seed` (run twice)
+  - `npx prisma migrate status`
+  - `npm test -- --run tests/categories.integration.test.ts tests/health.integration.test.ts tests/categories.service.test.ts`
+  - `npm run build` (server)
+  - `git diff --check`
+- Result:
+  - Passed: 5 focused tests; 2 seed runs; migration status up to date; 1 server build
+  - Failed: 0
+  - Skipped/Disabled: 0 in the focused database run
+- Notes and follow-up:
+  - The configured database is PostgreSQL `tocktick` on `localhost:5432`; credentials are intentionally not logged.
+  - The database now has all three migrations in this branch applied.
+  - This verifies only the models currently present in `schema.prisma` (`Category` and `DevRequester`). The remaining Lab 2 models and their migration/seed requirements are still planned work for the dependent issues.
+
 ### 2026-08-23 - Lab 2 Issue #12 requester selection and context foundation
 - Scope: Implemented active Development Requester bootstrap, strict reusable requester-context validation, sessionStorage helpers, requester selection guard, stale-context handling, requester switching, and accessible Zen Green shell states.
-- Tests added/updated: Added `server/tests/lab-02/dev-requesters.api.test.ts`, `server/tests/lab-02/requester-context.api.test.ts`, and `client/src/lab-02-tests/RequesterSelection.test.tsx`; adapted `client/src/App.test.tsx` for mandatory requester context.
+- Tests added/updated: Added `server/tests/lab-02/api-contract.api.test.ts` and `client/src/lab-02-tests/RequesterSelection.test.tsx`; adapted `client/src/App.test.tsx` for mandatory requester context. Dedicated `dev-requesters.api.test.ts` and `requester-context.api.test.ts` files required by Issue #12 are not present in this branch.
 - Command(s) run:
   - `npm test -- --run tests/lab-02/dev-requesters.api.test.ts tests/lab-02/requester-context.api.test.ts`
   - `npm run build` (server)
   - `npm test -- --run src/lab-02-tests/RequesterSelection.test.tsx src/App.test.tsx`
   - `npm run build` (client)
 - Result:
-  - Passed: 21 focused tests; 2 production builds
+  - Passed: 18 focused tests; 2 production builds
   - Failed: 0
   - Skipped/Disabled: 0
 - Notes and follow-up:
-  - API-REQ-01 and selector UI rows have executable passing evidence. API-REQ-02 and UI-REQ-06 are marked Implemented where this baseline proves the reusable boundary but does not yet have downstream ticket endpoints to exercise.
+  - API-REQ-01 and selector UI rows have executable passing evidence through the files listed above. API-REQ-02 and UI-REQ-06 are marked Implemented where this baseline proves the reusable boundary but does not yet have downstream ticket endpoints to exercise.
   - Full-suite validation and `git diff --check` remain required before commit/push.
 
 ### 2026-08-23 - PR #16 re-review contract synchronization (BR-23 duplicate, error codes, attachment lifecycle evidence)
