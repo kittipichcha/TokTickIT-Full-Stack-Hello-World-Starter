@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getHealth, getCategoriesHandler } from "./controller.js";
+import { getHealth, getCategoriesHandler, getDevRequestersHandler } from "./controller.js";
 
 export const router = Router();
 
@@ -8,3 +8,5 @@ router.get("/health", getHealth);
 
 // Categories endpoint
 router.get("/categories", getCategoriesHandler);
+
+router.get("/dev-requesters", getDevRequestersHandler);
