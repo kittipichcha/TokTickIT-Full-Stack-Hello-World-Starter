@@ -36,3 +36,9 @@
 10. A closed implementation contract needs explicit parsing, error-body, concurrency, and state-disambiguation rules; otherwise different correct-looking implementations and test suites still diverge.
 11. Reusing the same rule ID for two different rules is as dangerous as an outright contradiction, since every citing test row silently inherits the ambiguity until the ID collision itself is fixed.
 12. A closed contract must define exact response envelopes and transport headers, not only endpoint intent; planned test rows must also distinguish specified coverage from executed evidence.
+
+## Issue #12 Implementation Entry
+
+- Prompt summary: Implement Lab 2 Issue #12, Development Requester Selection and Context Switching, from the documented FR/BR/API/UI/test contract in a new worktree.
+- What was done with output: Inspected the refreshed `lab2-staging` baseline, added the `DevRequester` schema/migration/seed data and active-requester API, implemented strict requester-context middleware and client session handling, built the selector and shell switching flow, and added focused API/UI tests.
+- Reflection: The baseline has no requester-owned ticket endpoints yet, so context validation was implemented as a reusable boundary and tested through a protected fixture route. The evidence log distinguishes fully exercised selector behavior from context behavior awaiting downstream ticket resources.
