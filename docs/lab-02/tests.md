@@ -290,6 +290,32 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
+### 2026-08-23 - Fix REQUESTER_STORAGE_KEY, agent.md working agreement, and Integration Tests
+- Scope: Fixed `REQUESTER_STORAGE_KEY` reference issue in `client/src/api.ts`. Updated `agent.md` working agreement to mandate real-database backend integration testing and client UI storage integration rules. Added real database integration test `server/tests/lab-02/requester-selection.integration.test.ts` and UI storage integration test `client/src/lab-02-tests/RequesterSelection.integration.test.tsx`.
+- Tests added/updated: Added `server/tests/lab-02/requester-selection.integration.test.ts`, added `client/src/lab-02-tests/RequesterSelection.integration.test.tsx`, updated `client/src/api.ts`, updated `agent.md`.
+- Command(s) run:
+  - `cd server && npm test -- --run`
+  - `cd client && npm test -- --run`
+- Result:
+  - Passed: 25 server tests across 5 test files; 11 client tests across 4 test files
+  - Failed: 0
+  - Skipped/Disabled: 0
+- Notes and follow-up:
+  - All unit and integration tests for both client and server are passing against the live database connection and storage APIs.
+
+### 2026-08-23 - Clean up Lab 1 health check leftover endpoint and UI components
+- Scope: Removed obsolete `/api/health` endpoint, controller, service logic, client `checkHealth` API method, and Lab 1 "System Overview" / "Check System" UI from `App.tsx`. Updated client and server test suites to focus strictly on Lab 2 Application Shell and Requester Selection.
+- Tests added/updated: Updated `client/src/App.test.tsx` for Application Shell navigation and identity display; updated `client/src/lab-02-tests/MyTickets.test.tsx` to remove obsolete health check invocation; deleted obsolete `server/tests/health.test.ts` and `server/tests/health.integration.test.ts`.
+- Command(s) run:
+  - `cd server && npm test`
+  - `cd client && npm test`
+- Result:
+  - Passed: 21 server tests across 4 test files; 9 client tests across 3 test files
+  - Failed: 0
+  - Skipped/Disabled: 0
+- Notes and follow-up:
+  - The codebase now exclusively serves Lab 2 endpoints and UI components, ensuring full compliance with the closed Lab 2 specification.
+
 ### 2026-08-23 - Real database connection, migrations, seed, and active-category contract
 - Scope: Verified the configured PostgreSQL connection, applied the pending forward migrations, regenerated Prisma Client, verified active-category filtering against the real database, and checked seed write access and idempotency.
 - Tests added/updated: Added `server/tests/categories.service.test.ts` to assert the active-category query includes `where: { isActive: true }`. Existing real-database tests in `server/tests/categories.integration.test.ts` and `server/tests/health.integration.test.ts` were used for connection/API verification.

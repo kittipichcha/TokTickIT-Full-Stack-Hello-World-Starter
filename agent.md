@@ -39,6 +39,14 @@ When a task is assigned to a model or agent, it must be split into two explicit 
 
 The Plan phase does not edit production code. The Act phase does not broaden scope beyond the approved plan without another approval gate.
 
+### 3.2 Integration & Real Database Test Rules
+1. **Backend Integration Testing with Real Database**:
+   - Integration tests MUST support testing against the actual database connection (PostgreSQL via Prisma / `DATABASE_URL`).
+   - Use conditional execution (e.g. `process.env.DATABASE_URL ? it : it.skip`) or test lifecycle setup (`beforeAll`, `afterAll` with `disconnectPrisma()`) so tests validate against live database records safely without mutating critical test seed data.
+2. **Frontend UI Integration Testing**:
+   - UI tests must cover end-to-end component rendering and client storage persistence (`sessionStorage` with `REQUESTER_STORAGE_KEY`).
+   - Validate full identity lifecycle: initial requester list fetching, selection persistence, context validation, and switching requesters.
+
 If tests fail:
 - Explain fail cause.
 - Propose fix plan.
