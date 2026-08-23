@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { checkHealth, getCategories } from "./service.js";
+import { checkHealth, getActiveDevRequesters, getCategories } from "./service.js";
 
 export async function getHealth(req: Request, res: Response): Promise<void> {
   const healthStatus = await checkHealth();
@@ -18,5 +18,16 @@ export async function getCategoriesHandler(req: Request, res: Response): Promise
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: errorMessage });
+  }
+}
+
+export async function getDevRequestersHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const requesters = await getActiveDevRequesters();
+    res.status(200).json({ data: requesters });
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
   }
 }
