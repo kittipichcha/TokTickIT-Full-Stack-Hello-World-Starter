@@ -1,10 +1,5 @@
 import { getPrisma } from "./prisma.js";
 
-export interface HealthCheckResponse {
-  status: "ok" | "fail";
-  service: string;
-}
-
 export interface Category {
   id: number;
   name: string;
@@ -14,24 +9,6 @@ export interface DevRequester {
   id: number;
   name: string;
   email: string;
-}
-
-export async function checkHealth(): Promise<HealthCheckResponse> {
-  try {
-    // Check database connection using Prisma
-    const prisma = getPrisma();
-    await prisma.$queryRaw`SELECT 1`;
-    
-    return {
-      status: "ok",
-      service: "TokTickIT API",
-    };
-  } catch (err) {
-    return {
-      status: "fail",
-      service: "TokTickIT API",
-    };
-  }
 }
 
 export async function getCategories(): Promise<Category[]> {

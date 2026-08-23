@@ -24,7 +24,6 @@ describe("UI-MY-03 requester switch behavior", () => {
       .mockResolvedValueOnce(requesterSetA)
       .mockResolvedValueOnce(requesterSetB);
     vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
-    vi.mocked(api.checkHealth).mockResolvedValue({ status: "ok", service: "TokTickIT API" });
     vi.mocked(api.fetchCategories).mockResolvedValue([{ id: 1, name: "Hardware" }]);
 
     vi.mocked(api.getStoredRequesterId).mockImplementation(() => {
@@ -48,14 +47,10 @@ describe("UI-MY-03 requester switch behavior", () => {
 
     await screen.findByText("Ada Lovelace");
 
-    fireEvent.click(screen.getByRole("button", { name: "Check System" }));
-    await screen.findByText("Available Categories");
-    expect(screen.getByText("Hardware")).toBeTruthy();
-
     fireEvent.click(screen.getByRole("button", { name: "Change Requester" }));
 
     await screen.findByLabelText("Development Requester");
-    expect(screen.queryByText("Available Categories")).toBeNull();
+    expect(screen.queryByText("Ada Lovelace")).toBeNull();
     expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
 
     const selectAfterChange = screen.getByLabelText("Development Requester");
