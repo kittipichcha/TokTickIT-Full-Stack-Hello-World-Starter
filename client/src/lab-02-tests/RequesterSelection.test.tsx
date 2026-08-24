@@ -31,7 +31,9 @@ describe("Requester Selection", () => {
   it("shows loading and requires context before the application shell", () => {
     vi.mocked(api.fetchDevRequesters).mockReturnValue(new Promise(() => undefined));
     render(<App />);
-    expect(screen.getByRole("status").textContent).toContain("Loading active requesters");
+    expect(screen.getByRole("status", { name: /loading active requesters/i })).toBeTruthy();
+    const continueButton = screen.getByRole("button", { name: "Continue" });
+    expect((continueButton as HTMLButtonElement).disabled).toBe(true);
     expect(screen.queryByRole("button", { name: "Change Requester" })).toBeNull();
   });
 
