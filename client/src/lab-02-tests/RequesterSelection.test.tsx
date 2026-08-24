@@ -110,6 +110,31 @@ describe("Requester Selection", () => {
     expect(sessionStorage.getItem("toktickit.requesterId")).toBe("1");
   });
 
+  it("activates Change Requester using only the keyboard and returns to the selector", async () => {
+    vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
+    render(<App />);
+
+    // Select a requester and reach the shell
+    const select = await screen.findByLabelText("Development Requester");
+    fireEvent.change(select, { target: { value: "1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    const changeButton = await screen.findByRole("button", { name: "Change Requester" });
+
+    // Keyboard-navigate from the shell's start through the header focusable controls to
+    // reach Change Requester, then activate it with Enter.
+    await userEvent.tab(); // My Tickets link
+    await userEvent.tab(); // Create Ticket link
+    await userEvent.tab(); // Change Requester button
+    expect(document.activeElement).toBe(changeButton);
+
+    await userEvent.keyboard("{Enter}");
+
+    expect(await screen.findByLabelText("Development Requester")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Change Requester" })).toBeNull();
+    expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
+  });
+
   it("shows an explanatory message when selected requester context is rejected", async () => {
     vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
     vi.mocked(api.fetchRequesterContext).mockRejectedValue(new Error("Requester inactive"));

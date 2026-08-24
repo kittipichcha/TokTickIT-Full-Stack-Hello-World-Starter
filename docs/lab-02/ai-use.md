@@ -51,3 +51,15 @@
 - Prompt summary: Fix `REQUESTER_STORAGE_KEY is not defined` error, update `agent.md` with integration testing rules, and create database & UI integration tests.
 - What was done with output: Defined `REQUESTER_STORAGE_KEY` export in `client/src/api.ts`, added section 3.2 to `agent.md`, created `server/tests/lab-02/requester-selection.integration.test.ts` for live PostgreSQL assertions, created `client/src/lab-02-tests/RequesterSelection.integration.test.tsx` for component storage integration, and updated test logs.
 - Reflection: Having explicit rules in `agent.md` for live DB integration tests and UI storage persistence ensures all agents follow identical validation standards without breaking test seed data or mocking critical client storage.
+
+## Issue #12 Re-review Fixes Entry
+
+- Prompt summary: Fix the PR #21 re-review blockers: scope-truthfulness, X-Dev-Requester-Id header assertion, keyboard Change Requester activation, README overstatement, and add an agent.md rule to read requirements/issue before planning.
+- What was done with output: Added `dev-requesters.service.test.ts` proving the active-filter query; captured fetch `init` headers in the integration test and asserted `X-Dev-Requester-Id === "1"`; added a keyboard-only Change Requester activation test; rewrote `tests.md` §5.1 to state that Issue #12 is not yet complete rather than redefining its required rows as downstream-owned; corrected README wording and test counts; added a step-0 rule to `agent.md` requiring the agent to read governing docs and the issue before planning.
+- Reflection: Evidence truthfulness is as important as implementation correctness. Marking matrix rows `Passed` without the executable evidence for every part of their contract creates false confidence. The header-proof gap (mock returned success regardless of whether the header was actually sent) demonstrated how a test can be structurally sound yet miss its core behavioral assertion.
+
+## Issue #12 Scope Amendment Entry
+
+- Prompt summary: Amend Issue #12 to remove cross-feature acceptance rows that depend on downstream models/endpoints/screens, redistribute them to #13/#14/#18, and check #13-#15 for similar over-scoping.
+- What was done with output: Read all five Lab 2 issues; determined only #12 was over-scoped. Amended #12 to remove `API-REQ-02`, `API-REQ-03`, `API-CONTRACT-01`, `UI-MY-03`, `E2E-05` from its required tests and acceptance criteria. Added `API-REQ-03` + `GET /api/related-systems` to #13. Added `API-REQ-02`, `UI-MY-03`, and BR-29 to #14. Added `API-CONTRACT-01`, `E2E-05` to #18. Rewrote `tests.md` §5.1 from "incomplete" language to a truth-table of redistribution. Updated README accordingly.
+- Reflection: Issue scoping should follow feature-implementation order closely. When a test row depends on a model or endpoint that won't exist until a later issue, it belongs in that later issue. The fix was straightforward because #13/#14/#15 were already properly scoped to their own features — only #12 had been written before the full implementation dependency graph was clear.
