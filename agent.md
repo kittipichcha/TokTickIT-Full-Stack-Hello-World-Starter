@@ -2,6 +2,11 @@
 
 This file defines how the coding agent must operate for Lab 2 work in this repository.
 
+## 0. Requirement Primacy and User Prompt Rule
+Repository specifications (`docs/lab-02/specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, and issue criteria) are the **top priority** and take precedence over user prompts.
+- If a user prompt requests something that conflicts with or violates the defined requirements, requirements **surpass** the user prompt.
+- If such a conflict occurs, the agent must explicitly **inform the user of the conflict before planning** or executing any changes.
+
 ## 1. Mandatory Clarification and Approval Gate
 Before taking implementation actions, the agent must:
 1. Restate the task in scoped terms.
@@ -25,21 +30,27 @@ For every task, the agent must map work to requirement IDs:
 
 Every proposed change summary must include those mappings.
 
-## 3. Test-First and Test-Evidence Rules
+## 3. Test-First, Test-Evidence, and Test Specification Alignment Rules
 For any functionally changed behavior:
 1. Add/update related tests first (or in same change set if minimal).
 2. Run relevant tests.
 3. Report results clearly.
 4. Only after the relevant test slice passes may the agent stage and commit the change.
 
-### 3.1 Plan-vs-Act requirement for assigned tasks
+### 3.1 Test and `tests.md` Alignment Requirement
+The agent must continuously verify that executable test code and `docs/lab-02/tests.md` are strictly aligned:
+- Exact planned test paths and test IDs specified in `tests.md` and issue contracts must exist and match. The agent must never replace or redirect required test paths in `tests.md` to different files.
+- Test statuses in `tests.md` (`Planned`, `Implemented`, `Passed`) must accurately reflect executable test evidence.
+- A test status must NOT be marked `Passed` if only a partial matrix is covered or if dependent flows/data do not yet exist.
+
+### 3.2 Plan-vs-Act requirement for assigned tasks
 When a task is assigned to a model or agent, it must be split into two explicit phases within the task function:
 - Plan: identify scope, mapped requirements (FR/BR/AC), relevant tests, risks, and implementation order.
 - Act: implement only the approved plan, run the relevant validation, and keep the change small and traceable.
 
 The Plan phase does not edit production code. The Act phase does not broaden scope beyond the approved plan without another approval gate.
 
-### 3.2 Integration & Real Database Test Rules
+### 3.3 Integration & Real Database Test Rules
 1. **Backend Integration Testing with Real Database**:
    - Integration tests MUST support testing against the actual database connection (PostgreSQL via Prisma / `DATABASE_URL`).
    - Use conditional execution (e.g. `process.env.DATABASE_URL ? it : it.skip`) or test lifecycle setup (`beforeAll`, `afterAll` with `disconnectPrisma()`) so tests validate against live database records safely without mutating critical test seed data.
@@ -53,7 +64,21 @@ If tests fail:
 - Ask for approval before larger corrective changes.
 - Do not push or merge until the failing slice is fixed and validated.
 
-## 4. Test Logging Requirement
+## 4. Debug Mantra Skill
+Four-step discipline for any debug session:
+1. **First is reproducibility.** Can the issue be reproduced reliably? Build a fast, deterministic pass/fail repro before hypothesizing.
+2. **Know the fail path.** Debugger first; then source trace + knob enumeration; then in-code instrumentation with unique prefixes.
+3. **Question your hypothesis.** What disproves it? Run the disproof first before committing to a fix. Generate 3–5 ranked hypotheses.
+4. **Every run is a breadcrumb.** Maintain a running ledger of every experiment. Cross-reference all observations before declaring a fix correct.
+
+## 5. Scrutinize Skill
+Outsider-perspective end-to-end review discipline for plans, code changes, and PRs:
+1. **Intent**: State goal in one sentence. Ask: is there a simpler, smaller, or more elegant way (or existing mechanism) to achieve this goal?
+2. **Trace**: Walk actual code path end-to-end (entry point → call sites → branches → state mutation → return/side effect), including surrounding code.
+3. **Verify**: Does traced path produce claimed behavior? What edge cases/inputs break it? What does it silently change? How is it tested?
+4. **Report**: Output findings ordered by severity (Finding, Why it matters, Evidence, Suggested change), closing with a clear verdict.
+
+## 6. Test Logging Requirement
 After each completed task, insert the newest result entry at the **top** of the Results Log
 (prepend each completed task result under the Results Log heading — newest first):
 - `docs/lab-02/tests.md` (Section: Results Log, newest first)
@@ -66,7 +91,7 @@ Each entry must include:
 - pass/fail/skipped counts
 - follow-up notes
 
-## 5. AI Usage Log Requirement
+## 7. AI Usage Log Requirement
 After each completed task, update:
 - `docs/lab-02/ai-use.md`
 
@@ -78,7 +103,7 @@ Minimum content to update each time:
 - what was done with output
 - reflection note if relevant
 
-## 6. Commit Policy (Traceability)
+## 8. Commit Policy (Traceability)
 Commits must be grouped by function/behavior, not by file.
 
 Examples:
@@ -87,7 +112,7 @@ Examples:
 
 Agent may commit only after explicit user approval.
 
-## 7. Branch and Worktree Policy
+## 9. Branch and Worktree Policy
 Branching strategy must follow main requirement functions:
 - Staging branch: `lab2-staging` is created from the current head of `main` as the integration target.
 - Feature branches branch off and target `lab2-staging`:
@@ -109,7 +134,7 @@ If a bugfix outside current branch scope is needed:
 2. Ask user permission.
 3. Create a dedicated bugfix branch/worktree only after approval.
 
-## 8. PR and Kanban Policy
+## 10. PR and Kanban Policy
 When branch scope meets issue acceptance criteria:
 1. Summarize completion evidence (including tests).
 2. Check whether all required issue criteria are satisfied and the target behavior is fully implemented.
@@ -120,7 +145,7 @@ The agent is allowed to propose or request a PR once the issue criteria are sati
 
 No autonomous PR creation or Kanban state changes without user approval.
 
-## 9. Standard Task Flow
+## 11. Standard Task Flow
 1. Clarify + map FR/BR/AC.
 2. Propose plan and ask approval.
 3. Split the task into Plan and Act phases.
@@ -133,7 +158,7 @@ No autonomous PR creation or Kanban state changes without user approval.
 10. After approval, stage, commit, and push only the validated changes within scope.
 11. Ask separate approval for a PR targeting `lab2-staging` and for board updates once issue acceptance criteria are satisfied.
 
-## 10. Stop Conditions
+## 12. Stop Conditions
 The agent must stop and ask the user when:
 - requirement conflict is detected
 - behavior is underspecified
