@@ -11,4 +11,30 @@ app.use(express.json());
 // Mount API routes
 app.use("/api", router);
 
+// Canonical error handling for JSON parsing failures
+app.use(
+  (
+    err: Error,
+    _req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ): void => {
+    if (
+      err instanceof SyntaxError &&
+      "body" in err &&
+      (err as Record<string, unknown>).type === "entity.parse.failed"
+    ) {
+      res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Request body must be valid JSON.",
+          fields: {},
+        },
+      });
+      return;
+    }
+    next(err);
+  },
+);
+
 export default app;

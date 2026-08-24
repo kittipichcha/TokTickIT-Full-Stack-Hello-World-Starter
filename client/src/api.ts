@@ -56,3 +56,28 @@ export async function fetchRequesterContext(id: number): Promise<{ requesterId: 
   const payload = (await response.json()) as { data: { requesterId: number } };
   return payload.data;
 }
+
+export interface MyTicketsResponse {
+  data: unknown[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    unfilteredTotalItems: number;
+  };
+}
+
+export async function fetchMyTickets(
+  requesterId: number,
+  params?: Record<string, string>,
+): Promise<MyTicketsResponse> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const url = new URL("/api/tickets", apiBaseUrl);
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+  }
+  const response = await fetch(url, { headers: requesterHeaders(requesterId) });
+  if (!response.ok) throw new Error(`Failed to fetch tickets: ${response.status} ${response.statusText}`);
+  return response.json();
+}

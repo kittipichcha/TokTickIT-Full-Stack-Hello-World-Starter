@@ -1,7 +1,7 @@
 import { describe, it, expect, afterAll } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
-import { disconnectPrisma } from "../../src/prisma.js";
+import { disconnectPrisma, getPrisma } from "../../src/prisma.js";
 
 describe("Requester Selection API - Real Database Connection", () => {
   afterAll(async () => {

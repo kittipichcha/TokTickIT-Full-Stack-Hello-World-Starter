@@ -3,6 +3,7 @@ import "./App.css";
 import {
   clearStoredRequesterId,
   fetchDevRequesters,
+  fetchMyTickets,
   fetchRequesterContext,
   getStoredRequesterId,
   setStoredRequesterId,
@@ -45,6 +46,12 @@ export default function App() {
   useEffect(() => {
     void loadRequesters();
   }, []);
+
+  useEffect(() => {
+    if (activeRequester) {
+      void fetchMyTickets(activeRequester.id);
+    }
+  }, [activeRequester]);
 
   const continueToApp = async () => {
     const requester = requesters.find((candidate) => candidate.id === selectedId);
