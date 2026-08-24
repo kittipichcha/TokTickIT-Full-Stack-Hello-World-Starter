@@ -22,3 +22,23 @@
 - No separate review was submitted by the author on another contributor's PR for this documentation task.
 - Approval is pending. This record must be updated with the final approval decision and merge/release-PR evidence before the Lab 2 course submission.
 
+---
+
+## Pull Request — Feature Implementation (PR #21)
+
+- **PR:** [#21 — Feature/lab2 requester selection](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/21)
+- **Source branch:** `feature/lab2-requester-selection`
+- **Target branch:** `lab2-staging`
+- **Scope:** Development Requester Selection and requester-context foundation (Issue #12).
+
+### Review Comments Received and Responses
+
+| Review source | Summary of feedback | Response / current evidence |
+|---|---|---|
+| @oangsa — PR #21 review | Contract coverage, test alignment, and E2E-05 keyboard evidence: expand the request-parsing matrix (malformed JSON, non-object body, wrong Content-Type, duplicate query params), confirm `dev-requesters.api.test.ts` and `requester-context.api.test.ts` exist at the required paths, and add a keyboard-only Continue test. | Expanded `api-contract.api.test.ts` with the parsing contract; added canonical JSON parsing middleware; expanded `dev-requesters.api.test.ts`; added keyboard-only focus test to `RequesterSelection.test.tsx`. |
+| @oangsa — PR #21 re-review | Traceability truthfulness and scope correction: several matrix rows were marked `Passed` before their full contract was executable in Issue #12 scope; a premature `fetchMyTickets()` runtime call hit a non-existent route; Lab 1 `/api/health` and System Overview UI had been removed out of scope. | Demoted `API-REQ-02/03`, `API-CONTRACT-01`, `UI-MY-03`, `E2E-05` to `Planned`; removed `fetchMyTickets`; restored `/api/health`, `checkHealth`, and System Overview UI; fixed keyboard-only test to assert post-Continue shell state; added `agent.md` §3.4. |
+
+### Review Evidence
+- Review comments and discussions: [PR #21 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/21)
+- Review status: Open; peer review feedback addressed. Approval and merge evidence must be recorded before the Lab 2 course submission.
+
