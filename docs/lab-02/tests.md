@@ -75,9 +75,9 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-REQ-01 | API | Selector returns only active development requesters | Returns only active requesters and excludes inactive ones from the selector payload. | `server/tests/lab-02/dev-requesters.api.test.ts` | FR-01, FR-15 | BR-03, BR-04 | AC-15 | Passed |
 | UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | Missing requester context redirects to the selector screen without crashing. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-21, BR-05 | AC-02 | Passed |
 | UI-REQ-02 | UI | Stale/inactive requester context clears sessionStorage and shows explanatory message | Stored requester is cleared, the app redirects to selector, and the user sees a clear inactive-requester message. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-15 | BR-05, BR-21 | AC-02, AC-15 | Passed |
-| API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Passed |
-| API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | — | Passed |
-| API-CONTRACT-01 | API | Canonical error body and request parsing matrix for every endpoint class | Each requester-scoped endpoint rejects missing, malformed, duplicate, unknown, and inactive requester headers with the canonical `422` body; malformed route IDs/numbers return canonical `404`; JSON endpoints reject malformed JSON, non-object bodies, and wrong content type with canonical `400`; duplicate query keys use the first value; all `500` responses are safe. | `server/tests/lab-02/api-contract.api.test.ts` | FR-01, FR-09 | BR-21, BR-24 | AC-02, AC-03 | Passed |
+| API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Planned |
+| API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | — | Planned |
+| API-CONTRACT-01 | API | Canonical error body and request parsing matrix for every endpoint class | Each requester-scoped endpoint rejects missing, malformed, duplicate, unknown, and inactive requester headers with the canonical `422` body; malformed route IDs/numbers return canonical `404`; JSON endpoints reject malformed JSON, non-object bodies, and wrong content type with canonical `400`; duplicate query keys use the first value; all `500` responses are safe. | `server/tests/lab-02/api-contract.api.test.ts` | FR-01, FR-09 | BR-21, BR-24 | AC-02, AC-03 | Planned |
 | DB-01 | Integration | Fresh database migrates to the Lab 2 schema | Forward migration creates all required tables, fields, constraints, relations, and indexes without resetting the database. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Planned |
 | DB-02 | Integration | Existing Lab 1 Category rows survive the Lab 2 migration | Existing Category `id`, `name`, and `createdAt` values remain unchanged and `isActive` is backfilled to `true`. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Planned |
 | SEED-01 | Integration | Seed is idempotent when run twice | Running the seed twice creates no duplicate Requesters, Categories, or Related Systems and does not replace existing required Categories. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Planned |
@@ -126,7 +126,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-ATT-14 | Integration | Attachment signature/filename and concurrent-limit matrix | Fixed valid/corrupt fixtures verify the extension-to-signature matrix, case-insensitive extension handling, no/double extension rejection, safe stored/download filenames, and PDF-preview failure behavior. Concurrent uploads when four attachments are active yield exactly one success and never expose more than five active rows. | `server/tests/lab-02/attachment-concurrency.integration.test.ts` | FR-10, FR-12, FR-13 | BR-12, BR-13, BR-26, BR-27, BR-28 | AC-07, AC-08, AC-13, AC-24 | Planned |
 | UI-MY-01 | UI | Empty state shown when `unfilteredTotalItems = 0`, even with an active normalized search/filter | Given `unfilteredTotalItems = 0`, with or without an active normalized search/filter, the UI renders the Empty state with the Create Ticket CTA. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-30 | AC-21 | Planned |
 | UI-MY-02 | UI | No-results state shown when `unfilteredTotalItems > 0` and filtered results are zero | Given `unfilteredTotalItems > 0` and `totalItems = 0` after normalized search/filtering, the UI renders the No-Results state with the Clear Filters CTA. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-30 | AC-22 | Planned |
-| UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | Switching Requester clears the previous list and reloads the current Requester's tickets. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 | Passed |
+| UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | Switching Requester clears the previous list and reloads the current Requester's tickets. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 | Planned |
 | UI-MY-04 | UI | My Tickets loading and API failure states show skeleton/error with manual Retry | The list shows loading and failure states and requires a manual retry action instead of automatic reload. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04, FR-17 | — | — | Planned |
 | UI-MY-05 | UI | Valid out-of-range page does not display Empty or No-Results | When a valid page exceeds `totalPages`, the UI navigates to and reloads the last valid page; it does not mislabel the response as Empty or No-Results. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-08, FR-16 | BR-22, BR-30 | — | Planned |
 | API-ATT-01 | API | Attachment type/content validation matrix | Allowed extension + invalid content is rejected; disallowed extension + valid content is rejected; allowed extension + matching content is accepted; a multipart request with no `file` part is rejected with `400 VALIDATION_ERROR` and creates no metadata or stored file. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12, BR-13 | AC-07 | Planned |
@@ -147,13 +147,30 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | E2E-02 | E2E | Ownership isolation across two requester contexts | Requester A and B cannot see each other's tickets and ownership enforcement works end-to-end. | `e2e/lab-02/ownership.spec.ts` | FR-09 | BR-24 | AC-03 | Planned |
 | E2E-03 | E2E | Full attachment lifecycle (upload/preview/download/remove) | Users can add, preview, download, and remove attachments on their own tickets without breaking the ticket flow. | `e2e/lab-02/attachment-lifecycle.spec.ts` | FR-10, FR-11, FR-12, FR-13 | BR-12, BR-18, BR-28 | AC-07, AC-12, AC-13, AC-24 | Planned |
 | E2E-04 | E2E | BR-17 partial success: ticket created, attachment upload fails, ticket persists, no duplicate, retry from Ticket Detail | Ticket creation succeeds, attachment failure is reported separately, and the user can retry the attachment without creating a duplicate. | `e2e/lab-02/partial-success-attachment.spec.ts` | FR-02, FR-10, FR-17 | BR-17 | AC-26 | Planned |
-| E2E-05 | E2E | Keyboard-only requester selection and create-ticket flow with visible focus indicators | Keyboard users can operate the testing-only Requester Selection, Continue, Change Requester, and complete Create Ticket with visible focus and no inaccessible inputs. | `client/src/lab-02-tests/RequesterSelection.test.tsx` (keyboard-only Continue test); `e2e/lab-02/keyboard-access.spec.ts` | FR-01, FR-14 | BR-03, BR-14 | AC-25 | Passed |
+| E2E-05 | E2E | Keyboard-only requester selection and create-ticket flow with visible focus indicators | Keyboard users can operate the testing-only Requester Selection, Continue, Change Requester, and complete Create Ticket with visible focus and no inaccessible inputs. | `e2e/lab-02/keyboard-access.spec.ts` | FR-01, FR-14 | BR-03, BR-14 | AC-25 | Planned |
 | UI-ERR-01 | UI | Case A — ticket create API failure preserves form state and requires manual retry | A create failure leaves all form values populated and requires manual retry rather than auto-retrying. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 | Planned |
 | UI-STYLE-01 | UI Style | Editable/read-only/invalid/disabled/busy field and button styles match Zen Green tokens | The visual system consistently distinguishes valid, invalid, disabled, busy, and read-only states. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | — | — | Planned |
 | UI-STYLE-02 | UI Style | Required-field labels show red asterisk; validation messages render directly under fields | Required labels and inline validation match the accessibility and UI contract. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-08, BR-09 | AC-04, AC-06 | Planned |
 | UI-STYLE-03 | UI Style | Priority/Status/Removed badge styling and non-color-reliant labels | Badges are styled with accessible labels and are understandable without relying on color alone. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-20 | AC-12 | Planned |
 | VISUAL-01 | Visual | Zen Green screenshots across all Lab 2 screens at desktop/tablet/mobile viewports | Screenshots across all required screens demonstrate the required responsive visual style. | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | Planned |
 | E2E-06 | E2E | Responsive layout across all Lab 2 screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile — no horizontal scroll, stacked controls on mobile | The app renders without horizontal overflow and stacks content correctly across breakpoints. | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | Planned |
+
+### 5.1 Issue #12 Scope Boundary (Requester Selection only)
+
+Issue #12 owns only the Development Requester Selection and requester-context foundation. The
+remaining rows in Section 5 belong to downstream issues and are intentionally left `Planned`
+in this branch:
+
+- **Create Ticket** (`feature/lab2-ticket-creation`): `API-TKT-NOR-01/02`, `API-TKT-01..07`, `UI-TKT-01..08`, `UI-ERR-01`.
+- **My Tickets** (`feature/lab2-my-tickets`): `API-MY-01..08`, `UI-MY-01..05`.
+- **Attachments / Ticket Detail** (`feature/lab2-attachments`): `API-ATT-*`, `API-REF-01/02`, `UNIT-ATT-01`, `ATT-PERSIST-01`, `UI-ATT-*`, `UI-DETAIL-01`.
+- **Database / Seed / Migration**: `DB-01/02`, `SEED-01/02` (schema for `Ticket`/`Attachment`/`RelatedSystem` does not exist yet).
+- **Static / Visual / E2E**: `STATIC-01`, `UI-STYLE-01..03`, `VISUAL-01`, `E2E-01..06`.
+
+Rows that depend on downstream data models or endpoints (e.g. `API-REQ-02` BR-29 historical
+inactive-requester tickets, `API-REQ-03` reference endpoints, `API-CONTRACT-01` ticket/attachment
+parse matrix, `UI-MY-03` rendered My Tickets state, `E2E-05` create-ticket flow) cannot be marked
+`Passed` until their owning feature exists — see `agent.md` §3.4.
 
 ### Required boundary assertions for `MAX_ATTACHMENT_BYTES = 5,000,000`
 - `4,999,999` bytes → accepted
@@ -290,6 +307,57 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
+### 2026-08-24 - PR #21 re-review: traceability truthfulness and scope correction
+- Scope: Addressed PR #21 re-review findings that several matrix rows were marked `Passed` without their full contract being executable in this issue's scope. Demoted `API-REQ-02`, `API-REQ-03`, `API-CONTRACT-01`, `UI-MY-03`, and `E2E-05` from `Passed` to `Planned` (their remaining behavior belongs to the ticket-creation / my-tickets / attachments downstream issues). Removed the premature `fetchMyTickets()` runtime call that hit a non-existent `GET /api/tickets` endpoint. Restored the unrelated Lab 1 `/api/health` endpoint, client `checkHealth`, and System Overview UI that had been removed outside Issue #12 scope. Repaired the keyboard-only test so it asserts post-Continue shell state rather than the already-present `<option>` text. Added a new `agent.md` §3.4 scope/status rule.
+- Tests added/updated:
+  - `docs/lab-02/tests.md`: demoted 5 rows to `Planned`; added §5.1 Issue #12 scope boundary; repaired Results Log ordering and contradictions.
+  - `client/src/api.ts`: removed `fetchMyTickets`; restored `checkHealth`.
+  - `client/src/App.tsx`: removed `fetchMyTickets` effect; restored System Overview / Check System UI.
+  - `client/src/App.test.tsx`: restored System Overview + Check System tests.
+  - `client/src/lab-02-tests/MyTickets.test.tsx`: reverted `fetchMyTickets` assertions.
+  - `client/src/lab-02-tests/RequesterSelection.test.tsx`: fixed keyboard-only test false positive.
+  - `client/src/lab-02-tests/RequesterSelection.integration.test.tsx`: removed `/api/tickets` mock.
+  - `server/src/{controller,module,service}.ts` + `server/tests/health*.test.ts`: restored `/api/health`.
+- Command(s) run:
+  - `cd server && npm test`
+  - `cd client && npm test`
+- Result:
+  - Passed: 48 server tests across 9 test files; 18 client tests across 4 test files
+  - Failed: 0
+  - Skipped/Disabled: DB-dependent integration tests skip when `DATABASE_URL` is absent
+- Notes and follow-up:
+  - `API-REQ-02`, `API-REQ-03`, `API-CONTRACT-01`, `UI-MY-03`, and `E2E-05` remain `Planned` until their owning downstream features exist; see §5.1.
+
+### 2026-08-24 - PR #21 review feedback: contract coverage, test alignment, E2E-05 evidence
+- Scope: Addressed P1 review feedback from @oangsa on PR #21 — expanded API-CONTRACT-01 matrix with malformed JSON, non-object body, wrong Content-Type, and duplicate query parameter tests; confirmed `dev-requesters.api.test.ts` and `requester-context.api.test.ts` exist at the Issue #12 required paths; added keyboard-only Continue test for E2E-05; added canonical JSON parsing error middleware in `server/src/app.ts`.
+- Tests added/updated:
+  - `server/tests/lab-02/api-contract.api.test.ts`: added request parsing contract describe block (4 new tests)
+  - `server/tests/lab-02/dev-requesters.api.test.ts`: expanded with 5 total tests
+  - `client/src/lab-02-tests/RequesterSelection.test.tsx`: added keyboard-only focus test
+  - `server/src/app.ts`: added canonical JSON parsing error middleware
+- Command(s) run:
+  - `npx vitest run` (server): 45 passed, 0 failed
+  - `npx vitest run` (client): 12 passed, 0 failed
+- Result:
+  - Passed: 57 total tests (45 server + 12 client)
+  - Failed: 0
+  - Skipped/Disabled: DB-dependent integration tests skip when `DATABASE_URL` is absent
+- Notes and follow-up:
+  - The `2026-08-24` truthfulness audit (above) later demoted `API-REQ-02`, `API-REQ-03`, `API-CONTRACT-01`, `UI-MY-03`, and `E2E-05` back to `Planned` because their full contracts still depend on downstream features.
+
+### 2026-08-23 - PR #16 re-review contract closure (docs-only)
+- Scope: Resolved the second PR #16 re-review pass — merged the duplicate `BR-23` into a canonical `BR-23`/`BR-30` pair, froze Ticket Number sequence semantics, added a canonical `error.code` table, froze the attachment storage-access and persistence-compensation invariants (new `BR-31`), and closed the remaining Test-DD gaps.
+- Tests added/updated: Added planned rows `API-TKT-07`, `STATIC-01`, `ATT-PERSIST-01`, `API-ATT-OWN-01`, `API-ATT-15`; tightened `API-TKT-01`, `API-TKT-06`, `API-MY-06`, `API-MY-08`, `API-ATT-01`, `API-ATT-05`, `UI-DETAIL-01`; retargeted `UI-MY-01`, `UI-MY-02`, `UI-MY-05` from `BR-23` to `BR-30`. Updated `specification.md`, `api-spec.md`, `ui-spec.md`, and `agent.md`.
+- Command(s) run:
+  - `git status`
+- Result:
+  - Passed: 0
+  - Failed: 0
+  - Skipped/Disabled: 0
+- Notes and follow-up:
+  - This is a documentation/planned-test contract pass only; the referenced automated test files remain future implementation work.
+  - No executable tests exist yet in this repository for Lab 2, so no test run was performed.
+
 ### 2026-08-23 - Fix REQUESTER_STORAGE_KEY, agent.md working agreement, and Integration Tests
 - Scope: Fixed `REQUESTER_STORAGE_KEY` reference issue in `client/src/api.ts`. Updated `agent.md` working agreement to mandate real-database backend integration testing and client UI storage integration rules. Added real database integration test `server/tests/lab-02/requester-selection.integration.test.ts` and UI storage integration test `client/src/lab-02-tests/RequesterSelection.integration.test.tsx`.
 - Tests added/updated: Added `server/tests/lab-02/requester-selection.integration.test.ts`, added `client/src/lab-02-tests/RequesterSelection.integration.test.tsx`, updated `client/src/api.ts`, updated `agent.md`.
@@ -314,7 +382,7 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
   - Failed: 0
   - Skipped/Disabled: 0
 - Notes and follow-up:
-  - The codebase now exclusively serves Lab 2 endpoints and UI components, ensuring full compliance with the closed Lab 2 specification.
+  - Historical record: this removal was later reverted in the `2026-08-24` truthfulness audit because it was unrelated to Issue #12 and belonged to a separate issue.
 
 ### 2026-08-23 - Real database connection, migrations, seed, and active-category contract
 - Scope: Verified the configured PostgreSQL connection, applied the pending forward migrations, regenerated Prisma Client, verified active-category filtering against the real database, and checked seed write access and idempotency.
@@ -338,7 +406,7 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ### 2026-08-23 - Lab 2 Issue #12 requester selection and context foundation
 - Scope: Implemented active Development Requester bootstrap, strict reusable requester-context validation, sessionStorage helpers, requester selection guard, stale-context handling, requester switching, and accessible Zen Green shell states.
-- Tests added/updated: Added `server/tests/lab-02/api-contract.api.test.ts` and `client/src/lab-02-tests/RequesterSelection.test.tsx`; adapted `client/src/App.test.tsx` for mandatory requester context. Dedicated `dev-requesters.api.test.ts` and `requester-context.api.test.ts` files required by Issue #12 are not present in this branch.
+- Tests added/updated: Added `server/tests/lab-02/api-contract.api.test.ts` and `client/src/lab-02-tests/RequesterSelection.test.tsx`; adapted `client/src/App.test.tsx` for mandatory requester context.
 - Command(s) run:
   - `npm test -- --run tests/lab-02/dev-requesters.api.test.ts tests/lab-02/requester-context.api.test.ts`
   - `npm run build` (server)
@@ -349,39 +417,8 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
   - Failed: 0
   - Skipped/Disabled: 0
 - Notes and follow-up:
-  - API-REQ-01 and selector UI rows have executable passing evidence through the files listed above. Issue #12 required test files (`dev-requesters.api.test.ts` and `requester-context.api.test.ts`) now exist and all tests pass.
+  - At the time of this entry, the dedicated `dev-requesters.api.test.ts` and `requester-context.api.test.ts` files required by Issue #12 were not yet present in this branch. They were added in a later commit.
   - Full-suite validation and `git diff --check` remain required before commit/push.
-
-### 2026-08-24 - PR #21 review feedback: contract coverage, test alignment, E2E-05 evidence
-- Scope: Addressed all P1 review feedback from @oangsa on PR #21 — expanded API-CONTRACT-01 matrix with malformed JSON, non-object body, wrong Content-Type, and duplicate query parameter tests; confirmed `dev-requesters.api.test.ts` exists at the Issue #12 required path; confirmed `requester-context.api.test.ts` exists; added `fetchMyTickets` to the client API layer; updated `UI-MY-03` MyTickets test to verify ticket data lifecycle on requester switch; added keyboard-only Continue test with visible focus assertions for E2E-05; added canonical JSON parsing error middleware in `server/src/app.ts`.
-- Tests added/updated:
-  - `server/tests/lab-02/api-contract.api.test.ts`: added request parsing contract describe block (4 new tests)
-  - `server/tests/lab-02/dev-requesters.api.test.ts`: expanded with 5 total tests
-  - `client/src/lab-02-tests/MyTickets.test.tsx`: updated to verify `fetchMyTickets` calls with correct requester IDs
-  - `client/src/lab-02-tests/RequesterSelection.test.tsx`: added keyboard-only focus test
-  - `client/src/lab-02-tests/RequesterSelection.integration.test.tsx`: added `/api/tickets` mock
-  - `docs/lab-02/tests.md`: updated API-REQ-02, API-REQ-03, API-CONTRACT-01, UI-MY-03, E2E-05 to Passed
-- Command(s) run:
-  - `npx vitest run` (server): 45 passed, 0 failed
-  - `npx vitest run` (client): 12 passed, 0 failed
-- Result:
-  - Passed: 57 total tests (45 server + 12 client)
-  - Failed: 0
-  - Skipped/Disabled: 0 (DB-dependent integration tests skip when DATABASE_URL is absent)
-- Notes and follow-up:
-  - The historical inactive-requester ticket behavior test (API-REQ-02) is partially covered by unit tests (422 rejection) and the integration test (`requester-selection.integration.test.ts`) which verifies real DB filtering.
-  - Health check removal will be addressed in a separate issue.
-- Scope: Resolved the second PR #16 re-review pass — merged the duplicate `BR-23` into a canonical `BR-23`/`BR-30` pair, froze Ticket Number sequence semantics, added a canonical `error.code` table, froze the attachment storage-access and persistence-compensation invariants (new `BR-31`), and closed the remaining Test-DD gaps (BR-02 currentStatus assertion, backend BR-10 coverage, BR-25 static-verification row, cross-requester attachment ownership, exact `410`/preview assertions, active-count-after-soft-removal boundary, missing-multipart-file case, and split API vs UI responsibility for Empty/No-Results evidence).
-- Tests added/updated: Added planned rows `API-TKT-07`, `STATIC-01`, `ATT-PERSIST-01`, `API-ATT-OWN-01`, `API-ATT-15`; tightened `API-TKT-01`, `API-TKT-06`, `API-MY-06`, `API-MY-08`, `API-ATT-01`, `API-ATT-05`, `UI-DETAIL-01`; retargeted `UI-MY-01`, `UI-MY-02`, `UI-MY-05` from `BR-23` to `BR-30`. Updated `specification.md` (BR-01, BR-20/BR-31, BR-23/BR-30, AC-21/AC-22), `api-spec.md` (error-code table, storage-access boundary, 409 code wording), `ui-spec.md` (Unavailable trigger/recovery, Ticket Detail screen-level states), and `agent.md` (branch example).
-- Command(s) run:
-  - `git status`
-- Result:
-  - Passed: 0
-  - Failed: 0
-  - Skipped/Disabled: 0
-- Notes and follow-up:
-  - This is a documentation/planned-test contract pass only; the referenced automated test files remain future implementation work.
-  - No executable tests exist yet in this repository for Lab 2, so no test run was performed.
 
 ### 2026-08-23 - Lab 2 implementation-contract closure
 - Scope: Resolved the Empty/No-Results contradiction; standardized API errors and request parsing; specified attachment signatures, filename handling, ordering, and preview failure; and documented ticket/attachment concurrent-write invariants.

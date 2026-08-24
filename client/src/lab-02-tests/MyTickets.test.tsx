@@ -15,16 +15,6 @@ const requesterSetB = [
   { id: 3, name: "Alan Turing", email: "alan@example.com" },
 ];
 
-const ticketsForAda = {
-  data: [{ ticketNumber: "TKT-2026-000001", summary: "Ada's ticket" }],
-  pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 },
-};
-
-const ticketsForAlan = {
-  data: [{ ticketNumber: "TKT-2026-000002", summary: "Alan's ticket" }],
-  pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 },
-};
-
 describe("UI-MY-03 requester switch behavior", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -35,9 +25,6 @@ describe("UI-MY-03 requester switch behavior", () => {
       .mockResolvedValueOnce(requesterSetB);
     vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
     vi.mocked(api.fetchCategories).mockResolvedValue([{ id: 1, name: "Hardware" }]);
-    vi.mocked(api.fetchMyTickets)
-      .mockResolvedValueOnce(ticketsForAda)
-      .mockResolvedValueOnce(ticketsForAlan);
 
     vi.mocked(api.getStoredRequesterId).mockImplementation(() => {
       const stored = sessionStorage.getItem("toktickit.requesterId");
@@ -54,39 +41,25 @@ describe("UI-MY-03 requester switch behavior", () => {
   it("clears prior requester data and reloads from new requester scope", async () => {
     render(<App />);
 
-    // Select Ada Lovelace (id=1) and continue
     const select = await screen.findByLabelText("Development Requester");
     fireEvent.change(select, { target: { value: "1" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     await screen.findByText("Ada Lovelace");
 
-    // Verify Ada's tickets were fetched with her requester ID
-    await waitFor(() => {
-      expect(vi.mocked(api.fetchMyTickets)).toHaveBeenCalledWith(1);
-    });
-
-    // Switch requester
     fireEvent.click(screen.getByRole("button", { name: "Change Requester" }));
 
-    // Verify old requester context is cleared
     await screen.findByLabelText("Development Requester");
     expect(screen.queryByText("Ada Lovelace")).toBeNull();
     expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
 
-    // Select Alan Turing (id=3) and continue
     const selectAfterChange = screen.getByLabelText("Development Requester");
     fireEvent.change(selectAfterChange, { target: { value: "3" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     await screen.findByText("Alan Turing");
-
-    // Verify Alan's tickets were fetched with his requester ID (new scope)
     await waitFor(() => {
-      expect(vi.mocked(api.fetchMyTickets)).toHaveBeenCalledWith(3);
+      expect(vi.mocked(api.fetchDevRequesters)).toHaveBeenCalledTimes(2);
     });
-
-    // Verify fetchDevRequesters was called twice (initial load + after change)
-    expect(vi.mocked(api.fetchDevRequesters)).toHaveBeenCalledTimes(2);
   });
 });

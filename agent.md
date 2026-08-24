@@ -58,6 +58,20 @@ The Plan phase does not edit production code. The Act phase does not broaden sco
    - UI tests must cover end-to-end component rendering and client storage persistence (`sessionStorage` with `REQUESTER_STORAGE_KEY`).
    - Validate full identity lifecycle: initial requester list fetching, selection persistence, context validation, and switching requesters.
 
+### 3.4 Test Status vs. Issue Scope Rule
+A `tests.md` matrix row may only be marked `Passed` when its **entire** required contract is
+executable within the current issue's scope and is actually asserted by automated tests.
+- If any part of the row depends on data models, endpoints, screens, or flows that belong to a
+  different/downstream issue (and therefore do not exist in this branch), the row MUST stay
+  `Planned` (or `Blocked` if a documented prerequisite is unavailable). Partial coverage is
+  never sufficient for `Passed`.
+- Do NOT add runtime code (e.g. a premature `fetchMyTickets()` hitting a not-yet-existing route)
+  solely to produce test evidence before the owning feature exists. Leave the row `Planned` and
+  defer it to the issue that owns the behavior.
+- When code in the repository does not correspond to any requirement/test in the current issue,
+  mark it as out-of-scope/pending rather than silently changing `tests.md` or forcing a `Passed`
+  status.
+
 If tests fail:
 - Explain fail cause.
 - Propose fix plan.
