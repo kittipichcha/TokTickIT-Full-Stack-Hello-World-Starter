@@ -18,20 +18,22 @@ In summary, Lab 2 requires:
 - Attachment upload/list/preview/download/soft-remove
 - Responsive Zen Green UI and keyboard-accessible flows
 
-## 2. Current Implementation Status (as of 2026-08-22)
+## 2. Current Implementation Status (as of 2026-08-24)
 Implemented in code right now:
 - `GET /api/health`
-- `GET /api/categories`
-- Prisma model: `Category` only
-- Seed data: 4 categories
-- Frontend screen: health check + categories display
+- `GET /api/categories` (active-only)
+- `GET /api/dev-requesters` (active-only, `{ "data": [...] }` envelope)
+- `GET /api/requester-context` (requires `X-Dev-Requester-Id`, returns `422` if missing/unknown/inactive)
+- Prisma models: `Category` (with `isActive`), `DevRequester`
+- Seed data: 4 categories, 4 active + 1 inactive development requesters (idempotent upserts)
+- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester), plus the Lab 1 System Overview / health-check screen
+- Requester context is persisted in `sessionStorage` and sent via the `X-Dev-Requester-Id` header on requester-scoped calls
 
-Not yet implemented for Lab 2:
-- All requester selection features and requester-scoped routing
-- Ticket, related system, dev requester, attachment data models
-- All ticket and attachment endpoints from Lab 2 API contract
-- My Tickets and Ticket Detail UI
-- Lab 2 test suites (unit/api/ui/e2e/responsive/visual)
+Not yet implemented for Lab 2 (downstream issues):
+- Ticket, related system, and attachment data models
+- All ticket and attachment endpoints from the Lab 2 API contract
+- Create Ticket, My Tickets, and Ticket Detail UI
+- Lab 2 test suites for tickets/attachments (unit/api/ui/e2e/responsive/visual)
 
 ## 3. Repository Structure
 
@@ -44,6 +46,10 @@ Not yet implemented for Lab 2:
 |  |  |- App.test.tsx
 |  |  |- App.tsx
 |  |  |- main.tsx
+|  |  |- lab-02-tests/
+|  |  |  |- MyTickets.test.tsx
+|  |  |  |- RequesterSelection.integration.test.tsx
+|  |  |  |- RequesterSelection.test.tsx
 |  |- package.json
 |  |- tsconfig.json
 |  |- vite.config.ts
@@ -68,12 +74,20 @@ Not yet implemented for Lab 2:
 |  |  |- index.ts
 |  |  |- module.ts
 |  |  |- prisma.ts
+|  |  |- requester-context.ts
 |  |  |- service.ts
 |  |- tests/
 |  |  |- categories.integration.test.ts
+|  |  |- categories.service.test.ts
 |  |  |- categories.test.ts
 |  |  |- health.integration.test.ts
 |  |  |- health.test.ts
+|  |  |- lab-02/
+|  |  |  |- api-contract.api.test.ts
+|  |  |  |- dev-requesters.api.test.ts
+|  |  |  |- dev-requesters.service.test.ts
+|  |  |  |- requester-context.api.test.ts
+|  |  |  |- requester-selection.integration.test.ts
 |  |- package.json
 |  |- tsconfig.json
 |  |- vitest.config.ts
@@ -152,8 +166,13 @@ npm test
 ```
 
 Important:
-- Lab 2 test suites in `docs/lab-02/tests.md` are a target plan.
-- Most listed Lab 2 test files do not exist yet in this starter branch.
+- `docs/lab-02/tests.md` is the full Lab 2 test plan. Issue #12 was amended
+  (2026-08-24) to scope down to the requester-selection foundation only. Its required
+  rows (`API-REQ-01`, `UI-REQ-01..07`) are implemented and passing. The five
+  cross-feature rows previously listed in #12 (`API-REQ-02`, `API-REQ-03`,
+  `API-CONTRACT-01`, `UI-MY-03`, `E2E-05`) have been formally reassigned to #13, #14,
+  and #18 where their dependent models/endpoints/screens exist.
+- Server tests: 49 across 10 files; client tests: 19 across 4 files.
 
 ## 8. API Implemented Today
 
@@ -168,7 +187,7 @@ Response example:
 ```
 
 ### `GET /api/categories`
-Response example:
+Returns active categories only. Response example:
 
 ```json
 [
@@ -179,10 +198,31 @@ Response example:
 ]
 ```
 
+### `GET /api/dev-requesters`
+Returns active development requesters only (no requester header required). Response example:
+
+```json
+{
+  "data": [
+    { "id": 1, "name": "Ada Lovelace", "email": "ada@example.com" }
+  ]
+}
+```
+
+### `GET /api/requester-context`
+Requires the `X-Dev-Requester-Id` header. Validates the requester is active. Response example:
+
+```json
+{ "data": { "requesterId": 1 } }
+```
+
+Missing, malformed, unknown, or inactive requester headers return
+`422` with `{ "error": { "code": "REQUESTER_CONTEXT_INVALID", "message": "A valid active requester is required." } }`.
+
 ## 9. Lab 2 Implementation Order (Recommended)
-1. Requirement baseline + docs alignment
-2. Requester identity mechanism (`X-Dev-Requester-Id`) and selector flow
-3. Data model expansion (DevRequester, RelatedSystem, Ticket, Attachment)
+1. ~~Requirement baseline + docs alignment~~ ✅
+2. ~~Requester identity mechanism (`X-Dev-Requester-Id`) and selector flow~~ ✅
+3. ~~`DevRequester` model~~ ✅ / remaining data models (`RelatedSystem`, `Ticket`, `Attachment`)
 4. Ticket creation API + UI + validation
 5. My Tickets API + UI + query behavior
 6. Attachment lifecycle API + UI
