@@ -1,5 +1,20 @@
 import { getPrisma } from "./prisma.js";
 
+export interface HealthStatus {
+  status: "ok" | "fail";
+  service: string;
+}
+
+export async function checkHealth(): Promise<HealthStatus> {
+  try {
+    const prisma = getPrisma();
+    await prisma.$queryRaw`SELECT 1`;
+    return { status: "ok", service: "TokTickIT API" };
+  } catch {
+    return { status: "fail", service: "TokTickIT API" };
+  }
+}
+
 export interface Category {
   id: number;
   name: string;

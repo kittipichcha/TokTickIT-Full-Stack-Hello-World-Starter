@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
-import { getActiveDevRequesters, getCategories } from "./service.js";
+import { checkHealth, getActiveDevRequesters, getCategories } from "./service.js";
+
+export async function healthHandler(req: Request, res: Response): Promise<void> {
+  const result = await checkHealth();
+  res.status(result.status === "ok" ? 200 : 503).json(result);
+}
 
 export async function getCategoriesHandler(req: Request, res: Response): Promise<void> {
   try {
