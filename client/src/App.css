@@ -11,6 +11,7 @@ h1 { font-size: 28px; margin: 8px 0 12px; } h2 { font-size: 19px; }
 .testing-note { margin-bottom: 28px; }
 .selector-form { display: grid; gap: 10px; max-width: 460px; }
 select { min-height: 44px; padding: 8px 12px; border: 1px solid #76847c; background: var(--surface); color: var(--text); }
+.skeleton-select { min-height: 44px; border-radius: 4px; background: var(--pale); border: 1px solid #c8d8ce; }
 .primary-button { padding: 10px 20px; border: 1px solid var(--primary); background: var(--primary); color: white; font-weight: 700; }
 .secondary-button, .header-button { padding: 8px 16px; border: 1px solid var(--secondary); background: transparent; color: var(--secondary); font-weight: 700; }
 button:disabled { opacity: .5; cursor: not-allowed; }

@@ -106,7 +106,13 @@ export default function App() {
         <h1>Choose a Development Requester</h1>
         <p className="testing-note">For Lab 2 testing only, not a login screen.</p>
         {message && <p className="notice" role="status">{message}</p>}
-        {selectorState === "loading" && <p role="status">Loading active requesters...</p>}
+        {selectorState === "loading" && (
+          <div className="selector-form" role="status" aria-label="Loading active requesters">
+            <label htmlFor="requester">Development Requester</label>
+            <div className="skeleton-select" aria-hidden="true" />
+            <button className="primary-button" disabled>Continue</button>
+          </div>
+        )}
         {selectorState === "error" && (
           <div className="error-box" role="alert">
             <p>{error}</p>
