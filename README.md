@@ -85,6 +85,7 @@ Not yet implemented for Lab 2 (downstream issues):
 |  |  |- lab-02/
 |  |  |  |- api-contract.api.test.ts
 |  |  |  |- dev-requesters.api.test.ts
+|  |  |  |- dev-requesters.service.test.ts
 |  |  |  |- requester-context.api.test.ts
 |  |  |  |- requester-selection.integration.test.ts
 |  |- package.json
@@ -165,10 +166,13 @@ npm test
 ```
 
 Important:
-- `docs/lab-02/tests.md` is the full Lab 2 test plan. The Issue #12 (Requester Selection)
-  rows are implemented and passing; ticket/attachment rows remain `Planned` until their
-  owning downstream features exist (see `docs/lab-02/tests.md` §5.1).
-- Server tests: 48 across 9 files; client tests: 18 across 4 files.
+- `docs/lab-02/tests.md` is the full Lab 2 test plan. Issue #12 was amended
+  (2026-08-24) to scope down to the requester-selection foundation only. Its required
+  rows (`API-REQ-01`, `UI-REQ-01..07`) are implemented and passing. The five
+  cross-feature rows previously listed in #12 (`API-REQ-02`, `API-REQ-03`,
+  `API-CONTRACT-01`, `UI-MY-03`, `E2E-05`) have been formally reassigned to #13, #14,
+  and #18 where their dependent models/endpoints/screens exist.
+- Server tests: 49 across 10 files; client tests: 19 across 4 files.
 
 ## 8. API Implemented Today
 

@@ -5,10 +5,13 @@ import { REQUESTER_STORAGE_KEY } from "../api";
 
 // Integration test for Requester Selection UI + sessionStorage + real api.ts exports (unmocked api helper methods)
 describe("Requester Selection Integration Test - UI & Storage Persistence", () => {
+  let capturedRequesterContextHeaders: Headers | null = null;
+
   beforeEach(() => {
     sessionStorage.clear();
+    capturedRequesterContextHeaders = null;
     // Intercept global fetch so UI can test component flow deterministically without external backend running on port 3000
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const urlString = typeof input === "string" ? input : input.toString();
 
       if (urlString.includes("/api/dev-requesters")) {
@@ -24,6 +27,7 @@ describe("Requester Selection Integration Test - UI & Storage Persistence", () =
       }
 
       if (urlString.includes("/api/requester-context")) {
+        capturedRequesterContextHeaders = new Headers(init?.headers);
         return new Response(
           JSON.stringify({ data: { requesterId: 1 } }),
           { status: 200, headers: { "Content-Type": "application/json" } }
@@ -62,6 +66,9 @@ describe("Requester Selection Integration Test - UI & Storage Persistence", () =
 
     // 4. Verify Active Requester is rendered in shell header
     expect(await screen.findByText("Ada Lovelace")).toBeTruthy();
+
+    // 4b. Verify the requester-context request carried the X-Dev-Requester-Id header
+    expect(capturedRequesterContextHeaders?.get("X-Dev-Requester-Id")).toBe("1");
 
     // 5. Verify actual sessionStorage entry matches REQUESTER_STORAGE_KEY
     expect(sessionStorage.getItem(REQUESTER_STORAGE_KEY)).toBe("1");

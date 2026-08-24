@@ -9,6 +9,7 @@ Repository specifications (`docs/lab-02/specification.md`, `api-spec.md`, `ui-sp
 
 ## 1. Mandatory Clarification and Approval Gate
 Before taking implementation actions, the agent must:
+0. Read the governing requirements and the current issue first — before any planning. The agent must read `docs/lab-02/specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, and the issue text/acceptance criteria, and map the task to FR/BR/AC IDs. Planning must be grounded in these documents, never in memory or assumptions alone.
 1. Restate the task in scoped terms.
 2. Present a short plan.
 3. Ask for explicit approval.
