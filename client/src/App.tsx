@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import {
+  checkHealth,
   clearStoredRequesterId,
+  fetchCategories,
   fetchDevRequesters,
-  fetchMyTickets,
   fetchRequesterContext,
   getStoredRequesterId,
   setStoredRequesterId,
+  type Category,
   type DevRequester,
 } from "./api";
 
@@ -18,7 +20,10 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeRequester, setActiveRequester] = useState<DevRequester | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[] | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [healthStatus, setHealthStatus] = useState<string | null>(null);
 
   const loadRequesters = async () => {
     setSelectorState("loading");
@@ -47,12 +52,6 @@ export default function App() {
     void loadRequesters();
   }, []);
 
-  useEffect(() => {
-    if (activeRequester) {
-      void fetchMyTickets(activeRequester.id);
-    }
-  }, [activeRequester]);
-
   const continueToApp = async () => {
     const requester = requesters.find((candidate) => candidate.id === selectedId);
     if (!requester) return;
@@ -77,8 +76,27 @@ export default function App() {
     clearStoredRequesterId();
     setActiveRequester(null);
     setSelectedId(null);
+    setCategories(null);
+    setHealthStatus(null);
     setError(null);
     void loadRequesters();
+  };
+
+  const checkSystem = async () => {
+    setLoading(true);
+    setError(null);
+    setHealthStatus(null);
+    setCategories(null);
+    try {
+      const health = await checkHealth();
+      if (health.status !== "ok") throw new Error("System health check failed");
+      setHealthStatus("Connection successful");
+      setCategories(await fetchCategories());
+    } catch (checkError) {
+      setError(checkError instanceof Error ? checkError.message : "Failed to check system");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!activeRequester) {
@@ -135,8 +153,24 @@ export default function App() {
         <div className="identity">{activeRequester.name}<button className="header-button" onClick={changeRequester}>Change Requester</button></div>
       </header>
       <main className="app-container">
-        <h1>Welcome, {activeRequester.name}</h1>
-        <p>Select an option from the navigation to manage or create tickets.</p>
+        <h1>System Overview</h1>
+        <button className="primary-button" onClick={() => void checkSystem()} disabled={loading}>{loading ? "Checking..." : "Check System"}</button>
+        {healthStatus && <div className="health-box" role="status"><p>{healthStatus}</p></div>}
+        {categories && (
+          <div className="categories-box">
+            <h2>Available Categories</h2>
+            {categories.length > 0 ? (
+              <ul>
+                {categories.map((category) => (
+                  <li key={category.id}>{category.name}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>No categories found.</p>
+            )}
+          </div>
+        )}
+        {error && <div className="error-box" role="alert"><p>{error}</p></div>}
       </main>
     </div>
   );

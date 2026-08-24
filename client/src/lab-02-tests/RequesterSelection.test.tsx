@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import App from "../App";
 import * as api from "../api";
 
@@ -21,10 +22,6 @@ describe("Requester Selection", () => {
     vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
     vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
-    vi.mocked(api.fetchMyTickets).mockResolvedValue({
-      data: [],
-      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
-    });
   });
 
   afterEach(() => {
@@ -65,10 +62,6 @@ describe("Requester Selection", () => {
 
   it("persists the selected requester and supports keyboard selection and switching", async () => {
     vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
-    vi.mocked(api.fetchMyTickets).mockResolvedValue({
-      data: [],
-      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
-    });
     render(<App />);
     const select = await screen.findByLabelText("Development Requester");
     const continueButton = screen.getByRole("button", { name: "Continue" });
@@ -88,29 +81,31 @@ describe("Requester Selection", () => {
 
   it("keyboard-only Continue triggers selection with visible focus on dropdown and button", async () => {
     vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
-    vi.mocked(api.fetchMyTickets).mockResolvedValue({
-      data: [],
-      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
-    });
     render(<App />);
 
     const select = (await screen.findByLabelText("Development Requester")) as HTMLSelectElement;
 
-    // Focus the dropdown and select via keyboard arrow keys
+    // Focus the dropdown and make a selection
     select.focus();
-    expect(document.activeElement?.tagName).toBe("SELECT");
+    expect(document.activeElement).toBe(select);
 
     fireEvent.change(select, { target: { value: "1" } });
+    expect(select.value).toBe("1");
 
-    // Tab to Continue button and press Enter (keyboard-only activation)
+    // Tab to Continue button and activate with Enter (keyboard-only activation)
+    await userEvent.tab();
     const continueBtn = screen.getByRole("button", { name: "Continue" });
-    continueBtn.focus();
     expect(document.activeElement).toBe(continueBtn);
-    fireEvent.keyDown(continueBtn, { key: "Enter", code: "Enter" });
-    fireEvent.keyUp(continueBtn, { key: "Enter", code: "Enter" });
 
-    // Verify the requester was selected via keyboard activation alone
-    expect(await screen.findByText("Ada Lovelace")).toBeTruthy();
+    await userEvent.keyboard("{Enter}");
+
+    // Assert on content that exists only after successful Continue — the application
+    // shell "Change Requester" action — not on the requester name that is already
+    // present as an <option> in the selector.
+    expect(await screen.findByRole("button", { name: /change requester/i })).toBeTruthy();
+    expect(screen.queryByLabelText("Development Requester")).toBeNull();
+    expect(api.fetchRequesterContext).toHaveBeenCalledWith(1);
+    expect(sessionStorage.getItem("toktickit.requesterId")).toBe("1");
   });
 
   it("shows an explanatory message when selected requester context is rejected", async () => {

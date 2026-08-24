@@ -1,8 +1,11 @@
 import { Router } from "express";
-import { getCategoriesHandler, getDevRequestersHandler, getRequesterContextHandler } from "./controller.js";
+import { getHealth, getCategoriesHandler, getDevRequestersHandler, getRequesterContextHandler } from "./controller.js";
 import { requireDevRequesterContext } from "./requester-context.js";
 
 export const router = Router();
+
+// Health check endpoint
+router.get("/health", getHealth);
 
 // Categories endpoint
 router.get("/categories", getCategoriesHandler);

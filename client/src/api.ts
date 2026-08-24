@@ -3,6 +3,11 @@ export interface Category {
   name: string;
 }
 
+export interface HealthCheckResponse {
+  status: "ok" | "fail";
+  service: string;
+}
+
 export interface DevRequester {
   id: number;
   name: string;
@@ -14,6 +19,13 @@ export interface DevRequesterResponse {
 }
 
 export const REQUESTER_STORAGE_KEY = "toktickit.requesterId";
+
+export async function checkHealth(): Promise<HealthCheckResponse> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const response = await fetch(new URL("/api/health", apiBaseUrl));
+  if (!response.ok) throw new Error(`Health check failed: ${response.status} ${response.statusText}`);
+  return response.json();
+}
 
 export async function fetchCategories(): Promise<Category[]> {
   const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -55,29 +67,4 @@ export async function fetchRequesterContext(id: number): Promise<{ requesterId: 
   if (!response.ok) throw new Error(`Failed to validate requester context: ${response.status} ${response.statusText}`);
   const payload = (await response.json()) as { data: { requesterId: number } };
   return payload.data;
-}
-
-export interface MyTicketsResponse {
-  data: unknown[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    totalItems: number;
-    totalPages: number;
-    unfilteredTotalItems: number;
-  };
-}
-
-export async function fetchMyTickets(
-  requesterId: number,
-  params?: Record<string, string>,
-): Promise<MyTicketsResponse> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const url = new URL("/api/tickets", apiBaseUrl);
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
-  }
-  const response = await fetch(url, { headers: requesterHeaders(requesterId) });
-  if (!response.ok) throw new Error(`Failed to fetch tickets: ${response.status} ${response.statusText}`);
-  return response.json();
 }
