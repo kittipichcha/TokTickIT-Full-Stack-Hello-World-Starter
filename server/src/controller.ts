@@ -15,9 +15,10 @@ export async function getCategoriesHandler(req: Request, res: Response): Promise
   try {
     const categories = await getCategories();
     res.status(200).json(categories);
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : "Internal server error";
-    res.status(500).json({ error: errorMessage });
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
   }
 }
 
