@@ -1,77 +1,136 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
-import { checkHealth, fetchCategories, type Category } from "./api";
+import {
+  clearStoredRequesterId,
+  fetchDevRequesters,
+  fetchRequesterContext,
+  getStoredRequesterId,
+  setStoredRequesterId,
+  type DevRequester,
+} from "./api";
+
+type SelectorState = "loading" | "ready" | "empty" | "error";
 
 export default function App() {
-  const [categories, setCategories] = useState<Category[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [requesters, setRequesters] = useState<DevRequester[]>([]);
+  const [selectorState, setSelectorState] = useState<SelectorState>("loading");
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [activeRequester, setActiveRequester] = useState<DevRequester | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [healthStatus, setHealthStatus] = useState<string | null>(null);
 
-  const checkSystem = async () => {
-    setLoading(true);
-    setError(null);
-    setHealthStatus(null);
-    setCategories(null);
-
+  const loadRequesters = async () => {
+    setSelectorState("loading");
+    setMessage(null);
     try {
-      // First check system health
-      const health = await checkHealth();
-      if (health.status === "ok") {
-        setHealthStatus("✓ Connection successful");
-        // Then load categories
-        const categoriesData = await fetchCategories();
-        setCategories(categoriesData);
-      } else {
-        throw new Error(health.service ? `System health check failed: ${health.service}` : "System health check failed");
+      const data = await fetchDevRequesters();
+      setRequesters(data);
+      const storedId = getStoredRequesterId();
+      const storedRequester = data.find((requester) => requester.id === storedId);
+      if (storedId !== null && !storedRequester) {
+        clearStoredRequesterId();
+        setMessage("Your saved requester is no longer active. Please select an active requester.");
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to check system";
-      setError(errorMessage);
-      setHealthStatus(null);
-      setCategories(null);
-    } finally {
-      setLoading(false);
+      if (storedRequester) {
+        setActiveRequester(storedRequester);
+        setSelectedId(storedRequester.id);
+      }
+      setSelectorState(data.length > 0 ? "ready" : "empty");
+    } catch (loadError) {
+      setSelectorState("error");
+      setError(loadError instanceof Error ? loadError.message : "Failed to load requesters.");
     }
   };
 
-  return (
-    <div className="app-container">
-      <h1>TokTickIT Categories</h1>
-      
-      <button onClick={checkSystem} disabled={loading}>
-        {loading ? "Checking..." : "Check System"}
-      </button>
+  useEffect(() => {
+    void loadRequesters();
+  }, []);
 
-      {healthStatus && (
-        <div className="health-box">
-          <p>{healthStatus}</p>
-        </div>
-      )}
+  const continueToApp = async () => {
+    const requester = requesters.find((candidate) => candidate.id === selectedId);
+    if (!requester) return;
 
-      {categories && (
-        <div className="categories-box">
-          <h3>Available Categories</h3>
-          {categories.length > 0 ? (
-            <ul>
-              {categories.map((category) => (
-                <li key={category.id}>
-                  <strong>ID {category.id}:</strong> {category.name}
-                </li>
+    try {
+      await fetchRequesterContext(requester.id);
+      setStoredRequesterId(requester.id);
+      setActiveRequester(requester);
+      setMessage(null);
+      setError(null);
+    } catch {
+      clearStoredRequesterId();
+      setActiveRequester(null);
+      setSelectedId(null);
+      setMessage("Selected requester is no longer active. Please select an active requester.");
+      setError(null);
+      setSelectorState("ready");
+    }
+  };
+
+  const changeRequester = () => {
+    clearStoredRequesterId();
+    setActiveRequester(null);
+    setSelectedId(null);
+    setError(null);
+    void loadRequesters();
+  };
+
+  if (!activeRequester) {
+    return (
+      <main className="app-container selector-screen">
+        <p className="eyebrow">TokTickIT</p>
+        <h1>Choose a Development Requester</h1>
+        <p className="testing-note">For Lab 2 testing only, not a login screen.</p>
+        {message && <p className="notice" role="status">{message}</p>}
+        {selectorState === "loading" && <p role="status">Loading active requesters...</p>}
+        {selectorState === "error" && (
+          <div className="error-box" role="alert">
+            <p>{error}</p>
+            <button className="secondary-button" onClick={() => void loadRequesters()}>Retry</button>
+          </div>
+        )}
+        {selectorState === "empty" && <p className="empty-state">No active development requesters are available.</p>}
+        {selectorState === "ready" && (
+          <div className="selector-form">
+            <label htmlFor="requester">Development Requester</label>
+            <select
+              id="requester"
+              value={selectedId ?? ""}
+              onChange={(event) => {
+                const value = event.target.value;
+                setSelectedId(value ? Number(value) : null);
+              }}
+            >
+              <option value="">Select a requester</option>
+              {requesters.map((requester) => (
+                <option key={requester.id} value={requester.id}>
+                  {requester.name}
+                </option>
               ))}
-            </ul>
-          ) : (
-            <p>No categories found.</p>
-          )}
-        </div>
-      )}
+            </select>
+            <button
+              className="primary-button"
+              disabled={selectedId === null || !requesters.some((r) => r.id === selectedId)}
+              onClick={() => void continueToApp()}
+            >
+              Continue
+            </button>
+          </div>
+        )}
+      </main>
+    );
+  }
 
-      {error && (
-        <div className="error-box">
-          <h2>⚠️ Failed to Load Categories</h2>
-          <p>{error}</p>
-        </div>
-      )}
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <strong>TokTickIT</strong>
+        <nav aria-label="Primary"><a href="#my-tickets">My Tickets</a><a href="#create-ticket">Create Ticket</a></nav>
+        <div className="identity">{activeRequester.name}<button className="header-button" onClick={changeRequester}>Change Requester</button></div>
+      </header>
+      <main className="app-container">
+        <h1>Welcome, {activeRequester.name}</h1>
+        <p>Select an option from the navigation to manage or create tickets.</p>
+      </main>
     </div>
   );
 }

@@ -89,7 +89,7 @@ describe("Categories Endpoint", () => {
 
     expect(response.status).toBe(500);
     expect(response.body).toHaveProperty("error");
-    expect(response.body.error).toContain("Failed");
+    expect(response.body.error).toEqual({ code: "INTERNAL_ERROR", message: "An unexpected error occurred." });
   });
 
   it("should return empty array when no categories exist", async () => {
