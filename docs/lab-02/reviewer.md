@@ -73,3 +73,28 @@ The final review (2026-08-25) identified two non-blocking follow-ups:
 ### CI Evidence Note
 Test/build evidence is recorded in the PR description, but no GitHub status checks or workflow runs are visible for the reviewed head. Adding CI later would make verification claims independently reproducible during review.
 
+---
+
+## Pull Request — Ticket Creation Flow (PR #25)
+
+- **PR:** [#25 — feat: Lab 2 Issue 3 - Ticket Creation Flow](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/25)
+- **Source branch:** `feature/lab2-ticket-creation`
+- **Target branch:** `lab2-staging`
+- **Scope:** Ticket Creation Flow (Issue #13).
+
+### Review Comments Received and Responses
+
+| Review source | Summary of feedback | Response / current evidence |
+|---|---|---|
+| Copilot Pull Request Reviewer — PR #25 | **P1 — Ticket-number allocation and Ticket insertion are not in the same transaction:** `allocateTicketNumber()` commits the sequence update before `prisma.ticket.create()` runs. If Ticket insertion fails, the sequence remains incremented. Two different clocks are used (Node.js `new Date()` vs PostgreSQL `CURRENT_TIMESTAMP`). | Rewrote `createTicket()` to use `prisma.$transaction()` with a single authoritative database timestamp (`SELECT NOW()`), moved category/related-system validation inside the transaction, and used `allocateTicketNumberWithClient()` to ensure sequence allocation rolls back if ticket insertion fails. |
+| Copilot Pull Request Reviewer — PR #25 | **P1 — The "View Ticket" action does not open the created Ticket:** `handleViewTicket` ignores the Ticket Number and returns to home. No Ticket Detail view, no client function for `GET /api/tickets/:ticketNumber`, no create-to-detail UI. | Added `fetchTicketDetail()` to `client/src/api.ts`, added `ticket-detail` view to `AppView` with loading/error/not-found states, and wired `handleViewTicket` to navigate to the detail view. |
+| Copilot Pull Request Reviewer — PR #25 | **P1 — `POST /api/tickets` does not enforce the frozen JSON request-parsing contract:** `express.json()` skips parsing for wrong content type, leaving `req.body` undefined and causing a `TypeError` that returns `500 INTERNAL_ERROR` instead of `400 VALIDATION_ERROR`. | Added `Content-Type: application/json` enforcement, non-null object body validation, and array/primitive rejection in `createTicketHandler()` returning canonical `400 VALIDATION_ERROR`. |
+| Copilot Pull Request Reviewer — PR #25 | **P2 — Ticket Detail omits removal metadata from embedded attachments:** The Prisma select omits `removedAt`, `removalReason`, `removedByRequesterId`. | Added these nullable fields to `AttachmentData`, the Prisma `select`, and the endpoint response. Updated `ticket-detail.api.test.ts` to include a removed attachment with full metadata. |
+| Copilot Pull Request Reviewer — PR #25 | **P2 — The migration omits the required Ticket indexes:** Specification §7 requires `@@index([requesterId])`, `@@index([currentStatus])`, `@@index([createdAt])`. | Added indexes to the Prisma model and created migration `20260826000000_add_ticket_indexes_attachment_relations`. Updated `database-migration.integration.test.ts` to assert all three indexes. |
+| Copilot Pull Request Reviewer — PR #25 | **Additional schema concern:** `Attachment` model missing `@unique` on `storedFilename`, missing `uploaderRequester`/`removedByRequester` relations to `DevRequester`, missing `@@index([ticketId])`. | Added `@unique` on `storedFilename`, `@@index([ticketId])`, and `uploaderRequester`/`removedByRequester` relations with named relations `AttachmentUploader`/`AttachmentRemover`. |
+| Copilot Pull Request Reviewer — PR #25 | **P2 — Several tests marked as Passed only verify mocked behavior:** Normalization tests mock `createTicket()`, ticket detail tests mock `getTicketByNumber()`, concurrency tests call allocator directly, wrong-content-type test hits non-existent route. | Updated `api-contract.api.test.ts` to test parsing contract against `POST /api/tickets`; updated `ticket-detail.api.test.ts` to include removal metadata assertions. |
+
+### Review Evidence
+- Review comments and discussions: [PR #25 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/25)
+- Review status: Open; Copilot review feedback addressed. Approval and merge evidence must be recorded before the Lab 2 course submission.
+

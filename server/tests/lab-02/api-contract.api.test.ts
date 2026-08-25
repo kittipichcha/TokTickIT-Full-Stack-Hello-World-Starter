@@ -115,9 +115,9 @@ describe("API-CONTRACT-01 requester context contract", () => {
   });
 
   describe("request parsing contract", () => {
-    it("rejects malformed JSON body with canonical 400 on JSON endpoints", async () => {
+    it("rejects malformed JSON body with canonical 400 on POST /api/tickets", async () => {
       const response = await request(app)
-        .post("/api/requester-context")
+        .post("/api/tickets")
         .set("X-Dev-Requester-Id", "1")
         .set("Content-Type", "application/json")
         .send('{ malformed');
@@ -127,9 +127,9 @@ describe("API-CONTRACT-01 requester context contract", () => {
       expect(response.body.error).toHaveProperty("fields");
     });
 
-    it("rejects non-object JSON body with canonical 400", async () => {
+    it("rejects non-object JSON body (null) with canonical 400 on POST /api/tickets", async () => {
       const response = await request(app)
-        .post("/api/requester-context")
+        .post("/api/tickets")
         .set("X-Dev-Requester-Id", "1")
         .set("Content-Type", "application/json")
         .send("null");
@@ -139,25 +139,40 @@ describe("API-CONTRACT-01 requester context contract", () => {
       expect(response.body.error).toHaveProperty("fields");
     });
 
-    it("rejects wrong Content-Type with canonical 400 on JSON endpoints", async () => {
-      // When a POST/PUT/PATCH endpoint expects JSON but receives text/plain,
-      // the express.json() middleware skips parsing, leaving req.body undefined.
-      // The endpoint handler should validate and return 400.
-      // This test verifies the middleware chain does not crash on wrong Content-Type.
+    it("rejects array JSON body with canonical 400 on POST /api/tickets", async () => {
       const response = await request(app)
-        .post("/api/requester-context")
+        .post("/api/tickets")
+        .set("X-Dev-Requester-Id", "1")
+        .set("Content-Type", "application/json")
+        .send("[]");
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe("VALIDATION_ERROR");
+      expect(response.body.error).toHaveProperty("fields");
+    });
+
+    it("rejects primitive JSON body (string) with canonical 400 on POST /api/tickets", async () => {
+      const response = await request(app)
+        .post("/api/tickets")
+        .set("X-Dev-Requester-Id", "1")
+        .set("Content-Type", "application/json")
+        .send('"hello"');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe("VALIDATION_ERROR");
+      expect(response.body.error).toHaveProperty("fields");
+    });
+
+    it("rejects wrong Content-Type with canonical 400 on POST /api/tickets", async () => {
+      const response = await request(app)
+        .post("/api/tickets")
         .set("X-Dev-Requester-Id", "1")
         .set("Content-Type", "text/plain")
         .send("not json");
 
-      // Currently returns 404 because no POST handler exists for this route.
-      // When POST endpoints are added, this should return 400 VALIDATION_ERROR.
-      // For now, verify the middleware chain handles it without crashing.
-      expect([400, 404]).toContain(response.status);
-      if (response.status === 400) {
-        expect(response.body.error.code).toBe("VALIDATION_ERROR");
-        expect(response.body.error).toHaveProperty("fields");
-      }
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe("VALIDATION_ERROR");
+      expect(response.body.error).toHaveProperty("fields");
     });
 
     it("uses first value for duplicate query parameters", async () => {

@@ -40,6 +40,57 @@ export interface TicketResponse {
   };
 }
 
+export interface TicketDetailResponse {
+  data: {
+    id: number;
+    ticketNumber: string;
+    requesterId: number;
+    requesterName: string;
+    requesterIsActive: boolean;
+    categoryId: number;
+    categoryName: string;
+    relatedSystemId: number;
+    relatedSystemName: string;
+    summary: string;
+    description: string;
+    requestedPriority: string;
+    itPriority: string | null;
+    ticketOwnerId: number | null;
+    currentStatus: string;
+    createdAt: string;
+    updatedAt: string;
+    attachments: Array<{
+      id: number;
+      originalFilename: string;
+      mimeType: string;
+      fileSizeBytes: number;
+      uploadedAt: string;
+      isRemoved: boolean;
+      removedAt: string | null;
+      removalReason: string | null;
+      removedByRequesterId: number | null;
+    }>;
+  };
+}
+
+export async function fetchTicketDetail(
+  requesterId: number,
+  ticketNumber: string,
+): Promise<TicketDetailResponse["data"]> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const response = await fetch(new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}`, apiBaseUrl), {
+    headers: requesterHeaders(requesterId),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const err = new Error(body?.error?.message || `Failed to fetch ticket: ${response.status}`) as Error & { code?: string };
+    err.code = body?.error?.code;
+    throw err;
+  }
+  const result = (await response.json()) as TicketDetailResponse;
+  return result.data;
+}
+
 export const REQUESTER_STORAGE_KEY = "toktickit.requesterId";
 
 export async function fetchCategories(): Promise<Category[]> {

@@ -29,7 +29,30 @@ describe("API-TKT-03: Ticket detail ownership enforcement", () => {
     currentStatus: "NEW",
     createdAt: new Date("2026-08-21T09:14:00.000Z"),
     updatedAt: new Date("2026-08-21T09:14:00.000Z"),
-    attachments: [],
+    attachments: [
+      {
+        id: 1,
+        originalFilename: "screenshot.png",
+        mimeType: "image/png",
+        fileSizeBytes: 12345,
+        uploadedAt: new Date("2026-08-21T09:15:00.000Z"),
+        isRemoved: false,
+        removedAt: null,
+        removalReason: null,
+        removedByRequesterId: null,
+      },
+      {
+        id: 2,
+        originalFilename: "old-doc.pdf",
+        mimeType: "application/pdf",
+        fileSizeBytes: 54321,
+        uploadedAt: new Date("2026-08-21T09:16:00.000Z"),
+        isRemoved: true,
+        removedAt: new Date("2026-08-21T10:00:00.000Z"),
+        removalReason: "Wrong file uploaded",
+        removedByRequesterId: 1,
+      },
+    ],
   };
 
   it("returns 200 with full ticket detail for owner", async () => {
@@ -45,7 +68,30 @@ describe("API-TKT-03: Ticket detail ownership enforcement", () => {
     expect(res.body.data.requesterName).toBe("Ada Lovelace");
     expect(res.body.data.categoryName).toBe("Hardware");
     expect(res.body.data.relatedSystemName).toBe("Corporate Laptop");
-    expect(res.body.data.attachments).toEqual([]);
+    expect(res.body.data.attachments).toEqual([
+      {
+        id: 1,
+        originalFilename: "screenshot.png",
+        mimeType: "image/png",
+        fileSizeBytes: 12345,
+        uploadedAt: "2026-08-21T09:15:00.000Z",
+        isRemoved: false,
+        removedAt: null,
+        removalReason: null,
+        removedByRequesterId: null,
+      },
+      {
+        id: 2,
+        originalFilename: "old-doc.pdf",
+        mimeType: "application/pdf",
+        fileSizeBytes: 54321,
+        uploadedAt: "2026-08-21T09:16:00.000Z",
+        isRemoved: true,
+        removedAt: "2026-08-21T10:00:00.000Z",
+        removalReason: "Wrong file uploaded",
+        removedByRequesterId: 1,
+      },
+    ]);
   });
 
   it("returns 404 for non-owner access", async () => {

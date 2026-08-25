@@ -4,14 +4,16 @@ import {
   clearStoredRequesterId,
   fetchDevRequesters,
   fetchRequesterContext,
+  fetchTicketDetail,
   getStoredRequesterId,
   setStoredRequesterId,
   type DevRequester,
+  type TicketDetailResponse,
 } from "./api";
 import CreateTicket from "./CreateTicket";
 
 type SelectorState = "loading" | "ready" | "empty" | "error";
-type AppView = "home" | "create-ticket";
+type AppView = "home" | "create-ticket" | "ticket-detail";
 
 export default function App() {
   const [requesters, setRequesters] = useState<DevRequester[]>([]);
@@ -21,6 +23,10 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<AppView>("home");
+  const [detailTicketNumber, setDetailTicketNumber] = useState<string | null>(null);
+  const [ticketDetail, setTicketDetail] = useState<TicketDetailResponse["data"] | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   const loadRequesters = async () => {
     setSelectorState("loading");
@@ -79,9 +85,39 @@ export default function App() {
   };
 
   const handleViewTicket = (ticketNumber: string) => {
-    // For now, just go home — Ticket Detail will be implemented in a later issue
-    setView("home");
+    setDetailTicketNumber(ticketNumber);
+    setView("ticket-detail");
   };
+
+  // Load ticket detail when entering the ticket-detail view
+  useEffect(() => {
+    if (view !== "ticket-detail" || !detailTicketNumber || !activeRequester) return;
+
+    let cancelled = false;
+    setDetailLoading(true);
+    setDetailError(null);
+    setTicketDetail(null);
+
+    fetchTicketDetail(activeRequester.id, detailTicketNumber)
+      .then((data) => {
+        if (!cancelled) {
+          setTicketDetail(data);
+          setDetailLoading(false);
+        }
+      })
+      .catch((err: Error & { code?: string }) => {
+        if (!cancelled) {
+          if (err.code === "NOT_FOUND") {
+            setDetailError("Ticket not found.");
+          } else {
+            setDetailError(err.message || "Failed to load ticket detail.");
+          }
+          setDetailLoading(false);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [view, detailTicketNumber, activeRequester]);
 
   const handleCreateAnother = () => {
     setView("create-ticket");
@@ -173,6 +209,65 @@ export default function App() {
           onViewTicket={handleViewTicket}
           onCreateAnother={handleCreateAnother}
         />
+      )}
+      {view === "ticket-detail" && (
+        <main className="app-container">
+          <h1>Ticket Detail</h1>
+          {detailLoading && (
+            <div role="status" aria-label="Loading ticket detail">
+              <div className="skeleton-select" />
+              <div className="skeleton-select" />
+            </div>
+          )}
+          {detailError && (
+            <div className="error-box" role="alert">
+              <p>{detailError}</p>
+              <button className="secondary-button" onClick={() => setView("home")}>Back to Home</button>
+            </div>
+          )}
+          {ticketDetail && (
+            <div className="ticket-detail">
+              <div className="ticket-info">
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Ticket Number</span>
+                  <span className="ticket-info-value">{ticketDetail.ticketNumber}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Status</span>
+                  <span className="ticket-info-value">{ticketDetail.currentStatus}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Category</span>
+                  <span className="ticket-info-value">{ticketDetail.categoryName}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Related System</span>
+                  <span className="ticket-info-value">{ticketDetail.relatedSystemName}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Summary</span>
+                  <span className="ticket-info-value">{ticketDetail.summary}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Description</span>
+                  <span className="ticket-info-value">{ticketDetail.description}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Requested Priority</span>
+                  <span className="ticket-info-value">{ticketDetail.requestedPriority}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Created</span>
+                  <span className="ticket-info-value">{new Date(ticketDetail.createdAt).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "")} UTC</span>
+                </div>
+              </div>
+              <div className="ticket-detail-actions">
+                <button className="secondary-button" onClick={() => setView("home")}>Back to Home</button>
+                <button className="primary-button" onClick={() => setView("create-ticket")}>Create Another</button>
+              </div>
+            </div>
+          )}
+        </main>
       )}
     </div>
   );
