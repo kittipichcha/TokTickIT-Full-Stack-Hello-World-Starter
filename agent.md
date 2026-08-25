@@ -91,7 +91,7 @@ Perform the following checks in parallel (or rapid sequence) across all governin
 | Check | Source | Target | What to Verify |
 |---|---|---|---|
 | Requirements → Code | `specification.md` FR/BR list | Actual source files | Every implemented FR/BR has corresponding code; no extra behaviors beyond spec |
-| API Spec → Routes | `api-spec.md` endpoints | `server/src/module.ts` routes | Every documented endpoint exists; no undocumented endpoints remain |
+| API Spec → Routes | `api-spec.md` endpoints | `server/src/module.ts` routes | Endpoints claimed as implemented for the current issue scope exist and match the contract; implemented routes are documented. Planned/downstream endpoints that belong to future issues are explicitly not required to exist yet and must not cause a gate failure. |
 | API Spec → README | `api-spec.md` endpoints | `README.md` "API Implemented Today" | README lists only implemented endpoints; no stale/removed endpoints documented |
 | Tests.md → Test Files | `tests.md` test IDs and file paths | Actual test files on disk | Every test file path listed in `tests.md` exists on disk. Test files that are not part of the Lab 2 contract matrix (e.g. legacy Lab 1 tests, supporting utilities) are intentionally excluded from this check and do not need to appear in `tests.md`. |
 | Tests.md → Status | `tests.md` Final column | Actual test run output | Every `Passed` row has passing evidence; no `Planned` row is incorrectly marked `Passed` |
@@ -116,6 +116,9 @@ Produce a concise alignment report summarizing:
 - Any discrepancies found and how they were resolved
 - Final test counts (passed/skipped/failed)
 - Confirmation that all issue ACs are met
+
+### 4.6 Step 6: Governance Isolation Rule
+Changes to `agent.md` that introduce new mandatory workflows, verification gates, or working-agreement rules must be isolated in their own governance PR — they must not be bundled with feature implementation PRs. Minor corrections (typos, section numbering, clarifying existing rules without adding new obligations) may accompany any PR when documented in the PR description.
 
 ## 5. Debug Mantra Skill
 Four-step discipline for any debug session:

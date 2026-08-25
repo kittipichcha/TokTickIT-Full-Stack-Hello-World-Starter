@@ -59,5 +59,17 @@
 
 ### Review Evidence
 - Review comments and discussions: [PR #23 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/23)
-- Review status: Open; peer review feedback addressed. Re-review requested.
+- Review status: Approved (2026-08-25). Merged into `lab2-staging`.
+
+### Non-Blocking Follow-ups from Final Review
+
+The final review (2026-08-25) identified two non-blocking follow-ups:
+
+| # | Follow-up | Status |
+|---|-----------|--------|
+| 1 | Scope the `agent.md` API alignment gate to the currently implemented slice so planned/downstream endpoints are not required to exist yet. | Addressed in `docs/governance-amendment-pr23-followups` — narrowed the "API Spec → Routes" check in `agent.md` §4.2 to verify only current-scope endpoints. |
+| 2 | Keep unrelated issue-governance amendments isolated from feature PRs where practical. | Addressed in `docs/governance-amendment-pr23-followups` — added `agent.md` §4.6 Governance Isolation Rule requiring new mandatory workflows to be introduced in their own governance PR. |
+
+### CI Evidence Note
+Test/build evidence is recorded in the PR description, but no GitHub status checks or workflow runs are visible for the reviewed head. Adding CI later would make verification claims independently reproducible during review.
 
