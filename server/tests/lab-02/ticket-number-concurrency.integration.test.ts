@@ -1,0 +1,169 @@
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import request from "supertest";
+import { app } from "../../src/app.js";
+import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import {
+  allocateTicketNumber,
+  TicketSequenceExhaustedError,
+} from "../../src/ticket-number.js";
+
+const itIfDb = process.env.DATABASE_URL ? it : it.skip;
+
+// Dedicated years that will never collide with real ticket creation, so we can
+// exercise the allocation primitive without perturbing the current-year sequence.
+const TEST_YEARS = [2090, 2091, 2092, 2093, 2094];
+
+const SUMMARY_MARKER = "TKT-CONCURRENCY-TEST-MARKER";
+
+let currentYearSnapshot: { year: number; lastSeq: number } | null = null;
+
+async function currentYear(): Promise<number> {
+  return new Date().getUTCFullYear();
+}
+
+describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion", () => {
+  beforeAll(async () => {
+    if (!process.env.DATABASE_URL) return;
+    const prisma = getPrisma();
+    // Snapshot the current-year sequence so the suite leaves no side effects.
+    currentYearSnapshot = await prisma.ticketSequence.findUnique({
+      where: { year: await currentYear() },
+    });
+  });
+
+  afterAll(async () => {
+    if (!process.env.DATABASE_URL) return;
+    const prisma = getPrisma();
+    // Remove tickets created by this suite.
+    await prisma.ticket.deleteMany({ where: { summary: { contains: SUMMARY_MARKER } } });
+    // Remove the test-year sequence rows.
+    await prisma.ticketSequence.deleteMany({ where: { year: { in: TEST_YEARS } } });
+    // Restore the current-year sequence to its original state.
+    const year = await currentYear();
+    await prisma.ticketSequence.deleteMany({ where: { year } });
+    if (currentYearSnapshot) {
+      await prisma.ticketSequence.create({ data: currentYearSnapshot });
+    }
+    await disconnectPrisma();
+  });
+
+  itIfDb("allocates 000001 then 000002 within the same year (increment of exactly 1)", async () => {
+    const first = await allocateTicketNumber(2090);
+    const second = await allocateTicketNumber(2090);
+
+    expect(first).toBe("TKT-2090-000001");
+    expect(second).toBe("TKT-2090-000002");
+  });
+
+  itIfDb("resets the sequence to 000001 in a new year", async () => {
+    const yearA = await allocateTicketNumber(2091);
+    const yearB = await allocateTicketNumber(2092);
+
+    expect(yearA).toBe("TKT-2091-000001");
+    expect(yearB).toBe("TKT-2092-000001");
+  });
+
+  itIfDb("concurrent allocations for the same year receive distinct numbers", async () => {
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () => allocateTicketNumber(2093)),
+    );
+
+    const unique = new Set(results);
+    expect(unique.size).toBe(20);
+
+    for (const number of results) {
+      expect(number).toMatch(/^TKT-2093-\d{6}$/);
+    }
+  });
+
+  itIfDb("throws TicketSequenceExhaustedError when the year sequence is exhausted", async () => {
+    const prisma = getPrisma();
+    await prisma.ticketSequence.upsert({
+      where: { year: 2094 },
+      update: { lastSeq: 999999 },
+      create: { year: 2094, lastSeq: 999999 },
+    });
+
+    await expect(allocateTicketNumber(2094)).rejects.toBeInstanceOf(
+      TicketSequenceExhaustedError,
+    );
+  });
+
+  itIfDb("createTicket produces distinct, format-valid numbers and currentStatus NEW", async () => {
+    const prisma = getPrisma();
+    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const category = await prisma.category.findFirst({ where: { isActive: true } });
+    const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
+    expect(requester && category && system).toBeTruthy();
+
+    const body = {
+      categoryId: category!.id,
+      relatedSystemId: system!.id,
+      summary: `${SUMMARY_MARKER} first`,
+      description: "A description long enough for the create ticket contract.",
+      requestedPriority: "MEDIUM",
+    };
+
+    const res1 = await request(app)
+      .post("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requester!.id))
+      .send(body);
+
+    const res2 = await request(app)
+      .post("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requester!.id))
+      .send({ ...body, summary: `${SUMMARY_MARKER} second` });
+
+    expect(res1.status).toBe(201);
+    expect(res2.status).toBe(201);
+
+    const num1 = res1.body.data.ticketNumber as string;
+    const num2 = res2.body.data.ticketNumber as string;
+
+    expect(num1).toMatch(/^TKT-\d{4}-\d{6}$/);
+    expect(num2).toMatch(/^TKT-\d{4}-\d{6}$/);
+    expect(num1).not.toBe(num2);
+
+    // The {YYYY} portion derives from the UTC-authoritative clock (current UTC year).
+    const currentUtcYear = await currentYear();
+    expect(num1.startsWith(`TKT-${currentUtcYear}-`)).toBe(true);
+    expect(num2.startsWith(`TKT-${currentUtcYear}-`)).toBe(true);
+
+    expect(res1.body.data.currentStatus).toBe("NEW");
+  });
+
+  itIfDb("returns 409 TICKET_SEQUENCE_EXHAUSTED and creates no ticket when exhausted", async () => {
+    const prisma = getPrisma();
+    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const category = await prisma.category.findFirst({ where: { isActive: true } });
+    const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
+    expect(requester && category && system).toBeTruthy();
+
+    const currentUtcYear = await currentYear();
+    const before = await prisma.ticket.count();
+
+    // Exhaust the real current-year sequence; the afterAll snapshot-restore undoes this.
+    await prisma.ticketSequence.upsert({
+      where: { year: currentUtcYear },
+      update: { lastSeq: 999999 },
+      create: { year: currentUtcYear, lastSeq: 999999 },
+    });
+
+    const res = await request(app)
+      .post("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requester!.id))
+      .send({
+        categoryId: category!.id,
+        relatedSystemId: system!.id,
+        summary: `${SUMMARY_MARKER} exhausted`,
+        description: "A description long enough for the create ticket contract.",
+        requestedPriority: "MEDIUM",
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe("TICKET_SEQUENCE_EXHAUSTED");
+
+    const after = await prisma.ticket.count();
+    expect(after).toBe(before);
+  });
+});
