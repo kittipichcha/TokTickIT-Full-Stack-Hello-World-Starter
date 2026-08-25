@@ -49,6 +49,30 @@ export function getRequesterContextHandler(req: Request, res: Response): void {
 
 export async function createTicketHandler(req: Request, res: Response): Promise<void> {
   try {
+    // Enforce frozen JSON request-parsing contract (API §0)
+    const contentType = req.headers["content-type"] ?? "";
+    if (!contentType.toLowerCase().startsWith("application/json")) {
+      res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Request body must be a JSON object.",
+          fields: {},
+        },
+      });
+      return;
+    }
+
+    if (req.body === undefined || req.body === null || typeof req.body !== "object" || Array.isArray(req.body)) {
+      res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Request body must be a JSON object.",
+          fields: {},
+        },
+      });
+      return;
+    }
+
     const requesterId = res.locals.devRequesterId as number;
     const ticket = await createTicket(requesterId, req.body);
     res.status(201).json({ data: ticket });

@@ -24,13 +24,16 @@ Implemented in code right now:
 - `GET /api/dev-requesters` (active-only, `{ "data": [...] }` envelope)
 - `GET /api/related-systems` (active-only, `{ "data": [...] }` envelope)
 - `GET /api/requester-context` (requires `X-Dev-Requester-Id`, returns `422` if missing/unknown/inactive)
-- `POST /api/tickets` (create ticket with trim-then-validate normalization, category/related-system reference checks)
-- `GET /api/tickets/:ticketNumber` (detail with requester ownership enforcement)
+- `POST /api/tickets` (create ticket with trim-then-validate normalization, category/related-system reference checks, JSON request-parsing contract enforcement, single-transaction atomic allocation)
+- `GET /api/tickets/:ticketNumber` (detail with requester ownership enforcement, attachment removal metadata)
 - Prisma models: `Category`, `DevRequester`, `RelatedSystem` (all with `isActive`), `Ticket`, `Attachment`, `TicketSequence`
-- Atomic ticket number generation: `TKT-<UTC-year>-<6-digit seq>` via `INSERT ... ON CONFLICT ... RETURNING`
+- Atomic ticket number generation: `TKT-<UTC-year>-<6-digit seq>` via `INSERT ... ON CONFLICT ... RETURNING` inside a single database transaction with one authoritative timestamp
+- Ticket indexes: `@@index([requesterId])`, `@@index([currentStatus])`, `@@index([createdAt])`
+- Attachment model: `storedFilename @unique`, `@@index([ticketId])`, `uploaderRequester` and `removedByRequester` relations to `DevRequester`
 - Seed data: 4 categories, 4 active + 1 inactive development requesters, related systems (idempotent upserts)
-- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester) + Create Ticket form
+- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester) + Create Ticket form + Ticket Detail view
 - Requester context is persisted in `sessionStorage` and sent via the `X-Dev-Requester-Id` header on requester-scoped calls
+- View Ticket action navigates to Ticket Detail with loading/error/not-found states
 
 Not yet implemented for Lab 2 (downstream issues):
 - `GET /api/tickets` (My Tickets list with search, filter, sort, pagination)

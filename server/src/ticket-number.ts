@@ -1,4 +1,4 @@
-import { getPrisma } from "./prisma.js";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 const MAX_SEQUENCE = 999999;
 
@@ -21,9 +21,20 @@ export class TicketSequenceExhaustedError extends Error {
  * Throws TicketSequenceExhaustedError if all 999,999 values are allocated.
  */
 export async function allocateTicketNumber(utcYear: number): Promise<string> {
+  const { getPrisma } = await import("./prisma.js");
   const prisma = getPrisma();
+  return allocateTicketNumberWithClient(prisma, utcYear);
+}
 
-  const rows = await prisma.$queryRaw<Array<{ lastSeq: number }>>`
+/**
+ * Same as allocateTicketNumber but accepts an explicit Prisma client (or transaction
+ * client) so the allocation can participate in a wider database transaction.
+ */
+export async function allocateTicketNumberWithClient(
+  client: PrismaClient | Prisma.TransactionClient,
+  utcYear: number,
+): Promise<string> {
+  const rows = await client.$queryRaw<Array<{ lastSeq: number }>>`
     INSERT INTO "TicketSequence" ("year", "lastSeq")
     VALUES (${utcYear}, 1)
     ON CONFLICT ("year") DO UPDATE

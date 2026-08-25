@@ -73,3 +73,17 @@
 - Prompt summary: Amend Issue #13 to remove attachment orchestration scope and move it to Issue #15, update tests.md redistribution table, and align all downstream issue ownership.
 - What was done with output: Removed attachment panel, multi-file upload, and Case B partial-success UI from #13 scope. Reassigned `UI-TKT-06` and `UI-TKT-08` from #13 to #15. Updated #13 and #15 on GitHub with corrected scope, requirement mappings, and acceptance criteria. Added `tests.md` §5.2 documenting the redistribution. Added results log entry.
 - Reflection: The attachment orchestration (pre-submit file validation panel, sequential upload after ticket creation, Case B partial-success UI) depends on the full attachment endpoints (`POST /api/tickets/:ticketNumber/attachments`, etc.) and storage infrastructure that only exist in #15. Keeping them in #13 would have created an untestable dependency. The split is clean: #13 owns the ticket creation form with text fields and reference selects; #15 owns everything file-related including the attachment panel on the create form.
+
+## Issue #13 PR #25 Review Fixes Entry
+
+- Prompt summary: Fix all P1 and P2 findings from the PR #25 review against the Issue 3 (Ticket Creation Flow) implementation.
+- What was done with output:
+  1. **P1 — Atomic ticket-number + ticket creation**: Rewrote `createTicket()` to use `prisma.$transaction()` with a single authoritative database timestamp (`SELECT NOW()`), moved category/related-system validation inside the transaction, and used `allocateTicketNumberWithClient()` to ensure sequence allocation rolls back if ticket insertion fails.
+  2. **P1 — View Ticket opens Ticket Detail**: Added `fetchTicketDetail()` to `client/src/api.ts`, added `ticket-detail` view to `AppView`, implemented loading/error/not-found states, and wired `handleViewTicket` to navigate to the detail view instead of returning home.
+  3. **P1 — JSON request-parsing contract**: Added `Content-Type: application/json` enforcement, non-null object body validation, and array/primitive rejection in `createTicketHandler()` returning canonical `400 VALIDATION_ERROR`.
+  4. **P2 — Attachment removal metadata**: Added `removedAt`, `removalReason`, `removedByRequesterId` to `AttachmentData` interface and Prisma select in `getTicketByNumber()`.
+  5. **P2 — Ticket indexes**: Added `@@index([requesterId])`, `@@index([currentStatus])`, `@@index([createdAt])` to the Ticket model and created migration `20260826000000_add_ticket_indexes_attachment_relations`.
+  6. **Schema fixes**: Added `@unique` on `storedFilename`, `@@index([ticketId])` on Attachment, and `uploaderRequester`/`removedByRequester` relations to `DevRequester`.
+  7. **Test updates**: Updated `api-contract.api.test.ts` to test against `POST /api/tickets`; updated `ticket-detail.api.test.ts` to include removal metadata; added index assertions to `database-migration.integration.test.ts`.
+  8. **Documentation**: Updated `README.md`, `tests.md`, `ai-use.md`, and `reviewer.md`.
+- Reflection: The review identified critical contract violations that were invisible in the mocked test suite. The atomic transaction fix is the most impactful — without it, sequence gaps and year mismatches would silently violate BR-01. The JSON parsing contract enforcement prevents `TypeError` crashes from non-object bodies. The View Ticket fix completes the create-to-detail flow that was stubbed out. All changes are backward-compatible with the existing test suite.

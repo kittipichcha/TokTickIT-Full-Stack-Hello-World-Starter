@@ -83,6 +83,19 @@ describe("DB-01 / DB-02: Lab 2 forward migration against the real database", () 
     expect(ticketNumberIndex).toBeTruthy();
   });
 
+  itIfDb("DB-01: Ticket has required indexes on requesterId, currentStatus, and createdAt", async () => {
+    const prisma = getPrisma();
+    const rows = await prisma.$queryRaw<Array<{ indexname: string }>>`
+      SELECT indexname FROM pg_indexes
+      WHERE tablename = 'Ticket'
+    `;
+    const indexNames = new Set(rows.map((r) => r.indexname));
+
+    expect(indexNames.has("Ticket_requesterId_idx")).toBe(true);
+    expect(indexNames.has("Ticket_currentStatus_idx")).toBe(true);
+    expect(indexNames.has("Ticket_createdAt_idx")).toBe(true);
+  });
+
   itIfDb("DB-01: currentStatus defaults to NEW", async () => {
     const prisma = getPrisma();
     const rows = await prisma.$queryRaw<Array<{ column_default: string }>>`

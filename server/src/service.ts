@@ -1,5 +1,5 @@
 import { getPrisma } from "./prisma.js";
-import { allocateTicketNumber, TicketSequenceExhaustedError } from "./ticket-number.js";
+import { allocateTicketNumberWithClient, TicketSequenceExhaustedError } from "./ticket-number.js";
 
 export interface Category {
   id: number;
@@ -48,6 +48,9 @@ export interface AttachmentData {
   fileSizeBytes: number;
   uploadedAt: Date;
   isRemoved: boolean;
+  removedAt: Date | null;
+  removalReason: string | null;
+  removedByRequesterId: number | null;
 }
 
 export class ValidationError extends Error {
@@ -240,65 +243,83 @@ export async function createTicket(
 ): Promise<TicketData> {
   const validated = validateCreateTicketInput(input);
 
-  // Check that category and relatedSystem exist and are active
-  const catExists = await categoryExists(validated.categoryId);
-  if (!catExists) {
-    throw new InactiveReferenceError("The specified category does not exist or is inactive.");
-  }
-  const catActive = await isActiveCategory(validated.categoryId);
-  if (!catActive) {
-    throw new InactiveReferenceError("The specified category is inactive.");
-  }
-
-  const sysExists = await relatedSystemExists(validated.relatedSystemId);
-  if (!sysExists) {
-    throw new InactiveReferenceError("The specified related system does not exist or is inactive.");
-  }
-  const sysActive = await isActiveRelatedSystem(validated.relatedSystemId);
-  if (!sysActive) {
-    throw new InactiveReferenceError("The specified related system is inactive.");
-  }
-
   const prisma = getPrisma();
-  const utcYear = new Date().getUTCFullYear();
 
-  let ticketNumber: string;
-  try {
-    ticketNumber = await allocateTicketNumber(utcYear);
-  } catch (err) {
-    if (err instanceof TicketSequenceExhaustedError) {
-      throw err;
+  // Perform all creation work inside one database transaction so that:
+  // 1. Ticket-number allocation and Ticket insertion are atomic.
+  // 2. Both use the same authoritative database timestamp.
+  // 3. If Ticket insertion fails, the sequence allocation is rolled back.
+  return prisma.$transaction(async (tx) => {
+    // Obtain one authoritative database timestamp.
+    const rows = await tx.$queryRaw<Array<{ now: Date }>>`SELECT NOW() AS "now"`;
+    const authoritativeNow = rows[0]!.now;
+    const utcYear = authoritativeNow.getUTCFullYear();
+
+    // Validate or lock the Category and RelatedSystem records.
+    const cat = await tx.category.findUnique({
+      where: { id: validated.categoryId },
+      select: { id: true, isActive: true },
+    });
+    if (!cat) {
+      throw new InactiveReferenceError("The specified category does not exist or is inactive.");
     }
-    throw new Error("Failed to allocate ticket number");
-  }
+    if (!cat.isActive) {
+      throw new InactiveReferenceError("The specified category is inactive.");
+    }
 
-  const ticket = await prisma.ticket.create({
-    data: {
-      ticketNumber,
-      requesterId,
-      categoryId: validated.categoryId,
-      relatedSystemId: validated.relatedSystemId,
-      summary: validated.summary,
-      description: validated.description,
-      requestedPriority: validated.requestedPriority as "LOW" | "MEDIUM" | "HIGH",
-    },
+    const sys = await tx.relatedSystem.findUnique({
+      where: { id: validated.relatedSystemId },
+      select: { id: true, isActive: true },
+    });
+    if (!sys) {
+      throw new InactiveReferenceError("The specified related system does not exist or is inactive.");
+    }
+    if (!sys.isActive) {
+      throw new InactiveReferenceError("The specified related system is inactive.");
+    }
+
+    // Allocate the yearly sequence using the transaction client.
+    let ticketNumber: string;
+    try {
+      ticketNumber = await allocateTicketNumberWithClient(tx, utcYear);
+    } catch (err) {
+      if (err instanceof TicketSequenceExhaustedError) {
+        throw err;
+      }
+      throw new Error("Failed to allocate ticket number");
+    }
+
+    // Insert the Ticket using the same authoritative timestamp.
+    const ticket = await tx.ticket.create({
+      data: {
+        ticketNumber,
+        requesterId,
+        categoryId: validated.categoryId,
+        relatedSystemId: validated.relatedSystemId,
+        summary: validated.summary,
+        description: validated.description,
+        requestedPriority: validated.requestedPriority as "LOW" | "MEDIUM" | "HIGH",
+        createdAt: authoritativeNow,
+        updatedAt: authoritativeNow,
+      },
+    });
+
+    return {
+      id: ticket.id,
+      ticketNumber: ticket.ticketNumber,
+      requesterId: ticket.requesterId,
+      categoryId: ticket.categoryId,
+      relatedSystemId: ticket.relatedSystemId,
+      summary: ticket.summary,
+      description: ticket.description,
+      requestedPriority: ticket.requestedPriority,
+      itPriority: ticket.itPriority,
+      ticketOwnerId: ticket.ticketOwnerId,
+      currentStatus: ticket.currentStatus,
+      createdAt: ticket.createdAt,
+      updatedAt: ticket.updatedAt,
+    };
   });
-
-  return {
-    id: ticket.id,
-    ticketNumber: ticket.ticketNumber,
-    requesterId: ticket.requesterId,
-    categoryId: ticket.categoryId,
-    relatedSystemId: ticket.relatedSystemId,
-    summary: ticket.summary,
-    description: ticket.description,
-    requestedPriority: ticket.requestedPriority,
-    itPriority: ticket.itPriority,
-    ticketOwnerId: ticket.ticketOwnerId,
-    currentStatus: ticket.currentStatus,
-    createdAt: ticket.createdAt,
-    updatedAt: ticket.updatedAt,
-  };
 }
 
 export async function getTicketByNumber(
@@ -321,6 +342,9 @@ export async function getTicketByNumber(
           fileSizeBytes: true,
           uploadedAt: true,
           isRemoved: true,
+          removedAt: true,
+          removalReason: true,
+          removedByRequesterId: true,
         },
       },
     },

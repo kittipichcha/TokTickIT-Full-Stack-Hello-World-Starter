@@ -19,12 +19,14 @@ model Category {
 }
 
 model DevRequester {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  tickets   Ticket[]
+  id                  Int          @id @default(autoincrement())
+  name                String
+  email               String       @unique
+  isActive            Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  tickets             Ticket[]
+  uploadedAttachments Attachment[] @relation("AttachmentUploader")
+  removedAttachments  Attachment[] @relation("AttachmentRemover")
 }
 
 model RelatedSystem {
@@ -64,23 +66,31 @@ model Ticket {
   category       Category      @relation(fields: [categoryId], references: [id])
   relatedSystem  RelatedSystem @relation(fields: [relatedSystemId], references: [id])
   attachments    Attachment[]
+
+  @@index([requesterId])
+  @@index([currentStatus])
+  @@index([createdAt])
 }
 
 model Attachment {
-  id                    Int       @id @default(autoincrement())
+  id                    Int           @id @default(autoincrement())
   ticketId              Int
   originalFilename      String
-  storedFilename        String
+  storedFilename        String        @unique
   mimeType              String
   fileSizeBytes         Int
   uploaderRequesterId   Int
-  isRemoved             Boolean   @default(false)
+  isRemoved             Boolean       @default(false)
   removedAt             DateTime?
   removalReason         String?
   removedByRequesterId  Int?
-  uploadedAt            DateTime  @default(now())
+  uploadedAt            DateTime      @default(now())
 
-  ticket Ticket @relation(fields: [ticketId], references: [id])
+  ticket            Ticket        @relation(fields: [ticketId], references: [id])
+  uploaderRequester DevRequester  @relation("AttachmentUploader", fields: [uploaderRequesterId], references: [id])
+  removedByRequester DevRequester? @relation("AttachmentRemover", fields: [removedByRequesterId], references: [id])
+
+  @@index([ticketId])
 }
 
 model TicketSequence {
