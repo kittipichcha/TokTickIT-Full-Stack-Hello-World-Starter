@@ -268,3 +268,187 @@ describe("UI-ERR-01: Case A — ticket create API failure preserves form state",
     expect(api.createTicket).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("UI-TKT-SUCCESS: Success flow — Ticket Number display, date formatting, and View Ticket navigation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("displays generated Ticket Number from API response after successful creation", async () => {
+    vi.mocked(api.createTicket).mockResolvedValue({
+      id: 501,
+      ticketNumber: "TKT-2026-000123",
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "My laptop battery issue",
+      description: "The battery drains very quickly after the update",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-21T09:14:00.000Z",
+      updatedAt: "2026-08-21T09:14:00.000Z",
+    });
+
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByText("Create Ticket"));
+    await screen.findByLabelText(/Summary/);
+
+    await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
+    await userEvent.selectOptions(screen.getByLabelText(/Related System/), "1");
+    await userEvent.type(screen.getByLabelText(/Summary/), "My laptop battery issue");
+    await userEvent.type(screen.getByLabelText(/Description/), "The battery drains very quickly after the update");
+
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    // Success panel should show the ticket number
+    await screen.findByText("Ticket Created");
+    expect(screen.getByText("TKT-2026-000123")).toBeTruthy();
+  });
+
+  it("displays Ticket Date in UTC format YYYY-MM-DD HH:mm:ss UTC after success", async () => {
+    vi.mocked(api.createTicket).mockResolvedValue({
+      id: 501,
+      ticketNumber: "TKT-2026-000123",
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "My laptop battery issue",
+      description: "The battery drains very quickly after the update",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-21T09:14:00.000Z",
+      updatedAt: "2026-08-21T09:14:00.000Z",
+    });
+
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByText("Create Ticket"));
+    await screen.findByLabelText(/Summary/);
+
+    await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
+    await userEvent.selectOptions(screen.getByLabelText(/Related System/), "1");
+    await userEvent.type(screen.getByLabelText(/Summary/), "My laptop battery issue");
+    await userEvent.type(screen.getByLabelText(/Description/), "The battery drains very quickly after the update");
+
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    // Success panel should show the formatted date
+    await screen.findByText("Ticket Created");
+    expect(screen.getByText("2026-08-21 09:14:00 UTC")).toBeTruthy();
+  });
+
+  it("View Ticket button navigates to ticket detail view", async () => {
+    vi.mocked(api.createTicket).mockResolvedValue({
+      id: 501,
+      ticketNumber: "TKT-2026-000123",
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "My laptop battery issue",
+      description: "The battery drains very quickly after the update",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-21T09:14:00.000Z",
+      updatedAt: "2026-08-21T09:14:00.000Z",
+    });
+
+    // Mock ticket detail fetch for the detail view
+    vi.mocked(api.fetchTicketDetail).mockResolvedValue({
+      id: 501,
+      ticketNumber: "TKT-2026-000123",
+      requesterId: 1,
+      requesterName: "Ada Lovelace",
+      requesterIsActive: true,
+      categoryId: 1,
+      categoryName: "Hardware",
+      relatedSystemId: 1,
+      relatedSystemName: "Corporate Laptop",
+      summary: "My laptop battery issue",
+      description: "The battery drains very quickly after the update",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-21T09:14:00.000Z",
+      updatedAt: "2026-08-21T09:14:00.000Z",
+      attachments: [],
+    });
+
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByText("Create Ticket"));
+    await screen.findByLabelText(/Summary/);
+
+    await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
+    await userEvent.selectOptions(screen.getByLabelText(/Related System/), "1");
+    await userEvent.type(screen.getByLabelText(/Summary/), "My laptop battery issue");
+    await userEvent.type(screen.getByLabelText(/Description/), "The battery drains very quickly after the update");
+
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    // Success panel should appear
+    await screen.findByText("Ticket Created");
+
+    // Click View Ticket
+    await userEvent.click(screen.getByRole("button", { name: "View Ticket" }));
+
+    // Should navigate to ticket detail and show the ticket number
+    await screen.findByText("TKT-2026-000123");
+    expect(screen.getByText("Hardware")).toBeTruthy();
+    // Ada Lovelace appears in both header and detail — verify at least one
+    expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("Create Another button resets form and allows new ticket creation", async () => {
+    vi.mocked(api.createTicket).mockResolvedValue({
+      id: 501,
+      ticketNumber: "TKT-2026-000123",
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "My laptop battery issue",
+      description: "The battery drains very quickly after the update",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-21T09:14:00.000Z",
+      updatedAt: "2026-08-21T09:14:00.000Z",
+    });
+
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByText("Create Ticket"));
+    await screen.findByLabelText(/Summary/);
+
+    await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
+    await userEvent.selectOptions(screen.getByLabelText(/Related System/), "1");
+    await userEvent.type(screen.getByLabelText(/Summary/), "My laptop battery issue");
+    await userEvent.type(screen.getByLabelText(/Description/), "The battery drains very quickly after the update");
+
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    // Success panel should appear
+    await screen.findByText("Ticket Created");
+
+    // Click Create Another
+    await userEvent.click(screen.getByRole("button", { name: "Create Another" }));
+
+    // Should be back on the create ticket form with reset fields
+    await screen.findByLabelText(/Summary/);
+    expect((screen.getByLabelText(/Summary/) as HTMLInputElement).value).toBe("");
+    expect((screen.getByLabelText(/Description/) as HTMLTextAreaElement).value).toBe("");
+    expect((screen.getByLabelText(/Requested Priority/) as HTMLSelectElement).value).toBe("MEDIUM");
+  });
+});

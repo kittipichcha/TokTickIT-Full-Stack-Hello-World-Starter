@@ -59,3 +59,49 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   .form-actions button { width: 100%; }
   .success-actions { flex-direction: column; }
 }
+
+/* Ticket Detail */
+.ticket-detail-header { margin-bottom: 20px; }
+.ticket-detail-header h1 { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.back-link { color: var(--secondary); font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 8px; }
+.back-link:hover { text-decoration: underline; }
+
+/* Status badge */
+.status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+.status-new { background: var(--pale); color: var(--primary); border: 1px solid var(--primary); }
+
+/* Priority badges */
+.priority-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+.priority-low { background: var(--pale); color: var(--primary); }
+.priority-medium { background: #fef3c7; color: #92400e; }
+.priority-high { background: #fee2e2; color: #991b1b; border: 1px solid #991b1b; }
+
+/* Placeholder text for null values */
+.placeholder-text { color: #8a9a90; font-style: italic; }
+
+/* Full-width info rows */
+.ticket-info-full { flex-direction: column; gap: 4px; }
+.ticket-info-full .ticket-info-value { white-space: pre-wrap; word-break: break-word; }
+.ticket-description { font-family: inherit !important; }
+
+/* Attachments section */
+.attachments-section { margin-top: 32px; padding-top: 24px; border-top: 2px solid var(--pale); }
+.attachments-section h2 { margin-bottom: 12px; }
+.attachment-list { list-style: none; padding: 0; margin: 0; }
+.attachment-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #c8d8ce; border-radius: 4px; margin-bottom: 8px; background: var(--surface); flex-wrap: wrap; }
+.attachment-removed { opacity: 0.6; background: #f9faf9; }
+.attachment-icon { font-size: 20px; }
+.attachment-name { font-weight: 600; flex: 1; min-width: 120px; word-break: break-word; }
+.attachment-size { color: #5a6b60; font-size: 13px; white-space: nowrap; }
+.attachment-date { color: #5a6b60; font-size: 13px; white-space: nowrap; }
+.attachment-status-active { color: var(--secondary); font-size: 13px; font-weight: 600; }
+.removed-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; background: #e5e7eb; color: #6b7280; }
+.removal-reason { font-size: 12px; color: #8a9a90; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ticket-detail-actions { display: flex; justify-content: flex-start; gap: 12px; margin-top: 24px; }
+
+@media (max-width: 767px) {
+  .attachment-row { flex-direction: column; align-items: flex-start; }
+  .ticket-detail-actions { flex-direction: column; }
+  .ticket-detail-actions button { width: 100%; }
+}
