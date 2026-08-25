@@ -105,7 +105,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | UI-TKT-05 | UI | Case A — failed create keeps entered values and shows inline error | A failed create request preserves all form values and shows a manual-retry inline error without auto-retrying. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 | Passed |
 | UI-TKT-06 | UI | Case B — partial success: ticket created but attachment upload failed shows Ticket Number, separate attachment error, and blocks ticket resubmission | The created ticket remains saved, a separate attachment failure is reported, and the user is not shown a duplicate create flow. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02, FR-10, FR-17 | BR-17 | AC-26 | Planned |
 | UI-TKT-08 | UI | Valid and invalid pre-submit attachments | One valid and one invalid file shows the invalid file error, excludes the invalid file, and still submits the ticket with the valid file; evidence captures this state. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02, FR-10 | BR-12, BR-13 | AC-07 | Planned |
-| API-TKT-02 | API | Inactive/stale category or related-system ID rejected with 409 | Replacing an active category or related system with a stale/inactive ID fails with `409 Conflict` and no ticket is saved. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-07 | AC-27 | Passed |
+| API-TKT-02 | API | Inactive/stale category or related-system ID rejected with 409 | Replacing an active category or related system with a stale/inactive ID fails with `409 Conflict` and no ticket is saved. | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-reference-validation.integration.test.ts` | FR-02 | BR-07 | AC-27 | Passed |
 | API-TKT-03 | API | Ticket detail returns 404 for non-owner access | Requests for another Requester's ticket return `404 Not Found` and no data is exposed. | `server/tests/lab-02/ticket-detail.api.test.ts` | FR-09 | BR-24 | AC-03 | Passed |
 | API-MY-01 | API | My Tickets returns only current requester-owned tickets (ownership isolation) | Only tickets belonging to the current requester are returned, even when other tickets exist. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-04 | BR-24 | AC-03 | Planned |
 | API-MY-02 | API | Search by ticket number/summary substring | Search matches ticket numbers and summary substrings for the current requester only, after applying the BR-23 normalization rule. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05 | BR-23 | AC-17 | Planned |
@@ -248,6 +248,48 @@ Rows that belong to downstream issues (not #12) are intentionally left `Planned`
 
 ### Canonical parsing and error assertions (API-CONTRACT-01)
 - Every non-2xx response matches `{ error: { code, message } }`; every `400` includes `fields`, including `fields.file` for `ATTACHMENT_LIMIT_REACHED`; non-`400` responses omit `fields`.
+
+## 6. Mock vs Real Integration Test Status (2026-08-25)
+
+This section clarifies which tests exercise the real service+database layers and which
+verify only mocked behavior. The `Final` column in Section 5 reflects whether the test
+exists and passes; it does **not** distinguish mock from real integration.
+
+### Tests that use mocked service layer (verify HTTP contract only)
+
+| Test ID | File | Mocked function(s) | Notes |
+|---|---|---|---|
+| API-TKT-01 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies HTTP response shape, not real DB write |
+| API-TKT-04 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Captures requesterId passed to mock |
+| API-TKT-05 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies null fields in mock response |
+| API-TKT-07 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies validation error codes from mock |
+| API-TKT-02 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies 409 error codes from mock |
+| API-TKT-NOR-01 | `create-ticket-normalization.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies boundary validation via mock rejections |
+| API-TKT-NOR-02 | `create-ticket-normalization.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies reference validation via mock rejections |
+| API-TKT-03 | `ticket-detail.api.test.ts` | `getTicketByNumber`, `isActiveDevRequester` | Verifies ownership enforcement via mock |
+
+### Tests that exercise real service+database layers
+
+| Test ID | File | Notes |
+|---|---|---|
+| API-TKT-06 | `ticket-number-concurrency.integration.test.ts` | Real DB: allocates sequences, creates tickets, verifies exhaustion, concurrent HTTP creates |
+| API-TKT-02-INT | `create-ticket-reference-validation.integration.test.ts` | Real DB: creates inactive references, verifies 409 rejection, verifies valid create |
+| DB-01, DB-02 | `database-migration.integration.test.ts` | Real DB: runs Prisma migrations |
+| SEED-01, SEED-02 | `seed.integration.test.ts` | Real DB: runs seed, verifies idempotency |
+| API-REF-01, API-REF-02 | `reference-data.api.test.ts` | Mocked: verifies HTTP response shape, not real DB queries |
+| API-REQ-01 | `dev-requesters.api.test.ts` | Mocked: verifies HTTP response shape |
+| API-REQ-01 | `dev-requesters.service.test.ts` | Mocked: verifies Prisma query shape |
+| API-REQ-02, API-REQ-03 | `requester-context.api.test.ts` | Mocked: verifies requester header validation |
+| API-CONTRACT-01 | `api-contract.api.test.ts` | Real app: tests parsing contract against real endpoints |
+
+### Recommendation
+
+The mocked tests in the first table above verify the HTTP contract (status codes, error
+shapes, field-level validation messages) but do **not** prove that the service layer
+correctly interacts with the database. Real integration tests that exercise the actual
+`createTicket()` and `getTicketByNumber()` service functions against a real database
+should be added to `create-ticket.api.test.ts` and `ticket-detail.api.test.ts` (or new
+integration test files) to close this gap before merge.
 - `500` is exactly `INTERNAL_ERROR` with the safe generic message and no internal details.
 - Requester headers: missing, `abc`, `1.0`, `+1`, whitespace-padded, duplicate, unknown, and inactive all return `422 REQUESTER_CONTEXT_INVALID`.
 - Path parameters: malformed attachment IDs and ticket numbers return `404 NOT_FOUND` without resource data.

@@ -11,6 +11,7 @@ import {
   type TicketDetailResponse,
 } from "./api";
 import CreateTicket from "./CreateTicket";
+import { formatUtcDate, formatFileSize } from "./format";
 
 type SelectorState = "loading" | "ready" | "empty" | "error";
 type AppView = "home" | "create-ticket" | "ticket-detail";
@@ -212,29 +213,44 @@ export default function App() {
       )}
       {view === "ticket-detail" && (
         <main className="app-container">
-          <h1>Ticket Detail</h1>
           {detailLoading && (
             <div role="status" aria-label="Loading ticket detail">
               <div className="skeleton-select" />
               <div className="skeleton-select" />
+              <div className="skeleton-select" />
+              <div className="skeleton-select" />
             </div>
           )}
-          {detailError && (
+          {detailError && !detailLoading && (
             <div className="error-box" role="alert">
               <p>{detailError}</p>
-              <button className="secondary-button" onClick={() => setView("home")}>Back to Home</button>
+              <button className="secondary-button" onClick={() => setView("home")}>← Back to My Tickets</button>
             </div>
           )}
           {ticketDetail && (
             <div className="ticket-detail">
+              {/* Header row: Ticket Number + Status badge + Back link */}
+              <div className="ticket-detail-header">
+                <a
+                  href="#my-tickets"
+                  className="back-link"
+                  onClick={(e) => { e.preventDefault(); setView("home"); }}
+                >
+                  ← Back to My Tickets
+                </a>
+                <h1>
+                  {ticketDetail.ticketNumber}
+                  <span className={`status-badge status-${ticketDetail.currentStatus.toLowerCase()}`}>
+                    {ticketDetail.currentStatus}
+                  </span>
+                </h1>
+              </div>
+
+              {/* Read-only info grid */}
               <div className="ticket-info">
                 <div className="ticket-info-row">
-                  <span className="ticket-info-label">Ticket Number</span>
-                  <span className="ticket-info-value">{ticketDetail.ticketNumber}</span>
-                </div>
-                <div className="ticket-info-row">
-                  <span className="ticket-info-label">Status</span>
-                  <span className="ticket-info-value">{ticketDetail.currentStatus}</span>
+                  <span className="ticket-info-label">Ticket Date</span>
+                  <span className="ticket-info-value">{formatUtcDate(ticketDetail.createdAt)}</span>
                 </div>
                 <div className="ticket-info-row">
                   <span className="ticket-info-label">Category</span>
@@ -245,24 +261,87 @@ export default function App() {
                   <span className="ticket-info-value">{ticketDetail.relatedSystemName}</span>
                 </div>
                 <div className="ticket-info-row">
-                  <span className="ticket-info-label">Summary</span>
-                  <span className="ticket-info-value">{ticketDetail.summary}</span>
-                </div>
-                <div className="ticket-info-row">
-                  <span className="ticket-info-label">Description</span>
-                  <span className="ticket-info-value">{ticketDetail.description}</span>
+                  <span className="ticket-info-label">Requester</span>
+                  <span className="ticket-info-value">{ticketDetail.requesterName}</span>
                 </div>
                 <div className="ticket-info-row">
                   <span className="ticket-info-label">Requested Priority</span>
-                  <span className="ticket-info-value">{ticketDetail.requestedPriority}</span>
+                  <span className="ticket-info-value">
+                    <span className={`priority-badge priority-${ticketDetail.requestedPriority.toLowerCase()}`}>
+                      {ticketDetail.requestedPriority}
+                    </span>
+                  </span>
                 </div>
                 <div className="ticket-info-row">
-                  <span className="ticket-info-label">Created</span>
-                  <span className="ticket-info-value">{new Date(ticketDetail.createdAt).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "")} UTC</span>
+                  <span className="ticket-info-label">IT Priority</span>
+                  <span className="ticket-info-value">
+                    {ticketDetail.itPriority ? (
+                      <span className={`priority-badge priority-${ticketDetail.itPriority.toLowerCase()}`}>
+                        {ticketDetail.itPriority}
+                      </span>
+                    ) : (
+                      <span className="placeholder-text">Not yet triaged</span>
+                    )}
+                  </span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Ticket Owner</span>
+                  <span className="ticket-info-value">
+                    {ticketDetail.ticketOwnerId ? (
+                      ticketDetail.ticketOwnerId
+                    ) : (
+                      <span className="placeholder-text">Unassigned</span>
+                    )}
+                  </span>
+                </div>
+                <div className="ticket-info-row ticket-info-full">
+                  <span className="ticket-info-label">Summary</span>
+                  <span className="ticket-info-value">{ticketDetail.summary}</span>
+                </div>
+                <div className="ticket-info-row ticket-info-full">
+                  <span className="ticket-info-label">Description</span>
+                  <span className="ticket-info-value ticket-description">{ticketDetail.description}</span>
                 </div>
               </div>
+
+              {/* Attachments section */}
+              <section className="attachments-section" aria-label="Attachments">
+                <h2>Attachments</h2>
+                {ticketDetail.attachments.length === 0 ? (
+                  <p className="placeholder-text">No attachments.</p>
+                ) : (
+                  <ul className="attachment-list">
+                    {ticketDetail.attachments.map((att) => (
+                      <li
+                        key={att.id}
+                        className={`attachment-row ${att.isRemoved ? "attachment-removed" : ""}`}
+                      >
+                        <span className="attachment-icon">
+                          {att.mimeType.startsWith("image/") ? "🖼" : "📄"}
+                        </span>
+                        <span className="attachment-name">{att.originalFilename}</span>
+                        <span className="attachment-size">{formatFileSize(att.fileSizeBytes)}</span>
+                        <span className="attachment-date">{formatUtcDate(att.uploadedAt)}</span>
+                        {att.isRemoved ? (
+                          <>
+                            <span className="removed-badge">Removed</span>
+                            {att.removalReason && (
+                              <span className="removal-reason" title={att.removalReason}>
+                                {att.removalReason}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="attachment-status-active">Active</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
               <div className="ticket-detail-actions">
-                <button className="secondary-button" onClick={() => setView("home")}>Back to Home</button>
+                <button className="secondary-button" onClick={() => setView("home")}>← Back to My Tickets</button>
                 <button className="primary-button" onClick={() => setView("create-ticket")}>Create Another</button>
               </div>
             </div>

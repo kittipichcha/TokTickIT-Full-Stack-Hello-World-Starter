@@ -9,6 +9,7 @@ import {
   InactiveReferenceError,
 } from "./service.js";
 import { TicketSequenceExhaustedError } from "./ticket-number.js";
+import { validateIntegerFields } from "./integer-validation.js";
 
 export async function getCategoriesHandler(req: Request, res: Response): Promise<void> {
   try {
@@ -68,6 +69,24 @@ export async function createTicketHandler(req: Request, res: Response): Promise<
           code: "VALIDATION_ERROR",
           message: "Request body must be a JSON object.",
           fields: {},
+        },
+      });
+      return;
+    }
+
+    // Integer lexical validation: reject 1.0, 1e0, etc. per api-spec §0
+    const rawBody = (req as unknown as Record<string, unknown>).rawBody as string | undefined;
+    const invalidIntFields = validateIntegerFields(rawBody, ["categoryId", "relatedSystemId"]);
+    if (invalidIntFields.length > 0) {
+      const fields: Record<string, string> = {};
+      for (const f of invalidIntFields) {
+        fields[f] = `${f} must be a valid integer.`;
+      }
+      res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Validation failed.",
+          fields,
         },
       });
       return;

@@ -132,6 +132,48 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
     expect(res1.body.data.currentStatus).toBe("NEW");
   });
 
+  itIfDb("concurrent HTTP creates all receive distinct ticket numbers", async () => {
+    const prisma = getPrisma();
+    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const category = await prisma.category.findFirst({ where: { isActive: true } });
+    const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
+    expect(requester && category && system).toBeTruthy();
+
+    const CONCURRENT_COUNT = 10;
+    const marker = `${SUMMARY_MARKER} concurrent-http`;
+
+    const results = await Promise.all(
+      Array.from({ length: CONCURRENT_COUNT }, (_, i) =>
+        request(app)
+          .post("/api/tickets")
+          .set("X-Dev-Requester-Id", String(requester!.id))
+          .send({
+            categoryId: category!.id,
+            relatedSystemId: system!.id,
+            summary: `${marker} ${i}`,
+            description: "A description long enough for the create ticket contract.",
+            requestedPriority: "MEDIUM",
+          }),
+      ),
+    );
+
+    // All should succeed
+    for (const res of results) {
+      expect(res.status).toBe(201);
+      expect(res.body.data.ticketNumber).toMatch(/^TKT-\d{4}-\d{6}$/);
+    }
+
+    // All ticket numbers should be distinct
+    const numbers = results.map((r) => r.body.data.ticketNumber as string);
+    const unique = new Set(numbers);
+    expect(unique.size).toBe(CONCURRENT_COUNT);
+
+    // Clean up
+    await prisma.ticket.deleteMany({
+      where: { summary: { contains: marker } },
+    });
+  });
+
   itIfDb("returns 409 TICKET_SEQUENCE_EXHAUSTED and creates no ticket when exhausted", async () => {
     const prisma = getPrisma();
     const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });

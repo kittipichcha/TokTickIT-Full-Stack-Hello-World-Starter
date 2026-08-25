@@ -7,7 +7,17 @@ import { router } from "./module.js";
 export const app = express();
 
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? "http://localhost:5173" })); // allow local dev by default
-app.use(express.json());
+
+// Capture raw body for integer lexical validation (api-spec §0: integer grammar)
+// Stored per-request on req to avoid concurrency issues.
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as unknown as Record<string, unknown>).rawBody = buf.toString("utf-8");
+    },
+  }),
+);
+
 // Mount API routes
 app.use("/api", router);
 
