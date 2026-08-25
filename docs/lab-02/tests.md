@@ -174,11 +174,23 @@ Issue #12 is complete when `API-REQ-01` and `UI-REQ-01..07` are implemented and
 passing. These rows remain `Planned` in this branch until their owning feature exists;
 they are no longer blockers for Issue #12.
 
+### 5.2 Issue #13 scope and row redistribution (2026-08-25 amendment)
+
+Issue #13 was amended to remove attachment orchestration from its scope. The attachment
+panel, multi-file upload, and partial-success (Case B) UI behaviors require the full
+attachment endpoints and storage infrastructure created in #15. The following rows have
+been formally reassigned:
+
+| Row | Moved to | Rationale |
+|---|---|---|
+| `UI-TKT-06` | #15 (Attachments) | Case B partial-success UI requires attachment upload endpoints |
+| `UI-TKT-08` | #15 (Attachments) | Pre-submit attachment validation panel requires attachment endpoints |
+
 Rows that belong to downstream issues (not #12) are intentionally left `Planned`:
 
-- **Create Ticket** (`feature/lab2-ticket-creation`, #13): `API-REF-01/02`, `API-TKT-NOR-01/02`, `API-TKT-01..07`, `UI-TKT-01..08`, `UI-ERR-01`.
+- **Create Ticket** (`feature/lab2-ticket-creation`, #13): `API-REF-01/02`, `API-TKT-NOR-01/02`, `API-TKT-01..07`, `UI-TKT-01..05`, `UI-TKT-07`, `UI-ERR-01`.
 - **My Tickets** (`feature/lab2-my-tickets`, #14): `API-MY-01..08`, `UI-MY-01..05`.
-- **Attachments / Ticket Detail** (`feature/lab2-attachments`, #15): `API-ATT-*`, `UNIT-ATT-01`, `ATT-PERSIST-01`, `UI-ATT-*`, `UI-DETAIL-01`.
+- **Attachments / Ticket Detail** (`feature/lab2-attachments`, #15): `API-ATT-*`, `UNIT-ATT-01`, `ATT-PERSIST-01`, `UI-ATT-*`, `UI-DETAIL-01`, `UI-TKT-06`, `UI-TKT-08`.
 - **Database / Seed / Migration**: `DB-01/02`, `SEED-01/02` (schema for `Ticket`/`Attachment`/`RelatedSystem` created in #13).
 - **Integration / Visual / E2E** (#18): `API-CONTRACT-01`, `STATIC-01`, `UI-STYLE-01..03`, `VISUAL-01`, `E2E-01..06`.
 
@@ -316,6 +328,32 @@ npx playwright test e2e/lab-02
 Playwright note: run the E2E command only after Playwright scaffolding/dependencies are added for this branch.
 
 ## 6. Results Log (Newest First)
+
+### 2026-08-25 - PR #23 review: fix agent.md hierarchy, narrow Tests.md rule, clean up unused imports
+- Scope: Addressed @oangsa PR #23 review findings. Fixed `agent.md` section hierarchy (moved misplaced `3.3`/`3.4` back under `## 3`, removed duplicate `## 4`, renumbered subsequent sections). Narrowed the Tests.md cross-reference rule in `### 4.2` to apply only to Lab 2 contract matrix tests, explicitly excluding legacy Lab 1 tests and supporting utilities — preventing false flags on files like `server/tests/categories.test.ts`. Cleaned up unused `fireEvent`/`waitFor` imports from `client/src/App.test.tsx`. Added `reviewer.md` update requirement to `agent.md` Standard Task Flow. Updated `reviewer.md` with PR #23 review record. Updated `ai-use.md` with prompts 20-21 and reflections 14-15.
+- Tests added/updated:
+  - `agent.md`: fixed section hierarchy; narrowed Tests.md rule scope.
+  - `client/src/App.test.tsx`: removed unused `fireEvent`/`waitFor` imports.
+  - `docs/lab-02/reviewer.md`: added PR #23 review comments and responses table.
+  - `docs/lab-02/ai-use.md`: added prompts 20-21 and reflections 14-15.
+- Command(s) run:
+  - `cd server && npm test`
+  - `cd client && npm test`
+- Result:
+  - Server: 39 passed, 7 skipped (DB-dependent), 0 failed
+  - Client: 13 passed, 0 failed
+- Notes and follow-up:
+  - The `agent.md` Post-Implementation Double-Check Alignment Method (§4) is now properly nested and the Tests.md rule no longer conflicts with legacy Lab 1 test files.
+
+### 2026-08-25 - Issue #13 scope amendment: attachment orchestration moved to #15
+- Scope: Amended Issue #13 to remove attachment orchestration from its scope. The attachment panel, multi-file upload, and partial-success (Case B) UI behaviors require the full attachment endpoints and storage infrastructure created in #15. Formally reassigned `UI-TKT-06` and `UI-TKT-08` from #13 to #15. Updated #13 and #15 on GitHub to own their correct rows. Added `tests.md` §5.2 documenting the redistribution.
+- Tests added/updated:
+  - `docs/lab-02/tests.md`: added §5.2 Issue #13 scope redistribution; updated downstream row assignments.
+  - GitHub Issues #13, #15 amended.
+- Command(s) run: none (docs + issue governance only; no code changes)
+- Result: all existing tests unchanged.
+- Notes and follow-up:
+  - `UI-TKT-06` and `UI-TKT-08` remain `Planned` in this branch until their owning downstream feature (#15) is implemented. They are no longer blockers for Issue #13.
 
 ### 2026-08-24 - Issue #12 amendment: scope realignment and cross-feature row redistribution
 - Scope: Amended Issue #12 to remove cross-feature acceptance rows that depend on downstream models/endpoints/screens. Formally reassigned `API-REQ-02` to #14 (My Tickets), `API-REQ-03` to #13 (Ticket Creation), `API-CONTRACT-01` and `E2E-05` to #18 (Integration), and `UI-MY-03` to #14 (My Tickets). Updated #12, #13, #14, and #18 on GitHub to own their correct rows. Rewrote `tests.md` §5.1 from "Issue #12 is not complete" to a truth-table showing redistribution. The remaining #12 rows (`API-REQ-01`, `UI-REQ-01..07`) are implemented and passing; #12 is now scoped to completion at the requester-selection foundation.

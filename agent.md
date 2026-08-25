@@ -207,9 +207,10 @@ No autonomous PR creation or Kanban state changes without user approval.
 6. Report results.
 7. Update `docs/lab-02/tests.md` (newest log entry).
 8. Update `docs/lab-02/ai-use.md` in Lab 1 style.
-9. Report the validated change and request explicit approval to stage, commit, and push.
-10. After approval, stage, commit, and push only the validated changes within scope.
-11. Ask separate approval for a PR targeting `lab2-staging` and for board updates once issue acceptance criteria are satisfied.
+9. **Update `docs/lab-02/reviewer.md`** — whenever changes are made in response to peer review feedback (requested changes from a PR review), add a new row to the review comments table documenting the feedback source, summary, and how it was addressed. This ensures the reviewer record stays complete and traceable.
+10. Report the validated change and request explicit approval to stage, commit, and push.
+11. After approval, stage, commit, and push only the validated changes within scope.
+12. Ask separate approval for a PR targeting `lab2-staging` and for board updates once issue acceptance criteria are satisfied.
 
 ## 13. Stop Conditions
 The agent must stop and ask the user when:
