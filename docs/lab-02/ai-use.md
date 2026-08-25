@@ -24,8 +24,6 @@
 | 17 | Review whether the request/response contract and planned tests still leave implementation decisions open | Froze the validation bounds, UTC Ticket Date display format, Unicode comparison semantics, create-then-upload orchestration, attachment-list response shape, download filename headers, `400` field behavior, DELETE parsing, and planned-versus-passing test evidence status. |
 | 18 | Check codebase against Kanban & Lab 2 spec and remove Lab 1 health check leftovers | Checked Kanban alignment for Issue #12, confirmed Lab 1 `/api/health` and "System Overview" / "Check System" UI were leftovers, removed them, and updated test suites to test the Application Shell and Requester Selection. |
 | 19 | Fix REQUESTER_STORAGE_KEY undefined error, update agent.md working agreement, and create DB/UI integration tests | Added missing `REQUESTER_STORAGE_KEY` export to `client/src/api.ts`, updated `agent.md` with real DB and UI integration rules, created server database integration test and client storage integration test. |
-| 20 | Remove all health check system and Lab 1 leftover artifacts from the codebase | Removed `.health-box` CSS from `App.css`, removed `GET /api/health` from server and README, removed health test files, cleaned up unused imports in `App.test.tsx`, and verified no health references remain across the codebase. |
-| 21 | Fix agent.md section hierarchy, narrow Tests.md cross-reference rule, and clean up unused imports | Fixed duplicate `## 4` heading and misplaced `3.3`/`3.4` sections, narrowed the Tests.md rule to apply only to Lab 2 contract matrix tests (excluding legacy Lab 1 tests), and removed unused `fireEvent`/`waitFor` imports from `App.test.tsx`. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
@@ -41,8 +39,6 @@
 11. Reusing the same rule ID for two different rules is as dangerous as an outright contradiction, since every citing test row silently inherits the ambiguity until the ID collision itself is fixed.
 12. A closed contract must define exact response envelopes and transport headers, not only endpoint intent; planned test rows must also distinguish specified coverage from executed evidence.
 13. Combining unit testing with live database integration tests and explicit UI storage persistence tests ensures end-to-end reliability across both backend database queries and frontend state transitions.
-14. Removing legacy artifacts requires a systematic grep-based verification across all source directories to ensure no stale references remain — a single missed import or CSS class can silently break the build.
-15. A governance change in agent.md that conflicts with the current repository state (e.g., a mandatory rule that existing files cannot satisfy) must be scoped correctly or it will immediately fail its own requirement; narrowing the rule to the relevant subset of files avoids false positives from intentional legacy files.
 
 ## Issue #12 Implementation Entry
 
@@ -67,9 +63,3 @@
 - Prompt summary: Amend Issue #12 to remove cross-feature acceptance rows that depend on downstream models/endpoints/screens, redistribute them to #13/#14/#18, and check #13-#15 for similar over-scoping.
 - What was done with output: Read all five Lab 2 issues; determined only #12 was over-scoped. Amended #12 to remove `API-REQ-02`, `API-REQ-03`, `API-CONTRACT-01`, `UI-MY-03`, `E2E-05` from its required tests and acceptance criteria. Added `API-REQ-03` + `GET /api/related-systems` to #13. Added `API-REQ-02`, `UI-MY-03`, and BR-29 to #14. Added `API-CONTRACT-01`, `E2E-05` to #18. Rewrote `tests.md` §5.1 from "incomplete" language to a truth-table of redistribution. Updated README accordingly.
 - Reflection: Issue scoping should follow feature-implementation order closely. When a test row depends on a model or endpoint that won't exist until a later issue, it belongs in that later issue. The fix was straightforward because #13/#14/#15 were already properly scoped to their own features — only #12 had been written before the full implementation dependency graph was clear.
-
-## Issue #13 Scope Amendment Entry
-
-- Prompt summary: Amend Issue #13 to remove attachment orchestration scope and move it to Issue #15, update tests.md redistribution table, and align all downstream issue ownership.
-- What was done with output: Removed attachment panel, multi-file upload, and Case B partial-success UI from #13 scope. Reassigned `UI-TKT-06` and `UI-TKT-08` from #13 to #15. Updated #13 and #15 on GitHub with corrected scope, requirement mappings, and acceptance criteria. Added `tests.md` §5.2 documenting the redistribution. Added results log entry.
-- Reflection: The attachment orchestration (pre-submit file validation panel, sequential upload after ticket creation, Case B partial-success UI) depends on the full attachment endpoints (`POST /api/tickets/:ticketNumber/attachments`, etc.) and storage infrastructure that only exist in #15. Keeping them in #13 would have created an untestable dependency. The split is clean: #13 owns the ticket creation form with text fields and reference selects; #15 owns everything file-related including the attachment panel on the create form.
