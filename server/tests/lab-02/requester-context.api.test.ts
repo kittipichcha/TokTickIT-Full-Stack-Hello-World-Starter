@@ -93,5 +93,17 @@ describe("API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions", ()
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body).toEqual([{ id: 1, name: "Hardware" }]);
     });
+
+    it("allows GET /api/related-systems without X-Dev-Requester-Id header", async () => {
+      vi.mocked(service.getActiveRelatedSystems).mockResolvedValue([
+        { id: 1, name: "Corporate Laptop" },
+      ]);
+
+      const response = await request(app).get("/api/related-systems");
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        data: [{ id: 1, name: "Corporate Laptop" }],
+      });
+    });
   });
 });

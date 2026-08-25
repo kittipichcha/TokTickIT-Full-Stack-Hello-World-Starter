@@ -1,5 +1,14 @@
 import { Request, Response } from "express";
-import { getActiveDevRequesters, getCategories } from "./service.js";
+import {
+  getActiveDevRequesters,
+  getActiveRelatedSystems,
+  getCategories,
+  createTicket,
+  getTicketByNumber,
+  ValidationError,
+  InactiveReferenceError,
+} from "./service.js";
+import { TicketSequenceExhaustedError } from "./ticket-number.js";
 
 export async function getCategoriesHandler(req: Request, res: Response): Promise<void> {
   try {
@@ -23,6 +32,76 @@ export async function getDevRequestersHandler(req: Request, res: Response): Prom
   }
 }
 
+export async function getRelatedSystemsHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const systems = await getActiveRelatedSystems();
+    res.status(200).json({ data: systems });
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
 export function getRequesterContextHandler(req: Request, res: Response): void {
   res.status(200).json({ data: { requesterId: res.locals.devRequesterId as number } });
+}
+
+export async function createTicketHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+    const ticket = await createTicket(requesterId, req.body);
+    res.status(201).json({ data: ticket });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      res.status(400).json({
+        error: { code: "VALIDATION_ERROR", message: err.message, fields: err.fields },
+      });
+      return;
+    }
+    if (err instanceof InactiveReferenceError) {
+      res.status(409).json({
+        error: { code: "INACTIVE_REFERENCE", message: err.message },
+      });
+      return;
+    }
+    if (err instanceof TicketSequenceExhaustedError) {
+      res.status(409).json({
+        error: { code: "TICKET_SEQUENCE_EXHAUSTED", message: err.message },
+      });
+      return;
+    }
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
+export async function getTicketDetailHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+    const ticketNumber = req.params.ticketNumber;
+
+    // Validate ticketNumber format
+    if (!/^TKT-\d{4}-\d{6}$/.test(ticketNumber)) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found." },
+      });
+      return;
+    }
+
+    const ticket = await getTicketByNumber(ticketNumber, requesterId);
+    if (!ticket) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found." },
+      });
+      return;
+    }
+
+    res.status(200).json({ data: ticket });
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
 }
