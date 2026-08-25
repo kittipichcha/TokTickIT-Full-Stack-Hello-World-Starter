@@ -59,60 +59,96 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
     requestedPriority: "MEDIUM",
   };
 
-  itIfDb("rejects inactive category with 409 INACTIVE_REFERENCE (real DB)", async () => {
+  itIfDb("rejects inactive category with 409 INACTIVE_REFERENCE and creates no ticket (real DB)", async () => {
+    const prisma = getPrisma();
+    const markerSummary = "INT-TEST REF-REJECT inactive-category";
+    const before = await prisma.ticket.count({ where: { summary: markerSummary } });
+
     const res = await request(app)
       .post("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
       .send({
         ...validBody,
+        summary: markerSummary,
         categoryId: inactiveCategoryId,
         relatedSystemId: activeSystemId,
       });
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("INACTIVE_REFERENCE");
+
+    const after = await prisma.ticket.count({ where: { summary: markerSummary } });
+    expect(after).toBe(before);
+    expect(after).toBe(0);
   });
 
-  itIfDb("rejects inactive related system with 409 INACTIVE_REFERENCE (real DB)", async () => {
+  itIfDb("rejects inactive related system with 409 INACTIVE_REFERENCE and creates no ticket (real DB)", async () => {
+    const prisma = getPrisma();
+    const markerSummary = "INT-TEST REF-REJECT inactive-system";
+    const before = await prisma.ticket.count({ where: { summary: markerSummary } });
+
     const res = await request(app)
       .post("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
       .send({
         ...validBody,
+        summary: markerSummary,
         categoryId: activeCategoryId,
         relatedSystemId: inactiveSystemId,
       });
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("INACTIVE_REFERENCE");
+
+    const after = await prisma.ticket.count({ where: { summary: markerSummary } });
+    expect(after).toBe(before);
+    expect(after).toBe(0);
   });
 
-  itIfDb("rejects nonexistent categoryId with 409 INACTIVE_REFERENCE (real DB)", async () => {
+  itIfDb("rejects nonexistent categoryId with 409 INACTIVE_REFERENCE and creates no ticket (real DB)", async () => {
+    const prisma = getPrisma();
+    const markerSummary = "INT-TEST REF-REJECT no-category";
+    const before = await prisma.ticket.count({ where: { summary: markerSummary } });
+
     const res = await request(app)
       .post("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
       .send({
         ...validBody,
+        summary: markerSummary,
         categoryId: 999999,
         relatedSystemId: activeSystemId,
       });
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("INACTIVE_REFERENCE");
+
+    const after = await prisma.ticket.count({ where: { summary: markerSummary } });
+    expect(after).toBe(before);
+    expect(after).toBe(0);
   });
 
-  itIfDb("rejects nonexistent relatedSystemId with 409 INACTIVE_REFERENCE (real DB)", async () => {
+  itIfDb("rejects nonexistent relatedSystemId with 409 INACTIVE_REFERENCE and creates no ticket (real DB)", async () => {
+    const prisma = getPrisma();
+    const markerSummary = "INT-TEST REF-REJECT no-system";
+    const before = await prisma.ticket.count({ where: { summary: markerSummary } });
+
     const res = await request(app)
       .post("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
       .send({
         ...validBody,
+        summary: markerSummary,
         categoryId: activeCategoryId,
         relatedSystemId: 999999,
       });
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("INACTIVE_REFERENCE");
+
+    const after = await prisma.ticket.count({ where: { summary: markerSummary } });
+    expect(after).toBe(before);
+    expect(after).toBe(0);
   });
 
   itIfDb("accepts valid create with active references (real DB)", async () => {

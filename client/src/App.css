@@ -17,6 +17,8 @@ select { min-height: 44px; padding: 8px 12px; border: 1px solid #76847c; backgro
 button:disabled { opacity: .5; cursor: not-allowed; }
 .notice, .categories-box, .error-box, .empty-state { margin-top: 18px; padding: 16px; border: 1px solid #c8d8ce; background: var(--surface); }
 .error-box { border-color: var(--error); color: var(--error); }
+.error-actions { display: flex; gap: 12px; margin-top: 16px; }
+.error-actions .primary-button { color: white; }
 .app-header { display: flex; align-items: center; gap: 28px; padding: 14px 24px; background: var(--primary); color: white; }
 .app-header nav { display: flex; gap: 18px; flex: 1; } .app-header a { color: white; font-weight: 600; }
 .identity { display: flex; align-items: center; gap: 12px; text-align: right; } .header-button { border-color: white; color: white; }

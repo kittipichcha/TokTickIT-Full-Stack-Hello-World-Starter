@@ -51,8 +51,11 @@ export function getRequesterContextHandler(req: Request, res: Response): void {
 export async function createTicketHandler(req: Request, res: Response): Promise<void> {
   try {
     // Enforce frozen JSON request-parsing contract (API §0)
-    const contentType = req.headers["content-type"] ?? "";
-    if (!contentType.toLowerCase().startsWith("application/json")) {
+    // Use exact media-type parsing: "application/json" is valid, "application/json; charset=utf-8" is valid,
+    // but "application/json-invalid" is not.
+    const contentType = (req.headers["content-type"] ?? "").toLowerCase();
+    const mediaType = contentType.split(";")[0]?.trim() ?? "";
+    if (mediaType !== "application/json") {
       res.status(400).json({
         error: {
           code: "VALIDATION_ERROR",
