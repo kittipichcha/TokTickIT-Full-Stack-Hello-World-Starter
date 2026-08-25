@@ -42,3 +42,22 @@
 - Review comments and discussions: [PR #21 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/21)
 - Review status: Open; peer review feedback addressed. Approval and merge evidence must be recorded before the Lab 2 course submission.
 
+---
+
+## Pull Request — Health Check & Lab 1 Cleanup (PR #23)
+
+- **PR:** [#23 — Remove all health check system and Lab 1 leftover artifacts](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/23)
+- **Source branch:** `feature/issue-22-remove-health-check`
+- **Target branch:** `lab2-staging`
+- **Scope:** Remove all remaining health check system artifacts and Lab 1 leftover code (Issue #22).
+
+### Review Comments Received and Responses
+
+| Review source | Summary of feedback | Response / current evidence |
+|---|---|---|
+| @oangsa — PR #23 review | **Medium — agent.md introduces an unrelated governance change:** The PR adds a mandatory Post-Implementation Double-Check Alignment Method to `agent.md`, which is outside the scope of Issue #22 (health-check/Lab 1 cleanup only). The change also breaks the document hierarchy (duplicate `## 4` sections, `3.3`/`3.4` misplaced under the new Section 4) and the new test-alignment gate (`no test file exists that isn't in tests.md`) conflicts with existing files like `server/tests/categories.test.ts`. The PR description does not document the `agent.md` change. | Amended Issue #22 to explicitly allow `agent.md` maintenance within any issue scope. Fixed `agent.md` section hierarchy (moved `3.3`/`3.4` back under `## 3`, removed duplicate `## 4`, renumbered subsequent sections). Narrowed the Tests.md cross-reference rule to apply only to Lab 2 contract matrix tests, excluding legacy Lab 1 tests and supporting utilities. Cleaned up unused `fireEvent`/`waitFor` imports in `client/src/App.test.tsx`. Updated PR description to document the `agent.md` changes. |
+
+### Review Evidence
+- Review comments and discussions: [PR #23 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/23)
+- Review status: Open; peer review feedback addressed. Re-review requested.
+
