@@ -4,6 +4,7 @@ import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
 import {
   allocateTicketNumber,
+  allocateTicketNumberWithClient,
   TicketSequenceExhaustedError,
 } from "../../src/ticket-number.js";
 
@@ -11,7 +12,7 @@ const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
 // Dedicated years that will never collide with real ticket creation, so we can
 // exercise the allocation primitive without perturbing the current-year sequence.
-const TEST_YEARS = [2090, 2091, 2092, 2093, 2094];
+const TEST_YEARS = [2090, 2091, 2092, 2093, 2094, 2095];
 
 const SUMMARY_MARKER = "TKT-CONCURRENCY-TEST-MARKER";
 
@@ -125,14 +126,25 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
     expect(num1).not.toBe(num2);
 
     // The {YYYY} portion derives from the UTC-authoritative clock (current UTC year).
-    const currentUtcYear = await currentYear();
-    expect(num1.startsWith(`TKT-${currentUtcYear}-`)).toBe(true);
-    expect(num2.startsWith(`TKT-${currentUtcYear}-`)).toBe(true);
+    // Verify against the persisted createdAt, not the Node process clock.
+    const persisted1 = await prisma.ticket.findUnique({
+      where: { ticketNumber: num1 },
+      select: { createdAt: true },
+    });
+    const persisted2 = await prisma.ticket.findUnique({
+      where: { ticketNumber: num2 },
+      select: { createdAt: true },
+    });
+
+    const yearFromCreatedAt1 = persisted1!.createdAt.getUTCFullYear();
+    const yearFromCreatedAt2 = persisted2!.createdAt.getUTCFullYear();
+    expect(num1.startsWith(`TKT-${yearFromCreatedAt1}-`)).toBe(true);
+    expect(num2.startsWith(`TKT-${yearFromCreatedAt2}-`)).toBe(true);
 
     expect(res1.body.data.currentStatus).toBe("NEW");
   });
 
-  itIfDb("concurrent HTTP creates all receive distinct ticket numbers", async () => {
+  itIfDb("concurrent HTTP creates all receive distinct, contiguous ticket numbers with matching persisted year", async () => {
     const prisma = getPrisma();
     const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
@@ -167,6 +179,30 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
     const numbers = results.map((r) => r.body.data.ticketNumber as string);
     const unique = new Set(numbers);
     expect(unique.size).toBe(CONCURRENT_COUNT);
+
+    // Sorted sequence numbers should be contiguous (BR-01: increment by exactly 1)
+    const seqs = numbers
+      .map((n) => {
+        const parts = n.match(/^TKT-(\d{4})-(\d{6})$/);
+        return { year: parseInt(parts![1], 10), seq: parseInt(parts![2], 10) };
+      })
+      .sort((a, b) => a.seq - b.seq);
+
+    for (let i = 1; i < seqs.length; i++) {
+      expect(seqs[i].seq).toBe(seqs[i - 1].seq + 1);
+    }
+
+    // Each number's year should equal its persisted createdAt UTC year
+    const persistedTickets = await prisma.ticket.findMany({
+      where: { summary: { contains: marker } },
+      select: { ticketNumber: true, createdAt: true },
+    });
+
+    for (const t of persistedTickets) {
+      const yearFromNumber = parseInt(t.ticketNumber.match(/^TKT-(\d{4})-\d{6}$/)![1], 10);
+      const yearFromCreatedAt = t.createdAt.getUTCFullYear();
+      expect(yearFromNumber).toBe(yearFromCreatedAt);
+    }
 
     // Clean up
     await prisma.ticket.deleteMany({
@@ -207,5 +243,37 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
     const after = await prisma.ticket.count();
     expect(after).toBe(before);
+  });
+
+  itIfDb("failed post-allocation insertion leaves no sequence gap (transaction rollback)", async () => {
+    const prisma = getPrisma();
+
+    // Use a dedicated synthetic year so we can observe the sequence state directly.
+    const year = 2095;
+
+    // Record the sequence state before the failed transaction.
+    const beforeSeq = await prisma.ticketSequence.findUnique({ where: { year } });
+    const beforeLastSeq = beforeSeq?.lastSeq ?? 0;
+
+    // Simulate a failed ticket insertion after allocation within a transaction.
+    // We allocate the number inside a transaction, then force the transaction to
+    // fail (throw) before committing. The sequence increment must be rolled back.
+    await expect(
+      prisma.$transaction(async (tx) => {
+        const number = await allocateTicketNumberWithClient(tx, year);
+        expect(number).toBe(`TKT-${year}-${String(beforeLastSeq + 1).padStart(6, "0")}`);
+        // Force failure after allocation.
+        throw new Error("simulated post-allocation insertion failure");
+      }),
+    ).rejects.toThrow("simulated post-allocation insertion failure");
+
+    // The sequence increment must have been rolled back.
+    const afterSeq = await prisma.ticketSequence.findUnique({ where: { year } });
+    const afterLastSeq = afterSeq?.lastSeq ?? 0;
+    expect(afterLastSeq).toBe(beforeLastSeq);
+
+    // The next successful allocation in the same year must NOT skip a number.
+    const nextNumber = await allocateTicketNumber(year);
+    expect(nextNumber).toBe(`TKT-${year}-${String(beforeLastSeq + 1).padStart(6, "0")}`);
   });
 });

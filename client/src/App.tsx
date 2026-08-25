@@ -28,6 +28,7 @@ export default function App() {
   const [ticketDetail, setTicketDetail] = useState<TicketDetailResponse["data"] | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [detailRetryCounter, setDetailRetryCounter] = useState(0);
 
   const loadRequesters = async () => {
     setSelectorState("loading");
@@ -118,7 +119,7 @@ export default function App() {
       });
 
     return () => { cancelled = true; };
-  }, [view, detailTicketNumber, activeRequester]);
+  }, [view, detailTicketNumber, activeRequester, detailRetryCounter]);
 
   const handleCreateAnother = () => {
     setView("create-ticket");
@@ -224,7 +225,10 @@ export default function App() {
           {detailError && !detailLoading && (
             <div className="error-box" role="alert">
               <p>{detailError}</p>
-              <button className="secondary-button" onClick={() => setView("home")}>← Back to My Tickets</button>
+              <div className="error-actions">
+                <button className="secondary-button" onClick={() => setView("home")}>← Back to My Tickets</button>
+                <button className="primary-button" onClick={() => setDetailRetryCounter((c) => c + 1)}>Retry</button>
+              </div>
             </div>
           )}
           {ticketDetail && (
