@@ -8,8 +8,10 @@ import {
   setStoredRequesterId,
   type DevRequester,
 } from "./api";
+import CreateTicket from "./CreateTicket";
 
 type SelectorState = "loading" | "ready" | "empty" | "error";
+type AppView = "home" | "create-ticket";
 
 export default function App() {
   const [requesters, setRequesters] = useState<DevRequester[]>([]);
@@ -18,6 +20,7 @@ export default function App() {
   const [activeRequester, setActiveRequester] = useState<DevRequester | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<AppView>("home");
 
   const loadRequesters = async () => {
     setSelectorState("loading");
@@ -71,7 +74,17 @@ export default function App() {
     setActiveRequester(null);
     setSelectedId(null);
     setError(null);
+    setView("home");
     void loadRequesters();
+  };
+
+  const handleViewTicket = (ticketNumber: string) => {
+    // For now, just go home — Ticket Detail will be implemented in a later issue
+    setView("home");
+  };
+
+  const handleCreateAnother = () => {
+    setView("create-ticket");
   };
 
   if (!activeRequester) {
@@ -130,13 +143,37 @@ export default function App() {
     <div className="app-shell">
       <header className="app-header">
         <strong>TokTickIT</strong>
-        <nav aria-label="Primary"><a href="#my-tickets">My Tickets</a><a href="#create-ticket">Create Ticket</a></nav>
+        <nav aria-label="Primary">
+          <a
+            href="#my-tickets"
+            className={view === "home" ? "nav-active" : ""}
+            onClick={(e) => { e.preventDefault(); setView("home"); }}
+          >
+            My Tickets
+          </a>
+          <a
+            href="#create-ticket"
+            className={view === "create-ticket" ? "nav-active" : ""}
+            onClick={(e) => { e.preventDefault(); setView("create-ticket"); }}
+          >
+            Create Ticket
+          </a>
+        </nav>
         <div className="identity">{activeRequester.name}<button className="header-button" onClick={changeRequester}>Change Requester</button></div>
       </header>
-      <main className="app-container">
-        <h1>Welcome, {activeRequester.name}</h1>
-        <p>Select a feature from the navigation above to get started.</p>
-      </main>
+      {view === "home" && (
+        <main className="app-container">
+          <h1>Welcome, {activeRequester.name}</h1>
+          <p>Select a feature from the navigation above to get started.</p>
+        </main>
+      )}
+      {view === "create-ticket" && (
+        <CreateTicket
+          requester={activeRequester}
+          onViewTicket={handleViewTicket}
+          onCreateAnother={handleCreateAnother}
+        />
+      )}
     </div>
   );
 }
