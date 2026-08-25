@@ -18,15 +18,14 @@ In summary, Lab 2 requires:
 - Attachment upload/list/preview/download/soft-remove
 - Responsive Zen Green UI and keyboard-accessible flows
 
-## 2. Current Implementation Status (as of 2026-08-24)
+## 2. Current Implementation Status (as of 2026-08-25)
 Implemented in code right now:
-- `GET /api/health`
 - `GET /api/categories` (active-only)
 - `GET /api/dev-requesters` (active-only, `{ "data": [...] }` envelope)
 - `GET /api/requester-context` (requires `X-Dev-Requester-Id`, returns `422` if missing/unknown/inactive)
 - Prisma models: `Category` (with `isActive`), `DevRequester`
 - Seed data: 4 categories, 4 active + 1 inactive development requesters (idempotent upserts)
-- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester), plus the Lab 1 System Overview / health-check screen
+- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester)
 - Requester context is persisted in `sessionStorage` and sent via the `X-Dev-Requester-Id` header on requester-scoped calls
 
 Not yet implemented for Lab 2 (downstream issues):
@@ -80,8 +79,7 @@ Not yet implemented for Lab 2 (downstream issues):
 |  |  |- categories.integration.test.ts
 |  |  |- categories.service.test.ts
 |  |  |- categories.test.ts
-|  |  |- health.integration.test.ts
-|  |  |- health.test.ts
+
 |  |  |- lab-02/
 |  |  |  |- api-contract.api.test.ts
 |  |  |  |- dev-requesters.api.test.ts
@@ -172,19 +170,9 @@ Important:
   cross-feature rows previously listed in #12 (`API-REQ-02`, `API-REQ-03`,
   `API-CONTRACT-01`, `UI-MY-03`, `E2E-05`) have been formally reassigned to #13, #14,
   and #18 where their dependent models/endpoints/screens exist.
-- Server tests: 49 across 10 files; client tests: 19 across 4 files.
+- Server tests: 46 across 8 files; client tests: 13 across 4 files.
 
 ## 8. API Implemented Today
-
-### `GET /api/health`
-Response example:
-
-```json
-{
-  "status": "ok",
-  "service": "TokTickIT API"
-}
-```
 
 ### `GET /api/categories`
 Returns active categories only. Response example:

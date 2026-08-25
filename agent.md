@@ -49,6 +49,44 @@ When a task is assigned to a model or agent, it must be split into two explicit 
 - Plan: identify scope, mapped requirements (FR/BR/AC), relevant tests, risks, and implementation order.
 - Act: implement only the approved plan, run the relevant validation, and keep the change small and traceable.
 
+## 4. Post-Implementation Double-Check Alignment Method
+After every implementation is complete and all tests pass, the agent must perform a systematic double-check to ensure all documents, code, and the issue are aligned. This is a mandatory verification gate — no commit or PR may proceed until this check passes.
+
+### 4.1 Step 1: Re-read the Issue
+Re-read the issue text and acceptance criteria to confirm every task and AC has been addressed. Verify nothing was missed or misinterpreted.
+
+### 4.2 Step 2: Parallel Cross-Reference Check
+Perform the following checks in parallel (or rapid sequence) across all governing documents and the actual codebase:
+
+| Check | Source | Target | What to Verify |
+|---|---|---|---|
+| Requirements → Code | `specification.md` FR/BR list | Actual source files | Every implemented FR/BR has corresponding code; no extra behaviors beyond spec |
+| API Spec → Routes | `api-spec.md` endpoints | `server/src/module.ts` routes | Every documented endpoint exists; no undocumented endpoints remain |
+| API Spec → README | `api-spec.md` endpoints | `README.md` "API Implemented Today" | README lists only implemented endpoints; no stale/removed endpoints documented |
+| Tests.md → Test Files | `tests.md` test IDs and file paths | Actual test files on disk | Every test file path in `tests.md` exists; no test file exists that isn't in `tests.md` |
+| Tests.md → Status | `tests.md` Final column | Actual test run output | Every `Passed` row has passing evidence; no `Planned` row is incorrectly marked `Passed` |
+| UI Spec → CSS | `ui-spec.md` color tokens, styles | `client/src/App.css` | CSS uses only Zen Green tokens; no ad-hoc colors or removed component styles |
+| Issue AC → Evidence | Issue acceptance criteria | grep results, test output, file listings | Every AC is satisfied with concrete evidence |
+
+### 4.3 Step 3: Test Status Audit
+Run the full test suite and compare every test result against `tests.md`:
+- For each row in `tests.md` marked `Passed`: confirm the test file exists and the test actually passes in the latest run.
+- For each row marked `Implemented`: confirm the test file exists and the test runs (pass or fail).
+- For each row marked `Planned`: confirm the test file does NOT yet exist (or exists but is skipped), and the status is accurate.
+- If any discrepancy is found, update `tests.md` to reflect reality — never falsify status.
+
+### 4.4 Step 4: Cleanup Verification
+- Run `grep` for removed/legacy terms across `client/src/`, `server/src/`, and `README.md` to confirm no stale references remain.
+- Verify no orphaned test files, unused imports, or dead code paths reference removed features.
+- Confirm the repository structure in `README.md` matches the actual file tree.
+
+### 4.5 Step 5: Report
+Produce a concise alignment report summarizing:
+- Which checks passed
+- Any discrepancies found and how they were resolved
+- Final test counts (passed/skipped/failed)
+- Confirmation that all issue ACs are met
+
 The Plan phase does not edit production code. The Act phase does not broaden scope beyond the approved plan without another approval gate.
 
 ### 3.3 Integration & Real Database Test Rules
