@@ -15,6 +15,10 @@ const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
 const TEST_MARKER = "INT-TEST-REAL-DB";
 
+// Tracks every Ticket Number created by this suite so cleanup deletes exactly
+// those rows instead of relying on business-field marker strings.
+const createdTicketNumbers: string[] = [];
+
 describe("API-TKT-INT-02: Real normalization and persistence", () => {
   let requesterId: number;
   let activeCategoryId: number;
@@ -41,7 +45,7 @@ describe("API-TKT-INT-02: Real normalization and persistence", () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
     await prisma.ticket.deleteMany({
-      where: { summary: { contains: TEST_MARKER } },
+      where: { ticketNumber: { in: createdTicketNumbers } },
     });
     await disconnectPrisma();
   });
@@ -68,6 +72,7 @@ describe("API-TKT-INT-02: Real normalization and persistence", () => {
       });
 
     expect(res.status).toBe(201);
+    createdTicketNumbers.push(res.body.data.ticketNumber);
 
     const prisma = getPrisma();
     const ticket = await prisma.ticket.findUnique({
@@ -89,6 +94,7 @@ describe("API-TKT-INT-02: Real normalization and persistence", () => {
       });
 
     expect(res.status).toBe(201);
+    createdTicketNumbers.push(res.body.data.ticketNumber);
 
     const prisma = getPrisma();
     const ticket = await prisma.ticket.findUnique({
@@ -123,10 +129,17 @@ describe("API-TKT-INT-02: Real normalization and persistence", () => {
         ...validBody,
         categoryId: activeCategoryId,
         relatedSystemId: activeSystemId,
-        summary: `${TEST_MARKER}5`,
+        summary: "abcde",
       });
 
     expect(res.status).toBe(201);
+    createdTicketNumbers.push(res.body.data.ticketNumber);
+
+    const prisma = getPrisma();
+    const ticket = await prisma.ticket.findUnique({
+      where: { ticketNumber: res.body.data.ticketNumber },
+    });
+    expect(ticket!.summary).toBe("abcde");
   });
 
   itIfDb("accepts summary with 120 characters after trim", async () => {
@@ -142,6 +155,7 @@ describe("API-TKT-INT-02: Real normalization and persistence", () => {
       });
 
     expect(res.status).toBe(201);
+    createdTicketNumbers.push(res.body.data.ticketNumber);
   });
 
   itIfDb("rejects summary with 121 characters after trim", async () => {
@@ -192,6 +206,7 @@ describe("API-TKT-INT-02: Real normalization and persistence", () => {
       });
 
     expect(res.status).toBe(201);
+    createdTicketNumbers.push(res.body.data.ticketNumber);
   });
 
   itIfDb("accepts description with 2000 characters after trim", async () => {
@@ -207,6 +222,7 @@ describe("API-TKT-INT-02: Real normalization and persistence", () => {
       });
 
     expect(res.status).toBe(201);
+    createdTicketNumbers.push(res.body.data.ticketNumber);
   });
 
   itIfDb("rejects description with 2001 characters after trim", async () => {
@@ -301,7 +317,7 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
     await prisma.ticket.deleteMany({
-      where: { summary: { contains: TEST_MARKER } },
+      where: { ticketNumber: { in: createdTicketNumbers } },
     });
     await disconnectPrisma();
   });
@@ -322,6 +338,7 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
       });
 
     expect(res.status).toBe(201);
+    createdTicketNumbers.push(res.body.data.ticketNumber);
 
     const prisma = getPrisma();
     const ticket = await prisma.ticket.findUnique({
@@ -347,6 +364,7 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
       });
 
     expect(res.status).toBe(201);
+    createdTicketNumbers.push(res.body.data.ticketNumber);
     expect(res.body.data.itPriority).toBeNull();
     expect(res.body.data.ticketOwnerId).toBeNull();
     expect(res.body.data.currentStatus).toBe("NEW");
@@ -395,13 +413,14 @@ describe("API-TKT-INT-04: Real Ticket Detail ownership enforcement", () => {
 
     expect(res.status).toBe(201);
     ticketNumber = res.body.data.ticketNumber;
+    createdTicketNumbers.push(ticketNumber);
   });
 
   afterAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
     await prisma.ticket.deleteMany({
-      where: { summary: { contains: TEST_MARKER } },
+      where: { ticketNumber: { in: createdTicketNumbers } },
     });
     await disconnectPrisma();
   });

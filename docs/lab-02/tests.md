@@ -107,8 +107,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | UI-TKT-08 | UI | Valid and invalid pre-submit attachments | One valid and one invalid file shows the invalid file error, excludes the invalid file, and still submits the ticket with the valid file; evidence captures this state. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02, FR-10 | BR-12, BR-13 | AC-07 | Planned |
 | API-TKT-02 | API | Inactive/stale category or related-system ID rejected with 409 | Replacing an active category or related system with a stale/inactive ID fails with `409 Conflict` and no ticket is saved (ticket count verified unchanged). | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-reference-validation.integration.test.ts` | FR-02 | BR-07 | AC-27 | Passed |
 | API-TKT-03 | API | Ticket detail returns 404 for non-owner access | Requests for another Requester's ticket return `404 Not Found` and no data is exposed. | `server/tests/lab-02/ticket-detail.api.test.ts`, `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-09 | BR-24 | AC-03 | Passed |
-| API-TKT-06 | Integration | Ticket-number UTC allocation, concurrent uniqueness, contiguity, year matching, and sequence exhaustion | Frozen UTC boundary timestamps produce the correct year; the first ticket created in a frozen year receives sequence `000001` and the next ticket in the same year receives `000002` (increment of exactly 1); a frozen rollover to a new UTC year resets the sequence to `000001`; concurrent creates all receive distinct, contiguous numbers; each number's year equals its persisted `createdAt` UTC year; an exhausted yearly sequence returns `409 TICKET_SEQUENCE_EXHAUSTED` and creates no ticket. | `server/tests/lab-02/ticket-number-concurrency.integration.test.ts` | FR-03 | BR-01 | AC-01 | Passed |
-| API-TKT-INT-01 | API | Integer lexical validation (api-spec §0): decimal, exponent, nested, and escaped property names | `categoryId: 1.0`, `categoryId: 1e0`, `relatedSystemId: 1.0`, `relatedSystemId: 1e0` all return `400 VALIDATION_ERROR`; nested property with same field name does not interfere; escaped top-level property name (`\\uXXXX`) is correctly decoded; valid top-level field plus invalid ignored nested field is accepted. | `server/tests/lab-02/integer-validation.api.test.ts` | FR-02 | — | — | Passed |
+| API-TKT-INT-01 | API | Integer lexical validation (api-spec §0): decimal, exponent, nested, and escaped property names | `categoryId: 1.0`, `categoryId: 1e0`, `relatedSystemId: 1.0`, `relatedSystemId: 1e0` all return `400 VALIDATION_ERROR`; nested property with same field name does not interfere; escaped top-level property name (`\\uXXXX`) is correctly decoded; valid top-level field plus invalid ignored nested field is accepted; unknown multi-property nested objects, pretty-printed nested objects, and arrays of multi-property objects are safely ignored without `500`. | `server/tests/lab-02/integer-validation.api.test.ts` | FR-02 | — | — | Passed |
 | API-TKT-INT-02 | Integration | Real normalization and persistence against production service | Trim-before-persistence verified; all summary/description boundaries exercised through real `createTicket()`; whitespace-only values create no ticket. | `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02 | BR-08, BR-09 | — | Passed |
 | API-TKT-INT-03 | Integration | Real ownership and defaults against production service | `requesterId` from `X-Dev-Requester-Id` persisted; client-supplied `requesterId`/`ticketOwnerId` ignored; `itPriority`/`ticketOwnerId` remain `null`; `currentStatus` is `NEW`. | `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02, FR-04 | BR-06, BR-11, BR-21, BR-24 | — | Passed |
 | API-TKT-INT-04 | Integration | Real Ticket Detail ownership enforcement against production service | Requester A → `200` with full Ticket Detail; Requester B → `404 NOT_FOUND` with no ticket data exposed. | `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-09 | BR-24 | AC-03 | Passed |
@@ -380,6 +379,32 @@ npx playwright test e2e/lab-02
 Playwright note: run the E2E command only after Playwright scaffolding/dependencies are added for this branch.
 
 ## 6. Results Log (Newest First)
+
+### 2026-08-26 - PR #25 re-review: nested-object parser fix, boundary-test and cleanup corrections, E2E reassignment
+- Scope: Addressed the PR #25 re-review "Request changes" remaining blockers and follow-ups.
+  1. **P1 — 500 on ignored nested object (integer-validation.ts):** Fixed `skipValue()` to call `skipWhitespace()` before reading each nested-object key, so a comma inside an unknown nested object followed by whitespace/newline no longer throws from `readString()`. Wrapped the top-level walk in a defensive try/catch so any walker error returns the fields validated so far instead of becoming a `500 INTERNAL_ERROR`.
+  2. **P1 — cross-feature E2E:** Formally amended Issue #13 to reassign the real cross-feature E2E browser flow to Issue #18 (Integration), consistent with `tests.md` §5.2 (`E2E-01..06`). The create-to-detail flow is covered at component level (mocked `createTicket`/`fetchTicketDetail`) and API/integration level; no `e2e/` directory is added in this issue.
+  3. **P2 — 5-char summary boundary:** `create-ticket-real-db.integration.test.ts` now sends a literal 5-character summary `"abcde"` and asserts the persisted summary equals `"abcde"`.
+  4. **P2 — cleanup:** All `afterAll` blocks in `create-ticket-real-db.integration.test.ts` now delete Tickets by tracked Ticket Number (a shared `createdTicketNumbers` array) instead of matching `summary` contains `TEST_MARKER`, so accepted 120-char summaries are no longer left behind.
+  5. **Follow-up:** Removed the duplicate `API-TKT-06` matrix row in `docs/lab-02/tests.md`.
+- Tests added/updated:
+  - `server/src/integer-validation.ts`: `skipValue()` whitespace fix + defensive walk.
+  - `server/tests/lab-02/integer-validation.api.test.ts`: added 3 cases — ignored multi-property nested object, pretty-printed nested object, and array of multi-property objects, all accepted without `500`.
+  - `server/tests/lab-02/create-ticket-real-db.integration.test.ts`: literal `"abcde"` 5-char boundary; tracked Ticket Numbers for cleanup.
+  - `docs/lab-02/tests.md`: updated `API-TKT-INT-01` row, removed duplicate `API-TKT-06` row, added this Results Log entry.
+- Command(s) run:
+  - `cd server && npx vitest run tests/lab-02/integer-validation.api.test.ts`
+  - `cd server && npx vitest run tests/lab-02/create-ticket-real-db.integration.test.ts`
+  - `cd server && npx vitest run tests/lab-02`
+  - `cd client && npx vitest run`
+- Result:
+  - integer-validation: 11 passed
+  - create-ticket-real-db: 16 passed
+  - server tests/lab-02: 133 passed, 0 failed
+  - client: 24 passed, 0 failed
+- Notes and follow-up:
+  - CI evidence (GitHub workflow with isolated PostgreSQL) and standalone allocator exhaustion bounding remain non-blocking follow-ups (see issue/PR review).
+  - Cross-feature E2E is now formally owned by #18; `E2E-01..06` remain `Planned`.
 
 ### 2026-08-25 - PR #25 re-review: integer validation rewrite, real-DB evidence, BR-01 contiguity/rollback
 - Scope: Addressed the PR #25 re-review "Request changes" P1 blockers.
