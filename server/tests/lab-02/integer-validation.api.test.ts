@@ -138,6 +138,79 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
     expect(rawRes.body.error.fields.categoryId).toBeDefined();
   });
 
+  // ── Ignored nested objects/arrays must not produce 500 ──────────────────
+
+  it("ignores an unknown multi-property nested object without 500", async () => {
+    vi.mocked(service.createTicket).mockResolvedValue({
+      id: 1, ticketNumber: "TKT-2026-000001", requesterId: 1,
+      categoryId: 1, relatedSystemId: 1,
+      summary: "Valid summary text",
+      description: "Valid description text for testing",
+      requestedPriority: "MEDIUM", itPriority: null, ticketOwnerId: null,
+      currentStatus: "NEW", createdAt: new Date(), updatedAt: new Date(),
+    });
+
+    const rawRes = await request(app)
+      .post("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .set("Content-Type", "application/json")
+      .send('{"ignored":{"a":1,"b":2},"categoryId":1,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
+
+    expect(rawRes.status).toBe(201);
+  });
+
+  it("ignores a pretty-printed unknown nested object without 500", async () => {
+    vi.mocked(service.createTicket).mockResolvedValue({
+      id: 1, ticketNumber: "TKT-2026-000001", requesterId: 1,
+      categoryId: 1, relatedSystemId: 1,
+      summary: "Valid summary text",
+      description: "Valid description text for testing",
+      requestedPriority: "MEDIUM", itPriority: null, ticketOwnerId: null,
+      currentStatus: "NEW", createdAt: new Date(), updatedAt: new Date(),
+    });
+
+    const rawRes = await request(app)
+      .post("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .set("Content-Type", "application/json")
+      .send(
+        '{\n' +
+        '  "ignored": {\n' +
+        '    "nested": {\n' +
+        '      "x": 1,\n' +
+        '      "y": 2\n' +
+        '    }\n' +
+        '  },\n' +
+        '  "categoryId": 1,\n' +
+        '  "relatedSystemId": 1,\n' +
+        '  "summary": "Valid summary text",\n' +
+        '  "description": "Valid description text for testing",\n' +
+        '  "requestedPriority": "MEDIUM"\n' +
+        '}',
+      );
+
+    expect(rawRes.status).toBe(201);
+  });
+
+  it("ignores an unknown array of multi-property objects without 500", async () => {
+    vi.mocked(service.createTicket).mockResolvedValue({
+      id: 1, ticketNumber: "TKT-2026-000001", requesterId: 1,
+      categoryId: 1, relatedSystemId: 1,
+      summary: "Valid summary text",
+      description: "Valid description text for testing",
+      requestedPriority: "MEDIUM", itPriority: null, ticketOwnerId: null,
+      currentStatus: "NEW", createdAt: new Date(), updatedAt: new Date(),
+    });
+
+    const rawRes = await request(app)
+      .post("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .set("Content-Type", "application/json")
+      .send('{"ignored":[{"a":1,"b":2}],"categoryId":1,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
+
+    expect(rawRes.status).toBe(201);
+  });
+
   // ── Valid integer forms ─────────────────────────────────────────────────
 
   it("accepts valid integer categoryId and relatedSystemId", async () => {
