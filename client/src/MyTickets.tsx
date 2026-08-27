@@ -39,6 +39,9 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  // Mobile card collapse state — per-card, keyed by ticket ID
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+
   // Data state
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [tickets, setTickets] = useState<MyTicketItem[]>([]);
@@ -111,6 +114,7 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
     setSort("createdAt");
     setOrder("desc");
     setPage(1);
+    setExpandedCards(new Set());
   }, [resetKey]);
 
   const handleSortToggle = (field: SortField) => {
@@ -348,13 +352,33 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
                   </span>
                 </div>
                 <div className="ticket-card-summary">{ticket.summary}</div>
-                <div className="ticket-card-details">
-                  <span>{ticket.categoryName}</span>
-                  <span className={`priority-badge priority-${ticket.requestedPriority.toLowerCase()}`}>
-                    {ticket.requestedPriority}
-                  </span>
-                  <span>{formatUtcDate(ticket.createdAt)}</span>
-                </div>
+                <button
+                  className="ticket-card-toggle"
+                  onClick={() =>
+                    setExpandedCards((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(ticket.id)) {
+                        next.delete(ticket.id);
+                      } else {
+                        next.add(ticket.id);
+                      }
+                      return next;
+                    })
+                  }
+                  aria-expanded={expandedCards.has(ticket.id)}
+                  aria-label={`${expandedCards.has(ticket.id) ? "Collapse" : "Expand"} details for ${ticket.ticketNumber}`}
+                >
+                  {expandedCards.has(ticket.id) ? "▲ Less" : "▼ More"}
+                </button>
+                {expandedCards.has(ticket.id) && (
+                  <div className="ticket-card-details">
+                    <span>{ticket.categoryName}</span>
+                    <span className={`priority-badge priority-${ticket.requestedPriority.toLowerCase()}`}>
+                      {ticket.requestedPriority}
+                    </span>
+                    <span>{formatUtcDate(ticket.createdAt)}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
