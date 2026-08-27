@@ -340,7 +340,7 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
       [makeTicket(1), makeTicket(2), makeTicket(3), makeTicket(4), makeTicket(5)],
       { page: 1, pageSize: 10, totalItems: 25, totalPages: 3, unfilteredTotalItems: 25 },
     );
-    const outOfRangeResult = makeResult([], { page: 3, pageSize: 10, totalItems: 0, totalPages: 1, unfilteredTotalItems: 5 });
+    const outOfRangeResult = makeResult([], { page: 3, pageSize: 10, totalItems: 5, totalPages: 1, unfilteredTotalItems: 5 });
     const afterResetResult = makeResult(
       [makeTicket(1, { summary: "Ticket 1 after reset" })],
       { page: 1, pageSize: 10, totalItems: 5, totalPages: 1, unfilteredTotalItems: 5 },
