@@ -16,10 +16,20 @@ const TEST_YEARS = [2090, 2091, 2092, 2093, 2094, 2095];
 
 const SUMMARY_MARKER = "TKT-CONCURRENCY-TEST-MARKER";
 
+// Tracks every Ticket Number created by this suite so cleanup deletes exactly
+// those rows instead of relying on business-field marker strings.
+const createdTicketNumbers: string[] = [];
+
 let currentYearSnapshot: { year: number; lastSeq: number } | null = null;
 
-async function currentYear(): Promise<number> {
-  return new Date().getUTCFullYear();
+/**
+ * Returns the current UTC year according to the database clock,
+ * matching the authoritative source used by production.
+ */
+async function getDatabaseUTCCurrentYear(): Promise<number> {
+  const prisma = getPrisma();
+  const rows = await prisma.$queryRaw<Array<{ now: Date }>>`SELECT NOW() AS "now"`;
+  return rows[0]!.now.getUTCFullYear();
 }
 
 describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion", () => {
@@ -28,7 +38,7 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
     const prisma = getPrisma();
     // Snapshot the current-year sequence so the suite leaves no side effects.
     currentYearSnapshot = await prisma.ticketSequence.findUnique({
-      where: { year: await currentYear() },
+      where: { year: await getDatabaseUTCCurrentYear() },
     });
   });
 
@@ -36,15 +46,22 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
     // Remove tickets created by this suite.
-    await prisma.ticket.deleteMany({ where: { summary: { contains: SUMMARY_MARKER } } });
+    if (createdTicketNumbers.length > 0) {
+      await prisma.ticket.deleteMany({
+        where: { ticketNumber: { in: createdTicketNumbers } },
+      });
+    }
     // Remove the test-year sequence rows.
     await prisma.ticketSequence.deleteMany({ where: { year: { in: TEST_YEARS } } });
     // Restore the current-year sequence to its original state.
-    const year = await currentYear();
+    const year = await getDatabaseUTCCurrentYear();
     await prisma.ticketSequence.deleteMany({ where: { year } });
     if (currentYearSnapshot) {
       await prisma.ticketSequence.create({ data: currentYearSnapshot });
     }
+    // Assert that restoration succeeded
+    const restored = await prisma.ticketSequence.findUnique({ where: { year } });
+    expect(restored).toEqual(currentYearSnapshot);
     await disconnectPrisma();
   });
 
@@ -142,6 +159,9 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
     expect(num2.startsWith(`TKT-${yearFromCreatedAt2}-`)).toBe(true);
 
     expect(res1.body.data.currentStatus).toBe("NEW");
+
+    // Track for root-level cleanup
+    createdTicketNumbers.push(num1, num2);
   });
 
   itIfDb("concurrent HTTP creates all receive distinct, contiguous ticket numbers with matching persisted year", async () => {
@@ -194,7 +214,7 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
     // Each number's year should equal its persisted createdAt UTC year
     const persistedTickets = await prisma.ticket.findMany({
-      where: { summary: { contains: marker } },
+      where: { ticketNumber: { in: numbers } },
       select: { ticketNumber: true, createdAt: true },
     });
 
@@ -204,10 +224,10 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
       expect(yearFromNumber).toBe(yearFromCreatedAt);
     }
 
-    // Clean up
-    await prisma.ticket.deleteMany({
-      where: { summary: { contains: marker } },
-    });
+    // Track for root-level cleanup
+    for (const n of numbers) {
+      createdTicketNumbers.push(n);
+    }
   });
 
   itIfDb("returns 409 TICKET_SEQUENCE_EXHAUSTED and creates no ticket when exhausted", async () => {
@@ -217,7 +237,7 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester && category && system).toBeTruthy();
 
-    const currentUtcYear = await currentYear();
+    const currentUtcYear = await getDatabaseUTCCurrentYear();
     const before = await prisma.ticket.count();
 
     // Exhaust the real current-year sequence; the afterAll snapshot-restore undoes this.
