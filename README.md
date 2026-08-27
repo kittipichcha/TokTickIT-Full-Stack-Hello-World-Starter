@@ -18,7 +18,7 @@ In summary, Lab 2 requires:
 - Attachment upload/list/preview/download/soft-remove
 - Responsive Zen Green UI and keyboard-accessible flows
 
-## 2. Current Implementation Status (as of 2026-08-27)
+## 2. Current Implementation Status (as of 2026-08-28)
 Implemented in code right now:
 - `GET /api/categories` (active-only)
 - `GET /api/dev-requesters` (active-only, `{ "data": [...] }` envelope)
@@ -37,15 +37,24 @@ Implemented in code right now:
 - View Ticket action navigates to Ticket Detail with loading/error/not-found states
 - My Tickets frontend screen with sortable table, mobile cards, loading/empty/no-results/error states, pagination footer, and requester-switch data reset
 
-Deferred to Issue #15:
+**New in this release (Issue #15 — Attachment Lifecycle & Ticket Detail):**
+- `POST /api/tickets/:ticketNumber/attachments` — Upload attachment (multipart, single file) with type/size/content-signature validation, 5-active limit, sequential processing
+- `GET /api/tickets/:ticketNumber/attachments` — List attachments (active + removed), deterministic `uploadedAt ASC, id ASC` ordering
+- `GET /api/attachments/:attachmentId/download` — Download attachment with ownership re-validation, `Content-Disposition` with RFC 5987 UTF-8 `filename*`, removed → `410 ATTACHMENT_REMOVED`
+- `GET /api/attachments/:attachmentId/preview` — Preview attachment (image inline or PDF fallback), same ownership/removal semantics as download
+- `DELETE /api/attachments/:attachmentId` — Soft-remove with optional reason (normalization: omitted/blank → null, 1–200 chars after trim, non-string → 400), removed → `409 CONFLICT`
+- Secure filesystem storage with compensating write-then-persist strategy (physical file written before metadata; metadata failure deletes the file)
+- Uploaded files renamed to UUID + validated extension; original filename is display metadata only
+- Content-signature validation (FF D8 FF for JPEG, PNG magic bytes, RIFF+WEBP for WebP, %PDF- for PDF)
+- Client-side attachment validation (type/size before network), drag-and-drop, sequential upload with per-file status, Case B partial-success UI
+- Ticket Detail: Preview/Download/Remove actions, add attachment control with validation, removal confirmation dialog with optional reason
+- Server tests: 29 new attachment tests across `attachments.api.test.ts` and `attachment-validation.unit.test.ts`
 
-- Attachment upload, preview, download, and soft-removal endpoints.
-- Full attachment action controls on Ticket Detail.
-
-Not yet implemented for Lab 2 (downstream issues):
-- Attachment endpoints (upload, list, download, preview, soft-remove)
-- Full attachment action controls on Ticket Detail.
-- Remaining Lab 2 test suites for attachments (unit/api/ui/e2e/responsive/visual)
+Deferred to Issue #18 (final integration/release verification):
+- Full E2E test suite (Playwright)
+- Cross-endpoint API contract matrix
+- Visual/responsive screenshot evidence
+- Final release verification checklist
 
 ## 3. Repository Structure
 
