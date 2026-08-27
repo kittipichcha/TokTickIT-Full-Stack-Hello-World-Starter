@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchMyTickets,
   fetchCategories,
@@ -48,6 +48,9 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
   const [pagination, setPagination] = useState<MyTicketsResponse["pagination"] | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Monotonically increasing request sequence ID to guard against stale responses
+  const requestSeqRef = useRef(0);
+
   // Load categories for filter dropdown
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +65,7 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
   }, []);
 
   const loadTickets = useCallback(async () => {
+    const seqId = ++requestSeqRef.current;
     setLoadState("loading");
     setErrorMessage(null);
 
@@ -77,11 +81,17 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
         pageSize,
       });
 
+      // Guard: discard stale response from an earlier request
+      if (seqId !== requestSeqRef.current) return;
+
       // Handle out-of-range page: navigate to last valid page
       if (result.pagination.totalPages > 0 && page > result.pagination.totalPages) {
         setPage(result.pagination.totalPages);
         return; // Will re-trigger via page state change
       }
+
+      // Guard again after potential setPage (which could trigger a new loadTickets)
+      if (seqId !== requestSeqRef.current) return;
 
       setTickets(result.data);
       setPagination(result.pagination);
@@ -95,8 +105,11 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
         setLoadState("loaded");
       }
     } catch (err) {
-      setLoadState("error");
-      setErrorMessage(err instanceof Error ? err.message : "Failed to load tickets.");
+      // Only set error state if this is still the latest request
+      if (seqId === requestSeqRef.current) {
+        setLoadState("error");
+        setErrorMessage(err instanceof Error ? err.message : "Failed to load tickets.");
+      }
     }
   }, [requester.id, search, categoryId, requestedPriority, status, sort, order, page, pageSize]);
 

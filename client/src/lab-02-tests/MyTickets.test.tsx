@@ -518,3 +518,89 @@ describe("UI-MY-06: Mobile card collapse/expand for secondary details", () => {
     expect(toggle1.getAttribute("aria-expanded")).toBe("false");
   });
 });
+describe("UI-MY-07: Stale-response protection — older request must not overwrite newer results", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchCategories).mockImplementation(async () => [{ id: 1, name: "Hardware" }]);
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("discards stale response from a slow earlier request when a newer request completes first", async () => {
+    // Deferred promises to control resolution order
+    let resolveA!: (value: unknown) => void;
+    let resolveB!: (value: unknown) => void;
+    const promiseA = new Promise((resolve) => { resolveA = resolve; });
+    const promiseB = new Promise((resolve) => { resolveB = resolve; });
+
+    let callIdx = 0;
+    vi.mocked(api.fetchMyTickets).mockImplementation(async (_rid, params) => {
+      callIdx++;
+      const search = params?.search ?? "";
+      // Call 1 is the initial load — resolve immediately
+      if (callIdx === 1) {
+        return makeResult([], { unfilteredTotalItems: 0 });
+      }
+      // First search param change (e.g. "old") — hangs on promiseA
+      if (callIdx === 2) {
+        await promiseA;
+        return makeResult(
+          [makeTicket(1, { summary: "STALE result from old search" })],
+          { unfilteredTotalItems: 1 },
+        );
+      }
+      // All subsequent calls — hang on promiseB
+      await promiseB;
+      return makeResult(
+        [makeTicket(2, { ticketNumber: "TKT-2026-000002", summary: "NEW result from new search" })],
+        { unfilteredTotalItems: 1 },
+      );
+    });
+
+    render(<App />);
+
+    const selects = await screen.findAllByLabelText("Development Requester");
+    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    // Wait for initial empty state
+    await screen.findByText("You haven't created any tickets yet.");
+
+    // Get the search input
+    const searchInput = screen.getAllByLabelText("Search tickets")[0];
+
+    // Start request A (slow) — set search to "old"
+    fireEvent.change(searchInput, { target: { value: "old" } });
+
+    // Immediately start request B (fast) — set search to "new"
+    fireEvent.change(searchInput, { target: { value: "new" } });
+
+    // Resolve B first
+    resolveB!(undefined);
+    // Wait for B's result to render (appears in table and mobile cards)
+    await screen.findAllByText("NEW result from new search");
+
+    // Verify STALE is not yet displayed
+    expect(screen.queryByText("STALE result from old search")).toBeNull();
+
+    // Now resolve A (the stale request)
+    resolveA!(undefined);
+
+    // Wait a tick for React to process the stale state update
+    await new Promise((r) => setTimeout(r, 100));
+
+    // STALE should still not be displayed — the guard should have discarded it
+    expect(screen.queryByText("STALE result from old search")).toBeNull();
+
+    // NEW should still be displayed
+    expect(screen.getAllByText("NEW result from new search").length).toBeGreaterThan(0);
+  });
+});
