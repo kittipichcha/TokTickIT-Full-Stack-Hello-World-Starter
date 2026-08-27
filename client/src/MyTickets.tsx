@@ -254,7 +254,23 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
 
       {/* Empty state */}
       {loadState === "empty" && (
-        <div className="empty-state my-tickets-empty">
+        <div className="empty-state my-tickets-empty" role="status">
+          <svg
+            width="64"
+            height="64"
+            viewBox="0 0 64 64"
+            fill="none"
+            aria-hidden="true"
+            style={{ marginBottom: "12px" }}
+          >
+            <rect x="8" y="12" width="48" height="40" rx="4" stroke="var(--border-light)" strokeWidth="2" fill="var(--pale)" />
+            <line x1="16" y1="24" x2="48" y2="24" stroke="var(--border-light)" strokeWidth="2" />
+            <line x1="16" y1="32" x2="40" y2="32" stroke="var(--border-light)" strokeWidth="2" />
+            <line x1="16" y1="40" x2="44" y2="40" stroke="var(--border-light)" strokeWidth="2" />
+            <circle cx="48" cy="44" r="10" fill="var(--primary)" />
+            <line x1="48" y1="40" x2="48" y2="48" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            <line x1="44" y1="44" x2="52" y2="44" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          </svg>
           <p>You haven't created any tickets yet.</p>
           <button className="primary-button" onClick={onCreateTicket}>Create Ticket</button>
         </div>
