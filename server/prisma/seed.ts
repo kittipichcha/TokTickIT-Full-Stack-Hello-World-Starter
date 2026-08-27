@@ -31,7 +31,24 @@ async function main() {
     });
   }
 
-  console.log('Seed completed. Categories and development requesters inserted/verified.');
+  const relatedSystems = [
+    { name: 'Corporate Laptop' },
+    { name: 'Campus Wi-Fi' },
+    { name: 'Email System' },
+    { name: 'VPN Gateway' },
+    { name: 'HR Portal' },
+    { name: 'Shared Drive' },
+  ];
+
+  for (const system of relatedSystems) {
+    await prisma.relatedSystem.upsert({
+      where: { name: system.name },
+      update: {},
+      create: system,
+    });
+  }
+
+  console.log('Seed completed. Categories, development requesters, and related systems inserted/verified.');
 }
 
 main()

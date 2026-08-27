@@ -76,37 +76,41 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | Missing requester context redirects to the selector screen without crashing. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-21, BR-05 | AC-02 | Passed |
 | UI-REQ-02 | UI | Stale/inactive requester context clears sessionStorage and shows explanatory message | Stored requester is cleared, the app redirects to selector, and the user sees a clear inactive-requester message. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-15 | BR-05, BR-21 | AC-02, AC-15 | Passed |
 | API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Planned |
-| API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | — | Planned |
-| API-CONTRACT-01 | API | Canonical error body and request parsing matrix for every endpoint class | Each requester-scoped endpoint rejects missing, malformed, duplicate, unknown, and inactive requester headers with the canonical `422` body; malformed route IDs/numbers return canonical `404`; JSON endpoints reject malformed JSON, non-object bodies, and wrong content type with canonical `400`; duplicate query keys use the first value; all `500` responses are safe. | `server/tests/lab-02/api-contract.api.test.ts` | FR-01, FR-09 | BR-21, BR-24 | AC-02, AC-03 | Planned |
-| DB-01 | Integration | Fresh database migrates to the Lab 2 schema | Forward migration creates all required tables, fields, constraints, relations, and indexes without resetting the database. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Planned |
-| DB-02 | Integration | Existing Lab 1 Category rows survive the Lab 2 migration | Existing Category `id`, `name`, and `createdAt` values remain unchanged and `isActive` is backfilled to `true`. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Planned |
-| SEED-01 | Integration | Seed is idempotent when run twice | Running the seed twice creates no duplicate Requesters, Categories, or Related Systems and does not replace existing required Categories. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Planned |
-| SEED-02 | Integration | Seed contains the required reference and requester records | Each of the four required Category names exists exactly once, unrelated pre-existing Categories are preserved, and there are at least six Related Systems, at least four active Requesters, and at least one inactive Requester. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Planned |
-| API-REF-01 | API | GET /api/categories returns only active Categories with correct response shape | The endpoint returns an array of active Category objects with Lab 1 raw-array response shape (no `{ data: [...] }` envelope). | `server/tests/lab-02/reference-data.api.test.ts` | — | BR-07 | — | Planned |
-| API-REF-02 | API | GET /api/related-systems returns only active Related Systems with standard envelope | The endpoint returns `{ data: [...] }` with only active Related System objects. | `server/tests/lab-02/reference-data.api.test.ts` | — | BR-07 | — | Planned |
+| API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | — | Passed |
+| API-CONTRACT-01 | API | Canonical error body and request parsing matrix for every endpoint class | Each requester-scoped endpoint rejects missing, malformed, duplicate, unknown, and inactive requester headers with the canonical `422` body; malformed route IDs/numbers return canonical `404`; JSON endpoints reject malformed JSON, non-object bodies, and wrong content type with canonical `400`; duplicate query keys use the first value; all `500` responses are safe. | `server/tests/lab-02/api-contract.api.test.ts` | FR-01, FR-09 | BR-21, BR-24 | AC-02, AC-03 | Passed |
+| DB-01 | Integration | Fresh database migrates to the Lab 2 schema | Forward migration creates all required tables, fields, constraints, relations, and indexes without resetting the database. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Passed |
+| DB-02 | Integration | Existing Lab 1 Category rows survive the Lab 2 migration | Existing Category `id`, `name`, and `createdAt` values remain unchanged and `isActive` is backfilled to `true`. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Passed |
+| SEED-01 | Integration | Seed is idempotent when run twice | Running the seed twice creates no duplicate Requesters, Categories, or Related Systems and does not replace existing required Categories. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Passed |
+| SEED-02 | Integration | Seed contains the required reference and requester records | Each of the four required Category names exists exactly once, unrelated pre-existing Categories are preserved, and there are at least six Related Systems, at least four active Requesters, and at least one inactive Requester. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Passed |
+| API-REF-01 | API | GET /api/categories returns only active Categories with correct response shape | The endpoint returns an array of active Category objects with Lab 1 raw-array response shape (no `{ data: [...] }` envelope). | `server/tests/lab-02/reference-data.api.test.ts` | — | BR-07 | — | Passed |
+| API-REF-02 | API | GET /api/related-systems returns only active Related Systems with standard envelope | The endpoint returns `{ data: [...] }` with only active Related System objects. | `server/tests/lab-02/reference-data.api.test.ts` | — | BR-07 | — | Passed |
 | UI-REQ-03 | UI | Requester Selection loading state shows skeleton/spinner | The loading state displays while fetching active requesters from the API. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-04 | — | Passed |
 | UI-REQ-04 | UI | Requester Selection empty state for zero active requesters | When no active requesters exist, a clear empty-state message is shown instead of a blank dropdown. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-15 | BR-04 | — | Passed |
 | UI-REQ-05 | UI | Requester Selection API failure shows error with manual Retry button | API failure shows an error message and a Retry action; Continue remains disabled until selection succeeds. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | — | — | Passed |
 | UI-REQ-06 | UI | Requester Selection stores selected requester in sessionStorage and sends X-Dev-Requester-Id header | The client persists the selected ID, sends the header (asserted on the actual `/api/requester-context` fetch request), shows the selected Requester name in the application shell, and exposes an operable Change Requester action. | `client/src/lab-02-tests/RequesterSelection.integration.test.tsx` | FR-01, FR-14 | BR-14, BR-21 | — | Passed |
 | UI-REQ-07 | UI | Requester Selection keyboard and post-selection flow | Testing-only explanatory text is visible; Continue is disabled before selection and enabled after selection; the full selector → Continue → shell → Change Requester → selector path is keyboard-operable (Enter/Space activation) with focus reachable on each control; after Continue the selected name and Change Requester action are visible. Browser-rendered visible-focus styling is deferred to `E2E-05` (AC-25). | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-14 | BR-03, BR-14 | — | Passed |
-| API-TKT-NOR-01 | API | Summary/Description trimming and boundary behavior | Summary and Description are trimmed before validation; trimmed values are validated and persisted. Boundary: 5/4/120/121 chars for summary; 10/9/2000/2001 chars for description (inclusive/exclusive). Whitespace-only input rejected. | `server/tests/lab-02/create-ticket-normalization.api.test.ts` | FR-02 | BR-08, BR-09 | — | Planned |
-| API-TKT-NOR-02 | API | CategoryId/RelatedSystemId validation with malformed, nonexistent, and inactive cases | Malformed (non-integer) → 400; well-formed but nonexistent → 409; existing but inactive → 409. | `server/tests/lab-02/create-ticket-normalization.api.test.ts` | FR-02 | BR-07 | — | Planned |
-| API-TKT-01 | API | Create ticket success: returns generated ticket number matching TKT-{YYYY}-{6-digit} format, verifies uniqueness | A valid create request creates exactly one ticket, returns the official backend-generated ticket number matching the format pattern, verifies two tickets receive different numbers, and explicitly asserts `currentStatus === "NEW"` in the response. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 | Planned |
-| API-TKT-07 | API | Requested Priority server-side validation | Missing `requestedPriority` → 400; invalid enum value (e.g. `URGENT`) → 400; `LOW`/`MEDIUM`/`HIGH` are each accepted and persisted as submitted. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-10 | — | Planned |
-| API-TKT-06 | Integration | Ticket-number UTC allocation, concurrent uniqueness, and sequence exhaustion | Frozen UTC boundary timestamps produce the correct year; the first ticket created in a frozen year receives sequence `000001` and the next ticket in the same year receives `000002` (increment of exactly 1); a frozen rollover to a new UTC year resets the sequence to `000001`; concurrent creates all receive distinct numbers; an exhausted yearly sequence returns `409 TICKET_SEQUENCE_EXHAUSTED` and creates no ticket. | `server/tests/lab-02/ticket-number-concurrency.integration.test.ts` | FR-03 | BR-01 | AC-01 | Planned |
+| API-TKT-NOR-01 | API | Summary/Description trimming and boundary behavior | Summary and Description are trimmed before validation; trimmed values are validated and persisted. Boundary: 5/4/120/121 chars for summary; 10/9/2000/2001 chars for description (inclusive/exclusive). Whitespace-only input rejected. | `server/tests/lab-02/create-ticket-normalization.api.test.ts`, `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02 | BR-08, BR-09 | — | Passed |
+| API-TKT-NOR-02 | API | CategoryId/RelatedSystemId validation with malformed, nonexistent, and inactive cases | Malformed (non-integer) → 400; well-formed but nonexistent → 409; existent but inactive → 409. | `server/tests/lab-02/create-ticket-normalization.api.test.ts`, `server/tests/lab-02/create-ticket-validation.unit.test.ts` | FR-02 | BR-07 | — | Passed |
+| API-TKT-01 | API | Create ticket success: returns generated ticket number matching TKT-{YYYY}-{6-digit} format, verifies uniqueness | A valid create request creates exactly one ticket, returns the official backend-generated ticket number matching the format pattern, verifies two tickets receive different numbers, and explicitly asserts `currentStatus === "NEW"` in the response. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 | Passed |
+| API-TKT-07 | API | Requested Priority server-side validation | Missing `requestedPriority` → 400; invalid enum value (e.g. `URGENT`) → 400; `LOW`/`MEDIUM`/`HIGH` are each accepted and persisted as submitted. | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-validation.unit.test.ts` | FR-02 | BR-10 | — | Passed |
+| API-TKT-06 | Integration | Ticket-number UTC allocation, concurrent uniqueness, contiguity, year matching, and sequence exhaustion | Frozen UTC boundary timestamps produce the correct year; the first ticket created in a frozen year receives sequence `000001` and the next ticket in the same year receives `000002` (increment of exactly 1); a frozen rollover to a new UTC year resets the sequence to `000001`; concurrent creates all receive distinct, contiguous numbers; each number's year equals its persisted `createdAt` UTC year; an exhausted yearly sequence returns `409 TICKET_SEQUENCE_EXHAUSTED` and creates no ticket. | `server/tests/lab-02/ticket-number-concurrency.integration.test.ts` | FR-03 | BR-01 | AC-01 | Passed |
 | STATIC-01 | Static/Doc | BR-25 Lab 3 authentication-transition boundary is a documented, non-runtime contract | Confirms no Lab 2 code path treats a client-supplied `X-Dev-Requester-Id` as authentication, and that the Lab 3 transition boundary is documented; verified by code/documentation review rather than an executable assertion. | `docs/lab-02/specification.md` (BR-25) | — | BR-25 | — | Planned |
-| API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation | The server persists ownership from the validated caller header; the test does not introduce an undocumented `requesterId` request field. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | — | Planned |
-| API-TKT-05 | API | Requester-created tickets keep IT Priority and Ticket Owner null | `itPriority` and `ticketOwnerId` remain `null` on requester-created tickets. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-11 | — | Planned |
-| UI-TKT-07 | UI | Requested Priority control is required and defaults to MEDIUM | The field defaults to `MEDIUM` and blocks submission if the value is missing from the form model. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-10 | — | Planned |
-| UI-TKT-01 | UI | Empty summary blocks submit and shows field error | The summary field shows a direct validation error and no API call is sent. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-04 | Planned |
-| UI-TKT-02 | UI | Summary over 120 chars blocks submit with length error | A summary longer than 120 chars is rejected with a field-level message. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-05 | Planned |
-| UI-TKT-03 | UI | Description under 10 chars blocks submit with field error | A description shorter than 10 chars is rejected before request submission. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-09 | AC-06 | Planned |
-| UI-TKT-04 | UI | Submit busy state prevents duplicate submission | While a create request is in flight, the button is disabled and no second request is sent. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-15 | AC-10 | Planned |
-| UI-TKT-05 | UI | Case A — failed create keeps entered values and shows inline error | A failed create request preserves all form values and shows a manual-retry inline error without auto-retrying. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 | Planned |
+| API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation | The server persists ownership from the validated caller header; the test does not introduce an undocumented `requesterId` request field. | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | — | Passed |
+| API-TKT-05 | API | Requester-created tickets keep IT Priority and Ticket Owner null | `itPriority` and `ticketOwnerId` remain `null` on requester-created tickets. | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02 | BR-11 | — | Passed |
+| UI-TKT-07 | UI | Requested Priority control is required and defaults to MEDIUM | The field defaults to `MEDIUM` and blocks submission if the value is missing from the form model. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-10 | — | Passed |
+| UI-TKT-01 | UI | Empty summary blocks submit and shows field error | The summary field shows a direct validation error and no API call is sent. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-04 | Passed |
+| UI-TKT-02 | UI | Summary over 120 chars blocks submit with length error | A summary longer than 120 chars is rejected with a field-level message. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-08 | AC-05 | Passed |
+| UI-TKT-03 | UI | Description under 10 chars blocks submit with field error | A description shorter than 10 chars is rejected before request submission. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-09 | AC-06 | Passed |
+| UI-TKT-04 | UI | Submit busy state prevents duplicate submission | While a create request is in flight, the button is disabled and no second request is sent. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-15 | AC-10 | Passed |
+| UI-TKT-05 | UI | Case A — failed create keeps entered values and shows inline error | A failed create request preserves all form values and shows a manual-retry inline error without auto-retrying. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 | Passed |
 | UI-TKT-06 | UI | Case B — partial success: ticket created but attachment upload failed shows Ticket Number, separate attachment error, and blocks ticket resubmission | The created ticket remains saved, a separate attachment failure is reported, and the user is not shown a duplicate create flow. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02, FR-10, FR-17 | BR-17 | AC-26 | Planned |
 | UI-TKT-08 | UI | Valid and invalid pre-submit attachments | One valid and one invalid file shows the invalid file error, excludes the invalid file, and still submits the ticket with the valid file; evidence captures this state. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02, FR-10 | BR-12, BR-13 | AC-07 | Planned |
-| API-TKT-02 | API | Inactive/stale category or related-system ID rejected with 409 | Replacing an active category or related system with a stale/inactive ID fails with `409 Conflict` and no ticket is saved. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-07 | AC-27 | Planned |
-| API-TKT-03 | API | Ticket detail returns 404 for non-owner access | Requests for another Requester's ticket return `404 Not Found` and no data is exposed. | `server/tests/lab-02/ticket-detail.api.test.ts` | FR-09 | BR-24 | AC-03 | Planned |
+| API-TKT-02 | API | Inactive/stale category or related-system ID rejected with 409 | Replacing an active category or related system with a stale/inactive ID fails with `409 Conflict` and no ticket is saved (ticket count verified unchanged). | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-reference-validation.integration.test.ts` | FR-02 | BR-07 | AC-27 | Passed |
+| API-TKT-03 | API | Ticket detail returns 404 for non-owner access | Requests for another Requester's ticket return `404 Not Found` and no data is exposed. | `server/tests/lab-02/ticket-detail.api.test.ts`, `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-09 | BR-24 | AC-03 | Passed |
+| API-TKT-INT-01 | API | Integer lexical validation (api-spec §0): decimal, exponent, nested, and escaped property names | `categoryId: 1.0`, `categoryId: 1e0`, `relatedSystemId: 1.0`, `relatedSystemId: 1e0` all return `400 VALIDATION_ERROR`; nested property with same field name does not interfere; escaped top-level property name (`\\uXXXX`) is correctly decoded; valid top-level field plus invalid ignored nested field is accepted; unknown multi-property nested objects, pretty-printed nested objects, and arrays of multi-property objects are safely ignored without `500`. | `server/tests/lab-02/integer-validation.api.test.ts` | FR-02 | — | — | Passed |
+| API-TKT-INT-02 | Integration | Real normalization and persistence against production service | Trim-before-persistence verified; all summary/description boundaries exercised through real `createTicket()`; whitespace-only values create no ticket. | `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02 | BR-08, BR-09 | — | Passed |
+| API-TKT-INT-03 | Integration | Real ownership and defaults against production service | `requesterId` from `X-Dev-Requester-Id` persisted; client-supplied `requesterId`/`ticketOwnerId` ignored; `itPriority`/`ticketOwnerId` remain `null`; `currentStatus` is `NEW`. | `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02, FR-04 | BR-06, BR-11, BR-21, BR-24 | — | Passed |
+| API-TKT-INT-04 | Integration | Real Ticket Detail ownership enforcement against production service | Requester A → `200` with full Ticket Detail; Requester B → `404 NOT_FOUND` with no ticket data exposed. | `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-09 | BR-24 | AC-03 | Passed |
 | API-MY-01 | API | My Tickets returns only current requester-owned tickets (ownership isolation) | Only tickets belonging to the current requester are returned, even when other tickets exist. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-04 | BR-24 | AC-03 | Planned |
 | API-MY-02 | API | Search by ticket number/summary substring | Search matches ticket numbers and summary substrings for the current requester only, after applying the BR-23 normalization rule. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05 | BR-23 | AC-17 | Planned |
 | API-MY-03 | API | Category/Priority/Status filters are conjunctive | The list applies all selected filters together and returns only intersection matches. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-06 | BR-23 | AC-18 | Planned |
@@ -148,7 +152,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | E2E-03 | E2E | Full attachment lifecycle (upload/preview/download/remove) | Users can add, preview, download, and remove attachments on their own tickets without breaking the ticket flow. | `e2e/lab-02/attachment-lifecycle.spec.ts` | FR-10, FR-11, FR-12, FR-13 | BR-12, BR-18, BR-28 | AC-07, AC-12, AC-13, AC-24 | Planned |
 | E2E-04 | E2E | BR-17 partial success: ticket created, attachment upload fails, ticket persists, no duplicate, retry from Ticket Detail | Ticket creation succeeds, attachment failure is reported separately, and the user can retry the attachment without creating a duplicate. | `e2e/lab-02/partial-success-attachment.spec.ts` | FR-02, FR-10, FR-17 | BR-17 | AC-26 | Planned |
 | E2E-05 | E2E | Keyboard-only requester selection and create-ticket flow with visible focus indicators | Keyboard users can operate the testing-only Requester Selection, Continue, Change Requester, and complete Create Ticket with visible focus and no inaccessible inputs. | `e2e/lab-02/keyboard-access.spec.ts` | FR-01, FR-14 | BR-03, BR-14 | AC-25 | Planned |
-| UI-ERR-01 | UI | Case A — ticket create API failure preserves form state and requires manual retry | A create failure leaves all form values populated and requires manual retry rather than auto-retrying. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 | Planned |
+| UI-ERR-01 | UI | Case A — ticket create API failure preserves form state and requires manual retry | A create failure leaves all form values populated and requires manual retry rather than auto-retrying. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 | Passed |
 | UI-STYLE-01 | UI Style | Editable/read-only/invalid/disabled/busy field and button styles match Zen Green tokens | The visual system consistently distinguishes valid, invalid, disabled, busy, and read-only states. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | — | — | Planned |
 | UI-STYLE-02 | UI Style | Required-field labels show red asterisk; validation messages render directly under fields | Required labels and inline validation match the accessibility and UI contract. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-08, BR-09 | AC-04, AC-06 | Planned |
 | UI-STYLE-03 | UI Style | Priority/Status/Removed badge styling and non-color-reliant labels | Badges are styled with accessible labels and are understandable without relying on color alone. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-20 | AC-12 | Planned |
@@ -248,6 +252,53 @@ Rows that belong to downstream issues (not #12) are intentionally left `Planned`
 
 ### Canonical parsing and error assertions (API-CONTRACT-01)
 - Every non-2xx response matches `{ error: { code, message } }`; every `400` includes `fields`, including `fields.file` for `ATTACHMENT_LIMIT_REACHED`; non-`400` responses omit `fields`.
+
+## 6. Mock vs Real Integration Test Status (2026-08-25)
+
+This section clarifies which tests exercise the real service+database layers and which
+verify only mocked behavior. The `Final` column in Section 5 reflects whether the test
+exists and passes; it does **not** distinguish mock from real integration.
+
+### Tests that use mocked service layer (verify HTTP contract only)
+
+| Test ID | File | Mocked function(s) | Notes |
+|---|---|---|---|
+| API-TKT-01 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies HTTP response shape, not real DB write |
+| API-TKT-04 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Captures requesterId passed to mock |
+| API-TKT-05 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies null fields in mock response |
+| API-TKT-07 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies validation error codes from mock |
+| API-TKT-02 | `create-ticket.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies 409 error codes from mock |
+| API-TKT-NOR-01 | `create-ticket-normalization.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies boundary validation via mock rejections |
+| API-TKT-NOR-02 | `create-ticket-normalization.api.test.ts` | `createTicket`, `isActiveDevRequester` | Verifies reference validation via mock rejections |
+| API-TKT-03 | `ticket-detail.api.test.ts` | `getTicketByNumber`, `isActiveDevRequester` | Verifies ownership enforcement via mock |
+
+### Tests that exercise real service+database layers
+
+| Test ID | File | Notes |
+|---|---|---|
+| API-TKT-06 | `ticket-number-concurrency.integration.test.ts` | Real DB: allocates sequences, creates tickets, verifies exhaustion, concurrent HTTP creates, contiguity, year matching, and transaction rollback |
+| API-TKT-02-INT | `create-ticket-reference-validation.integration.test.ts` | Real DB: creates inactive references, verifies 409 rejection with unchanged ticket count, verifies valid create |
+| API-TKT-INT-01 | `integer-validation.api.test.ts` | Real app: verifies integer lexical validation (decimal/exponent/nested/escaped property names) |
+| API-TKT-INT-02 | `create-ticket-real-db.integration.test.ts` | Real DB: trim-before-persistence, summary/description boundaries, whitespace-only rejection through real `createTicket()` |
+| API-TKT-INT-03 | `create-ticket-real-db.integration.test.ts` | Real DB: ownership from header, ignored client-supplied fields, null defaults, `NEW` status through real `createTicket()` |
+| API-TKT-INT-04 | `create-ticket-real-db.integration.test.ts` | Real DB: owner 200 with full detail, non-owner 404 with no data through real `getTicketByNumber()` |
+| DB-01, DB-02 | `database-migration.integration.test.ts` | Real DB: runs Prisma migrations |
+| SEED-01, SEED-02 | `seed.integration.test.ts` | Real DB: runs seed, verifies idempotency |
+| API-REF-01, API-REF-02 | `reference-data.api.test.ts` | Mocked: verifies HTTP response shape, not real DB queries |
+| API-REQ-01 | `dev-requesters.api.test.ts` | Mocked: verifies HTTP response shape |
+| API-REQ-01 | `dev-requesters.service.test.ts` | Mocked: verifies Prisma query shape |
+| API-REQ-02, API-REQ-03 | `requester-context.api.test.ts` | Mocked: verifies requester header validation |
+| API-CONTRACT-01 | `api-contract.api.test.ts` | Real app: tests parsing contract against real endpoints |
+
+### Recommendation
+
+The mocked tests in the first table above verify the HTTP contract (status codes, error
+shapes, field-level validation messages) but do **not** prove that the service layer
+correctly interacts with the database. Real integration tests that exercise the actual
+`createTicket()` and `getTicketByNumber()` service functions against a real database
+are now provided by `create-ticket-real-db.integration.test.ts` (API-TKT-INT-02/03/04)
+and `create-ticket-reference-validation.integration.test.ts` (API-TKT-02-INT),
+closing this gap.
 - `500` is exactly `INTERNAL_ERROR` with the safe generic message and no internal details.
 - Requester headers: missing, `abc`, `1.0`, `+1`, whitespace-padded, duplicate, unknown, and inactive all return `422 REQUESTER_CONTEXT_INVALID`.
 - Path parameters: malformed attachment IDs and ticket numbers return `404 NOT_FOUND` without resource data.
@@ -328,6 +379,108 @@ npx playwright test e2e/lab-02
 Playwright note: run the E2E command only after Playwright scaffolding/dependencies are added for this branch.
 
 ## 6. Results Log (Newest First)
+
+### 2026-08-27 - PR #25 fix plan: TicketSequence isolation, oversized-ID handling, validator unit tests, cleanup
+- Scope: Implemented the 5-phase fix plan for PR #25 merge readiness.
+  1. **Phase 1 — TicketSequence test isolation**: Fixed all three real-DB integration test files to snapshot/restore the current-year `TicketSequence` using the database clock (`SELECT NOW()`), track created tickets by Ticket Number, and assert restoration success. Removed the standalone cleanup simulation test (`test-ticket-sequence-cleanup.test.ts`). Removed nested `afterAll` hooks that called `disconnectPrisma()` mid-file.
+  2. **Phase 2 — Oversized IDs**: Created `server/src/id-domain.ts` with `MAX_DATABASE_ID`. Updated `integer-validation.ts` with `inspectIntegerFields()` returning `{ invalidFields, outOfRangeFields }`. Controller returns `409 INACTIVE_REFERENCE` for out-of-range positive IDs. Service-layer defense-in-depth rejects IDs > `MAX_DATABASE_ID`. Requester-context uses `BigInt` to reject oversized headers before Prisma.
+  3. **Phase 3 — Validator unit tests**: Exported `validateCreateTicketInput` from `service.ts`. Created `create-ticket-validation.unit.test.ts` covering both reference fields with the same matrix (missing, null, string, decimal, zero, negative), requestedPriority (missing, invalid, LOW/MEDIUM/HIGH), and trimming output.
+  4. **Phase 4 — Cleanup**: Removed `.agents/skills/review-pr/SKILL.md`, `server/debug-integer.cjs`, `server/test-edge-cases.js`. Removed PR #25 status section from `agent.md`. Removed scratch `.gitignore` entry. Updated README to remove self-declared merge readiness and clarify Ticket Detail scope.
+  5. **Phase 5 — Documentation**: Updated `tests.md` to include the new unit test file in `API-TKT-NOR-02` and `API-TKT-07` rows.
+- Tests added/updated:
+  - `server/src/id-domain.ts`: new
+  - `server/src/integer-validation.ts`: added `inspectIntegerFields()` with out-of-range detection
+  - `server/src/controller.ts`: uses `inspectIntegerFields`, returns 409 for out-of-range
+  - `server/src/service.ts`: exported `validateCreateTicketInput`, added defense-in-depth range checks
+  - `server/src/requester-context.ts`: uses `BigInt` for exact range checking
+  - `server/tests/lab-02/create-ticket-validation.unit.test.ts`: new (21 tests)
+  - `server/tests/lab-02/create-ticket-real-db.integration.test.ts`: root-level hooks, database clock, ticket-number tracking
+  - `server/tests/lab-02/create-ticket-reference-validation.integration.test.ts`: database clock, ticket-number tracking
+  - `server/tests/lab-02/ticket-number-concurrency.integration.test.ts`: database clock, ticket-number tracking, restoration assertion
+  - `server/tests/lab-02/integer-validation.api.test.ts`: added 6 oversized-reference tests
+  - `server/tests/lab-02/requester-context.api.test.ts`: added 3 oversized-header tests
+  - Removed: `test-ticket-sequence-cleanup.test.ts`, `debug-integer.cjs`, `test-edge-cases.js`, `.agents/skills/review-pr/SKILL.md`
+- Command(s) run:
+  - `cd server && npx tsc --noEmit`
+  - `cd server && npx vitest run tests/lab-02/create-ticket-validation.unit.test.ts`
+  - `cd server && npx vitest run tests/lab-02/integer-validation.api.test.ts`
+  - `cd server && npx vitest run tests/lab-02/requester-context.api.test.ts`
+- Result:
+  - TypeScript: 0 errors
+  - create-ticket-validation.unit: 21 passed
+  - integer-validation.api: 19 passed
+  - requester-context.api: 15 passed
+- Notes and follow-up:
+  - All database integration tests must be run against a test database to verify TicketSequence isolation.
+  - The real-DB integration tests should be run together to confirm no cross-file sequence interference.
+
+### 2026-08-26 - PR #25 re-review: nested-object parser fix, boundary-test and cleanup corrections, E2E reassignment
+- Scope: Addressed the PR #25 re-review "Request changes" remaining blockers and follow-ups.
+  1. **P1 — 500 on ignored nested object (integer-validation.ts):** Fixed `skipValue()` to call `skipWhitespace()` before reading each nested-object key, so a comma inside an unknown nested object followed by whitespace/newline no longer throws from `readString()`. Wrapped the top-level walk in a defensive try/catch so any walker error returns the fields validated so far instead of becoming a `500 INTERNAL_ERROR`.
+  2. **P1 — cross-feature E2E:** Formally amended Issue #13 to reassign the real cross-feature E2E browser flow to Issue #18 (Integration), consistent with `tests.md` §5.2 (`E2E-01..06`). The create-to-detail flow is covered at component level (mocked `createTicket`/`fetchTicketDetail`) and API/integration level; no `e2e/` directory is added in this issue.
+  3. **P2 — 5-char summary boundary:** `create-ticket-real-db.integration.test.ts` now sends a literal 5-character summary `"abcde"` and asserts the persisted summary equals `"abcde"`.
+  4. **P2 — cleanup:** All `afterAll` blocks in `create-ticket-real-db.integration.test.ts` now delete Tickets by tracked Ticket Number (a shared `createdTicketNumbers` array) instead of matching `summary` contains `TEST_MARKER`, so accepted 120-char summaries are no longer left behind.
+  5. **Follow-up:** Removed the duplicate `API-TKT-06` matrix row in `docs/lab-02/tests.md`.
+- Tests added/updated:
+  - `server/src/integer-validation.ts`: `skipValue()` whitespace fix + defensive walk.
+  - `server/tests/lab-02/integer-validation.api.test.ts`: added 3 cases — ignored multi-property nested object, pretty-printed nested object, and array of multi-property objects, all accepted without `500`.
+  - `server/tests/lab-02/create-ticket-real-db.integration.test.ts`: literal `"abcde"` 5-char boundary; tracked Ticket Numbers for cleanup.
+  - `docs/lab-02/tests.md`: updated `API-TKT-INT-01` row, removed duplicate `API-TKT-06` row, added this Results Log entry.
+- Command(s) run:
+  - `cd server && npx vitest run tests/lab-02/integer-validation.api.test.ts`
+  - `cd server && npx vitest run tests/lab-02/create-ticket-real-db.integration.test.ts`
+  - `cd server && npx vitest run tests/lab-02`
+  - `cd client && npx vitest run`
+- Result:
+  - integer-validation: 11 passed
+  - create-ticket-real-db: 16 passed
+  - server tests/lab-02: 133 passed, 0 failed
+  - client: 24 passed, 0 failed
+- Notes and follow-up:
+  - CI evidence (GitHub workflow with isolated PostgreSQL) and standalone allocator exhaustion bounding remain non-blocking follow-ups (see issue/PR review).
+  - Cross-feature E2E is now formally owned by #18; `E2E-01..06` remain `Planned`.
+
+### 2026-08-25 - PR #25 re-review: integer validation rewrite, real-DB evidence, BR-01 contiguity/rollback
+- Scope: Addressed the PR #25 re-review "Request changes" P1 blockers.
+  1. Rewrote `server/src/integer-validation.ts` to use a tokenizer that inspects only effective top-level fields, ignores nested occurrences, and handles JSON escape sequences in property names. Added `server/tests/lab-02/integer-validation.api.test.ts` (API-TKT-INT-01) covering decimal/exponent forms, nested same-name fields, and escaped property names.
+  2. Added real-database evidence: `server/tests/lab-02/create-ticket-real-db.integration.test.ts` (API-TKT-INT-02/03/04) exercising the real `createTicket()` and `getTicketByNumber()` against the real DB for normalization/persistence, ownership/defaults, and Ticket Detail ownership. Extended `create-ticket-reference-validation.integration.test.ts` (API-TKT-02-INT) with before/after ticket-count assertions proving no ticket is created on `409`.
+  3. Completed BR-01 evidence in `ticket-number-concurrency.integration.test.ts`: asserted sorted sequence contiguity, per-number year === persisted `createdAt` UTC year, and a transaction-rollback test proving a failed post-allocation insertion leaves no sequence gap.
+- Tests added/updated:
+  - `server/src/integer-validation.ts`: tokenizer-based top-level integer validation.
+  - `server/tests/lab-02/integer-validation.api.test.ts`: new (API-TKT-INT-01).
+  - `server/tests/lab-02/create-ticket-real-db.integration.test.ts`: new (API-TKT-INT-02/03/04).
+  - `server/tests/lab-02/create-ticket-reference-validation.integration.test.ts`: added count assertions.
+  - `server/tests/lab-02/ticket-number-concurrency.integration.test.ts`: added contiguity/year/rollback assertions.
+  - `docs/lab-02/tests.md`: updated matrix rows, §6 mock-vs-real tables, and this Results Log entry.
+- Command(s) run:
+  - `cd server && npx vitest run tests/lab-02/integer-validation.api.test.ts`
+  - `cd server && npx vitest run tests/lab-02/create-ticket-real-db.integration.test.ts`
+  - `cd server && npx vitest run tests/lab-02/create-ticket-reference-validation.integration.test.ts`
+  - `cd server && npx vitest run tests/lab-02/ticket-number-concurrency.integration.test.ts`
+- Result:
+  - integer-validation: 8 passed
+  - create-ticket-real-db: 16 passed
+  - create-ticket-reference-validation: 5 passed
+  - ticket-number-concurrency: 8 passed
+- Notes and follow-up:
+  - Cross-feature E2E (`e2e/lab-02/create-to-detail.spec.ts`) remains `Planned` pending Playwright scaffolding, which is explicitly deferred in `tests.md` ("run the E2E command only after Playwright scaffolding/dependencies are added for this branch").
+
+### 2026-08-25 - Issue #13: add database-migration, seed, and ticket-number-concurrency integration tests
+- Scope: Closed Issue #13's remaining `Planned` integration rows. Added three integration test files that run against the real `DATABASE_URL` (skip cleanly when absent): `database-migration.integration.test.ts` (DB-01/DB-02), `seed.integration.test.ts` (SEED-01/SEED-02), and `ticket-number-concurrency.integration.test.ts` (API-TKT-06). Applied the pending `20260825000000_add_ticket_related_system_attachment` migration and re-ran the seed locally. Verified the suite leaves the database clean (snapshot/restore of the current-year `TicketSequence`, cleanup of created tickets and test-year rows).
+- Tests added/updated:
+  - `server/tests/lab-02/database-migration.integration.test.ts`: DB-01 required tables/columns/nullable `itPriority`/`ticketOwnerId`/`ticketNumber` unique index/`NEW` default; DB-02 Lab 1 Category rows survive with `isActive=true`.
+  - `server/tests/lab-02/seed.integration.test.ts`: SEED-01 idempotency (run twice) and unrelated-category preservation; SEED-02 four required categories exactly once, ≥6 related systems, ≥4 active + ≥1 inactive requesters.
+  - `server/tests/lab-02/ticket-number-concurrency.integration.test.ts`: API-TKT-06 increment (`000001`→`000002`), year rollover reset, 20-way concurrent uniqueness, sequence exhaustion (`409 TICKET_SEQUENCE_EXHAUSTED`, no ticket created), and end-to-end distinct ticket numbers with `currentStatus === NEW`.
+  - `docs/lab-02/tests.md`: DB-01/02, SEED-01/02, API-TKT-06 → `Passed`; added this Results Log entry.
+- Command(s) run:
+  - `cd server && npx vitest run`
+  - `cd client && npx vitest run`
+- Result:
+  - Server: 105 passed, 0 failed (was 89)
+  - Client: 20 passed, 0 failed
+- Notes and follow-up:
+  - `Attachment` schema/migration and the empty `attachments: []` on ticket detail remain in #13's scope per §7 (schema increment); attachment UI/endpoints stay `Planned` for #15.
+  - Known schema gap (out of #13 scope, flagged for #15): `Attachment.storedFilename` is not `@unique` and the `uploaderRequester`/`removedByRequester` relations are absent versus specification §7.
 
 ### 2026-08-25 - PR #23 review: fix agent.md hierarchy, narrow Tests.md rule, clean up unused imports
 - Scope: Addressed @oangsa PR #23 review findings. Fixed `agent.md` section hierarchy (moved misplaced `3.3`/`3.4` back under `## 3`, removed duplicate `## 4`, renumbered subsequent sections). Narrowed the Tests.md cross-reference rule in `### 4.2` to apply only to Lab 2 contract matrix tests, explicitly excluding legacy Lab 1 tests and supporting utilities — preventing false flags on files like `server/tests/categories.test.ts`. Cleaned up unused `fireEvent`/`waitFor` imports from `client/src/App.test.tsx`. Added `reviewer.md` update requirement to `agent.md` Standard Task Flow. Updated `reviewer.md` with PR #23 review record. Updated `ai-use.md` with prompts 20-21 and reflections 14-15.

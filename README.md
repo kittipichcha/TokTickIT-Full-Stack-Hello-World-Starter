@@ -18,21 +18,39 @@ In summary, Lab 2 requires:
 - Attachment upload/list/preview/download/soft-remove
 - Responsive Zen Green UI and keyboard-accessible flows
 
-## 2. Current Implementation Status (as of 2026-08-25)
+## 2. Current Implementation Status (as of 2026-08-27)
 Implemented in code right now:
 - `GET /api/categories` (active-only)
 - `GET /api/dev-requesters` (active-only, `{ "data": [...] }` envelope)
+- `GET /api/related-systems` (active-only, `{ "data": [...] }` envelope)
 - `GET /api/requester-context` (requires `X-Dev-Requester-Id`, returns `422` if missing/unknown/inactive)
-- Prisma models: `Category` (with `isActive`), `DevRequester`
-- Seed data: 4 categories, 4 active + 1 inactive development requesters (idempotent upserts)
-- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester)
+- `POST /api/tickets` (create ticket with integer lexical validation, trim-then-validate normalization, category/related-system reference checks, JSON request-parsing contract enforcement, single-transaction atomic allocation)
+- `GET /api/tickets/:ticketNumber` (detail with requester ownership enforcement, attachment removal metadata)
+- Prisma models: `Category`, `DevRequester`, `RelatedSystem` (all with `isActive`), `Ticket`, `Attachment`, `TicketSequence`
+- Atomic ticket number generation: `TKT-<UTC-year>-<6-digit seq>` via `INSERT ... ON CONFLICT ... RETURNING` inside a single database transaction with one authoritative timestamp
+- Ticket indexes: `@@index([requesterId])`, `@@index([currentStatus])`, `@@index([createdAt])`
+- Attachment model: `storedFilename @unique`, `@@index([ticketId])`, `uploaderRequester` and `removedByRequester` relations to `DevRequester`
+- Seed data: 4 categories, 4 active + 1 inactive development requesters, related systems (idempotent upserts)
+- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester) + Create Ticket form + Ticket Detail view
 - Requester context is persisted in `sessionStorage` and sent via the `X-Dev-Requester-Id` header on requester-scoped calls
+- View Ticket action navigates to Ticket Detail with loading/error/not-found states
+
+Implemented:
+
+- Basic requester-owned Ticket Detail view reached from the Create Ticket success panel.
+- Loading, not-found, failure, and manual Retry states.
+- Read-only Ticket fields and embedded attachment metadata.
+
+Deferred to Issue #15:
+
+- Attachment upload, preview, download, and soft-removal endpoints.
+- Full attachment action controls on Ticket Detail.
 
 Not yet implemented for Lab 2 (downstream issues):
-- Ticket, related system, and attachment data models
-- All ticket and attachment endpoints from the Lab 2 API contract
-- Create Ticket, My Tickets, and Ticket Detail UI
-- Lab 2 test suites for tickets/attachments (unit/api/ui/e2e/responsive/visual)
+- `GET /api/tickets` (My Tickets list with search, filter, sort, pagination)
+- Attachment endpoints (upload, list, download, preview, soft-remove)
+- My Tickets and Ticket Detail UI
+- Remaining Lab 2 test suites for tickets list/attachments (unit/api/ui/e2e/responsive/visual)
 
 ## 3. Repository Structure
 
@@ -44,8 +62,11 @@ Not yet implemented for Lab 2 (downstream issues):
 |  |  |- App.css
 |  |  |- App.test.tsx
 |  |  |- App.tsx
+|  |  |- CreateTicket.tsx
 |  |  |- main.tsx
+|  |  |- vite-env.d.ts
 |  |  |- lab-02-tests/
+|  |  |  |- CreateTicket.test.tsx
 |  |  |  |- MyTickets.test.tsx
 |  |  |  |- RequesterSelection.integration.test.tsx
 |  |  |  |- RequesterSelection.test.tsx
@@ -75,6 +96,7 @@ Not yet implemented for Lab 2 (downstream issues):
 |  |  |- prisma.ts
 |  |  |- requester-context.ts
 |  |  |- service.ts
+|  |  |- ticket-number.ts
 |  |- tests/
 |  |  |- categories.integration.test.ts
 |  |  |- categories.service.test.ts
@@ -82,10 +104,17 @@ Not yet implemented for Lab 2 (downstream issues):
 
 |  |  |- lab-02/
 |  |  |  |- api-contract.api.test.ts
+|  |  |  |- create-ticket-normalization.api.test.ts
+|  |  |  |- create-ticket.api.test.ts
+|  |  |  |- database-migration.integration.test.ts
 |  |  |  |- dev-requesters.api.test.ts
 |  |  |  |- dev-requesters.service.test.ts
+|  |  |  |- reference-data.api.test.ts
 |  |  |  |- requester-context.api.test.ts
 |  |  |  |- requester-selection.integration.test.ts
+|  |  |  |- seed.integration.test.ts
+|  |  |  |- ticket-detail.api.test.ts
+|  |  |  |- ticket-number-concurrency.integration.test.ts
 |  |- package.json
 |  |- tsconfig.json
 |  |- vitest.config.ts
@@ -170,7 +199,7 @@ Important:
   cross-feature rows previously listed in #12 (`API-REQ-02`, `API-REQ-03`,
   `API-CONTRACT-01`, `UI-MY-03`, `E2E-05`) have been formally reassigned to #13, #14,
   and #18 where their dependent models/endpoints/screens exist.
-- Server tests: 46 across 8 files; client tests: 13 across 4 files.
+- Server tests: 145 across 18 files; client tests: 24 across 6 files.
 
 ## 8. API Implemented Today
 
@@ -207,15 +236,53 @@ Requires the `X-Dev-Requester-Id` header. Validates the requester is active. Res
 Missing, malformed, unknown, or inactive requester headers return
 `422` with `{ "error": { "code": "REQUESTER_CONTEXT_INVALID", "message": "A valid active requester is required." } }`.
 
+### `GET /api/related-systems`
+Returns active related systems only (no requester header required). Response example:
+
+```json
+{
+  "data": [
+    { "id": 1, "name": "Email" },
+    { "id": 2, "name": "Payroll" }
+  ]
+}
+```
+
+### `POST /api/tickets`
+Creates a ticket for the active requester (requires `X-Dev-Requester-Id`).
+Request body:
+
+```json
+{
+  "categoryId": 1,
+  "relatedSystemId": 2,
+  "summary": "Cannot log in",
+  "description": "Login fails after password reset",
+  "requestedPriority": "HIGH"
+}
+```
+
+Returns `201` with `{ "data": { ...ticket, "ticketNumber": "TKT-2026-000001" } }`.
+Validation is trim-then-validate: summary (5-120 chars) and description are trimmed
+before validation and persisted trimmed. Referencing a nonexistent or inactive
+`categoryId`/`relatedSystemId` returns `409 INACTIVE_REFERENCE`.
+
+### `GET /api/tickets/:ticketNumber`
+Returns ticket detail for the active requester (requires `X-Dev-Requester-Id`).
+Enforces ownership: a ticket owned by another requester returns `404 NOT_FOUND`.
+Malformed `ticketNumber` path parameters return `404 NOT_FOUND`.
+
 ## 9. Lab 2 Implementation Order (Recommended)
 1. ~~Requirement baseline + docs alignment~~ ✅
 2. ~~Requester identity mechanism (`X-Dev-Requester-Id`) and selector flow~~ ✅
-3. ~~`DevRequester` model~~ ✅ / remaining data models (`RelatedSystem`, `Ticket`, `Attachment`)
-4. Ticket creation API + UI + validation
-5. My Tickets API + UI + query behavior
-6. Attachment lifecycle API + UI
-7. Responsive/visual/accessibility pass
-8. Full Lab 2 test evidence and docs completion
+3. ~~`DevRequester` model~~ ✅ / ~~remaining data models (`RelatedSystem`, `Ticket`, `Attachment`)~~ ✅
+4. ~~Ticket creation API + UI + validation~~ ✅
+5. ~~Ticket number generation (`ticket-number.ts`)~~ ✅
+6. ~~Ticket detail API~~ ✅
+7. My Tickets API + UI + query behavior
+8. Attachment lifecycle API + UI
+9. Responsive/visual/accessibility pass
+10. Full Lab 2 test evidence and docs completion
 
 ## 10. Notes
 - Lab 2 uses development requester identity only, not real authentication.
