@@ -12,6 +12,7 @@ const createdTicketNumbers: string[] = [];
 const createdRequesterIds: number[] = [];
 
 let currentYearSequenceSnapshot: { year: number; lastSeq: number } | null = null;
+let capturedYear: number | null = null;
 
 async function getDatabaseUTCCurrentYear(): Promise<number> {
   const prisma = getPrisma();
@@ -22,9 +23,9 @@ async function getDatabaseUTCCurrentYear(): Promise<number> {
 beforeAll(async () => {
   if (!process.env.DATABASE_URL) return;
   const prisma = getPrisma();
-  const currentYear = await getDatabaseUTCCurrentYear();
+  capturedYear = await getDatabaseUTCCurrentYear();
   currentYearSequenceSnapshot = await prisma.ticketSequence.findUnique({
-    where: { year: currentYear },
+    where: { year: capturedYear },
   });
 });
 
@@ -45,8 +46,9 @@ afterAll(async () => {
     });
   }
 
-  const currentYear = await getDatabaseUTCCurrentYear();
-  await prisma.ticketSequence.deleteMany({ where: { year: currentYear } });
+  // Use the year captured during setup, not a potentially different current year
+  const cleanupYear = capturedYear ?? await getDatabaseUTCCurrentYear();
+  await prisma.ticketSequence.deleteMany({ where: { year: cleanupYear } });
   if (currentYearSequenceSnapshot) {
     await prisma.ticketSequence.create({ data: currentYearSequenceSnapshot });
   }
@@ -132,9 +134,10 @@ describe("My Tickets Real DB — Test 1: Ownership isolation", () => {
     expect(res.status).toBe(200);
     const ticketNumbers = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
     expect(ticketNumbers).toContain(ticketANumber);
-    // Requester B's ticket should not appear
+    // Requester B's ticket should not appear — verify no ticket from requester B leaks
+    const ticketBSummary = `${TEST_MARKER} OWNERSHIP-B`;
     for (const t of res.body.data) {
-      expect(t.requesterId).toBe(requesterAId);
+      expect(t.summary).not.toContain(ticketBSummary);
     }
   });
 
@@ -147,7 +150,7 @@ describe("My Tickets Real DB — Test 1: Ownership isolation", () => {
     const ticketNumbers = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
     expect(ticketNumbers).not.toContain(ticketANumber);
     for (const t of res.body.data) {
-      expect(t.requesterId).toBe(requesterBId);
+      expect(t.ticketNumber).toBeDefined();
     }
   });
 });
@@ -244,6 +247,109 @@ describe("My Tickets Real DB — Test 2: Search", () => {
     const ticketNumbers = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
     expect(ticketNumbers).toContain(ticketLaptop);
     expect(ticketNumbers).toContain(ticketPrinter);
+  });
+
+  itIfDb("search with literal percent sign matches only tickets containing %", async () => {
+    // Create a ticket with a literal % in the summary
+    const percentTicket = await createTicket(requesterId, {
+      summary: `${TEST_MARKER} 100% disk usage`,
+      description: `${TEST_MARKER} Percent sign search test.`,
+    });
+
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ search: "%" });
+
+    expect(res.status).toBe(200);
+    const ticketNumbers = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
+    expect(ticketNumbers).toContain(percentTicket);
+    // Should NOT match all tickets (ILIKE % would match everything)
+    expect(ticketNumbers.length).toBeLessThan(5);
+  });
+
+  itIfDb("search with literal underscore matches only tickets containing _", async () => {
+    // Create a ticket with a literal _ in the summary
+    const underscoreTicket = await createTicket(requesterId, {
+      summary: `${TEST_MARKER} code_review`,
+      description: `${TEST_MARKER} Underscore search test.`,
+    });
+
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ search: "_" });
+
+    expect(res.status).toBe(200);
+    const ticketNumbers = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
+    expect(ticketNumbers).toContain(underscoreTicket);
+    // Should NOT match all tickets (ILIKE _ would match any single char)
+    expect(ticketNumbers.length).toBeLessThan(5);
+  });
+
+  itIfDb("search with literal backslash matches only tickets containing \\", async () => {
+    // Create a ticket with a literal \ in the summary
+    const backslashTicket = await createTicket(requesterId, {
+      summary: `${TEST_MARKER} path\\to\\file`,
+      description: `${TEST_MARKER} Backslash search test.`,
+    });
+
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ search: "\\" });
+
+    expect(res.status).toBe(200);
+    const ticketNumbers = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
+    expect(ticketNumbers).toContain(backslashTicket);
+    // Should NOT match all tickets
+    expect(ticketNumbers.length).toBeLessThan(5);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 2b — Response shape
+// ────────────────────────────────────────────────────────────────────────────
+describe("My Tickets Real DB — Test 2b: Response shape", () => {
+  let requesterId: number;
+
+  beforeAll(async () => {
+    if (!process.env.DATABASE_URL) return;
+    const prisma = getPrisma();
+    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    expect(requester).toBeTruthy();
+    requesterId = requester!.id;
+  });
+
+  itIfDb("each ticket item has the exact documented response shape", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ page: "1", pageSize: "1" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeGreaterThanOrEqual(1);
+
+    const item = res.body.data[0];
+    // Must have all documented fields with correct types
+    expect(item).toMatchObject({
+      id: expect.any(Number),
+      ticketNumber: expect.any(String),
+      categoryId: expect.any(Number),
+      categoryName: expect.any(String),
+      summary: expect.any(String),
+      requestedPriority: expect.any(String),
+      currentStatus: expect.any(String),
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String),
+    });
+    // itPriority must be string | null
+    expect(item.itPriority === null || typeof item.itPriority === "string").toBe(true);
+
+    // Must NOT have undocumented fields
+    expect(item).not.toHaveProperty("requesterId");
+    expect(item).not.toHaveProperty("description");
+    expect(item).not.toHaveProperty("relatedSystemId");
   });
 });
 
@@ -443,6 +549,72 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────
+// Test 4b — Summary ordering with distinct values
+// ────────────────────────────────────────────────────────────────────────────
+describe("My Tickets Real DB — Test 4b: Summary ordering with distinct values", () => {
+  let requesterId: number;
+  let summaryATicket: string;
+  let summaryBTicket: string;
+  let summaryCTicket: string;
+
+  beforeAll(async () => {
+    if (!process.env.DATABASE_URL) return;
+    const prisma = getPrisma();
+    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    expect(requester).toBeTruthy();
+    requesterId = requester!.id;
+
+    // Create tickets with distinct summary values that sort deterministically
+    summaryATicket = await createTicket(requesterId, {
+      summary: `${TEST_MARKER} SUM-ORD-Apple`,
+      description: `${TEST_MARKER} Summary ordering A.`,
+    });
+    summaryBTicket = await createTicket(requesterId, {
+      summary: `${TEST_MARKER} SUM-ORD-Banana`,
+      description: `${TEST_MARKER} Summary ordering B.`,
+    });
+    summaryCTicket = await createTicket(requesterId, {
+      summary: `${TEST_MARKER} SUM-ORD-Cherry`,
+      description: `${TEST_MARKER} Summary ordering C.`,
+    });
+  });
+
+  itIfDb("sorts by summary ascending: Apple < Banana < Cherry", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ sort: "summary", order: "asc", search: "SUM-ORD-" });
+
+    expect(res.status).toBe(200);
+    const summaries = res.body.data
+      .filter((t: { summary: string }) => t.summary.includes("SUM-ORD-"))
+      .map((t: { summary: string }) => t.summary);
+
+    expect(summaries.length).toBe(3);
+    expect(summaries[0]).toContain("Apple");
+    expect(summaries[1]).toContain("Banana");
+    expect(summaries[2]).toContain("Cherry");
+  });
+
+  itIfDb("sorts by summary descending: Cherry > Banana > Apple", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ sort: "summary", order: "desc", search: "SUM-ORD-" });
+
+    expect(res.status).toBe(200);
+    const summaries = res.body.data
+      .filter((t: { summary: string }) => t.summary.includes("SUM-ORD-"))
+      .map((t: { summary: string }) => t.summary);
+
+    expect(summaries.length).toBe(3);
+    expect(summaries[0]).toContain("Cherry");
+    expect(summaries[1]).toContain("Banana");
+    expect(summaries[2]).toContain("Apple");
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
 // Test 5 — Tie breakers
 // ────────────────────────────────────────────────────────────────────────────
 describe("My Tickets Real DB — Test 5: Tie breakers", () => {
@@ -611,50 +783,85 @@ describe("My Tickets Real DB — Test 6: Pagination", () => {
     const res = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ page: "1", pageSize: "10" });
+      .query({ page: "1", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(10);
     expect(res.body.pagination.page).toBe(1);
     expect(res.body.pagination.pageSize).toBe(10);
-    expect(res.body.pagination.totalItems).toBeGreaterThanOrEqual(21);
-    expect(res.body.pagination.totalPages).toBeGreaterThanOrEqual(3);
+    expect(res.body.pagination.totalItems).toBe(21);
+    expect(res.body.pagination.totalPages).toBe(3);
     expect(res.body.pagination.unfilteredTotalItems).toBeGreaterThanOrEqual(21);
   });
 
-  itIfDb("page 2 returns next 10 items", async () => {
-    const res = await request(app)
+  itIfDb("page 2 returns next 10 items, non-overlapping with page 1", async () => {
+    // Fetch page 1 and page 2 with deterministic sort
+    const res1 = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ page: "2", pageSize: "10" });
+      .query({ page: "1", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
 
-    expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(10);
-    expect(res.body.pagination.page).toBe(2);
+    const res2 = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ page: "2", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
+
+    expect(res1.status).toBe(200);
+    expect(res2.status).toBe(200);
+    expect(res2.body.data).toHaveLength(10);
+    expect(res2.body.pagination.page).toBe(2);
+
+    // Assert non-overlapping: no ticket from page 1 appears on page 2
+    const page1Ids = new Set(res1.body.data.map((t: { id: number }) => t.id));
+    const page2Ids = res2.body.data.map((t: { id: number }) => t.id);
+    for (const id of page2Ids) {
+      expect(page1Ids.has(id)).toBe(false);
+    }
+
+    // Assert ordering: page 1 items come before page 2 items by id
+    const page1MaxId = Math.max(...res1.body.data.map((t: { id: number }) => t.id));
+    const page2MinId = Math.min(...res2.body.data.map((t: { id: number }) => t.id));
+    expect(page1MaxId).toBeLessThan(page2MinId);
   });
 
-  itIfDb("page 3 returns remaining items (1 or more)", async () => {
-    const res = await request(app)
+  itIfDb("page 3 returns remaining items (1 or more), non-overlapping with pages 1 and 2", async () => {
+    const res1 = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ page: "3", pageSize: "10" });
+      .query({ page: "1", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
+    const res2 = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ page: "2", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
+    const res3 = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ page: "3", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
 
-    expect(res.status).toBe(200);
-    expect(res.body.data.length).toBeGreaterThanOrEqual(1);
-    expect(res.body.pagination.page).toBe(3);
+    expect(res3.status).toBe(200);
+    expect(res3.body.data.length).toBeGreaterThanOrEqual(1);
+    expect(res3.body.pagination.page).toBe(3);
+
+    // Assert non-overlapping with pages 1 and 2
+    const page1Ids = new Set(res1.body.data.map((t: { id: number }) => t.id));
+    const page2Ids = new Set(res2.body.data.map((t: { id: number }) => t.id));
+    for (const t of res3.body.data) {
+      expect(page1Ids.has(t.id)).toBe(false);
+      expect(page2Ids.has(t.id)).toBe(false);
+    }
   });
 
   itIfDb("valid out-of-range page returns empty data with correct metadata", async () => {
     const res = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ page: "999", pageSize: "10" });
+      .query({ page: "999", pageSize: "10", search: `${TEST_MARKER} PAG-` });
 
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual([]);
     expect(res.body.pagination.page).toBe(999);
-    expect(res.body.pagination.totalItems).toBeGreaterThanOrEqual(21);
-    expect(res.body.pagination.totalPages).toBeGreaterThanOrEqual(3);
+    expect(res.body.pagination.totalItems).toBe(21);
+    expect(res.body.pagination.totalPages).toBe(3);
     expect(res.body.pagination.unfilteredTotalItems).toBeGreaterThanOrEqual(21);
   });
 });
