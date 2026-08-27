@@ -43,6 +43,7 @@ The agent must continuously verify that executable test code and `docs/lab-02/te
 - Exact planned test paths and test IDs specified in `tests.md` and issue contracts must exist and match. The agent must never replace or redirect required test paths in `tests.md` to different files.
 - Test statuses in `tests.md` (`Planned`, `Implemented`, `Passed`) must accurately reflect executable test evidence.
 - A test status must NOT be marked `Passed` if only a partial matrix is covered or if dependent flows/data do not yet exist.
+- When adding new test rows to `tests.md`, the initial status must be `Planned`, never `Passed`. Only change to `Passed` after the automated test exists and has passed.
 
 ### 3.2 Plan-vs-Act requirement for assigned tasks
 When a task is assigned to a model or agent, it must be split into two explicit phases within the task function:
