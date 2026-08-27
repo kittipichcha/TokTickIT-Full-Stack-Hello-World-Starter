@@ -442,6 +442,23 @@ export async function getMyTickets(
   // Tie-breakers: secondary createdAt desc, tertiary id desc
   const orderClause = `${primaryOrder}, t."createdAt" DESC, t."id" DESC`;
 
+  const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / params.pageSize);
+
+  // If the requested page is beyond the last valid page, return empty data
+  // with correct pagination metadata — avoid issuing SQL with a giant OFFSET.
+  if (params.page > totalPages && totalPages > 0) {
+    return {
+      data: [],
+      pagination: {
+        page: params.page,
+        pageSize: params.pageSize,
+        totalItems,
+        totalPages,
+        unfilteredTotalItems,
+      },
+    };
+  }
+
   const offset = (params.page - 1) * params.pageSize;
 
   // Fetch paginated data
@@ -470,8 +487,6 @@ export async function getMyTickets(
      LIMIT ${params.pageSize} OFFSET ${offset}`,
     ...filterValues,
   );
-
-  const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / params.pageSize);
 
   return {
     data: rows.map((row) => ({

@@ -26,6 +26,7 @@
 | 19 | Fix REQUESTER_STORAGE_KEY undefined error, update agent.md working agreement, and create DB/UI integration tests | Added missing `REQUESTER_STORAGE_KEY` export to `client/src/api.ts`, updated `agent.md` with real DB and UI integration rules, created server database integration test and client storage integration test. |
 | 20 | Remove all health check system and Lab 1 leftover artifacts from the codebase | Removed `.health-box` CSS from `App.css`, removed `GET /api/health` from server and README, removed health test files, cleaned up unused imports in `App.test.tsx`, and verified no health references remain across the codebase. |
 | 21 | Fix agent.md section hierarchy, narrow Tests.md cross-reference rule, and clean up unused imports | Fixed duplicate `## 4` heading and misplaced `3.3`/`3.4` sections, narrowed the Tests.md rule to apply only to Lab 2 contract matrix tests (excluding legacy Lab 1 tests), and removed unused `fireEvent`/`waitFor` imports from `App.test.tsx`. |
+| 22 | Fix BLOCKING ISSUE #2 — Large finite `page` values can still produce an unsafe SQL offset | Added `Number.isSafeInteger()` guard in the controller to reject pages beyond the safe integer range; added early return in the service to return empty data with correct metadata when `page > totalPages` without executing a giant SQL `OFFSET`; added test cases for `MAX_SAFE_INTEGER`, `MAX_SAFE_INTEGER + 1`, large finite decimal strings, and overflow scenarios. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
@@ -43,6 +44,7 @@
 13. Combining unit testing with live database integration tests and explicit UI storage persistence tests ensures end-to-end reliability across both backend database queries and frontend state transitions.
 14. Removing legacy artifacts requires a systematic grep-based verification across all source directories to ensure no stale references remain — a single missed import or CSS class can silently break the build.
 15. A governance change in agent.md that conflicts with the current repository state (e.g., a mandatory rule that existing files cannot satisfy) must be scoped correctly or it will immediately fail its own requirement; narrowing the rule to the relevant subset of files avoids false positives from intentional legacy files.
+16. A safe-integer guard is necessary for any numeric input that could produce a large SQL offset, even when the `Infinity` case is already handled — `Number.isSafeInteger()` catches values that are finite but exceed JavaScript's precise integer range, preventing silent data corruption and runaway database queries.
 
 ## Issue #12 Implementation Entry
 

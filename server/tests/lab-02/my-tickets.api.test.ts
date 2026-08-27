@@ -443,7 +443,7 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
     expect(res.body.pagination.unfilteredTotalItems).toBe(25);
   });
 
-  it("falls back to page 1 for enormously large page that would produce Infinity", async () => {
+  it("falls back to page 1 for enormous page string that would produce Infinity", async () => {
     vi.mocked(service.getMyTickets).mockResolvedValue(makeResult([]));
 
     // A string of 400 digits of 9's — long enough that Number() returns Infinity
@@ -453,6 +453,45 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", "1")
       .query({ page: enormousPage });
+
+    expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
+  });
+
+  it("falls back to page 1 for page = Number.MAX_SAFE_INTEGER + 1 (unsafe integer)", async () => {
+    vi.mocked(service.getMyTickets).mockResolvedValue(makeResult([]));
+
+    // MAX_SAFE_INTEGER = 9007199254740991; +1 = 9007199254740992, which is not safe
+    await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .query({ page: "9007199254740992" });
+
+    expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
+  });
+
+  it("uses page = Number.MAX_SAFE_INTEGER as-is (safe integer)", async () => {
+    vi.mocked(service.getMyTickets).mockResolvedValue(makeResult([]));
+
+    // MAX_SAFE_INTEGER = 9007199254740991, which IS a safe integer
+    // The service will detect this is out of range and return empty data with correct metadata
+    await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .query({ page: "9007199254740991" });
+
+    // The controller should accept this as a valid page value
+    expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(9007199254740991);
+  });
+
+  it("falls back to page 1 for a large finite decimal string exceeding safe integer range", async () => {
+    vi.mocked(service.getMyTickets).mockResolvedValue(makeResult([]));
+
+    // A large finite number that exceeds the safe integer range
+    // 99999999999999999999999999999 is finite but not safe
+    await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .query({ page: "99999999999999999999999999999" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
   });
