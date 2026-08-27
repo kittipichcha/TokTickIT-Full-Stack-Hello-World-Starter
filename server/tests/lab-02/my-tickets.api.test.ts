@@ -429,7 +429,7 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
 
   it("returns 200 with empty data for valid out-of-range page", async () => {
     vi.mocked(service.getMyTickets).mockResolvedValue(
-      makeResult([], { page: 999, pageSize: 10, totalItems: 0, totalPages: 3, unfilteredTotalItems: 25 }),
+      makeResult([], { page: 999, pageSize: 10, totalItems: 25, totalPages: 3, unfilteredTotalItems: 25 }),
     );
 
     const res = await request(app)
@@ -439,6 +439,7 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual([]);
+    expect(res.body.pagination.totalItems).toBe(25);
     expect(res.body.pagination.totalPages).toBe(3);
     expect(res.body.pagination.unfilteredTotalItems).toBe(25);
   });
