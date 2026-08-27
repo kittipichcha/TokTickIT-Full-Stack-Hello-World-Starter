@@ -26,11 +26,11 @@ function makeTicket(
   id: number,
   overrides: Partial<{
     ticketNumber: string;
-    requesterId: number;
     categoryId: number;
     categoryName: string;
     summary: string;
     requestedPriority: string;
+    itPriority: string | null;
     currentStatus: string;
     createdAt: Date;
     updatedAt: Date;
@@ -39,11 +39,11 @@ function makeTicket(
   return {
     id,
     ticketNumber: overrides.ticketNumber ?? `TKT-2026-${String(id).padStart(6, "0")}`,
-    requesterId: overrides.requesterId ?? 1,
     categoryId: overrides.categoryId ?? 1,
     categoryName: overrides.categoryName ?? "Hardware",
     summary: overrides.summary ?? `Ticket ${id} summary`,
     requestedPriority: overrides.requestedPriority ?? "MEDIUM",
+    itPriority: overrides.itPriority ?? null,
     currentStatus: overrides.currentStatus ?? "NEW",
     createdAt: overrides.createdAt ?? new Date("2026-08-21T09:14:00.000Z"),
     updatedAt: overrides.updatedAt ?? new Date("2026-08-21T09:14:00.000Z"),
@@ -80,7 +80,7 @@ describe("API-MY-01: My Tickets ownership isolation", () => {
 
   it("returns only current requester's own tickets", async () => {
     vi.mocked(service.getMyTickets).mockResolvedValue(
-      makeResult([makeTicket(1, { requesterId: 1 }), makeTicket(2, { requesterId: 1 })], { unfilteredTotalItems: 5 }),
+      makeResult([makeTicket(1), makeTicket(2)], { unfilteredTotalItems: 5 }),
     );
 
     const res = await request(app)
@@ -89,9 +89,8 @@ describe("API-MY-01: My Tickets ownership isolation", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(2);
-    for (const ticket of res.body.data) {
-      expect(ticket.requesterId).toBe(1);
-    }
+    // Verify the service was called with the correct requesterId
+    expect(vi.mocked(service.getMyTickets).mock.calls[0]![0]).toBe(1);
   });
 
   it("returns empty array when requester has no tickets", async () => {
