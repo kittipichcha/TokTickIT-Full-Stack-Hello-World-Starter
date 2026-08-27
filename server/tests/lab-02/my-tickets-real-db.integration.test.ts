@@ -876,6 +876,19 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
     expect(res.body.pagination.page).toBe(1);
   });
 
+  itIfDb("enormously large page value falls back to 1 instead of producing Infinity", async () => {
+    // A string of 400 digits of 9's — long enough that Number() returns Infinity
+    const enormousPage = "9".repeat(400);
+
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ page: enormousPage });
+
+    expect(res.status).toBe(200);
+    expect(res.body.pagination.page).toBe(1);
+  });
+
   itIfDb("missing pageSize defaults to 10", async () => {
     const res = await request(app)
       .get("/api/tickets")

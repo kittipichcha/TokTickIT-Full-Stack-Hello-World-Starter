@@ -222,10 +222,15 @@ export async function getMyTicketsHandler(req: Request, res: Response): Promise<
     const order = rawOrder === "asc" || rawOrder === "desc" ? rawOrder : "desc";
 
     // page: missing/malformed/non-positive → fall back to 1 (not an error)
+    // Also guard against decimal strings so large that Number() produces
+    // Infinity, which would cause a server error when computing the SQL offset.
     let page = 1;
     const rawPage = firstQueryParam(req.query.page);
     if (rawPage !== undefined && /^(?:[1-9][0-9]*)$/.test(rawPage)) {
       page = Number(rawPage);
+      if (!Number.isFinite(page)) {
+        page = 1;
+      }
     }
 
     // pageSize: invalid/out of range → fall back to 10 (not an error)

@@ -443,6 +443,20 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
     expect(res.body.pagination.totalPages).toBe(3);
     expect(res.body.pagination.unfilteredTotalItems).toBe(25);
   });
+
+  it("falls back to page 1 for enormously large page that would produce Infinity", async () => {
+    vi.mocked(service.getMyTickets).mockResolvedValue(makeResult([]));
+
+    // A string of 400 digits of 9's — long enough that Number() returns Infinity
+    const enormousPage = "9".repeat(400);
+
+    await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .query({ page: enormousPage });
+
+    expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
+  });
 });
 
 describe("API-MY-08: Search normalization and metadata values", () => {
