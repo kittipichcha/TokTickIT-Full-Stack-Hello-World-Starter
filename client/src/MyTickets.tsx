@@ -70,8 +70,9 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
     setErrorMessage(null);
 
     try {
+      const trimmedSearch = search.trim();
       const result = await fetchMyTickets(requester.id, {
-        search: search || undefined,
+        search: trimmedSearch || undefined,
         categoryId,
         requestedPriority,
         status,
@@ -148,7 +149,7 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
     setPage(1);
   };
 
-  const hasActiveFilters = search || categoryId !== undefined || requestedPriority || status;
+  const hasActiveFilters = search.trim() || categoryId !== undefined || requestedPriority || status;
 
   // Pagination helpers
   const startItem = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
