@@ -77,7 +77,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | UI-REQ-02 | UI | Stale/inactive requester context clears sessionStorage and shows explanatory message | Stored requester is cleared, the app redirects to selector, and the user sees a clear inactive-requester message. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-15 | BR-05, BR-21 | AC-02, AC-15 | Passed |
 | API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Passed |
 | API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | — | Passed |
-| API-CONTRACT-01 | API | Canonical error body and request parsing matrix for every endpoint class | Each requester-scoped endpoint rejects missing, malformed, duplicate, unknown, and inactive requester headers with the canonical `422` body; malformed route IDs/numbers return canonical `404`; JSON endpoints reject malformed JSON, non-object bodies, and wrong content type with canonical `400`; duplicate query keys use the first value; all `500` responses are safe. | `server/tests/lab-02/api-contract.api.test.ts` | FR-01, FR-09 | BR-21, BR-24 | AC-02, AC-03 | Passed |
+| API-CONTRACT-01 | API | Canonical error body and request parsing matrix for every endpoint class | Each requester-scoped endpoint rejects missing, malformed, duplicate, unknown, and inactive requester headers with the canonical `422` body; malformed route IDs/numbers return canonical `404`; JSON endpoints reject malformed JSON, non-object bodies, and wrong content type with canonical `400`; duplicate query keys use the first value; all `500` responses are safe. | `server/tests/lab-02/api-contract.api.test.ts` | FR-01, FR-09 | BR-21, BR-24 | AC-02, AC-03 | Planned |
 | DB-01 | Integration | Fresh database migrates to the Lab 2 schema | Forward migration creates all required tables, fields, constraints, relations, and indexes without resetting the database. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Passed |
 | DB-02 | Integration | Existing Lab 1 Category rows survive the Lab 2 migration | Existing Category `id`, `name`, and `createdAt` values remain unchanged and `isActive` is backfilled to `true`. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Passed |
 | SEED-01 | Integration | Seed is idempotent when run twice | Running the seed twice creates no duplicate Requesters, Categories, or Related Systems and does not replace existing required Categories. | `server/tests/lab-02/seed.integration.test.ts` | — | — | — | Passed |
@@ -170,7 +170,7 @@ endpoints, and screens:
 |---|---|---|---|
 | `API-REQ-02` | #14 (My Tickets) | BR-29 historical inactive-requester tickets requires `Ticket` model | **Passed** (implemented in #14) |
 | `API-REQ-03` | #13 (Ticket Creation) | Reference endpoint exemption requires `RelatedSystem` model | **Passed** (implemented in #13) |
-| `API-CONTRACT-01` | #18 (Integration) | Full parsing matrix spans tickets + attachments endpoint classes | **Passed** (implemented across #13/#14) |
+| `API-CONTRACT-01` | #18 (Integration) | Full parsing matrix spans tickets + attachments endpoint classes | **Planned** (deferred to #18) |
 | `UI-MY-03` | #14 (My Tickets) | Requester switch → My Tickets reload requires My Tickets feature | **Passed** (implemented in #14) |
 | `E2E-05` | #18 (Integration) | Keyboard create-ticket flow requires Create Ticket feature | Planned |
 
@@ -193,7 +193,7 @@ been formally reassigned:
 Rows that belong to downstream issues (not #12) are intentionally left `Planned`:
 
 - **Create Ticket** (`feature/lab2-ticket-creation`, #13): `API-REF-01/02`, `API-TKT-NOR-01/02`, `API-TKT-01..07`, `UI-TKT-01..05`, `UI-TKT-07`, `UI-ERR-01`.
-- **My Tickets** (`feature/lab2-my-tickets`, #14): `API-MY-01..08`, `UI-MY-01..05`. **All Passed** as of 2026-08-27.
+- **My Tickets** (`feature/lab2-my-tickets`, #14): `API-MY-01..08`, `UI-MY-01..05`. **All Passed** as of 2026-08-27. `API-CONTRACT-01` is owned by #18 and remains `Planned`.
 - **Attachments / Ticket Detail** (`feature/lab2-attachments`, #15): `API-ATT-*`, `UNIT-ATT-01`, `ATT-PERSIST-01`, `UI-ATT-*`, `UI-DETAIL-01`, `UI-TKT-06`, `UI-TKT-08`.
 - **Database / Seed / Migration**: `DB-01/02`, `SEED-01/02` (schema for `Ticket`/`Attachment`/`RelatedSystem` created in #13).
 - **Integration / Visual / E2E** (#18): `API-CONTRACT-01`, `STATIC-01`, `UI-STYLE-01..03`, `VISUAL-01`, `E2E-01..06`.
