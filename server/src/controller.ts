@@ -14,6 +14,17 @@ import {
 import { TicketSequenceExhaustedError } from "./ticket-number.js";
 import { inspectIntegerFields } from "./integer-validation.js";
 
+/**
+ * Returns the first string value of a query parameter.
+ * Express parses duplicate query keys (e.g. ?search=a&search=b) as arrays;
+ * this helper ensures first-value semantics per the API contract.
+ */
+function firstQueryParam(val: unknown): string | undefined {
+  if (typeof val === "string") return val;
+  if (Array.isArray(val) && val.length > 0 && typeof val[0] === "string") return val[0];
+  return undefined;
+}
+
 export async function getCategoriesHandler(req: Request, res: Response): Promise<void> {
   try {
     const categories = await getCategories();
@@ -148,80 +159,74 @@ export async function getMyTicketsHandler(req: Request, res: Response): Promise<
   try {
     const requesterId = res.locals.devRequesterId as number;
 
-    // Parse query params
-    const rawSearch = typeof req.query.search === "string" ? req.query.search : "";
+    // Parse query params using first-value semantics for duplicates
+    const rawSearch = firstQueryParam(req.query.search) ?? "";
     const search = rawSearch.trim();
     const activeSearch = search.length > 0 ? search : undefined;
 
     // categoryId: malformed → 400
     let categoryId: number | undefined;
-    if (req.query.categoryId !== undefined) {
-      const raw = req.query.categoryId;
-      if (typeof raw !== "string" || !/^(?:[1-9][0-9]*)$/.test(raw)) {
+    const rawCategoryId = firstQueryParam(req.query.categoryId);
+    if (rawCategoryId !== undefined) {
+      if (!/^(?:[1-9][0-9]*)$/.test(rawCategoryId)) {
         res.status(400).json({
           error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: { categoryId: "categoryId must be a valid positive integer." } },
         });
         return;
       }
-      categoryId = Number(raw);
+      categoryId = Number(rawCategoryId);
     }
 
     // requestedPriority: invalid enum → 400
     let requestedPriority: string | undefined;
-    if (req.query.requestedPriority !== undefined) {
-      const raw = req.query.requestedPriority;
-      if (typeof raw !== "string" || !["LOW", "MEDIUM", "HIGH"].includes(raw)) {
+    const rawPriority = firstQueryParam(req.query.requestedPriority);
+    if (rawPriority !== undefined) {
+      if (!["LOW", "MEDIUM", "HIGH"].includes(rawPriority)) {
         res.status(400).json({
           error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: { requestedPriority: "requestedPriority must be one of LOW, MEDIUM, HIGH." } },
         });
         return;
       }
-      requestedPriority = raw;
+      requestedPriority = rawPriority;
     }
 
     // status: invalid enum → 400
     let status: string | undefined;
-    if (req.query.status !== undefined) {
-      const raw = req.query.status;
-      if (typeof raw !== "string" || raw !== "NEW") {
+    const rawStatus = firstQueryParam(req.query.status);
+    if (rawStatus !== undefined) {
+      if (rawStatus !== "NEW") {
         res.status(400).json({
           error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: { status: "status must be NEW." } },
         });
         return;
       }
-      status = raw;
+      status = rawStatus;
     }
 
     // sort: invalid → fall back to createdAt (not an error)
     const validSorts = ["createdAt", "ticketNumber", "summary", "requestedPriority"];
-    const rawSort = typeof req.query.sort === "string" ? req.query.sort : "";
+    const rawSort = firstQueryParam(req.query.sort) ?? "";
     const sort = validSorts.includes(rawSort) ? rawSort : "createdAt";
 
     // order: invalid → fall back to desc (not an error)
-    const rawOrder = typeof req.query.order === "string" ? req.query.order : "";
+    const rawOrder = firstQueryParam(req.query.order) ?? "";
     const order = rawOrder === "asc" || rawOrder === "desc" ? rawOrder : "desc";
 
     // page: missing/malformed/non-positive → fall back to 1 (not an error)
     let page = 1;
-    if (req.query.page !== undefined) {
-      const raw = req.query.page;
-      if (typeof raw === "string" && /^(?:[1-9][0-9]*)$/.test(raw)) {
-        page = Number(raw);
-      }
-      // else fall back to 1
+    const rawPage = firstQueryParam(req.query.page);
+    if (rawPage !== undefined && /^(?:[1-9][0-9]*)$/.test(rawPage)) {
+      page = Number(rawPage);
     }
 
     // pageSize: invalid/out of range → fall back to 10 (not an error)
     let pageSize = 10;
-    if (req.query.pageSize !== undefined) {
-      const raw = req.query.pageSize;
-      if (typeof raw === "string" && /^(?:[1-9][0-9]*)$/.test(raw)) {
-        const n = Number(raw);
-        if (n >= 1 && n <= 50) {
-          pageSize = n;
-        }
+    const rawPageSize = firstQueryParam(req.query.pageSize);
+    if (rawPageSize !== undefined && /^(?:[1-9][0-9]*)$/.test(rawPageSize)) {
+      const n = Number(rawPageSize);
+      if (n >= 1 && n <= 50) {
+        pageSize = n;
       }
-      // else fall back to 10
     }
 
     // Validate categoryId exists and is active → 409 if not
