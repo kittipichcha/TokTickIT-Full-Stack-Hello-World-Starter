@@ -11,10 +11,17 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
   let activeSystemId: number;
   let inactiveCategoryId: number | null = null;
   let inactiveSystemId: number | null = null;
+  let currentYearSequenceSnapshot: { year: number; lastSeq: number } | null = null;
 
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
+
+    // Snapshot the current-year TicketSequence to restore after tests
+    const currentYear = new Date().getUTCFullYear();
+    currentYearSequenceSnapshot = await prisma.ticketSequence.findUnique({
+      where: { year: currentYear },
+    });
 
     const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
@@ -50,6 +57,14 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
     if (inactiveSystemId) {
       await prisma.relatedSystem.deleteMany({ where: { id: inactiveSystemId } });
     }
+    
+    // Restore the current-year TicketSequence to its original state
+    const currentYear = new Date().getUTCFullYear();
+    await prisma.ticketSequence.deleteMany({ where: { year: currentYear } });
+    if (currentYearSequenceSnapshot) {
+      await prisma.ticketSequence.create({ data: currentYearSequenceSnapshot });
+    }
+    
     await disconnectPrisma();
   });
 

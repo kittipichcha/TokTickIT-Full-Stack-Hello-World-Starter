@@ -222,3 +222,144 @@ The agent must stop and ask the user when:
 - migration/data impact is risky
 - tests contradict API/spec contract
 - branch/worktree/PR action is requested implicitly but not approved explicitly
+
+## 14. Fix Plan for PR #25 P1 Blockers (Lab 2 Issue 3 - Ticket Creation Flow)
+The following detailed fix plan addresses the three P1 blockers identified in PR #25 review comments. This plan must be executed in sequence with appropriate testing validation after each change.
+
+### 14.1 P1 Blocker 1: Raw-body Integer Validator Can Be Byped and Can Reject Valid Requests
+**Problem**: `validateIntegerFields()` in `server/src/integer-validation.ts` parses JSON with a reviver, but then locates the original numeric token using a regular expression against the entire raw request body: `regex.exec(rawBody)` always returns the first textual occurrence of the field name. It does not identify the token belonging to the specific top-level property currently visited by the JSON reviver. This allows an invalid top-level ID to be hidden by an earlier property with the same name.
+
+**Example Vulnerability**: 
+```json
+{
+  "ignored": {
+    "categoryId": 1
+  },
+  "categoryId": 1.0,
+  "relatedSystemId": 1,
+  "summary": "Valid summary",
+  "description": "Valid description text",
+  "requester": "DEV_USER"
+}
+```
+Regex matches the nested valid `categoryId` instead of top-level invalid one.
+
+**Required Fix**:
+1. Remove regex-based approach entirely
+2. Modify walker algorithm to track which property key is currently being visited
+3. Only apply integer validation when traversing top-level property names in `integerFields` set
+4. Maintain current defense: ignore nested occurrences inside unknown properties
+5. Ensure JSON escape sequences in property names are correctly decoded
+
+**Test Validation**:
+- Update existing integer validation tests to verify new logic works correctly
+- Add new test case for vulnerability scenario with nested same-key property
+- Run: `cd server && npm test integer-validation.api.test.ts`
+
+### 14.2 P1 Blocker g2: Real-database Tests Delete Tickets but Permanently Advance `TicketSequence`
+**Problem**: Integration test cleanup (`create-ticket-real-db.integration.test.ts`, `create-ticket-reference-validation.integration.test.ts`, `ticket-number-concurrency.integration.test.ts`) correctly deletes Ticket rows but does NOT roll back `TicketSequence` increments. Each successful call to `POST /api/tickets` increments the current UTC year's `TicketSequence`. Deleting the Ticket row does not reset or restore the sequence.
+
+**Root Cause**: `TicketSequence` table persists sequence increments independently of Ticket existence.
+
+**Required Fix**:
+**Option A: Reset sequence after test suite (preferred)**
+1. In test `afterAll` hook, after deleting test Tickets, also reset `TicketSequence.lastSeq` for current UTC year to a safe baseline (e.g., 1)
+2. Use raw SQL: `UPDATE "TicketSequence" SET "lastSeq" = 1 WHERE "year" = ${currentYear}`
+3. Must handle edge case: only reset when `lastSeq` is under our control
+
+**Option B: Use separate test year (alternative)**
+1. Modify tests to use a dedicated test year (e.g., 9999) instead of current UTC year
+2. Reset that year's sequence in `beforeAll`/`afterAll` hooks
+
+**Option C: Use transactions (most complex)**
+1. Wrap entire test in Prisma transaction that gets rolled back
+2. Requires refactoring of `allocateTicketNumberWithClient` to work within transaction
+
+**Test Validation**:
+- Verify before/after test runs that `TicketSequence.lastSeq` for current year remains unchanged
+- Add assertion counting `TicketSequence` rows before/after test suite
+- Run: `cd server && npm test create-ticket-real-db.integration.test.ts create-ticket-reference-validation.integration.test.ts ticket-number-concurrency.integration.test.ts`
+
+### 14.3 P1 Blocker 3: Valid Request Containing Ignored Nested Object Can Return `500 INTERNAL_ERROR`
+**Problem**: The API contract states that unknown JSON properties are ignored. The custom raw-JSON parser attempts to skip unknown nested objects using:
+```ts
+while (true) {
+  readString();
+  skipWhitespace();
+  pos++;
+  skipValue();
+  skipWhitespace();
+
+  if (rawBody[pos] === ",") pos++;
+  else break;
+}
+```
+After consuming a comma inside a nested object, the loop immediately calls `readString()` again without first calling `skipWhitespace()`. This causes `readString()` to throw on valid requests with whitespace after comma.
+
+**Example Failure**: 
+```json
+{
+  "ignored": {
+    "a": 1,
+    "b": 2
+  },
+  "categoryId": 1,
+  "relatedSystemId": Longline truncated...
+```
+
+**Required Fix**:
+1. In `skipValue()` function, inside the object traversal loop, after consuming comma (`pos++`), call `skipWhitespace()` before `readString()`
+2. Also ensure whitespace is skipped after reading key-value pair
+3. Maintain defensive try-catch wrapper that returns empty invalid array on walker errors
+
+**Test Validation**:
+- Create test case with whitespace in ignored nested object: `{"ignored":{"a":1, "b":2}}`
+- Update integer validation test to include whitespace variations
+- Run: `cd server && npm test integer-validation.api.test.ts`
+
+### 14.4 Implementation Sequence
+1. **First fix Parser issue (P1 Blocker 3)** - simplest, isolated change to `integer-validation.ts`
+2. **Then fix Integer Validator (P1 Blocker 1)** - more complex logic change  
+3. **Finally fix TicketSequence (P1 Blocker 2)** - test infrastructure change
+
+**Traceability**:
+- FR-02.01.01: Integer lexical validation (api-spec §0)
+- FR-02.01.02: Normalization (trimming) enforcement
+- AC-02.02: Real database integration test evidence
+- AC-02.03: Test cleanup leaves database state unchanged
+
+Each fix must be accompanied by:
+1. Unit/integration test updates
+2. Verification that existing tests still pass
+3. `tests.md` status update if applicable
+4. `reviewer.md` update documenting change
+
+### 14.5 Risk Mitigation
+- **Data Corruption Risk**: TicketSequence fix must not affect production data; verify Year != current UTC year in test environment
+- **Regression Risk**: All fixes must maintain backward compatibility with API contract
+- **Performance Impact**: Integer validator walker efficiency should remain O(n)
+.### 14.6 Implementation Rules
+Before implementing any fix:
+1. Create a worktree from current branch (`feature/lab2-ticket-creation`)
+2. Write failing test that reproduces the issue
+3. Implement fix incrementally
+4. Run full test suite for affected component
+5. Update `tests.md` Results Log (newest first)
+6. Update `ai-use.md` with prompt/actions
+7. Update `reviewer.md` with fix documentation
+
+After all three blockers fixed:
+1. Run full cross-reference check (Section 4)
+2. Confirm all PR #25 review comments addressed
+3. Request user approval before committing/pushing
+
+## 15. PR #25 Status Summary
+**Title**: feat: Lab 2 Issue 3 - Ticket Creation Flow
+**Branch**: `feature/lab2-ticket-creation`
+**Target**: `lab2-staging`
+**Status**: 3 P1 blockers (must fix before merge)
+
+**Blockers**:
+1. Integer validator regex bypass/rejection
+2. Real-database tests permanently advance TicketSequence  
+3. Parser fails on valid requests with ignored nested objects

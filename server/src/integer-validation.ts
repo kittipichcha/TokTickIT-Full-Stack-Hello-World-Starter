@@ -88,6 +88,9 @@ export function validateIntegerFields(
     if (pos < len && body[pos] >= "0" && body[pos] <= "9") {
       if (body[pos] === "0") {
         pos++;
+        // After a zero, check if there are more digits (leading zero case)
+        // We still need to consume all digits for the regex check
+        while (pos < len && body[pos] >= "0" && body[pos] <= "9") pos++;
       } else {
         pos++;
         while (pos < len && body[pos] >= "0" && body[pos] <= "9") pos++;
@@ -128,6 +131,7 @@ export function validateIntegerFields(
           skipWhitespace();
           if (body[pos] === ",") {
             pos++;
+            skipWhitespace();
             continue;
           }
           break;
@@ -141,8 +145,12 @@ export function validateIntegerFields(
         while (true) {
           skipValue();
           skipWhitespace();
-          if (body[pos] === ",") pos++;
-          else break;
+          if (body[pos] === ",") {
+            pos++;
+            skipWhitespace();
+            continue;
+          }
+          break;
         }
       }
       pos++; // skip ]
