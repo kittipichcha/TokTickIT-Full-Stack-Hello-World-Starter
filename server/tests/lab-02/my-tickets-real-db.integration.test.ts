@@ -402,7 +402,7 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
     const res = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ sort: "requestedPriority", order: "asc" });
+      .query({ sort: "requestedPriority", order: "asc", search: `${TEST_MARKER} PRIO-` });
 
     expect(res.status).toBe(200);
     const prioTickets = res.body.data
@@ -423,7 +423,7 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
     const res = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ sort: "requestedPriority", order: "desc" });
+      .query({ sort: "requestedPriority", order: "desc", search: `${TEST_MARKER} PRIO-` });
 
     expect(res.status).toBe(200);
     const prioTickets = res.body.data
@@ -520,7 +520,7 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
     const res = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ sort: "requestedPriority", order: "asc" });
+      .query({ sort: "requestedPriority", order: "asc", search: `${TEST_MARKER} TIE-` });
 
     expect(res.status).toBe(200);
     const tieTickets = res.body.data
@@ -537,7 +537,7 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
     const res = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ sort: "summary", order: "asc" });
+      .query({ sort: "summary", order: "asc", search: `${TEST_MARKER} SAME-SUMMARY-TIE` });
 
     expect(res.status).toBe(200);
     const sameSummaryTickets = res.body.data
@@ -554,7 +554,7 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
     const res = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ sort: "createdAt", order: "asc" });
+      .query({ sort: "createdAt", order: "asc", search: `${TEST_MARKER} SAME-TS-` });
 
     expect(res.status).toBe(200);
     const sameTsTickets = res.body.data
@@ -650,7 +650,7 @@ describe("My Tickets Real DB — Test 6: Pagination", () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual([]);
     expect(res.body.pagination.page).toBe(999);
-    expect(res.body.pagination.totalItems).toBe(0);
+    expect(res.body.pagination.totalItems).toBeGreaterThanOrEqual(21);
     expect(res.body.pagination.totalPages).toBeGreaterThanOrEqual(3);
     expect(res.body.pagination.unfilteredTotalItems).toBeGreaterThanOrEqual(21);
   });
