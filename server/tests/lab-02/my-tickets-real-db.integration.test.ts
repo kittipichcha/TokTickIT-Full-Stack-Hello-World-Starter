@@ -253,6 +253,9 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
   let requesterId: number;
   let hardwareCategoryId: number;
   let softwareCategoryId: number;
+  let hardwareHighNumber: string;
+  let hardwareLowNumber: string;
+  let softwareHighNumber: string;
 
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
@@ -272,19 +275,19 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
     // Ticket A: Hardware, HIGH, NEW
     // Ticket B: Hardware, LOW, NEW
     // Ticket C: Software, HIGH, NEW
-    await createTicket(requesterId, {
+    hardwareHighNumber = await createTicket(requesterId, {
       categoryId: hardwareCategoryId,
       requestedPriority: "HIGH",
       summary: `${TEST_MARKER} CONJ-HW-HIGH`,
       description: `${TEST_MARKER} Hardware high priority ticket.`,
     });
-    await createTicket(requesterId, {
+    hardwareLowNumber = await createTicket(requesterId, {
       categoryId: hardwareCategoryId,
       requestedPriority: "LOW",
       summary: `${TEST_MARKER} CONJ-HW-LOW`,
       description: `${TEST_MARKER} Hardware low priority ticket.`,
     });
-    await createTicket(requesterId, {
+    softwareHighNumber = await createTicket(requesterId, {
       categoryId: softwareCategoryId,
       requestedPriority: "HIGH",
       summary: `${TEST_MARKER} CONJ-SW-HIGH`,
@@ -327,7 +330,11 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
       });
 
     expect(res.status).toBe(200);
-    // Only Hardware + HIGH + NEW tickets
+    const returned = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
+    // Only Hardware + HIGH + NEW tickets — should be exactly hardwareHighNumber
+    expect(returned).toContain(hardwareHighNumber);
+    expect(returned).not.toContain(hardwareLowNumber);
+    expect(returned).not.toContain(softwareHighNumber);
     for (const t of res.body.data) {
       expect(t.categoryId).toBe(hardwareCategoryId);
       expect(t.requestedPriority).toBe("HIGH");
@@ -345,7 +352,11 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
       });
 
     expect(res.status).toBe(200);
+    const returned = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
     // Should only match Hardware+HIGH (not Hardware+LOW, not Software+HIGH)
+    expect(returned).toContain(hardwareHighNumber);
+    expect(returned).not.toContain(hardwareLowNumber);
+    expect(returned).not.toContain(softwareHighNumber);
     for (const t of res.body.data) {
       expect(t.categoryId).toBe(hardwareCategoryId);
       expect(t.requestedPriority).toBe("HIGH");
@@ -358,6 +369,9 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
 // ────────────────────────────────────────────────────────────────────────────
 describe("My Tickets Real DB — Test 4: Priority ordering", () => {
   let requesterId: number;
+  let lowTicketNumber: string;
+  let mediumTicketNumber: string;
+  let highTicketNumber: string;
 
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
@@ -367,17 +381,17 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
     requesterId = requester!.id;
 
     // Create tickets with different priorities; createdAt will be sequential
-    await createTicket(requesterId, {
+    lowTicketNumber = await createTicket(requesterId, {
       requestedPriority: "LOW",
       summary: `${TEST_MARKER} PRIO-LOW`,
       description: `${TEST_MARKER} Low priority ticket for ordering.`,
     });
-    await createTicket(requesterId, {
+    mediumTicketNumber = await createTicket(requesterId, {
       requestedPriority: "MEDIUM",
       summary: `${TEST_MARKER} PRIO-MEDIUM`,
       description: `${TEST_MARKER} Medium priority ticket for ordering.`,
     });
-    await createTicket(requesterId, {
+    highTicketNumber = await createTicket(requesterId, {
       requestedPriority: "HIGH",
       summary: `${TEST_MARKER} PRIO-HIGH`,
       description: `${TEST_MARKER} High priority ticket for ordering.`,
@@ -391,13 +405,18 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
       .query({ sort: "requestedPriority", order: "asc" });
 
     expect(res.status).toBe(200);
-    const priorities = res.body.data
+    const prioTickets = res.body.data
       .filter((t: { summary: string }) => t.summary.includes("PRIO-"))
-      .map((t: { requestedPriority: string }) => t.requestedPriority);
+      .map((t: { requestedPriority: string; ticketNumber: string }) => ({
+        priority: t.requestedPriority,
+        ticketNumber: t.ticketNumber,
+      }));
 
-    const prioOrder = ["LOW", "MEDIUM", "HIGH"];
-    const filtered = priorities.filter((p: string) => prioOrder.includes(p));
-    expect(filtered).toEqual(["LOW", "MEDIUM", "HIGH"]);
+    // Must return exactly LOW, MEDIUM, HIGH in that order
+    expect(prioTickets.length).toBe(3);
+    expect(prioTickets[0].priority).toBe("LOW");
+    expect(prioTickets[1].priority).toBe("MEDIUM");
+    expect(prioTickets[2].priority).toBe("HIGH");
   });
 
   itIfDb("sorts by requestedPriority descending: HIGH > MEDIUM > LOW", async () => {
@@ -407,13 +426,18 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
       .query({ sort: "requestedPriority", order: "desc" });
 
     expect(res.status).toBe(200);
-    const priorities = res.body.data
+    const prioTickets = res.body.data
       .filter((t: { summary: string }) => t.summary.includes("PRIO-"))
-      .map((t: { requestedPriority: string }) => t.requestedPriority);
+      .map((t: { requestedPriority: string; ticketNumber: string }) => ({
+        priority: t.requestedPriority,
+        ticketNumber: t.ticketNumber,
+      }));
 
-    const prioOrder = ["HIGH", "MEDIUM", "LOW"];
-    const filtered = priorities.filter((p: string) => prioOrder.includes(p));
-    expect(filtered).toEqual(["HIGH", "MEDIUM", "LOW"]);
+    // Must return exactly HIGH, MEDIUM, LOW in that order
+    expect(prioTickets.length).toBe(3);
+    expect(prioTickets[0].priority).toBe("HIGH");
+    expect(prioTickets[1].priority).toBe("MEDIUM");
+    expect(prioTickets[2].priority).toBe("LOW");
   });
 });
 
@@ -453,6 +477,41 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
       description: `${TEST_MARKER} Second ticket with same summary.`,
       requestedPriority: "LOW",
     });
+
+    // Create two tickets with same priority and same createdAt to test id DESC tie-breaker
+    const cat = await prisma.category.findFirst({ where: { isActive: true } });
+    const sys = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
+    expect(cat).toBeTruthy();
+    expect(sys).toBeTruthy();
+    const sameTimestamp = new Date("2026-01-01T00:00:00.000Z");
+    await prisma.ticket.create({
+      data: {
+        requesterId,
+        categoryId: cat!.id,
+        relatedSystemId: sys!.id,
+        summary: `${TEST_MARKER} SAME-TS-LOWER-ID`,
+        description: `${TEST_MARKER} Same timestamp, lower id.`,
+        requestedPriority: "MEDIUM",
+        currentStatus: "NEW",
+        ticketNumber: `TKT-2026-${String(Math.floor(Math.random() * 900000) + 100000)}`,
+        createdAt: sameTimestamp,
+        updatedAt: sameTimestamp,
+      },
+    });
+    await prisma.ticket.create({
+      data: {
+        requesterId,
+        categoryId: cat!.id,
+        relatedSystemId: sys!.id,
+        summary: `${TEST_MARKER} SAME-TS-HIGHER-ID`,
+        description: `${TEST_MARKER} Same timestamp, higher id.`,
+        requestedPriority: "MEDIUM",
+        currentStatus: "NEW",
+        ticketNumber: `TKT-2026-${String(Math.floor(Math.random() * 900000) + 100000)}`,
+        createdAt: sameTimestamp,
+        updatedAt: sameTimestamp,
+      },
+    });
   });
 
   itIfDb("tie-breaker: createdAt DESC, id DESC after primary sort", async () => {
@@ -468,9 +527,8 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
 
     // With same priority, tie-breakers are createdAt DESC, id DESC
     // So the later-created ticket (higher id) should come first
-    if (tieTickets.length >= 2) {
-      expect(tieTickets[0].id).toBeGreaterThan(tieTickets[1].id);
-    }
+    expect(tieTickets.length).toBe(2);
+    expect(tieTickets[0].id).toBeGreaterThan(tieTickets[1].id);
   });
 
   itIfDb("tie-breaker: summary sort with same summary uses createdAt DESC, id DESC", async () => {
@@ -486,24 +544,25 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
 
     // With same summary, tie-breakers are createdAt DESC, id DESC
     // So the later-created ticket (higher id) should come first
-    expect(sameSummaryTickets.length).toBeGreaterThanOrEqual(2);
+    expect(sameSummaryTickets.length).toBe(2);
     expect(sameSummaryTickets[0].id).toBeGreaterThan(sameSummaryTickets[1].id);
   });
 
-  itIfDb("tie-breaker: createdAt sort uses id DESC as final tie-breaker", async () => {
+  itIfDb("tie-breaker: same createdAt uses id DESC as final tie-breaker", async () => {
     const res = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
       .query({ sort: "createdAt", order: "asc" });
 
     expect(res.status).toBe(200);
-    const ids = res.body.data.map((t: { id: number }) => t.id);
-    // When createdAt ASC, tickets with the same createdAt are ordered by id DESC
-    // Verify the overall ordering is deterministic (no assertion failures)
-    for (let i = 1; i < ids.length; i++) {
-      // ids should be in a valid order given the sort
-      expect(typeof ids[i]).toBe("number");
-    }
+    const sameTsTickets = res.body.data
+      .filter((t: { summary: string }) => t.summary.includes("SAME-TS-"))
+      .map((t: { id: number; createdAt: string }) => ({ id: t.id, createdAt: t.createdAt }));
+
+    // With same createdAt, tie-breaker is id DESC
+    // Higher id should come before lower id
+    expect(sameTsTickets.length).toBe(2);
+    expect(sameTsTickets[0].id).toBeGreaterThan(sameTsTickets[1].id);
   });
 
   itIfDb("tie-breaker: ticketNumber sort uses createdAt DESC, id DESC as tie-breaker", async () => {
@@ -860,10 +919,14 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
   });
 
   itIfDb("duplicate search params uses first value", async () => {
-    // Create a ticket with a distinctive summary so we can assert first-value behavior
-    const ticketNum = await createTicket(requesterId, {
+    // Create tickets with distinctive summaries
+    const ticketFirst = await createTicket(requesterId, {
       summary: `${TEST_MARKER} DUP-SEARCH-FIRST`,
       description: `${TEST_MARKER} Duplicate search first-value test.`,
+    });
+    const ticketSecond = await createTicket(requesterId, {
+      summary: `${TEST_MARKER} DUP-SEARCH-SECOND`,
+      description: `${TEST_MARKER} Duplicate search second-value test.`,
     });
 
     const res = await request(app)
@@ -873,13 +936,11 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
     expect(res.status).toBe(200);
     // The controller reads req.query.search as a string, which Express
     // returns as the first value when there are duplicates.
-    // "first" should be used as the search term; it won't match our ticket
-    // whose summary contains "DUP-SEARCH-FIRST" (no "first" substring).
-    // But the key assertion is that the server does NOT crash with 500.
-    // Additionally, verify the response shape is valid.
-    expect(res.body).toHaveProperty("data");
-    expect(res.body).toHaveProperty("pagination");
-    expect(res.body.pagination).toHaveProperty("unfilteredTotalItems");
+    // "first" should be used as the search term; it matches ticketFirst (summary contains "FIRST")
+    // but not ticketSecond (summary contains "SECOND", not "first")
+    const returned = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
+    expect(returned).toContain(ticketFirst);
+    expect(returned).not.toContain(ticketSecond);
   });
 
   itIfDb("duplicate categoryId uses first value", async () => {
@@ -1000,18 +1061,30 @@ describe("API-REQ-02: Historical inactive requester — data preserved, API inac
       data: { requesterId: inactiveRequesterId },
     });
 
-    // Verify the ticket exists in the database
-    const dbTicket = await prisma.ticket.findUnique({
+    // Assert DB row exists after reassignment
+    const dbTicketAfterReassign = await prisma.ticket.findUnique({
       where: { ticketNumber },
     });
-    expect(dbTicket).toBeTruthy();
-    expect(dbTicket!.requesterId).toBe(inactiveRequesterId);
+    expect(dbTicketAfterReassign).toBeTruthy();
+    expect(dbTicketAfterReassign!.requesterId).toBe(inactiveRequesterId);
 
-    // Verify the inactive requester cannot access it via My Tickets API
-    const res = await request(app)
+    // Inactive requester calls requester-context → 422
+    const resContext = await request(app)
+      .get("/api/requester-context")
+      .set("X-Dev-Requester-Id", String(inactiveRequesterId));
+    expect(resContext.status).toBe(422);
+
+    // Inactive requester calls My Tickets → 422
+    const resTickets = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(inactiveRequesterId));
+    expect(resTickets.status).toBe(422);
 
-    expect(res.status).toBe(422);
+    // Assert DB row STILL exists after API rejections
+    const dbTicketAfterRejection = await prisma.ticket.findUnique({
+      where: { ticketNumber },
+    });
+    expect(dbTicketAfterRejection).toBeTruthy();
+    expect(dbTicketAfterRejection!.requesterId).toBe(inactiveRequesterId);
   });
 });
