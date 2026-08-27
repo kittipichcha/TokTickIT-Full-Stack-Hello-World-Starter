@@ -428,6 +428,18 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
+### 2026-08-27 — Issue #14: My Tickets — Exact response-shape assertion (BLOCKING ISSUE #1 fix)
+- **Scope**: Replaced `toMatchObject()` with exact `Object.keys(item).sort()` assertion in the response-shape test to fail when any undocumented key is present. Removed redundant individual `not.toHaveProperty()` checks for `requesterId`, `description`, and `relatedSystemId` since the exact-key assertion covers them.
+- **Changes**:
+  - `server/tests/lab-02/my-tickets-real-db.integration.test.ts`: Replaced `toMatchObject()` with `expect(Object.keys(item).sort()).toEqual(DOCUMENTED_KEYS)` where `DOCUMENTED_KEYS` is the sorted list of the 10 documented fields (`id`, `ticketNumber`, `categoryId`, `categoryName`, `summary`, `requestedPriority`, `itPriority`, `currentStatus`, `createdAt`, `updatedAt`). Removed the three individual `not.toHaveProperty()` checks as redundant.
+- **Command(s) run**:
+  ```sh
+  cd server && npx vitest run tests/lab-02/my-tickets-real-db.integration.test.ts
+  cd server && npx vitest run tests/lab-02/
+  ```
+- **Result**: 55/55 My Tickets real-DB tests passed; 256/256 full lab-02 server tests passed.
+- **Follow-up**: The test now fails if any undocumented field is added to the API response.
+
 ### 2026-08-27 - Issue #14: My Tickets — Re-review fixes: bounded pagination, mobile CSS, exact-slice tests, evidence mapping
 - **Scope**: Addressed all P1 findings from the re-review verdict. Fixed bounded pagination window, mobile-safe pagination wrapping, 44px card toggle, vertical mobile filter stacking, exact-slice pagination assertions in real-DB tests, UI-MY-05 metadata consistency, evidence matrix updates, and governance rule isolation.
 - **Changes**:

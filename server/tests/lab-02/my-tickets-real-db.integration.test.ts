@@ -331,6 +331,22 @@ describe("My Tickets Real DB — Test 2b: Response shape", () => {
     expect(res.body.data.length).toBeGreaterThanOrEqual(1);
 
     const item = res.body.data[0];
+    const DOCUMENTED_KEYS = [
+      "categoryId",
+      "categoryName",
+      "createdAt",
+      "currentStatus",
+      "id",
+      "itPriority",
+      "requestedPriority",
+      "summary",
+      "ticketNumber",
+      "updatedAt",
+    ];
+
+    // Exact key-set assertion: fail if any undocumented key is present
+    expect(Object.keys(item).sort()).toEqual(DOCUMENTED_KEYS);
+
     // Must have all documented fields with correct types
     expect(item).toMatchObject({
       id: expect.any(Number),
@@ -345,11 +361,6 @@ describe("My Tickets Real DB — Test 2b: Response shape", () => {
     });
     // itPriority must be string | null
     expect(item.itPriority === null || typeof item.itPriority === "string").toBe(true);
-
-    // Must NOT have undocumented fields
-    expect(item).not.toHaveProperty("requesterId");
-    expect(item).not.toHaveProperty("description");
-    expect(item).not.toHaveProperty("relatedSystemId");
   });
 });
 
