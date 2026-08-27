@@ -428,6 +428,17 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
+### 2026-08-27 — Non-blocking suggestion: Normalize whitespace-only search on the client
+- **Scope**: Fixed `hasActiveFilters` and API call to use `search.trim()` instead of raw `search`, preventing whitespace-only input from being treated as an active filter.
+- **Changes**:
+  - `client/src/MyTickets.tsx`: Added `const trimmedSearch = search.trim()` before the API call; changed `search: search || undefined` to `search: trimmedSearch || undefined`; changed `hasActiveFilters` from `search || ...` to `search.trim() || ...`.
+- **Command(s) run**:
+  ```sh
+  cd client && npx vitest run src/lab-02-tests/MyTickets.test.tsx
+  ```
+- **Result**: 15/15 My Tickets client tests passed.
+- **Follow-up**: None.
+
 ### 2026-08-27 — Issue #14: My Tickets — Exact response-shape assertion (BLOCKING ISSUE #1 fix)
 - **Scope**: Replaced `toMatchObject()` with exact `Object.keys(item).sort()` assertion in the response-shape test to fail when any undocumented key is present. Removed redundant individual `not.toHaveProperty()` checks for `requesterId`, `description`, and `relatedSystemId` since the exact-key assertion covers them.
 - **Changes**:
