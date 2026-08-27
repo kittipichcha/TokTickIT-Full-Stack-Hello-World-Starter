@@ -1,5 +1,6 @@
 import { getPrisma } from "./prisma.js";
 import { allocateTicketNumberWithClient, TicketSequenceExhaustedError } from "./ticket-number.js";
+import { MAX_DATABASE_ID } from "./id-domain.js";
 
 export interface Category {
   id: number;
@@ -162,13 +163,15 @@ export interface CreateTicketInput {
   requestedPriority: unknown;
 }
 
-function validateCreateTicketInput(input: CreateTicketInput): {
+export interface ValidatedCreateTicketInput {
   categoryId: number;
   relatedSystemId: number;
   summary: string;
   description: string;
   requestedPriority: string;
-} {
+}
+
+export function validateCreateTicketInput(input: CreateTicketInput): ValidatedCreateTicketInput {
   const fields: Record<string, string> = {};
 
   // Validate categoryId
@@ -242,6 +245,19 @@ export async function createTicket(
   input: CreateTicketInput,
 ): Promise<TicketData> {
   const validated = validateCreateTicketInput(input);
+
+  // Defense in depth: reject IDs that exceed the database INTEGER range
+  // before they reach Prisma, preventing 500 INTERNAL_ERROR.
+  if (validated.categoryId > MAX_DATABASE_ID) {
+    throw new InactiveReferenceError(
+      "The specified category does not exist or is inactive.",
+    );
+  }
+  if (validated.relatedSystemId > MAX_DATABASE_ID) {
+    throw new InactiveReferenceError(
+      "The specified related system does not exist or is inactive.",
+    );
+  }
 
   const prisma = getPrisma();
 

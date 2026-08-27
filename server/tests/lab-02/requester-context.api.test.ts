@@ -70,6 +70,25 @@ describe("API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions", ()
       expect(response.status).toBe(422);
       expect(response.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
     });
+
+    // ── Oversized requester header values ──────────────────────────────────
+
+    it.each([
+      "2147483648",
+      "9007199254740993",
+      "9".repeat(400),
+    ])(
+      "rejects out-of-range requester header %s with 422",
+      async (value) => {
+        const response = await request(app)
+          .get("/api/requester-context")
+          .set("X-Dev-Requester-Id", value);
+
+        expect(response.status).toBe(422);
+        expect(response.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
+        expect(service.isActiveDevRequester).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe("API-REQ-03: Bootstrap & reference endpoints exemption", () => {
