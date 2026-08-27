@@ -373,10 +373,7 @@ ordering as the dedicated attachment-list endpoint.
         "mimeType": "application/pdf",
         "fileSizeBytes": 214532,
         "uploadedAt": "2026-08-21T09:15:00.000Z",
-        "isRemoved": false,
-        "removedAt": null,
-        "removalReason": null,
-        "removedByRequesterId": null
+        "isRemoved": false
       }
     ]
   }

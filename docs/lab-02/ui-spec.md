@@ -14,8 +14,6 @@
 | `--color-error` | `#B3261E` | Error text/border |
 | `--color-warning` | `#B7791F` | Warning callouts/badges only, never decorative |
 | `--color-success` | `#0B7A46` | Success confirmation, paired with text/icon (not color alone) |
-| `--color-focus` | `#F0A202` (amber) | Focus-visible outline for keyboard navigation, high-contrast accessibility |
-
 ## 2. Typography & Spacing
 - Font: system UI stack (`-apple-system, "Segoe UI", Roboto, sans-serif`).
 - Base size 16px; labels 14px/medium weight; page titles 24px/semibold; section headers 18px/semibold.
@@ -29,7 +27,7 @@
 | Read-only | `--color-field-readonly-bg`, no border-hover, cursor default, subtle "lock"-style visual distinction |
 | Invalid | `--color-error` border + text message directly below field (never top-of-form only) |
 | Disabled | Reduced opacity (0.5), `not-allowed` cursor, no hover/focus styles |
-| Focused | 3px `--color-focus` outline with 2px offset, visible for keyboard users, never removed via `outline: none` without replacement |
+| Focused | 2px `--color-secondary` outline, visible for keyboard users, never removed via `outline: none` without replacement |
 | Busy (Submit button) | Spinner + disabled + label changes to "Submitting…" |
 
 Required fields show a red asterisk **next to the label**; the asterisk is a visual cue

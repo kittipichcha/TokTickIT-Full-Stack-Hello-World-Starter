@@ -218,11 +218,10 @@ model Category {
 }
 
 model RelatedSystem {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  tickets   Ticket[]
+  id       Int      @id @default(autoincrement())
+  name     String   @unique
+  isActive Boolean  @default(true)
+  tickets  Ticket[]
 }
 
 model Ticket {
