@@ -355,6 +355,56 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
     expect(res.body.error.code).toBe("INACTIVE_REFERENCE");
   });
 
+  it("returns 400 for categoryId=0", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .query({ categoryId: "0" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 400 for categoryId=-1", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .query({ categoryId: "-1" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 400 for categoryId=0.5", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .query({ categoryId: "0.5" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 400 for categoryId=1e2", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .query({ categoryId: "1e2" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 409 for enormous positive integer categoryId", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .query({ categoryId: "9999999999" });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe("INACTIVE_REFERENCE");
+  });
+
   it("falls back to page 1 for malformed page", async () => {
     vi.mocked(service.getMyTickets).mockResolvedValue(makeResult([]));
 
