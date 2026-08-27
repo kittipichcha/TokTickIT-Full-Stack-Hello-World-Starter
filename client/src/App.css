@@ -1,9 +1,9 @@
-:root { --primary: #006b3c; --secondary: #0b7a46; --pale: #eaf6ef; --background: #f5f7f6; --surface: #fff; --text: #1c2b24; --error: #b3261e; --border: #76847c; --border-light: #c8d8ce; --border-subtle: #e2e8e4; --text-secondary: #5a6b60; --focus: #f0a202; --field-readonly-bg: #f1f4f1; }
+:root { --primary: #006b3c; --secondary: #0b7a46; --pale: #eaf6ef; --background: #f5f7f6; --surface: #fff; --text: #1c2b24; --error: #b3261e; --border: #76847c; --border-light: #c8d8ce; --border-subtle: #e2e8e4; --text-secondary: #5a6b60; --field-readonly-bg: #f1f4f1; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--background); color: var(--text); font-family: -apple-system, "Segoe UI", sans-serif; }
 button, select { font: inherit; }
 button { min-height: 44px; border-radius: 4px; cursor: pointer; }
-button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; }
 .app-container { max-width: 760px; margin: 0 auto; padding: 48px 24px; }
 .selector-screen { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
 .eyebrow { color: var(--secondary); font-weight: 700; letter-spacing: 0; }
@@ -94,7 +94,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .tickets-table-wrapper { overflow-x: auto; }
 .tickets-table { width: 100%; border-collapse: collapse; }
 .tickets-table th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border-light); font-size: 13px; font-weight: 700; color: var(--text-secondary); cursor: pointer; user-select: none; white-space: nowrap; }
-.tickets-table th:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.tickets-table th:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; }
 .tickets-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
 .tickets-table tbody tr:hover { background: var(--pale); }
 .tickets-table a { color: var(--secondary); font-weight: 600; text-decoration: none; }
@@ -108,7 +108,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .ticket-card-header a:hover { text-decoration: underline; }
 .ticket-card-summary { font-size: 15px; margin-bottom: 8px; color: var(--text); }
 .ticket-card-toggle { background: none; border: none; color: var(--secondary); font-weight: 600; cursor: pointer; padding: 4px 0; font-size: 13px; min-height: 44px; text-align: left; display: block; margin-bottom: 4px; }
-.ticket-card-toggle:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ticket-card-toggle:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; }
 .ticket-card-details { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); align-items: center; }
 
 /* Pagination */
@@ -117,7 +117,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .pagination-controls { display: flex; gap: 4px; align-items: center; }
 .pagination-page { min-height: 36px; min-width: 36px; padding: 4px 8px; border: 1px solid var(--border-light); background: var(--surface); color: var(--text); border-radius: 4px; cursor: pointer; font: inherit; font-size: 14px; }
 .pagination-page.active { background: var(--primary); color: white; border-color: var(--primary); font-weight: 700; }
-.pagination-page:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.pagination-page:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; }
 .pagination-ellipsis { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; padding: 4px 8px; font-size: 14px; color: var(--text-secondary); user-select: none; }
 
 /* Skeleton */
