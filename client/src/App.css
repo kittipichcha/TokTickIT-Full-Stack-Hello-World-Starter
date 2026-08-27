@@ -182,3 +182,64 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   .ticket-detail-actions { flex-direction: column; }
   .ticket-detail-actions button { width: 100%; }
 }
+
+/* Drop zone for file attachments */
+.drop-zone { border: 2px dashed var(--border-light); border-radius: 4px; padding: 24px; text-align: center; margin-top: 8px; cursor: pointer; background: var(--surface); }
+.drop-zone:hover { border-color: var(--secondary); background: var(--pale); }
+.drop-zone p { margin: 0; color: var(--text-secondary); }
+.link-button { background: none; border: none; color: var(--secondary); font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0; min-height: auto; font: inherit; }
+
+/* Selected files list */
+.selected-files-list { list-style: none; padding: 0; margin: 8px 0 0; }
+.selected-file-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 4px; margin-bottom: 4px; background: var(--surface); flex-wrap: wrap; }
+.selected-file-row.file-invalid { border-color: var(--error); background: #fef2f2; }
+.file-icon { font-size: 18px; }
+.file-name { font-weight: 600; flex: 1; min-width: 80px; word-break: break-word; font-size: 14px; }
+.file-size { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
+.file-error-message { color: var(--error); font-size: 13px; flex-basis: 100%; }
+.file-valid-indicator { color: var(--secondary); font-size: 14px; }
+.file-remove-button { background: none; border: 1px solid var(--error); color: var(--error); border-radius: 4px; cursor: pointer; padding: 2px 8px; font-size: 16px; font-weight: 700; min-height: 32px; }
+.file-remove-button:hover { background: #fef2f2; }
+
+/* Upload progress */
+.upload-progress { margin-top: 8px; padding: 12px; background: var(--pale); border-radius: 4px; }
+.upload-progress p { font-weight: 600; margin: 0 0 8px; }
+.upload-result-list { list-style: none; padding: 0; margin: 0; }
+.upload-result-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
+.upload-filename { font-weight: 600; flex: 1; }
+.upload-spinner { color: var(--secondary); }
+.upload-success { color: var(--secondary); }
+.upload-failed { color: var(--error); }
+
+/* Attachment count */
+.attachment-count { font-weight: 400; font-size: 13px; color: var(--text-secondary); }
+
+/* Case B note */
+.case-b-note { color: var(--warning, #b7791f); font-style: italic; margin: 12px 0; }
+
+/* Attachment results in Case B */
+.attachment-results { background: #fff8e6; border: 1px solid var(--warning, #b7791f); border-radius: 4px; padding: 16px; margin: 12px 0; text-align: left; }
+.attachment-results h2 { font-size: 16px; margin: 0 0 8px; }
+
+/* Destructive button */
+.destructive-button { padding: 8px 16px; border: 1px solid var(--error); background: transparent; color: var(--error); font-weight: 700; border-radius: 4px; cursor: pointer; min-height: 44px; }
+.destructive-button:hover { background: #fef2f2; }
+.destructive-button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Add Attachment control */
+.add-attachment-control { margin-top: 12px; }
+.add-attachment-control .field-error { margin-top: 8px; }
+
+/* Modal overlay */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+.modal-content { background: var(--surface); border-radius: 8px; padding: 24px; max-width: 480px; width: 100%; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.modal-content h2 { margin: 0 0 12px; }
+.modal-content p { margin: 0 0 16px; }
+.modal-content textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; font: inherit; min-height: 80px; resize: vertical; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+
+/* Preview modal */
+.preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+.preview-content { max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center; }
+.preview-content img { max-width: 100%; max-height: 80vh; object-fit: contain; }
+.preview-close { margin-top: 12px; padding: 8px 24px; background: var(--surface); border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }

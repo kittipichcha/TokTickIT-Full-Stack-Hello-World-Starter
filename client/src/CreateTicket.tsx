@@ -1,20 +1,42 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   fetchCategories,
   fetchRelatedSystems,
   createTicket,
+  uploadAttachment,
+  isAllowedAttachmentType,
+  isWithinSizeLimit,
   type Category,
   type RelatedSystem,
   type DevRequester,
 } from "./api";
-import { formatUtcDate } from "./format";
+import { formatUtcDate, formatFileSize } from "./format";
 
-type FormState = "editing" | "submitting" | "success" | "error";
+type FormState = "editing" | "submitting" | "success" | "error" | "case-b";
+
+interface SelectedFile {
+  file: File;
+  id: string;
+  error?: string;
+}
+
+interface UploadResult {
+  id: string;
+  fileName: string;
+  status: "uploading" | "success" | "failed";
+  error?: string;
+}
 
 interface CreateTicketProps {
   requester: DevRequester;
   onViewTicket: (ticketNumber: string) => void;
   onCreateAnother: () => void;
+}
+
+let fileIdCounter = 0;
+function nextFileId(): string {
+  fileIdCounter++;
+  return `file-${fileIdCounter}-${Date.now()}`;
 }
 
 export default function CreateTicket({ requester, onViewTicket, onCreateAnother }: CreateTicketProps) {
@@ -34,6 +56,12 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [createdTicketNumber, setCreatedTicketNumber] = useState<string | null>(null);
   const [createdTicketDate, setCreatedTicketDate] = useState<string | null>(null);
+
+  // Attachment state
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
+  const [uploadResults, setUploadResults] = useState<UploadResult[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,6 +107,50 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
     return errors;
   };
 
+  const handleAddFiles = (files: FileList | null) => {
+    if (!files) return;
+
+    const newFiles: SelectedFile[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      let error: string | undefined;
+
+      if (!isAllowedAttachmentType(file.name)) {
+        error = `File type "${file.name.split(".").pop()}" is not supported. Allowed: JPG, PNG, WEBP, PDF.`;
+      } else if (!isWithinSizeLimit(file.size)) {
+        error = `File exceeds the 5 MB size limit.`;
+      }
+
+      newFiles.push({ file, id: nextFileId(), error });
+    }
+
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
+  };
+
+  const handleRemoveFile = (fileId: string) => {
+    setSelectedFiles((prev) => prev.filter((f) => f.id !== fileId));
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleAddFiles(e.target.files);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleAddFiles(e.dataTransfer.files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const validFiles = selectedFiles.filter((f) => !f.error);
+  const invalidFiles = selectedFiles.filter((f) => f.error);
+  const activeFileCount = validFiles.length + uploadResults.filter((r) => r.status === "success").length;
+
   const handleSubmit = async () => {
     const errors = validate();
     setFieldErrors(errors);
@@ -86,8 +158,10 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
 
     setFormState("submitting");
     setErrorMessage(null);
+    setIsUploading(true);
 
     try {
+      // Step 1: Create the ticket (Case A — if this fails, preserve form values)
       const ticket = await createTicket(requester.id, {
         categoryId: categoryId!,
         relatedSystemId: relatedSystemId!,
@@ -97,17 +171,56 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
       });
       setCreatedTicketNumber(ticket.ticketNumber);
       setCreatedTicketDate(formatUtcDate(ticket.createdAt));
-      setFormState("success");
+
+      // Step 2: Upload valid files sequentially (Case B — partial success)
+      if (validFiles.length === 0) {
+        setFormState("success");
+        setIsUploading(false);
+        return;
+      }
+
+      const results: UploadResult[] = [];
+      for (const sf of validFiles) {
+        const result: UploadResult = {
+          id: sf.id,
+          fileName: sf.file.name,
+          status: "uploading",
+        };
+        results.push(result);
+        setUploadResults([...results]);
+
+        try {
+          await uploadAttachment(requester.id, ticket.ticketNumber, sf.file);
+          result.status = "success";
+        } catch (err) {
+          result.status = "failed";
+          result.error = err instanceof Error ? err.message : "Upload failed.";
+        }
+
+        const idx = results.indexOf(result);
+        results[idx] = result;
+        setUploadResults([...results]);
+      }
+
+      setIsUploading(false);
+
+      const allSucceeded = results.every((r) => r.status === "success");
+      if (allSucceeded) {
+        setFormState("success");
+      } else {
+        setFormState("case-b");
+      }
     } catch (err) {
+      // Case A: Ticket creation failed
       const e = err as Error & { code?: string; fields?: Record<string, string> };
       setErrorMessage(e.message || "Failed to create ticket.");
       if (e.fields) setFieldErrors(e.fields);
       setFormState("error");
+      setIsUploading(false);
     }
   };
 
   const handleCancel = () => {
-    // Reset form
     setCategoryId(null);
     setRelatedSystemId(null);
     setSummary("");
@@ -118,6 +231,9 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
     setFieldErrors({});
     setCreatedTicketNumber(null);
     setCreatedTicketDate(null);
+    setSelectedFiles([]);
+    setUploadResults([]);
+    setIsUploading(false);
   };
 
   if (loadingRefs) {
@@ -145,6 +261,56 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
     );
   }
 
+  // Case B: Ticket created, attachment(s) failed
+  if (formState === "case-b" && createdTicketNumber) {
+    return (
+      <main className="app-container">
+        <div className="success-panel">
+          <h1>Ticket Created</h1>
+          <p className="success-message">Your ticket has been created successfully.</p>
+          <div className="ticket-info">
+            <div className="ticket-info-row">
+              <span className="ticket-info-label">Ticket Number</span>
+              <span className="ticket-info-value">{createdTicketNumber}</span>
+            </div>
+            <div className="ticket-info-row">
+              <span className="ticket-info-label">Ticket Date</span>
+              <span className="ticket-info-value">{createdTicketDate}</span>
+            </div>
+          </div>
+
+          <div className="attachment-results" role="alert">
+            <h2>Attachment Upload Results</h2>
+            <ul className="upload-result-list">
+              {uploadResults.map((r) => (
+                <li key={r.id} className={`upload-result-item upload-${r.status}`}>
+                  <span className="upload-filename">{r.fileName}</span>
+                  {r.status === "uploading" && <span className="upload-spinner" aria-label="Uploading">⏳</span>}
+                  {r.status === "success" && <span className="upload-success">✓ Uploaded</span>}
+                  {r.status === "failed" && (
+                    <span className="upload-failed">
+                      ✗ {r.error || "Upload failed."}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="case-b-note">
+            The ticket was saved, but some attachments could not be uploaded. You can retry failed attachments from Ticket Detail.
+          </p>
+
+          <div className="success-actions">
+            <button className="primary-button" onClick={() => onViewTicket(createdTicketNumber)}>View Ticket</button>
+            <button className="secondary-button" onClick={() => { handleCancel(); onCreateAnother(); }}>Create Another</button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Success state
   if (formState === "success" && createdTicketNumber) {
     return (
       <main className="app-container">
@@ -274,6 +440,71 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
             placeholder="Describe the issue in detail"
           />
           {fieldErrors.description && <p className="field-error" role="alert">{fieldErrors.description}</p>}
+        </div>
+
+        {/* Attachments panel */}
+        <div className="form-field attachments-panel">
+          <label>Attachments <span className="attachment-count">({activeFileCount}/5)</span></label>
+          <div
+            className="drop-zone"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+          >
+            <p>Drag and drop files here, or <button type="button" className="link-button" onClick={() => fileInputRef.current?.click()}>browse files</button></p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".jpg,.jpeg,.png,.webp,.pdf"
+              onChange={handleFileInputChange}
+              style={{ display: "none" }}
+            />
+          </div>
+
+          {/* Selected files list */}
+          {selectedFiles.length > 0 && (
+            <ul className="selected-files-list">
+              {selectedFiles.map((sf) => (
+                <li key={sf.id} className={`selected-file-row ${sf.error ? "file-invalid" : ""}`}>
+                  <span className="file-icon">{sf.file.type.startsWith("image/") ? "🖼" : "📄"}</span>
+                  <span className="file-name">{sf.file.name}</span>
+                  <span className="file-size">{formatFileSize(sf.file.size)}</span>
+                  {sf.error ? (
+                    <span className="file-error-message" role="alert">{sf.error}</span>
+                  ) : (
+                    <span className="file-valid-indicator">✓</span>
+                  )}
+                  <button
+                    type="button"
+                    className="file-remove-button"
+                    onClick={() => handleRemoveFile(sf.id)}
+                    aria-label={`Remove ${sf.file.name}`}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Upload progress during submission */}
+          {isUploading && uploadResults.length > 0 && (
+            <div className="upload-progress" role="status" aria-label="Uploading attachments">
+              <p>Uploading attachments…</p>
+              <ul className="upload-result-list">
+                {uploadResults.map((r) => (
+                  <li key={r.id} className={`upload-result-item upload-${r.status}`}>
+                    <span className="upload-filename">{r.fileName}</span>
+                    {r.status === "uploading" && <span className="upload-spinner">⏳</span>}
+                    {r.status === "success" && <span className="upload-success">✓ Uploaded</span>}
+                    {r.status === "failed" && (
+                      <span className="upload-failed">✗ {r.error}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Action row */}

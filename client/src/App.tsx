@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "./App.css";
 import {
   clearStoredRequesterId,
@@ -7,8 +7,15 @@ import {
   fetchTicketDetail,
   getStoredRequesterId,
   setStoredRequesterId,
+  uploadAttachment,
+  removeAttachment,
+  previewAttachmentFile,
+  downloadAttachmentFile,
+  isAllowedAttachmentType,
+  isWithinSizeLimit,
   type DevRequester,
   type TicketDetailResponse,
+  type AttachmentItem,
 } from "./api";
 import CreateTicket from "./CreateTicket";
 import MyTickets from "./MyTickets";
@@ -31,6 +38,17 @@ export default function App() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailRetryCounter, setDetailRetryCounter] = useState(0);
   const [myTicketsResetKey, setMyTicketsResetKey] = useState(0);
+
+  // Attachment dialog state
+  const [removeDialogAttachment, setRemoveDialogAttachment] = useState<AttachmentItem | null>(null);
+  const [removeReason, setRemoveReason] = useState("");
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [addAttachmentError, setAddAttachmentError] = useState<string | null>(null);
+  const [isAddingAttachment, setIsAddingAttachment] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Preview state
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const loadRequesters = async () => {
     setSelectorState("loading");
@@ -316,7 +334,7 @@ export default function App() {
               {/* Attachments section */}
               <section className="attachments-section" aria-label="Attachments">
                 <h2>Attachments</h2>
-                {ticketDetail.attachments.length === 0 ? (
+                {ticketDetail.attachments.length === 0 && !isAddingAttachment ? (
                   <p className="placeholder-text">No attachments.</p>
                 ) : (
                   <ul className="attachment-list">
@@ -339,19 +357,183 @@ export default function App() {
                                 {att.removalReason}
                               </span>
                             )}
+                            <button
+                              className="tertiary-button"
+                              disabled
+                              aria-disabled="true"
+                            >
+                              Preview
+                            </button>
+                            <button
+                              className="tertiary-button"
+                              disabled
+                              aria-disabled="true"
+                            >
+                              Download
+                            </button>
                           </>
                         ) : (
-                          <span className="attachment-status-active">Active</span>
+                          <>
+                            <span className="attachment-status-active">Active</span>
+                            <button
+                              className="tertiary-button"
+                              onClick={async () => {
+                                try {
+                                  const { blob, mimeType } = await previewAttachmentFile(att.id, activeRequester!.id);
+                                  const url = URL.createObjectURL(blob);
+                                  window.open(url, "_blank");
+                                  setTimeout(() => URL.revokeObjectURL(url), 60000);
+                                } catch (err) {
+                                  setAddAttachmentError(err instanceof Error ? err.message : "Preview failed.");
+                                }
+                              }}
+                            >
+                              Preview
+                            </button>
+                            <button
+                              className="tertiary-button"
+                              onClick={async () => {
+                                try {
+                                  const { blob, filename } = await downloadAttachmentFile(att.id, activeRequester!.id);
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = filename;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                  URL.revokeObjectURL(url);
+                                } catch (err) {
+                                  setAddAttachmentError(err instanceof Error ? err.message : "Download failed.");
+                                }
+                              }}
+                            >
+                              Download
+                            </button>
+                            <button
+                              className="destructive-button"
+                              onClick={() => setRemoveDialogAttachment(att)}
+                            >
+                              Remove
+                            </button>
+                          </>
                         )}
                       </li>
                     ))}
                   </ul>
                 )}
+
+                {/* Add Attachment control */}
+                <div className="add-attachment-control">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.pdf"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file || !activeRequester || !detailTicketNumber) return;
+                      e.target.value = "";
+
+                      // Validate
+                      if (!isAllowedAttachmentType(file.name)) {
+                        setAddAttachmentError(`File type "${file.name.split(".").pop()}" is not supported. Allowed: JPG, PNG, WEBP, PDF.`);
+                        return;
+                      }
+                      if (!isWithinSizeLimit(file.size)) {
+                        setAddAttachmentError("File exceeds the 5 MB size limit.");
+                        return;
+                      }
+
+                      setAddAttachmentError(null);
+                      setIsAddingAttachment(true);
+
+                      try {
+                        await uploadAttachment(activeRequester.id, detailTicketNumber, file);
+                        // Refresh ticket detail to show new attachment
+                        const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
+                        setTicketDetail(data);
+                      } catch (err) {
+                        setAddAttachmentError(err instanceof Error ? err.message : "Upload failed.");
+                      } finally {
+                        setIsAddingAttachment(false);
+                      }
+                    }}
+                    style={{ display: "none" }}
+                  />
+                  <button
+                    className="secondary-button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isAddingAttachment}
+                  >
+                    {isAddingAttachment ? "Uploading…" : "+ Add Attachment"}
+                  </button>
+                  {addAttachmentError && (
+                    <p className="field-error" role="alert">{addAttachmentError}</p>
+                  )}
+                </div>
               </section>
 
               <div className="ticket-detail-actions">
                 <button className="secondary-button" onClick={() => setView("home")}>← Back to My Tickets</button>
                 <button className="primary-button" onClick={() => setView("create-ticket")}>Create Another</button>
+              </div>
+            </div>
+          )}
+
+          {/* Removal confirmation dialog */}
+          {removeDialogAttachment && (
+            <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Remove attachment">
+              <div className="modal-content">
+                <h2>Remove Attachment</h2>
+                <p>Are you sure you want to remove <strong>{removeDialogAttachment.originalFilename}</strong>?</p>
+                <div className="form-field">
+                  <label htmlFor="removalReason">Reason (optional)</label>
+                  <textarea
+                    id="removalReason"
+                    value={removeReason}
+                    onChange={(e) => setRemoveReason(e.target.value)}
+                    rows={3}
+                    placeholder="Optional reason for removal"
+                    maxLength={200}
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button
+                    className="secondary-button"
+                    onClick={() => {
+                      setRemoveDialogAttachment(null);
+                      setRemoveReason("");
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="destructive-button"
+                    disabled={isRemoving}
+                    onClick={async () => {
+                      if (!activeRequester) return;
+                      setIsRemoving(true);
+                      try {
+                        await removeAttachment(
+                          activeRequester.id,
+                          removeDialogAttachment.id,
+                          removeReason.trim() || undefined,
+                        );
+                        // Refresh ticket detail
+                        const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber!);
+                        setTicketDetail(data);
+                        setRemoveDialogAttachment(null);
+                        setRemoveReason("");
+                      } catch (err) {
+                        setAddAttachmentError(err instanceof Error ? err.message : "Failed to remove attachment.");
+                      } finally {
+                        setIsRemoving(false);
+                      }
+                    }}
+                  >
+                    {isRemoving ? "Removing…" : "Remove"}
+                  </button>
+                </div>
               </div>
             </div>
           )}

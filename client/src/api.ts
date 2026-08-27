@@ -237,3 +237,214 @@ export async function createTicket(
   const result = (await response.json()) as TicketResponse;
   return result.data;
 }
+
+// Attachment types
+
+export interface AttachmentItem {
+  id: number;
+  originalFilename: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  uploadedAt: string;
+  isRemoved: boolean;
+  removedAt: string | null;
+  removalReason: string | null;
+  removedByRequesterId: number | null;
+}
+
+export interface AttachmentUploadResult {
+  data: {
+    id: number;
+    originalFilename: string;
+    mimeType: string;
+    fileSizeBytes: number;
+    uploadedAt: string;
+    isRemoved: boolean;
+    storedFilename: string;
+  };
+}
+
+export interface AttachmentRemoveResult {
+  data: AttachmentItem;
+}
+
+export interface AttachmentListResponse {
+  data: AttachmentItem[];
+}
+
+export interface AttachmentError extends Error {
+  code?: string;
+  fields?: Record<string, string>;
+}
+
+const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+
+export function isAllowedAttachmentType(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  return ALLOWED_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+export function isWithinSizeLimit(sizeBytes: number): boolean {
+  return sizeBytes <= 5_000_000;
+}
+
+export async function uploadAttachment(
+  requesterId: number,
+  ticketNumber: string,
+  file: File,
+): Promise<AttachmentUploadResult["data"]> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(
+    new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`, apiBaseUrl),
+    {
+      method: "POST",
+      headers: requesterHeaders(requesterId),
+      body: formData,
+    },
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const err = new Error(
+      body?.error?.message || `Failed to upload attachment: ${response.status}`,
+    ) as AttachmentError;
+    err.code = body?.error?.code;
+    err.fields = body?.error?.fields;
+    throw err;
+  }
+
+  const result = (await response.json()) as AttachmentUploadResult;
+  return result.data;
+}
+
+export async function fetchAttachments(
+  requesterId: number,
+  ticketNumber: string,
+): Promise<AttachmentItem[]> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const response = await fetch(
+    new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`, apiBaseUrl),
+    {
+      headers: requesterHeaders(requesterId),
+    },
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const err = new Error(
+      body?.error?.message || `Failed to fetch attachments: ${response.status}`,
+    ) as AttachmentError;
+    err.code = body?.error?.code;
+    throw err;
+  }
+
+  return (await response.json()) as AttachmentItem[];
+}
+
+export function getAttachmentDownloadUrl(
+  attachmentId: number,
+  requesterId: number,
+): string {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const url = new URL(`/api/attachments/${attachmentId}/download`, apiBaseUrl);
+  // Add requester ID as query parameter for download via new window
+  url.searchParams.set("requesterId", String(requesterId));
+  return url.toString();
+}
+
+export function getAttachmentPreviewUrl(
+  attachmentId: number,
+  requesterId: number,
+): string {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const url = new URL(`/api/attachments/${attachmentId}/preview`, apiBaseUrl);
+  url.searchParams.set("requesterId", String(requesterId));
+  return url.toString();
+}
+
+export async function downloadAttachmentFile(
+  requesterId: number,
+  attachmentId: number,
+): Promise<{ blob: Blob; filename: string }> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const response = await fetch(
+    new URL(`/api/attachments/${attachmentId}/download`, apiBaseUrl),
+    { headers: requesterHeaders(requesterId) },
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const err = new Error(
+      body?.error?.message || `Failed to download attachment: ${response.status}`,
+    ) as AttachmentError;
+    err.code = body?.error?.code;
+    throw err;
+  }
+
+  const disposition = response.headers.get("content-disposition") || "";
+  const match = disposition.match(/filename\*?=([^;]+)/);
+  const filename = match ? decodeURIComponent(match[1].replace(/UTF-8''/i, "").trim()) : "download";
+
+  const blob = await response.blob();
+  return { blob, filename };
+}
+
+export async function previewAttachmentFile(
+  requesterId: number,
+  attachmentId: number,
+): Promise<{ blob: Blob; mimeType: string }> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const response = await fetch(
+    new URL(`/api/attachments/${attachmentId}/preview`, apiBaseUrl),
+    { headers: requesterHeaders(requesterId) },
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const err = new Error(
+      body?.error?.message || `Failed to preview attachment: ${response.status}`,
+    ) as AttachmentError;
+    err.code = body?.error?.code;
+    throw err;
+  }
+
+  const mimeType = response.headers.get("content-type") || "application/octet-stream";
+  const blob = await response.blob();
+  return { blob, mimeType };
+}
+
+export async function removeAttachment(
+  requesterId: number,
+  attachmentId: number,
+  removalReason?: string,
+): Promise<AttachmentItem> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const body = removalReason !== undefined ? { removalReason } : undefined;
+
+  const response = await fetch(
+    new URL(`/api/attachments/${attachmentId}`, apiBaseUrl),
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...requesterHeaders(requesterId),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    },
+  );
+
+  if (!response.ok) {
+    const bodyJson = await response.json().catch(() => ({}));
+    const err = new Error(
+      bodyJson?.error?.message || `Failed to remove attachment: ${response.status}`,
+    ) as AttachmentError;
+    err.code = bodyJson?.error?.code;
+    throw err;
+  }
+
+  const result = (await response.json()) as AttachmentRemoveResult;
+  return result.data;
+}
