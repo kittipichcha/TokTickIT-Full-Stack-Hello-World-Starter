@@ -37,17 +37,25 @@ Implemented in code right now:
 - View Ticket action navigates to Ticket Detail with loading/error/not-found states
 - My Tickets frontend screen with sortable table, mobile cards, loading/empty/no-results/error states, pagination footer, and requester-switch data reset
 
-**New in this release (Issue #15 — Attachment Lifecycle & Ticket Detail):**
+**New in this release (Issue #15 — Attachment Lifecycle & Ticket Detail — Post-Review Fixes):**
 - `POST /api/tickets/:ticketNumber/attachments` — Upload attachment (multipart, single file) with type/size/content-signature validation, 5-active limit, sequential processing
 - `GET /api/tickets/:ticketNumber/attachments` — List attachments (active + removed), deterministic `uploadedAt ASC, id ASC` ordering
 - `GET /api/attachments/:attachmentId/download` — Download attachment with ownership re-validation, `Content-Disposition` with RFC 5987 UTF-8 `filename*`, removed → `410 ATTACHMENT_REMOVED`
-- `GET /api/attachments/:attachmentId/preview` — Preview attachment (image inline or PDF fallback), same ownership/removal semantics as download
+- `GET /api/attachments/:attachmentId/preview` — Preview attachment: image inline or **PDF first page rendered as PNG via `sharp`** (replaces the old full-PDF fallback); satisfies FR-12/BR-28/AC-24
 - `DELETE /api/attachments/:attachmentId` — Soft-remove with optional reason (normalization: omitted/blank → null, 1–200 chars after trim, non-string → 400), removed → `409 CONFLICT`
 - Secure filesystem storage with compensating write-then-persist strategy (physical file written before metadata; metadata failure deletes the file)
 - Uploaded files renamed to UUID + validated extension; original filename is display metadata only
 - Content-signature validation (FF D8 FF for JPEG, PNG magic bytes, RIFF+WEBP for WebP, %PDF- for PDF)
+- **Concurrency-safe attachment limit**: `SELECT ... FOR UPDATE` row lock on the parent `Ticket` row serializes concurrent attachment-count checks (BR-12/AC-08). Two concurrent uploads when 4 are active → exactly 1 succeeds, 1 gets `ATTACHMENT_LIMIT_REACHED`, never >5 active rows
+- **Fixed client API argument order**: `previewAttachmentFile(requesterId, attachmentId)` and `downloadAttachmentFile(requesterId, attachmentId)` were called with reversed arguments in `App.tsx`. Both are `number`, so TypeScript could not catch the bug. Fixed to `previewAttachmentFile(activeRequester.id, att.id)` etc.
+- **Failed attachment retry from Ticket Detail (BR-17/UI-ATT-05)**: Failed uploads from Create Ticket Case B are tracked with original file metadata and displayed with a Retry button in Ticket Detail. Retry re-uploads only that file without recreating the ticket.
+- **Fixed `activeFileCount` double-counting**: `validFiles.length` already includes all valid pending files; the old code incorrectly added `uploadResults.filter(r.status === "success").length` on top of it.
 - Client-side attachment validation (type/size before network), drag-and-drop, sequential upload with per-file status, Case B partial-success UI
 - Ticket Detail: Preview/Download/Remove actions, add attachment control with validation, removal confirmation dialog with optional reason
+- **Server tests**: 31 tests across 4 files (29 API-layer + 2 real-DB integration) — all 296 server tests pass
+- **Client tests**: 43 tests across 6 files — 5 new AttachmentSection tests (UI-ATT-01 through 05) covering disallowed type, removed badge, oversized rejection, removal dialog, and multi-file partial success
+- **API-ATT-03** now tests the real multer `413 FILE_TOO_LARGE` path with a 5,000,001-byte buffer instead of a mocked 400 expectation
+- **Real-DB integration tests** (`attachment-concurrency`, `attachment-persistence-compensation`) executed against live PostgreSQL — all `itIfDb` tests ran (not skipped)
 - Server tests: 29 new attachment tests across `attachments.api.test.ts` and `attachment-validation.unit.test.ts`
 
 Deferred to Issue #18 (final integration/release verification):
@@ -70,6 +78,7 @@ Deferred to Issue #18 (final integration/release verification):
 |  |  |- main.tsx
 |  |  |- vite-env.d.ts
 |  |  |- lab-02-tests/
+|  |  |  |- AttachmentSection.test.tsx
 |  |  |  |- CreateTicket.test.tsx
 |  |  |  |- MyTickets.test.tsx
 |  |  |  |- RequesterSelection.integration.test.tsx
@@ -108,11 +117,21 @@ Deferred to Issue #18 (final integration/release verification):
 
 |  |  |- lab-02/
 |  |  |  |- api-contract.api.test.ts
+|  |  |  |- attachment-concurrency.integration.test.ts
+|  |  |  |- attachment-persistence-compensation.integration.test.ts
+|  |  |  |- attachment-validation.unit.test.ts
+|  |  |  |- attachments.api.test.ts
 |  |  |  |- create-ticket-normalization.api.test.ts
+|  |  |  |- create-ticket-real-db.integration.test.ts
+|  |  |  |- create-ticket-reference-validation.integration.test.ts
+|  |  |  |- create-ticket-validation.unit.test.ts
 |  |  |  |- create-ticket.api.test.ts
 |  |  |  |- database-migration.integration.test.ts
 |  |  |  |- dev-requesters.api.test.ts
 |  |  |  |- dev-requesters.service.test.ts
+|  |  |  |- integer-validation.api.test.ts
+|  |  |  |- my-tickets-real-db.integration.test.ts
+|  |  |  |- my-tickets.api.test.ts
 |  |  |  |- reference-data.api.test.ts
 |  |  |  |- requester-context.api.test.ts
 |  |  |  |- requester-selection.integration.test.ts
