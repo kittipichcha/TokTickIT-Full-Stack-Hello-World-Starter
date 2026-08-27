@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { isActiveDevRequester } from "./service.js";
+import { MAX_DATABASE_ID_BIGINT } from "./id-domain.js";
 
 const INVALID_REQUESTER_CONTEXT = {
   error: { code: "REQUESTER_CONTEXT_INVALID", message: "A valid active requester is required." },
@@ -14,7 +15,20 @@ export function getRequesterIdFromHeaders(req: Request): number | null {
   if (headerValues.length !== 1 || !validFormat) {
     return null;
   }
-  return Number(value);
+
+  // Use BigInt for exact parsing to detect values exceeding the database INTEGER range.
+  let exactValue: bigint;
+  try {
+    exactValue = BigInt(value);
+  } catch {
+    return null;
+  }
+
+  if (exactValue < 1n || exactValue > MAX_DATABASE_ID_BIGINT) {
+    return null;
+  }
+
+  return Number(exactValue);
 }
 
 export async function requireDevRequesterContext(

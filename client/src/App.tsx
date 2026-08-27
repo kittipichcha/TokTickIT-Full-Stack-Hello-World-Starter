@@ -4,12 +4,17 @@ import {
   clearStoredRequesterId,
   fetchDevRequesters,
   fetchRequesterContext,
+  fetchTicketDetail,
   getStoredRequesterId,
   setStoredRequesterId,
   type DevRequester,
+  type TicketDetailResponse,
 } from "./api";
+import CreateTicket from "./CreateTicket";
+import { formatUtcDate, formatFileSize } from "./format";
 
 type SelectorState = "loading" | "ready" | "empty" | "error";
+type AppView = "home" | "create-ticket" | "ticket-detail";
 
 export default function App() {
   const [requesters, setRequesters] = useState<DevRequester[]>([]);
@@ -18,6 +23,12 @@ export default function App() {
   const [activeRequester, setActiveRequester] = useState<DevRequester | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<AppView>("home");
+  const [detailTicketNumber, setDetailTicketNumber] = useState<string | null>(null);
+  const [ticketDetail, setTicketDetail] = useState<TicketDetailResponse["data"] | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [detailRetryCounter, setDetailRetryCounter] = useState(0);
 
   const loadRequesters = async () => {
     setSelectorState("loading");
@@ -71,7 +82,47 @@ export default function App() {
     setActiveRequester(null);
     setSelectedId(null);
     setError(null);
+    setView("home");
     void loadRequesters();
+  };
+
+  const handleViewTicket = (ticketNumber: string) => {
+    setDetailTicketNumber(ticketNumber);
+    setView("ticket-detail");
+  };
+
+  // Load ticket detail when entering the ticket-detail view
+  useEffect(() => {
+    if (view !== "ticket-detail" || !detailTicketNumber || !activeRequester) return;
+
+    let cancelled = false;
+    setDetailLoading(true);
+    setDetailError(null);
+    setTicketDetail(null);
+
+    fetchTicketDetail(activeRequester.id, detailTicketNumber)
+      .then((data) => {
+        if (!cancelled) {
+          setTicketDetail(data);
+          setDetailLoading(false);
+        }
+      })
+      .catch((err: Error & { code?: string }) => {
+        if (!cancelled) {
+          if (err.code === "NOT_FOUND") {
+            setDetailError("Ticket not found.");
+          } else {
+            setDetailError(err.message || "Failed to load ticket detail.");
+          }
+          setDetailLoading(false);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [view, detailTicketNumber, activeRequester, detailRetryCounter]);
+
+  const handleCreateAnother = () => {
+    setView("create-ticket");
   };
 
   if (!activeRequester) {
@@ -130,13 +181,177 @@ export default function App() {
     <div className="app-shell">
       <header className="app-header">
         <strong>TokTickIT</strong>
-        <nav aria-label="Primary"><a href="#my-tickets">My Tickets</a><a href="#create-ticket">Create Ticket</a></nav>
+        <nav aria-label="Primary">
+          <a
+            href="#my-tickets"
+            className={view === "home" ? "nav-active" : ""}
+            onClick={(e) => { e.preventDefault(); setView("home"); }}
+          >
+            My Tickets
+          </a>
+          <a
+            href="#create-ticket"
+            className={view === "create-ticket" ? "nav-active" : ""}
+            onClick={(e) => { e.preventDefault(); setView("create-ticket"); }}
+          >
+            Create Ticket
+          </a>
+        </nav>
         <div className="identity">{activeRequester.name}<button className="header-button" onClick={changeRequester}>Change Requester</button></div>
       </header>
-      <main className="app-container">
-        <h1>Welcome, {activeRequester.name}</h1>
-        <p>Select a feature from the navigation above to get started.</p>
-      </main>
+      {view === "home" && (
+        <main className="app-container">
+          <h1>Welcome, {activeRequester.name}</h1>
+          <p>Select a feature from the navigation above to get started.</p>
+        </main>
+      )}
+      {view === "create-ticket" && (
+        <CreateTicket
+          requester={activeRequester}
+          onViewTicket={handleViewTicket}
+          onCreateAnother={handleCreateAnother}
+        />
+      )}
+      {view === "ticket-detail" && (
+        <main className="app-container">
+          {detailLoading && (
+            <div role="status" aria-label="Loading ticket detail">
+              <div className="skeleton-select" />
+              <div className="skeleton-select" />
+              <div className="skeleton-select" />
+              <div className="skeleton-select" />
+            </div>
+          )}
+          {detailError && !detailLoading && (
+            <div className="error-box" role="alert">
+              <p>{detailError}</p>
+              <div className="error-actions">
+                <button className="secondary-button" onClick={() => setView("home")}>← Back to My Tickets</button>
+                <button className="primary-button" onClick={() => setDetailRetryCounter((c) => c + 1)}>Retry</button>
+              </div>
+            </div>
+          )}
+          {ticketDetail && (
+            <div className="ticket-detail">
+              {/* Header row: Ticket Number + Status badge + Back link */}
+              <div className="ticket-detail-header">
+                <a
+                  href="#my-tickets"
+                  className="back-link"
+                  onClick={(e) => { e.preventDefault(); setView("home"); }}
+                >
+                  ← Back to My Tickets
+                </a>
+                <h1>
+                  {ticketDetail.ticketNumber}
+                  <span className={`status-badge status-${ticketDetail.currentStatus.toLowerCase()}`}>
+                    {ticketDetail.currentStatus}
+                  </span>
+                </h1>
+              </div>
+
+              {/* Read-only info grid */}
+              <div className="ticket-info">
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Ticket Date</span>
+                  <span className="ticket-info-value">{formatUtcDate(ticketDetail.createdAt)}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Category</span>
+                  <span className="ticket-info-value">{ticketDetail.categoryName}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Related System</span>
+                  <span className="ticket-info-value">{ticketDetail.relatedSystemName}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Requester</span>
+                  <span className="ticket-info-value">{ticketDetail.requesterName}</span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Requested Priority</span>
+                  <span className="ticket-info-value">
+                    <span className={`priority-badge priority-${ticketDetail.requestedPriority.toLowerCase()}`}>
+                      {ticketDetail.requestedPriority}
+                    </span>
+                  </span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">IT Priority</span>
+                  <span className="ticket-info-value">
+                    {ticketDetail.itPriority ? (
+                      <span className={`priority-badge priority-${ticketDetail.itPriority.toLowerCase()}`}>
+                        {ticketDetail.itPriority}
+                      </span>
+                    ) : (
+                      <span className="placeholder-text">Not yet triaged</span>
+                    )}
+                  </span>
+                </div>
+                <div className="ticket-info-row">
+                  <span className="ticket-info-label">Ticket Owner</span>
+                  <span className="ticket-info-value">
+                    {ticketDetail.ticketOwnerId ? (
+                      ticketDetail.ticketOwnerId
+                    ) : (
+                      <span className="placeholder-text">Unassigned</span>
+                    )}
+                  </span>
+                </div>
+                <div className="ticket-info-row ticket-info-full">
+                  <span className="ticket-info-label">Summary</span>
+                  <span className="ticket-info-value">{ticketDetail.summary}</span>
+                </div>
+                <div className="ticket-info-row ticket-info-full">
+                  <span className="ticket-info-label">Description</span>
+                  <span className="ticket-info-value ticket-description">{ticketDetail.description}</span>
+                </div>
+              </div>
+
+              {/* Attachments section */}
+              <section className="attachments-section" aria-label="Attachments">
+                <h2>Attachments</h2>
+                {ticketDetail.attachments.length === 0 ? (
+                  <p className="placeholder-text">No attachments.</p>
+                ) : (
+                  <ul className="attachment-list">
+                    {ticketDetail.attachments.map((att) => (
+                      <li
+                        key={att.id}
+                        className={`attachment-row ${att.isRemoved ? "attachment-removed" : ""}`}
+                      >
+                        <span className="attachment-icon">
+                          {att.mimeType.startsWith("image/") ? "🖼" : "📄"}
+                        </span>
+                        <span className="attachment-name">{att.originalFilename}</span>
+                        <span className="attachment-size">{formatFileSize(att.fileSizeBytes)}</span>
+                        <span className="attachment-date">{formatUtcDate(att.uploadedAt)}</span>
+                        {att.isRemoved ? (
+                          <>
+                            <span className="removed-badge">Removed</span>
+                            {att.removalReason && (
+                              <span className="removal-reason" title={att.removalReason}>
+                                {att.removalReason}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="attachment-status-active">Active</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <div className="ticket-detail-actions">
+                <button className="secondary-button" onClick={() => setView("home")}>← Back to My Tickets</button>
+                <button className="primary-button" onClick={() => setView("create-ticket")}>Create Another</button>
+              </div>
+            </div>
+          )}
+        </main>
+      )}
     </div>
   );
 }

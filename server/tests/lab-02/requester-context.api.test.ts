@@ -70,6 +70,25 @@ describe("API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions", ()
       expect(response.status).toBe(422);
       expect(response.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
     });
+
+    // ── Oversized requester header values ──────────────────────────────────
+
+    it.each([
+      "2147483648",
+      "9007199254740993",
+      "9".repeat(400),
+    ])(
+      "rejects out-of-range requester header %s with 422",
+      async (value) => {
+        const response = await request(app)
+          .get("/api/requester-context")
+          .set("X-Dev-Requester-Id", value);
+
+        expect(response.status).toBe(422);
+        expect(response.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
+        expect(service.isActiveDevRequester).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe("API-REQ-03: Bootstrap & reference endpoints exemption", () => {
@@ -92,6 +111,18 @@ describe("API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions", ()
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body).toEqual([{ id: 1, name: "Hardware" }]);
+    });
+
+    it("allows GET /api/related-systems without X-Dev-Requester-Id header", async () => {
+      vi.mocked(service.getActiveRelatedSystems).mockResolvedValue([
+        { id: 1, name: "Corporate Laptop" },
+      ]);
+
+      const response = await request(app).get("/api/related-systems");
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        data: [{ id: 1, name: "Corporate Laptop" }],
+      });
     });
   });
 });
