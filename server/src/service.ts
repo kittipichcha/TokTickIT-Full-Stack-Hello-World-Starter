@@ -663,7 +663,8 @@ export async function uploadAttachment(
   // Sanitize original filename for display
   const sanitizedFilename = sanitizeOriginalFilename(originalFilename);
 
-  // Find ticket and verify ownership
+  // Find ticket and verify ownership — lock the parent Ticket row to serialize
+  // concurrent attachment-limit checks for the same ticket.
   const ticket = await prisma.ticket.findUnique({
     where: { ticketNumber },
     select: { id: true, requesterId: true },
@@ -673,8 +674,20 @@ export async function uploadAttachment(
     throw new ValidationError("Ticket not found.", {});
   }
 
-  // Use a transaction for count check + metadata insert to prevent race conditions
+  // Use a transaction with row lock for count check + metadata insert to prevent
+  // concurrent uploads from exceeding the active attachment limit.
   return prisma.$transaction(async (tx) => {
+    // Lock the parent Ticket row to serialize concurrent attachment-limit checks.
+    // SELECT … FOR UPDATE prevents two transactions from both seeing count=4
+    // and both inserting, which would violate the 5-active-attachment invariant.
+    const lockedTicket = await tx.$queryRaw<
+      Array<{ id: number }>
+    >`SELECT id FROM "Ticket" WHERE id = ${ticket.id} FOR UPDATE`;
+
+    if (lockedTicket.length === 0) {
+      throw new ValidationError("Ticket not found.", {});
+    }
+
     // Count active (non-removed) attachments
     const activeCount = await tx.attachment.count({
       where: { ticketId: ticket.id, isRemoved: false },
