@@ -154,6 +154,51 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
   const startItem = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
   const endItem = pagination ? Math.min(pagination.page * pagination.pageSize, pagination.totalItems) : 0;
 
+  /**
+   * Generate a bounded window of pagination items.
+   * Returns an array of page numbers and "ellipsis" markers.
+   * The number of rendered controls stays bounded regardless of totalPages.
+   */
+  function getPaginationItems(
+    currentPage: number,
+    totalPages: number,
+  ): Array<number | "ellipsis"> {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const items: Array<number | "ellipsis"> = [];
+
+    // Always include first page
+    items.push(1);
+
+    if (currentPage <= 4) {
+      // Near the start: 1 2 3 4 5 … last
+      for (let i = 2; i <= Math.min(5, totalPages - 1); i++) {
+        items.push(i);
+      }
+      items.push("ellipsis");
+      items.push(totalPages);
+    } else if (currentPage >= totalPages - 3) {
+      // Near the end: 1 … n-4 n-3 n-2 n-1 last
+      items.push("ellipsis");
+      for (let i = totalPages - 4; i <= totalPages - 1; i++) {
+        items.push(i);
+      }
+      items.push(totalPages);
+    } else {
+      // Middle: 1 … cur-1 cur cur+1 … last
+      items.push("ellipsis");
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        items.push(i);
+      }
+      items.push("ellipsis");
+      items.push(totalPages);
+    }
+
+    return items;
+  }
+
   const sortIndicator = (field: SortField): string => {
     if (sort !== field) return "";
     return order === "asc" ? " ▲" : " ▼";
@@ -409,15 +454,25 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
               >
                 Previous
               </button>
-              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  className={p === page ? "pagination-page active" : "pagination-page"}
-                  onClick={() => setPage(p)}
-                >
-                  {p}
-                </button>
-              ))}
+              {getPaginationItems(page, pagination.totalPages).map((item, index) =>
+                item === "ellipsis" ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="pagination-ellipsis"
+                    aria-hidden="true"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    className={item === page ? "pagination-page active" : "pagination-page"}
+                    onClick={() => setPage(item)}
+                  >
+                    {item}
+                  </button>
+                ),
+              )}
               <button
                 className="secondary-button"
                 disabled={page >= pagination.totalPages}
