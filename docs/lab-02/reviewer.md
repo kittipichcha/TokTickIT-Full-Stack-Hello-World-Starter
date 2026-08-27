@@ -100,9 +100,9 @@ Test/build evidence is recorded in the PR description, but no GitHub status chec
 
 ---
 
-## Pull Request — My Tickets Feature (PR #26)
+## Pull Request — My Tickets Feature (PR #28)
 
-- **PR:** [#26 — feat: Lab 2 Issue 4 - My Tickets Feature](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/26)
+- **PR:** [#28 — feat: implement My Tickets feature](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/28)
 - **Source branch:** `feature/lab2-my-tickets`
 - **Target branch:** `lab2-staging`
 - **Scope:** My Tickets list with search, filter, sort, pagination, and ownership enforcement (Issue #14).
@@ -111,10 +111,10 @@ Test/build evidence is recorded in the PR description, but no GitHub status chec
 
 | Review source | Summary of feedback | Response / current evidence |
 |---|---|---|
-| @oangsa — PR #26 review | **Medium — test coverage and contract alignment:** Verify that `API-MY-01..08` and `UI-MY-01..05` are all implemented and passing; confirm `unfilteredTotalItems` semantics match BR-30; ensure out-of-range page navigation works correctly. | All My Tickets API tests (`API-MY-01..08`) and UI tests (`UI-MY-01..05`) are implemented and passing. `unfilteredTotalItems` semantics follow BR-30 exactly. Out-of-range page navigation redirects to the last valid page. |
-| Copilot Pull Request Reviewer — PR #26 | **P2 — Missing `format.ts` file:** The `formatUtcDate` function used in `MyTickets.tsx` was not included in the commit. | Added `client/src/format.ts` with `formatUtcDate()` and `formatFileSize()` utility functions. |
+| @oangsa — PR #28 review | **Medium — test coverage and contract alignment:** Verify that `API-MY-01..08` and `UI-MY-01..05` are all implemented and passing; confirm `unfilteredTotalItems` semantics match BR-30; ensure out-of-range page navigation works correctly. | All My Tickets API tests (`API-MY-01..08`) and UI tests (`UI-MY-01..05`) are implemented and passing. `unfilteredTotalItems` semantics follow BR-30 exactly. Out-of-range page navigation redirects to the last valid page. |
+| Copilot Pull Request Reviewer — PR #28 | **P2 — Missing `format.ts` file:** The `formatUtcDate` function used in `MyTickets.tsx` was not included in the commit. | Added `client/src/format.ts` with `formatUtcDate()` and `formatFileSize()` utility functions. |
 
 ### Review Evidence
-- Review comments and discussions: [PR #26 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/26)
+- Review comments and discussions: [PR #28 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/28)
 - Review status: Open; review feedback addressed. Approval and merge evidence must be recorded before the Lab 2 course submission.
 
