@@ -484,7 +484,7 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
     expect(cat).toBeTruthy();
     expect(sys).toBeTruthy();
     const sameTimestamp = new Date("2026-01-01T00:00:00.000Z");
-    await prisma.ticket.create({
+    const ticketLower = await prisma.ticket.create({
       data: {
         requesterId,
         categoryId: cat!.id,
@@ -498,7 +498,8 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
         updatedAt: sameTimestamp,
       },
     });
-    await prisma.ticket.create({
+    createdTicketNumbers.push(ticketLower.ticketNumber);
+    const ticketHigher = await prisma.ticket.create({
       data: {
         requesterId,
         categoryId: cat!.id,
@@ -512,6 +513,7 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
         updatedAt: sameTimestamp,
       },
     });
+    createdTicketNumbers.push(ticketHigher.ticketNumber);
   });
 
   itIfDb("tie-breaker: createdAt DESC, id DESC after primary sort", async () => {
