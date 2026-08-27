@@ -96,6 +96,12 @@
 - What was done with output: Implemented `GET /api/tickets` endpoint with search, filter, sort, pagination, and ownership enforcement. Added `getMyTickets()` service function with Prisma query supporting case-insensitive substring search, conjunctive category/priority/status filters, deterministic sort with tie-breakers, and pagination with `unfilteredTotalItems`. Created `MyTickets.tsx` frontend component with sortable table, mobile card layout, loading/empty/no-results/error states, pagination footer, and requester-switch data reset. Added `format.ts` with `formatUtcDate()` and `formatFileSize()` utilities. Wrote `my-tickets.api.test.ts` (8 API test suites) and `MyTickets.test.tsx` (5 UI test suites). Updated `tests.md` traceability matrix with `Passed` status for all My Tickets rows.
 - Reflection: The My Tickets feature was well-specified with clear BR-22/BR-23/BR-30 rules for sort defaults, search normalization, and Empty/No-Results semantics. The `unfilteredTotalItems` distinction was critical for correct UI state rendering. The out-of-range page navigation (redirect to last valid page) required careful state management to avoid infinite re-render loops.
 
+## Issue #14 BLOCKING ISSUE #1 Fix — Exact Response-Shape Assertion Entry
+
+- Prompt summary: Fix BLOCKING ISSUE #1 — Replace `toMatchObject()` with exact `Object.keys(item).sort()` assertion in the My Tickets response-shape test so the test fails if any undocumented field is added to the API response.
+- What was done with output: Replaced `toMatchObject()` with `expect(Object.keys(item).sort()).toEqual(DOCUMENTED_KEYS)` in `my-tickets-real-db.integration.test.ts`. Removed redundant individual `not.toHaveProperty()` checks. Verified 55/55 My Tickets real-DB tests and 256/256 full lab-02 server tests pass.
+- Reflection: `toMatchObject()` only checks that documented properties exist — it does not fail when undocumented properties are added. An exact key-set assertion using `Object.keys().sort()` is the correct approach for response-shape verification, as it enforces both completeness and the absence of extra fields.
+
 ## Issue #14 Review Fix — Stale-Response Protection Entry
 
 - Prompt summary: Fix BLOCKING ISSUE #1 — Stale My Tickets requests can overwrite newer results. Add a monotonically increasing request sequence ID (`useRef`) to guard against stale async responses. Apply the same guard to error-state updates. Add a UI test (`UI-MY-07`) that uses deferred promises to verify the race condition is resolved.
