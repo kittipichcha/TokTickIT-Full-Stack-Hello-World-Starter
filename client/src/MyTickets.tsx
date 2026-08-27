@@ -282,7 +282,7 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
                   <th>Category</th>
                   {renderSortableHeader("Requested Priority", "requestedPriority")}
                   <th>Current Status</th>
-                  {renderSortableHeader("Last Updated", "createdAt")}
+                  <th>Last Updated</th>
                 </tr>
               </thead>
               <tbody>
