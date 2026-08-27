@@ -165,8 +165,13 @@ describe("UI-ATT-02: Removed attachment shows Removed badge and disabled control
       makeTicketDetail(testTicketNumber, [activeAtt, removedAtt]),
     );
 
-    await screen.findByText(testTicketNumber);
-    await userEvent.click(screen.getByText(testTicketNumber));
+    // Wait for ticket to appear, then click first link to view detail
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
     await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
 
     expect(screen.getByText("active.jpg")).toBeTruthy();
@@ -251,8 +256,13 @@ describe("UI-ATT-04: Removal confirmation dialog and cancel behavior", () => {
       makeTicketDetail(testTicketNumber, [activeAtt]),
     );
 
-    await screen.findByText(testTicketNumber);
-    await userEvent.click(screen.getByText(testTicketNumber));
+// Wait for ticket to appear, then click first link to view detail
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
     await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
 
     await userEvent.click(screen.getByText("Remove"));
