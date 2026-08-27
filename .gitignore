@@ -13,3 +13,5 @@ server/prisma/*.db
 *.log
 .DS_Store
 .history
+# compiled JS output
+client/src/**/*.js

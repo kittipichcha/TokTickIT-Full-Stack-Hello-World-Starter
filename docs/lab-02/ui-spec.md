@@ -14,7 +14,6 @@
 | `--color-error` | `#B3261E` | Error text/border |
 | `--color-warning` | `#B7791F` | Warning callouts/badges only, never decorative |
 | `--color-success` | `#0B7A46` | Success confirmation, paired with text/icon (not color alone) |
-
 ## 2. Typography & Spacing
 - Font: system UI stack (`-apple-system, "Segoe UI", Roboto, sans-serif`).
 - Base size 16px; labels 14px/medium weight; page titles 24px/semibold; section headers 18px/semibold.

@@ -5,11 +5,26 @@ import {
   getCategories,
   createTicket,
   getTicketByNumber,
+  getMyTickets,
+  categoryExists,
+  isActiveCategory,
   ValidationError,
   InactiveReferenceError,
 } from "./service.js";
 import { TicketSequenceExhaustedError } from "./ticket-number.js";
 import { inspectIntegerFields } from "./integer-validation.js";
+import { MAX_DATABASE_ID } from "./id-domain.js";
+
+/**
+ * Returns the first string value of a query parameter.
+ * Express parses duplicate query keys (e.g. ?search=a&search=b) as arrays;
+ * this helper ensures first-value semantics per the API contract.
+ */
+function firstQueryParam(val: unknown): string | undefined {
+  if (typeof val === "string") return val;
+  if (Array.isArray(val) && val.length > 0 && typeof val[0] === "string") return val[0];
+  return undefined;
+}
 
 export async function getCategoriesHandler(req: Request, res: Response): Promise<void> {
   try {
@@ -135,6 +150,132 @@ export async function createTicketHandler(req: Request, res: Response): Promise<
       });
       return;
     }
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
+export async function getMyTicketsHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+
+    // Parse query params using first-value semantics for duplicates
+    const rawSearch = firstQueryParam(req.query.search) ?? "";
+    const search = rawSearch.trim();
+    const activeSearch = search.length > 0 ? search : undefined;
+
+    // categoryId: malformed → 400
+    let categoryId: number | undefined;
+    const rawCategoryId = firstQueryParam(req.query.categoryId);
+    if (rawCategoryId !== undefined) {
+      if (!/^(?:[1-9][0-9]*)$/.test(rawCategoryId)) {
+        res.status(400).json({
+          error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: { categoryId: "categoryId must be a valid positive integer." } },
+        });
+        return;
+      }
+      categoryId = Number(rawCategoryId);
+
+      // Reject IDs that exceed the database INTEGER range → 409, never 500
+      if (!Number.isFinite(categoryId) || categoryId > MAX_DATABASE_ID) {
+        res.status(409).json({
+          error: { code: "INACTIVE_REFERENCE", message: "The specified category does not exist or is inactive." },
+        });
+        return;
+      }
+    }
+
+    // requestedPriority: invalid enum → 400
+    let requestedPriority: string | undefined;
+    const rawPriority = firstQueryParam(req.query.requestedPriority);
+    if (rawPriority !== undefined) {
+      if (!["LOW", "MEDIUM", "HIGH"].includes(rawPriority)) {
+        res.status(400).json({
+          error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: { requestedPriority: "requestedPriority must be one of LOW, MEDIUM, HIGH." } },
+        });
+        return;
+      }
+      requestedPriority = rawPriority;
+    }
+
+    // status: invalid enum → 400
+    let status: string | undefined;
+    const rawStatus = firstQueryParam(req.query.status);
+    if (rawStatus !== undefined) {
+      if (rawStatus !== "NEW") {
+        res.status(400).json({
+          error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: { status: "status must be NEW." } },
+        });
+        return;
+      }
+      status = rawStatus;
+    }
+
+    // sort: invalid → fall back to createdAt (not an error)
+    const validSorts = ["createdAt", "ticketNumber", "summary", "requestedPriority"];
+    const rawSort = firstQueryParam(req.query.sort) ?? "";
+    const sort = validSorts.includes(rawSort) ? rawSort : "createdAt";
+
+    // order: invalid → fall back to desc (not an error)
+    const rawOrder = firstQueryParam(req.query.order) ?? "";
+    const order = rawOrder === "asc" || rawOrder === "desc" ? rawOrder : "desc";
+
+    // page: missing/malformed/non-positive → fall back to 1 (not an error)
+    // Also guard against:
+    //   - decimal strings so large that Number() produces Infinity
+    //   - values that exceed Number.MAX_SAFE_INTEGER (lose integer precision)
+    //   - values where (page - 1) * pageSize would overflow the safe domain
+    let page = 1;
+    const rawPage = firstQueryParam(req.query.page);
+    if (rawPage !== undefined && /^(?:[1-9][0-9]*)$/.test(rawPage)) {
+      const parsed = Number(rawPage);
+      if (Number.isFinite(parsed) && Number.isSafeInteger(parsed)) {
+        page = parsed;
+      }
+    }
+
+    // pageSize: invalid/out of range → fall back to 10 (not an error)
+    let pageSize = 10;
+    const rawPageSize = firstQueryParam(req.query.pageSize);
+    if (rawPageSize !== undefined && /^(?:[1-9][0-9]*)$/.test(rawPageSize)) {
+      const n = Number(rawPageSize);
+      if (n >= 1 && n <= 50) {
+        pageSize = n;
+      }
+    }
+
+    // Validate categoryId exists and is active → 409 if not
+    if (categoryId !== undefined) {
+      const exists = await categoryExists(categoryId);
+      if (!exists) {
+        res.status(409).json({
+          error: { code: "INACTIVE_REFERENCE", message: "The specified category does not exist or is inactive." },
+        });
+        return;
+      }
+      const active = await isActiveCategory(categoryId);
+      if (!active) {
+        res.status(409).json({
+          error: { code: "INACTIVE_REFERENCE", message: "The specified category does not exist or is inactive." },
+        });
+        return;
+      }
+    }
+
+    const result = await getMyTickets(requesterId, {
+      search: activeSearch,
+      categoryId,
+      requestedPriority,
+      status,
+      sort,
+      order,
+      page,
+      pageSize,
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
     res.status(500).json({
       error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
     });
