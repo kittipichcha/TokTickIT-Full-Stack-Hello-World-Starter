@@ -369,6 +369,7 @@ export async function downloadAttachmentFile(
   requesterId: number,
   attachmentId: number,
 ): Promise<{ blob: Blob; filename: string }> {
+  // NOTE: First param is requesterId, second is attachmentId
   const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const response = await fetch(
     new URL(`/api/attachments/${attachmentId}/download`, apiBaseUrl),

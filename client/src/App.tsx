@@ -47,9 +47,6 @@ export default function App() {
   const [isAddingAttachment, setIsAddingAttachment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Preview state
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
   const loadRequesters = async () => {
     setSelectorState("loading");
     setMessage(null);
@@ -379,7 +376,7 @@ export default function App() {
                               className="tertiary-button"
                               onClick={async () => {
                                 try {
-                                  const { blob, mimeType } = await previewAttachmentFile(att.id, activeRequester!.id);
+                                  const { blob } = await previewAttachmentFile(activeRequester!.id, att.id);
                                   const url = URL.createObjectURL(blob);
                                   window.open(url, "_blank");
                                   setTimeout(() => URL.revokeObjectURL(url), 60000);
@@ -394,7 +391,7 @@ export default function App() {
                               className="tertiary-button"
                               onClick={async () => {
                                 try {
-                                  const { blob, filename } = await downloadAttachmentFile(att.id, activeRequester!.id);
+                                  const { blob, filename } = await downloadAttachmentFile(activeRequester!.id, att.id);
                                   const url = URL.createObjectURL(blob);
                                   const a = document.createElement("a");
                                   a.href = url;
