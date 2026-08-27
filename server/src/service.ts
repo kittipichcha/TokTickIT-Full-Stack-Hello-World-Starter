@@ -341,11 +341,11 @@ export async function createTicket(
 export interface MyTicketItem {
   id: number;
   ticketNumber: string;
-  requesterId: number;
   categoryId: number;
   categoryName: string;
   summary: string;
   requestedPriority: string;
+  itPriority: string | null;
   currentStatus: string;
   createdAt: Date;
   updatedAt: Date;
@@ -390,8 +390,8 @@ export async function getMyTickets(
   let paramIndex = 2;
 
   if (params.search) {
-    conditions.push(`(t."ticketNumber" ILIKE $${paramIndex} OR t."summary" ILIKE $${paramIndex})`);
-    filterValues.push(`%${params.search}%`);
+    conditions.push(`(POSITION(LOWER($${paramIndex}) IN LOWER(t."ticketNumber")) > 0 OR POSITION(LOWER($${paramIndex}) IN LOWER(t."summary")) > 0)`);
+    filterValues.push(params.search);
     paramIndex++;
   }
 
@@ -449,19 +449,19 @@ export async function getMyTickets(
     Array<{
       id: number;
       ticketNumber: string;
-      requesterId: number;
       categoryId: number;
       categoryName: string;
       summary: string;
       requestedPriority: string;
+      itPriority: string | null;
       currentStatus: string;
       createdAt: Date;
       updatedAt: Date;
     }>
   >(
-    `SELECT t."id", t."ticketNumber", t."requesterId", t."categoryId",
+    `SELECT t."id", t."ticketNumber", t."categoryId",
             c."name" AS "categoryName", t."summary",
-            t."requestedPriority", t."currentStatus",
+            t."requestedPriority", t."itPriority", t."currentStatus",
             t."createdAt", t."updatedAt"
      FROM "Ticket" t
      JOIN "Category" c ON c."id" = t."categoryId"
@@ -477,11 +477,11 @@ export async function getMyTickets(
     data: rows.map((row) => ({
       id: row.id,
       ticketNumber: row.ticketNumber,
-      requesterId: row.requesterId,
       categoryId: row.categoryId,
       categoryName: row.categoryName,
       summary: row.summary,
       requestedPriority: row.requestedPriority,
+      itPriority: row.itPriority,
       currentStatus: row.currentStatus,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
