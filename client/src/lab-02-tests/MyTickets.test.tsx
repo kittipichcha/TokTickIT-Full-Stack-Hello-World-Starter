@@ -152,9 +152,6 @@ describe("UI-MY-03: Requester switch clears prior data and reloads new scope", (
     vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesterSetA);
     vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
     vi.mocked(api.fetchCategories).mockImplementation(async () => [{ id: 1, name: "Hardware" }]);
-    vi.mocked(api.fetchMyTickets).mockImplementation(async () =>
-      makeResult([makeTicket(1)], { unfilteredTotalItems: 1 }),
-    );
 
     vi.mocked(api.getStoredRequesterId).mockImplementation(() => {
       const stored = sessionStorage.getItem("toktickit.requesterId");
@@ -173,14 +170,23 @@ describe("UI-MY-03: Requester switch clears prior data and reloads new scope", (
   });
 
   it("clears prior requester data and reloads from new requester scope", async () => {
+    // Return different data based on requester ID
+    vi.mocked(api.fetchMyTickets).mockImplementation(async (requesterId) => {
+      if (requesterId === 1) {
+        return makeResult([makeTicket(1, { summary: "Ticket A", requesterId: 1 })], { unfilteredTotalItems: 1 });
+      }
+      // Requester B (id=3)
+      return makeResult([makeTicket(3, { ticketNumber: "TKT-2026-000003", summary: "Ticket B", requesterId: 3 })], { unfilteredTotalItems: 1 });
+    });
+
     render(<App />);
 
     const selects = await screen.findAllByLabelText("Development Requester");
     fireEvent.change(selects[0], { target: { value: "1" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
-    // Wait for shell to appear
-    await screen.findAllByRole("button", { name: "Change Requester" });
+    // Wait for shell to appear and Ticket A to show
+    await screen.findAllByText("Ticket A");
 
     // After Change Requester, switch mock to return requesterSetB
     vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesterSetB);
@@ -190,15 +196,20 @@ describe("UI-MY-03: Requester switch clears prior data and reloads new scope", (
 
     // Should be back on selector screen
     await screen.findByLabelText("Development Requester");
-    // App shell should be gone - no Change Requester button visible
-    expect(screen.queryByText("Choose a Development Requester")).toBeTruthy();
-    expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
 
+    // Verify Ticket A is no longer displayed (requester context cleared)
+    expect(screen.queryByText("Ticket A")).toBeNull();
+
+    // Select requester B (Alan Turing, id=3)
     const selectAfterChange = screen.getByLabelText("Development Requester");
     fireEvent.change(selectAfterChange, { target: { value: "3" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
-    await screen.findAllByText("Alan Turing");
+    // Wait for Ticket B to appear
+    await screen.findAllByText("Ticket B");
+
+    // Verify Ticket A is absent
+    expect(screen.queryByText("Ticket A")).toBeNull();
   });
 });
 
@@ -260,18 +271,48 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
     cleanup();
   });
 
-  it("navigates to last valid page when page exceeds totalPages", async () => {
-    // Scenario: user is on page 1, API returns page=1, totalPages=3
-    // User clicks page 3, API returns page=3, totalPages=3 with tickets
-    // User applies a filter, API returns page=3, totalPages=1, data=[]
-    // Component should navigate to page 1 and re-fetch
-    const normalResponse = makeResult(
-      [makeTicket(1), makeTicket(2), makeTicket(3), makeTicket(4), makeTicket(5)],
-      { page: 1, pageSize: 10, totalItems: 5, totalPages: 1, unfilteredTotalItems: 5 },
-    );
+  it("navigates to last valid page when page exceeds totalPages after filter change", async () => {
+    // Scenario:
+    // 1. Initial response: page=1, totalPages=3
+    // 2. Click page 3
+    // 3. Return page 3 data
+    // 4. Apply a filter
+    // 5. Return: page=3, totalPages=1, data=[]
+    // 6. Component should navigate to page 1 and re-fetch
+    // 7. Return page 1 data
+    // 8. Assert page 1 is displayed
+    // 9. Assert neither Empty nor No-Results is shown
 
-    // StrictMode double-renders, so we need 2 mock implementations for normal
-    vi.mocked(api.fetchMyTickets).mockImplementation(async () => normalResponse);
+    // Track the requested page to serve appropriate responses
+    const requestedPages: number[] = [];
+    vi.mocked(api.fetchMyTickets).mockImplementation(async (_rid, params) => {
+      const p = params?.page ?? 1;
+      requestedPages.push(p);
+
+      if (p === 1 && requestedPages.filter(x => x === 1).length <= 2) {
+        // Initial load(s) - page 1, totalPages=3
+        return makeResult(
+          [makeTicket(1), makeTicket(2), makeTicket(3), makeTicket(4), makeTicket(5)],
+          { page: 1, pageSize: 10, totalItems: 25, totalPages: 3, unfilteredTotalItems: 25 },
+        );
+      }
+      if (p === 3 && requestedPages.filter(x => x === 3).length === 1) {
+        // Page 3 click - return page 3 data
+        return makeResult(
+          [makeTicket(30, { summary: "Ticket 30 on page 3" })],
+          { page: 3, pageSize: 10, totalItems: 25, totalPages: 3, unfilteredTotalItems: 25 },
+        );
+      }
+      if (p === 3 && requestedPages.filter(x => x === 3).length > 1) {
+        // Filter applied, API returns page=3, totalPages=1, data=[]
+        return makeResult([], { page: 3, pageSize: 10, totalItems: 0, totalPages: 1, unfilteredTotalItems: 5 });
+      }
+      // Page 1 after out-of-range redirect
+      return makeResult(
+        [makeTicket(1, { summary: "Ticket 1 after reset" })],
+        { page: 1, pageSize: 10, totalItems: 5, totalPages: 1, unfilteredTotalItems: 5 },
+      );
+    });
 
     render(<App />);
 
@@ -280,9 +321,67 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     // Should show tickets from page 1
-    const ticketElements = await screen.findAllByText("Ticket 1 summary");
-    expect(ticketElements.length).toBeGreaterThan(0);
+    await screen.findAllByText("Ticket 1 summary");
+
+    // Click page 3 button
+    const page3Button = screen.getByRole("button", { name: "3" });
+    await userEvent.click(page3Button);
+
+    // Wait for page 3 data to appear
+    await screen.findAllByText("Ticket 30 on page 3");
+
+    // Apply a filter (search) to trigger the out-of-range scenario
+    const searchInputs = screen.getAllByLabelText("Search tickets");
+    await userEvent.type(searchInputs[0], "something");
+
+    // Wait for the component to navigate to page 1 and show tickets
+    await screen.findAllByText("Ticket 1 after reset");
+
+    // Assert neither Empty nor No-Results is shown
     expect(screen.queryByText("You haven't created any tickets yet.")).toBeNull();
     expect(screen.queryByText("No tickets match your filters.")).toBeNull();
+  });
+});
+
+describe("UI-MY-06: Last Updated header is not sortable", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchCategories).mockImplementation(async () => []);
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("clicking Last Updated does not issue a sort=createdAt request", async () => {
+    const tickets = [makeTicket(1), makeTicket(2)];
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () =>
+      makeResult(tickets, { unfilteredTotalItems: 2 }),
+    );
+
+    render(<App />);
+
+    const selects = await screen.findAllByLabelText("Development Requester");
+    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    // Wait for tickets to load
+    await screen.findAllByText("Ticket 1 summary");
+
+    // Clear the mock call history
+    vi.mocked(api.fetchMyTickets).mockClear();
+
+    // Find and click the Last Updated header
+    const lastUpdatedHeader = screen.getByRole("columnheader", { name: "Last Updated" });
+    await userEvent.click(lastUpdatedHeader);
+
+    // Verify no new fetchMyTickets call was made (no sort change triggered)
+    expect(vi.mocked(api.fetchMyTickets)).not.toHaveBeenCalled();
   });
 });
