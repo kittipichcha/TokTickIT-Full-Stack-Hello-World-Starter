@@ -19,50 +19,68 @@ const TEST_MARKER = "INT-TEST-REAL-DB";
 // those rows instead of relying on business-field marker strings.
 const createdTicketNumbers: string[] = [];
 
-describe("API-TKT-INT-02: Real normalization and persistence", () => {
+// Snapshot of the current-year TicketSequence to restore after all tests
+let currentYearSequenceSnapshot: { year: number; lastSeq: number } | null = null;
+
+/**
+ * Returns the current UTC year according to the database clock,
+ * matching the authoritative source used by production.
+ */
+async function getDatabaseUTCCurrentYear(): Promise<number> {
+  const prisma = getPrisma();
+  const rows = await prisma.$queryRaw<Array<{ now: Date }>>`SELECT NOW() AS "now"`;
+  return rows[0]!.now.getUTCFullYear();
+}
+
+// Root-level beforeAll: snapshot the current-year TicketSequence once for the entire file
+beforeAll(async () => {
+  if (!process.env.DATABASE_URL) return;
+  const prisma = getPrisma();
+  const currentYear = await getDatabaseUTCCurrentYear();
+  currentYearSequenceSnapshot = await prisma.ticketSequence.findUnique({
+    where: { year: currentYear },
+  });
+});
+
+// Root-level afterAll: delete all test tickets and restore the sequence exactly once
+afterAll(async () => {
+  if (!process.env.DATABASE_URL) return;
+  const prisma = getPrisma();
+  
+  // Delete every Ticket created by this test file
+  if (createdTicketNumbers.length > 0) {
+    await prisma.ticket.deleteMany({
+      where: { ticketNumber: { in: createdTicketNumbers } },
+    });
+  }
+  
+  // Restore the current-year TicketSequence to its original state
+  const currentYear = await getDatabaseUTCCurrentYear();
+  await prisma.ticketSequence.deleteMany({ where: { year: currentYear } });
+  if (currentYearSequenceSnapshot) {
+    await prisma.ticketSequence.create({ data: currentYearSequenceSnapshot });
+  }
+  
+  await disconnectPrisma();
+});
+
+describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   let requesterId: number;
   let activeCategoryId: number;
   let activeSystemId: number;
-  let currentYearSequenceSnapshot: { year: number; lastSeq: number } | null = null;
 
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    
-    // Snapshot the current-year TicketSequence to restore after tests
-    const currentYear = new Date().getUTCFullYear();
-    currentYearSequenceSnapshot = await prisma.ticketSequence.findUnique({
-      where: { year: currentYear },
-    });
-
     const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
-
     expect(requester).toBeTruthy();
     expect(category).toBeTruthy();
     expect(system).toBeTruthy();
-
     requesterId = requester!.id;
     activeCategoryId = category!.id;
     activeSystemId = system!.id;
-  });
-
-  afterAll(async () => {
-    if (!process.env.DATABASE_URL) return;
-    const prisma = getPrisma();
-    await prisma.ticket.deleteMany({
-      where: { ticketNumber: { in: createdTicketNumbers } },
-    });
-    
-    // Restore the current-year TicketSequence to its original state
-    const currentYear = new Date().getUTCFullYear();
-    await prisma.ticketSequence.deleteMany({ where: { year: currentYear } });
-    if (currentYearSequenceSnapshot) {
-      await prisma.ticketSequence.create({ data: currentYearSequenceSnapshot });
-    }
-    
-    await disconnectPrisma();
   });
 
   const validBody = {
@@ -328,15 +346,6 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
     activeSystemId = system!.id;
   });
 
-  afterAll(async () => {
-    if (!process.env.DATABASE_URL) return;
-    const prisma = getPrisma();
-    await prisma.ticket.deleteMany({
-      where: { ticketNumber: { in: createdTicketNumbers } },
-    });
-    await disconnectPrisma();
-  });
-
   itIfDb("persists requesterId from X-Dev-Requester-Id header, ignores client-supplied ownership fields", async () => {
     const res = await request(app)
       .post("/api/tickets")
@@ -429,15 +438,6 @@ describe("API-TKT-INT-04: Real Ticket Detail ownership enforcement", () => {
     expect(res.status).toBe(201);
     ticketNumber = res.body.data.ticketNumber;
     createdTicketNumbers.push(ticketNumber);
-  });
-
-  afterAll(async () => {
-    if (!process.env.DATABASE_URL) return;
-    const prisma = getPrisma();
-    await prisma.ticket.deleteMany({
-      where: { ticketNumber: { in: createdTicketNumbers } },
-    });
-    await disconnectPrisma();
   });
 
   itIfDb("returns 200 with full ticket detail for owner (Requester A)", async () => {

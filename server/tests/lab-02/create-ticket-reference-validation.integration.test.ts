@@ -5,20 +5,36 @@ import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
+// Tracks every Ticket Number created by this suite so cleanup deletes exactly
+// those rows instead of relying on business-field marker strings.
+const createdTicketNumbers: string[] = [];
+
+// Snapshot of the current-year TicketSequence to restore after all tests
+let currentYearSequenceSnapshot: { year: number; lastSeq: number } | null = null;
+
+/**
+ * Returns the current UTC year according to the database clock,
+ * matching the authoritative source used by production.
+ */
+async function getDatabaseUTCCurrentYear(): Promise<number> {
+  const prisma = getPrisma();
+  const rows = await prisma.$queryRaw<Array<{ now: Date }>>`SELECT NOW() AS "now"`;
+  return rows[0]!.now.getUTCFullYear();
+}
+
 describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
   let requesterId: number;
   let activeCategoryId: number;
   let activeSystemId: number;
   let inactiveCategoryId: number | null = null;
   let inactiveSystemId: number | null = null;
-  let currentYearSequenceSnapshot: { year: number; lastSeq: number } | null = null;
 
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
 
     // Snapshot the current-year TicketSequence to restore after tests
-    const currentYear = new Date().getUTCFullYear();
+    const currentYear = await getDatabaseUTCCurrentYear();
     currentYearSequenceSnapshot = await prisma.ticketSequence.findUnique({
       where: { year: currentYear },
     });
@@ -58,8 +74,15 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
       await prisma.relatedSystem.deleteMany({ where: { id: inactiveSystemId } });
     }
     
+    // Delete every Ticket created by this test file
+    if (createdTicketNumbers.length > 0) {
+      await prisma.ticket.deleteMany({
+        where: { ticketNumber: { in: createdTicketNumbers } },
+      });
+    }
+    
     // Restore the current-year TicketSequence to its original state
-    const currentYear = new Date().getUTCFullYear();
+    const currentYear = await getDatabaseUTCCurrentYear();
     await prisma.ticketSequence.deleteMany({ where: { year: currentYear } });
     if (currentYearSequenceSnapshot) {
       await prisma.ticketSequence.create({ data: currentYearSequenceSnapshot });
@@ -180,10 +203,7 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
     expect(res.body.data.ticketNumber).toMatch(/^TKT-\d{4}-\d{6}$/);
     expect(res.body.data.currentStatus).toBe("NEW");
 
-    // Clean up the created ticket
-    const prisma = getPrisma();
-    await prisma.ticket.deleteMany({
-      where: { summary: validBody.summary },
-    });
+    // Track the created ticket for root-level cleanup
+    createdTicketNumbers.push(res.body.data.ticketNumber);
   });
 });
