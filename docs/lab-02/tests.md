@@ -28,6 +28,16 @@ E2E/Responsive/Keyboard (planned):
 - **Real-DB suite**: Executed with `DATABASE_URL` present — all `itIfDb` tests ran (not skipped)
 - **Real-DB My Tickets tests**: All 9 test groups executed against real database, including literal search semantics for `%`, `_`, `\`, response shape verification, summary ordering with distinct values, pagination slice correctness, and empty/no-results metadata
 
+### Safe-integer page guard tests (BLOCKING ISSUE #2 — 2026-08-27)
+- **Added `Number.isSafeInteger()` guard** in the controller: pages exceeding `Number.MAX_SAFE_INTEGER` now fall back to `page=1` instead of being passed to the service
+- **Added early return in the service**: when `page > totalPages` and `totalPages > 0`, returns empty `data` with correct pagination metadata — no SQL `OFFSET` is executed
+- **New test cases in `API-MY-07`**:
+  - `Number.MAX_SAFE_INTEGER` (9007199254740991) — accepted as a valid page value
+  - `Number.MAX_SAFE_INTEGER + 1` (9007199254740992) — falls back to `page=1`
+  - Large finite decimal string exceeding safe integer range — falls back to `page=1`
+  - 400-digit string (Infinity) — falls back to `page=1`
+- All new tests verify the controller does not pass an unsafe/invalid page to the service, and the service does not execute SQL with a giant offset
+
 ### Client My Tickets tests
 - **Command**: `npx vitest run src/lab-02-tests/MyTickets.test.tsx` (from `client/`)
 - **Result**: 15 tests passed, 0 failed
@@ -134,7 +144,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-MY-04 | API | Deterministic sort order with tie-breakers and priority ordering | Sort order is deterministic using selected field/direction and then `createdAt desc`, `id desc` as tie-breakers. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-07 | BR-22 | AC-19 | Passed |
 | API-MY-05 | API | Pagination returns correct page metadata and slices | Page and pageSize metadata are returned accurately and the correct slice of results is delivered. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-08 | BR-22 | AC-20 | Passed |
 | API-MY-06 | API | Default pagination/sort values and invalid-value fallback | Omitted pagination/sort params use `page=1`, `pageSize=10`, `sort=createdAt`, `order=desc`; invalid `sort`, `order`, `page`, or `pageSize` values fall back to these same documented defaults. (Invalid `categoryId`/`requestedPriority`/`status` filter values are validation errors, not fallback defaults — see `API-MY-07`.) | `server/tests/lab-02/my-tickets.api.test.ts` | FR-07, FR-08 | BR-22 | AC-19, AC-20 | Passed |
-| API-MY-07 | API | Invalid filter parameter values and pagination | Malformed categoryId → 400; invalid requestedPriority/status enums → 400; page missing/malformed/non-positive uses page 1; valid out-of-range page → 200 with empty data and accurate metadata. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-06, FR-08 | BR-22, BR-23 | — | Passed |
+| API-MY-07 | API | Invalid filter parameter values and pagination (including safe-integer page guard) | Malformed categoryId → 400; invalid requestedPriority/status enums → 400; page missing/malformed/non-positive uses page 1; valid out-of-range page → 200 with empty data and accurate metadata; pages exceeding `Number.MAX_SAFE_INTEGER` fall back to `page=1`; `Number.MAX_SAFE_INTEGER` itself is accepted as a valid page value. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-06, FR-08 | BR-22, BR-23 | — | Passed |
 | API-MY-08 | API | Search normalization and returned Empty/No-Results metadata values (API layer only) | Search is trimmed; blank-after-trim is inactive. Every list response includes accurate `totalItems` and `unfilteredTotalItems` values: a requester with no ticket history returns `unfilteredTotalItems=0` even with an active filter; a requester with ticket history and a zero-match filter returns `unfilteredTotalItems>0`. This test asserts only the returned numbers — which UI state those numbers should render is proven separately by `UI-MY-01`/`UI-MY-02`. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05, FR-16 | BR-22, BR-23 | — | Passed |
 | API-ATT-09 | API | Attachment list ordering is deterministic (uploadedAt asc, id asc) | Attachment listing returns results in deterministic order for stable display ordering and reproducible tests. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | — | — | Planned |
 | ATT-PERSIST-01 | Integration | Attachment metadata-persistence compensation on failure | Given the physical file write succeeds and metadata persistence then fails, the request fails safely, no Active attachment metadata row is created, and the newly written physical file is deleted (no orphaned file remains). | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-31 | — | Planned |
