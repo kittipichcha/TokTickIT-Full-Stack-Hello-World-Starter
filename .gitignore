@@ -13,5 +13,3 @@ server/prisma/*.db
 *.log
 .DS_Store
 .history
-# temp / scratch
-review_comment.txt
