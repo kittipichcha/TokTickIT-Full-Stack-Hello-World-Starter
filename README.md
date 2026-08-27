@@ -194,7 +194,7 @@ Important:
   cross-feature rows previously listed in #12 (`API-REQ-02`, `API-REQ-03`,
   `API-CONTRACT-01`, `UI-MY-03`, `E2E-05`) have been formally reassigned to #13, #14,
   and #18 where their dependent models/endpoints/screens exist.
-- Server tests: 154 passing across 13 files; client tests: 30 passing across 5 files.
+- Server tests: 251 passing across 18 files; client tests: 30 passing across 5 files.
 
 ## 8. API Implemented Today
 
@@ -237,8 +237,8 @@ Returns active related systems only (no requester header required). Response exa
 ```json
 {
   "data": [
-    { "id": 1, "name": "Email" },
-    { "id": 2, "name": "Payroll" }
+    { "id": 1, "name": "Corporate Laptop" },
+    { "id": 2, "name": "Campus Wi-Fi" }
   ]
 }
 ```
