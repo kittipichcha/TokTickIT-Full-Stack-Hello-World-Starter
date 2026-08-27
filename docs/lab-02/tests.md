@@ -117,7 +117,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-MY-04 | API | Deterministic sort order with tie-breakers and priority ordering | Sort order is deterministic using selected field/direction and then `createdAt desc`, `id desc` as tie-breakers. | Controller contract: `server/tests/lab-02/my-tickets.api.test.ts`; Real DB: `server/tests/lab-02/my-tickets-real-db.integration.test.ts` (Tests 4 & 5) | FR-07 | BR-22 | AC-19 | Passed |
 | API-MY-05 | API | Pagination returns correct page metadata and slices | Page and pageSize metadata are returned accurately and the correct slice of results is delivered. | Controller contract: `server/tests/lab-02/my-tickets.api.test.ts`; Real DB: `server/tests/lab-02/my-tickets-real-db.integration.test.ts` (Test 6) | FR-08 | BR-22 | AC-20 | Passed |
 | API-MY-06 | API | Default pagination/sort values and invalid-value fallback | Omitted pagination/sort params use `page=1`, `pageSize=10`, `sort=createdAt`, `order=desc`; invalid `sort`, `order`, `page`, or `pageSize` values fall back to these same documented defaults. (Invalid `categoryId`/`requestedPriority`/`status` filter values are validation errors, not fallback defaults — see `API-MY-07`.) | Controller contract: `server/tests/lab-02/my-tickets.api.test.ts`; Real DB: `server/tests/lab-02/my-tickets-real-db.integration.test.ts` (Test 9) | FR-07, FR-08 | BR-22 | AC-19, AC-20 | Passed |
-| API-MY-07 | API | Invalid filter parameter values and pagination | Malformed categoryId → 400; invalid requestedPriority/status enums → 400; page missing/malformed/non-positive uses page 1; valid out-of-range page → 200 with empty data and accurate metadata. | Controller contract: `server/tests/lab-02/my-tickets.api.test.ts`; Real DB: `server/tests/lab-02/my-tickets-real-db.integration.test.ts` (Test 8) | FR-06, FR-08 | BR-22, BR-23 | — | Passed |
+| API-MY-07 | API | Invalid filter parameter values and pagination | Malformed categoryId (abc, 0, -1, 0.5, 1e2) → 400; nonexistent/inactive categoryId → 409; enormous positive integer → 409; invalid requestedPriority/status enums → 400; page missing/malformed/non-positive uses page 1; valid out-of-range page → 200 with empty data and accurate metadata; duplicate query params use first value. | Controller contract: `server/tests/lab-02/my-tickets.api.test.ts`; Real DB: `server/tests/lab-02/my-tickets-real-db.integration.test.ts` (Tests 8, 9, 10) | FR-06, FR-08 | BR-22, BR-23 | — | Passed |
 | API-MY-08 | API | Search normalization and returned Empty/No-Results metadata values (API layer only) | Search is trimmed; blank-after-trim is inactive. Every list response includes accurate `totalItems` and `unfilteredTotalItems` values: a requester with no ticket history returns `unfilteredTotalItems=0` even with an active filter; a requester with ticket history and a zero-match filter returns `unfilteredTotalItems>0`. This test asserts only the returned numbers — which UI state those numbers should render is proven separately by `UI-MY-01`/`UI-MY-02`. | Controller contract: `server/tests/lab-02/my-tickets.api.test.ts`; Real DB: `server/tests/lab-02/my-tickets-real-db.integration.test.ts` (Test 7) | FR-05, FR-16 | BR-22, BR-23 | — | Passed |
 | API-ATT-09 | API | Attachment list ordering is deterministic (uploadedAt asc, id asc) | Attachment listing returns results in deterministic order for stable display ordering and reproducible tests. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | — | — | Planned |
 | ATT-PERSIST-01 | Integration | Attachment metadata-persistence compensation on failure | Given the physical file write succeeds and metadata persistence then fails, the request fails safely, no Active attachment metadata row is created, and the newly written physical file is deleted (no orphaned file remains). | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-31 | — | Planned |
@@ -228,9 +228,10 @@ Rows that belong to downstream issues (not #12) are intentionally left `Planned`
 
 ### My Tickets invalid filter and pagination behavior (BR-22, BR-23, API-MY-07, API-MY-08)
 **Invalid filter parameters:**
-- Malformed `categoryId` (e.g., `categoryId=abc` or `categoryId=0.5`) → 400 validation error
+- Malformed `categoryId` (e.g., `categoryId=abc`, `categoryId=0`, `categoryId=-1`, `categoryId=0.5`, `categoryId=1e2`) → 400 validation error
 - Well-formed but nonexistent `categoryId` → 409 Conflict (referenced record doesn't exist)
 - Existing but inactive `categoryId` → 409 Conflict (referenced record is inactive)
+- Enormous positive integer `categoryId` (exceeding database INTEGER range) → 409 Conflict
 - Invalid `requestedPriority` enum (e.g., `requestedPriority=URGENT`) → 400 validation error
 - Invalid `status` enum (e.g., `status=CLOSED`) → 400 validation error
 - Invalid `sort` field → fallback to default (`createdAt`)
@@ -249,6 +250,9 @@ Rows that belong to downstream issues (not #12) are intentionally left `Planned`
 - `?search=%20laptop%20` (trimmed to "laptop") → substring match on "laptop"
 - Requester with zero tickets ever, with or without normalized filters → Empty state (`totalItems=0`, `unfilteredTotalItems=0`)
 - Requester with ticket history and filters yielding zero rows → No-Results state (`totalItems=0`, `unfilteredTotalItems>0`)
+
+**Duplicate query parameters:**
+- Duplicate `search`, `categoryId`, and `sort` params each use the first occurrence value
 
 ### Canonical parsing and error assertions (API-CONTRACT-01)
 - Every non-2xx response matches `{ error: { code, message } }`; every `400` includes `fields`, including `fields.file` for `ATTACHMENT_LIMIT_REACHED`; non-`400` responses omit `fields`.
