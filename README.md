@@ -37,14 +37,15 @@ Implemented in code right now:
 - View Ticket action navigates to Ticket Detail with loading/error/not-found states
 - My Tickets frontend screen with sortable table, mobile cards, loading/empty/no-results/error states, pagination footer, and requester-switch data reset
 
-**Implemented:**
-- My Tickets API (`GET /api/tickets`)
-- My Tickets UI (My Tickets screen with search, filter, sort, pagination)
+Deferred to Issue #15:
 
-**Deferred to Issue #15:**
-- Attachment upload, preview, download, and soft-removal endpoints
-- Full attachment action controls on Ticket Detail
-- Attachment lifecycle / Ticket Detail attachment controls
+- Attachment upload, preview, download, and soft-removal endpoints.
+- Full attachment action controls on Ticket Detail.
+
+Not yet implemented for Lab 2 (downstream issues):
+- Attachment endpoints (upload, list, download, preview, soft-remove)
+- Full attachment action controls on Ticket Detail.
+- Remaining Lab 2 test suites for attachments (unit/api/ui/e2e/responsive/visual)
 
 ## 3. Repository Structure
 
