@@ -13,6 +13,7 @@ import {
 } from "./service.js";
 import { TicketSequenceExhaustedError } from "./ticket-number.js";
 import { inspectIntegerFields } from "./integer-validation.js";
+import { MAX_DATABASE_ID } from "./id-domain.js";
 
 /**
  * Returns the first string value of a query parameter.
@@ -175,6 +176,14 @@ export async function getMyTicketsHandler(req: Request, res: Response): Promise<
         return;
       }
       categoryId = Number(rawCategoryId);
+
+      // Reject IDs that exceed the database INTEGER range → 409, never 500
+      if (!Number.isFinite(categoryId) || categoryId > MAX_DATABASE_ID) {
+        res.status(409).json({
+          error: { code: "INACTIVE_REFERENCE", message: "The specified category does not exist or is inactive." },
+        });
+        return;
+      }
     }
 
     // requestedPriority: invalid enum → 400
