@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import { allocateTicketNumberWithClient } from "../../src/ticket-number.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
@@ -484,6 +485,7 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
     expect(cat).toBeTruthy();
     expect(sys).toBeTruthy();
     const sameTimestamp = new Date("2026-01-01T00:00:00.000Z");
+    const ticketLowerNumber = await allocateTicketNumberWithClient(prisma, 2026);
     const ticketLower = await prisma.ticket.create({
       data: {
         requesterId,
@@ -493,12 +495,13 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
         description: `${TEST_MARKER} Same timestamp, lower id.`,
         requestedPriority: "MEDIUM",
         currentStatus: "NEW",
-        ticketNumber: `TKT-2026-${String(Math.floor(Math.random() * 900000) + 100000)}`,
+        ticketNumber: ticketLowerNumber,
         createdAt: sameTimestamp,
         updatedAt: sameTimestamp,
       },
     });
     createdTicketNumbers.push(ticketLower.ticketNumber);
+    const ticketHigherNumber = await allocateTicketNumberWithClient(prisma, 2026);
     const ticketHigher = await prisma.ticket.create({
       data: {
         requesterId,
@@ -508,7 +511,7 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
         description: `${TEST_MARKER} Same timestamp, higher id.`,
         requestedPriority: "MEDIUM",
         currentStatus: "NEW",
-        ticketNumber: `TKT-2026-${String(Math.floor(Math.random() * 900000) + 100000)}`,
+        ticketNumber: ticketHigherNumber,
         createdAt: sameTimestamp,
         updatedAt: sameTimestamp,
       },
