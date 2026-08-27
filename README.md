@@ -35,11 +35,16 @@ Implemented in code right now:
 - Requester context is persisted in `sessionStorage` and sent via the `X-Dev-Requester-Id` header on requester-scoped calls
 - View Ticket action navigates to Ticket Detail with loading/error/not-found states
 
-**PR #25 Status**: All P1 blockers resolved, ready for merge. Issues fixed:
-1. Integer validation bypassable via nested objects - FIXED
-2. Real-database tests permanently advance TicketSequence - VERIFIED (snapshot/restore pattern already implemented)
-3. Parser fails on valid requests with ignored nested objects - FIXED
-4. All P2 issues verified as addressed
+Implemented:
+
+- Basic requester-owned Ticket Detail view reached from the Create Ticket success panel.
+- Loading, not-found, failure, and manual Retry states.
+- Read-only Ticket fields and embedded attachment metadata.
+
+Deferred to Issue #15:
+
+- Attachment upload, preview, download, and soft-removal endpoints.
+- Full attachment action controls on Ticket Detail.
 
 Not yet implemented for Lab 2 (downstream issues):
 - `GET /api/tickets` (My Tickets list with search, filter, sort, pagination)
@@ -195,7 +200,6 @@ Important:
   `API-CONTRACT-01`, `UI-MY-03`, `E2E-05`) have been formally reassigned to #13, #14,
   and #18 where their dependent models/endpoints/screens exist.
 - Server tests: 145 across 18 files; client tests: 24 across 6 files.
-- PR #25 (Ticket Creation Flow) is complete with all P1 blockers resolved and ready for merge.
 
 ## 8. API Implemented Today
 
