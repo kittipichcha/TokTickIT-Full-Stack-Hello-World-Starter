@@ -380,7 +380,22 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
-### 2026-08-27 - Issue #14: My Tickets — Backend API + Frontend UI implemented
+### 2026-08-27 - Issue #14 fix: Real-DB My Tickets evidence, pagination contract fix, tie-breaker isolation
+
+- **Scope**: Addressed PR #28 review blocking issues for My Tickets real-DB evidence.
+  1. **Blocking Issue #1 — Real-DB evidence**: Executed `my-tickets-real-db.integration.test.ts` against the real database. All 46 tests passed, covering ownership isolation, search (by number, substring, case-insensitive, trimmed, whitespace-only), conjunctive filters (category, priority, status), priority ordering (ascending/descending), tie-breakers (createdAt DESC/id DESC, same-summary, same-createdAt, ticketNumber), pagination (pages 1/2/3, out-of-range), Empty vs No-Results, invalid category (malformed, zero, negative, nonexistent, inactive), defaults/fallbacks (missing page, malformed page, page=0/-1/1.0/1e2, pageSize=0/51), duplicate query parameters, and inactive requester behavior.
+  2. **Blocking Issue #2 — Pagination contract fix**: Corrected the out-of-range pagination test in both `my-tickets-real-db.integration.test.ts` and `my-tickets.api.test.ts` to assert `totalItems` as the filtered count (≥21) rather than `0`, consistent with the API spec where `totalItems` describes the current search/filter result before LIMIT/OFFSET.
+  3. **Tie-breaker fragility fix**: Added unique `search` terms to priority-ordering and tie-breaker queries (e.g., `search=INT-TEST-MY-TKT-PRIO-`, `search=INT-TEST-MY-TKT-TIE-`, `search=INT-TEST-MY-TKT-SAME-SUMMARY-TIE`, `search=INT-TEST-MY-TKT-SAME-TS-`) so tests isolate their fixture records and are independent of pre-existing data or earlier test-created tickets.
+- Tests added/updated:
+  - `server/tests/lab-02/my-tickets-real-db.integration.test.ts`: fixed out-of-range `totalItems` assertion; added `search` isolation to priority-ordering and tie-breaker tests.
+  - `server/tests/lab-02/my-tickets.api.test.ts`: fixed mocked out-of-range `totalItems` from `0` to `25`.
+- Command(s) run:
+  - `cd server && npx vitest run tests/lab-02/my-tickets-real-db.integration.test.ts`
+- Result:
+  - my-tickets-real-db.integration: **46 passed** (all tests executed against real database)
+- Notes and follow-up:
+  - All 46 real-DB tests executed with `DATABASE_URL` set, providing actual database-level evidence for every My Tickets acceptance criterion.
+  - The `itIfDb` guard remains in place so tests skip cleanly when no database is available, but the evidence log now records the executed result.
 - **Scope**: Backend `GET /api/tickets` endpoint with search, filter, sort, pagination, and ownership enforcement. Frontend My Tickets screen with toolbar, sortable table, mobile cards, pagination, loading/empty/no-results/error states, requester-switch data reset, and out-of-range page handling.
 - **Server changes**:
   - `server/src/service.ts`: Added `getMyTickets()`, `MyTicketsParams`, `MyTicketItem`, `MyTicketsResult` interfaces
