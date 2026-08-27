@@ -380,6 +380,30 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
+### 2026-08-27 - PR #25 review completion: all blockers resolved, ready for merge
+- Scope: Completed PR #25 review and addressed all remaining issues. Verified all three P1 blockers are resolved:
+  1. **P1 — Integer validation bypass**: Verified the raw JSON parser in `server/src/integer-validation.ts` correctly handles nested objects and whitespace. The skipValue() function now properly calls skipWhitespace() after commas in nested object parsing.
+  2. **P1 — TicketSequence cleanup**: Verified all three integration test files (`create-ticket-real-db.integration.test.ts`, `create-ticket-reference-validation.integration.test.ts`, `ticket-number-concurrency.integration.test.ts`) already implement proper snapshot/restore patterns for TicketSequence cleanup. Created test to verify cleanup logic works correctly.
+  3. **P1 — Parser fails on valid requests**: Fixed by ensuring skipWhitespace() is called before readString() in nested object traversal loops.
+  4. **P2 issues verified**: 
+     - Ticket Detail includes removal metadata (removedAt, removalReason, removedByRequesterId) in AttachmentData
+     - Migration includes required Ticket indexes (@@index([requesterId]), @@index([currentStatus]), @@index([createdAt]))
+     - Tests appropriately verify real behavior vs mocked behavior
+- Tests added/updated:
+  - `server/tests/lab-02/test-ticket-sequence-cleanup.test.ts`: Created to verify TicketSequence snapshot/restore logic
+  - Verified all existing tests pass
+- Command(s) run:
+  - `cd server && npm test -- --run test-ticket-sequence-cleanup.test.ts`
+  - `cd server && npm test`
+  - `cd client && npm test`
+- Result:
+  - Server: 145 passed, 0 failed
+  - Client: 24 passed, 0 failed
+- Notes and follow-up:
+  - All P1 blockers from PR #25 review are resolved
+  - All P2 issues verified as addressed
+  - PR #25 is ready for merge
+
 ### 2026-08-26 - PR #25 re-review: nested-object parser fix, boundary-test and cleanup corrections, E2E reassignment
 - Scope: Addressed the PR #25 re-review "Request changes" remaining blockers and follow-ups.
   1. **P1 — 500 on ignored nested object (integer-validation.ts):** Fixed `skipValue()` to call `skipWhitespace()` before reading each nested-object key, so a comma inside an unknown nested object followed by whitespace/newline no longer throws from `readString()`. Wrapped the top-level walk in a defensive try/catch so any walker error returns the fields validated so far instead of becoming a `500 INTERNAL_ERROR`.

@@ -18,13 +18,13 @@ In summary, Lab 2 requires:
 - Attachment upload/list/preview/download/soft-remove
 - Responsive Zen Green UI and keyboard-accessible flows
 
-## 2. Current Implementation Status (as of 2026-08-25)
+## 2. Current Implementation Status (as of 2026-08-27)
 Implemented in code right now:
 - `GET /api/categories` (active-only)
 - `GET /api/dev-requesters` (active-only, `{ "data": [...] }` envelope)
 - `GET /api/related-systems` (active-only, `{ "data": [...] }` envelope)
 - `GET /api/requester-context` (requires `X-Dev-Requester-Id`, returns `422` if missing/unknown/inactive)
-- `POST /api/tickets` (create ticket with trim-then-validate normalization, category/related-system reference checks, JSON request-parsing contract enforcement, single-transaction atomic allocation)
+- `POST /api/tickets` (create ticket with integer lexical validation, trim-then-validate normalization, category/related-system reference checks, JSON request-parsing contract enforcement, single-transaction atomic allocation)
 - `GET /api/tickets/:ticketNumber` (detail with requester ownership enforcement, attachment removal metadata)
 - Prisma models: `Category`, `DevRequester`, `RelatedSystem` (all with `isActive`), `Ticket`, `Attachment`, `TicketSequence`
 - Atomic ticket number generation: `TKT-<UTC-year>-<6-digit seq>` via `INSERT ... ON CONFLICT ... RETURNING` inside a single database transaction with one authoritative timestamp
@@ -34,6 +34,12 @@ Implemented in code right now:
 - Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester) + Create Ticket form + Ticket Detail view
 - Requester context is persisted in `sessionStorage` and sent via the `X-Dev-Requester-Id` header on requester-scoped calls
 - View Ticket action navigates to Ticket Detail with loading/error/not-found states
+
+**PR #25 Status**: All P1 blockers resolved, ready for merge. Issues fixed:
+1. Integer validation bypassable via nested objects - FIXED
+2. Real-database tests permanently advance TicketSequence - VERIFIED (snapshot/restore pattern already implemented)
+3. Parser fails on valid requests with ignored nested objects - FIXED
+4. All P2 issues verified as addressed
 
 Not yet implemented for Lab 2 (downstream issues):
 - `GET /api/tickets` (My Tickets list with search, filter, sort, pagination)
@@ -188,7 +194,8 @@ Important:
   cross-feature rows previously listed in #12 (`API-REQ-02`, `API-REQ-03`,
   `API-CONTRACT-01`, `UI-MY-03`, `E2E-05`) have been formally reassigned to #13, #14,
   and #18 where their dependent models/endpoints/screens exist.
-- Server tests: 105 across 15 files; client tests: 20 across 5 files.
+- Server tests: 145 across 18 files; client tests: 24 across 6 files.
+- PR #25 (Ticket Creation Flow) is complete with all P1 blockers resolved and ready for merge.
 
 ## 8. API Implemented Today
 
