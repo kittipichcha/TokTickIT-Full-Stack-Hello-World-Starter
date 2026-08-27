@@ -924,6 +924,38 @@ describe("My Tickets Real DB — Test 7: Empty vs No-Results", () => {
     expect(res.body.pagination.totalItems).toBe(0);
     expect(res.body.pagination.unfilteredTotalItems).toBeGreaterThan(0);
   });
+
+  itIfDb("totalPages=0 with giant page returns empty data without executing huge OFFSET", async () => {
+    // Requester with zero tickets: totalPages === 0
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterWithNoTicketsId))
+      .query({ page: "9007199254740991", pageSize: "50" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([]);
+    expect(res.body.pagination.page).toBe(9007199254740991);
+    expect(res.body.pagination.pageSize).toBe(50);
+    expect(res.body.pagination.totalItems).toBe(0);
+    expect(res.body.pagination.totalPages).toBe(0);
+    expect(res.body.pagination.unfilteredTotalItems).toBe(0);
+  });
+
+  itIfDb("totalPages=0 (filtered, unfilteredTotalItems>0) with giant page returns empty data", async () => {
+    // Requester with tickets but filter matches nothing: totalItems=0, unfilteredTotalItems>0
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterWithTicketsId))
+      .query({ page: "9007199254740991", pageSize: "50", search: "ZZZZNONEXISTENT" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([]);
+    expect(res.body.pagination.page).toBe(9007199254740991);
+    expect(res.body.pagination.pageSize).toBe(50);
+    expect(res.body.pagination.totalItems).toBe(0);
+    expect(res.body.pagination.totalPages).toBe(0);
+    expect(res.body.pagination.unfilteredTotalItems).toBeGreaterThan(0);
+  });
 });
 
 // ────────────────────────────────────────────────────────────────────────────

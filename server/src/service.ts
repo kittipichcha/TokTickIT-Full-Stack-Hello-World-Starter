@@ -444,9 +444,9 @@ export async function getMyTickets(
 
   const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / params.pageSize);
 
-  // If the requested page is beyond the last valid page, return empty data
-  // with correct pagination metadata — avoid issuing SQL with a giant OFFSET.
-  if (params.page > totalPages && totalPages > 0) {
+  // If totalPages === 0 (no data) or the requested page is beyond the last valid page,
+  // return empty data with correct pagination metadata — avoid issuing SQL with a giant OFFSET.
+  if (totalPages === 0 || params.page > totalPages) {
     return {
       data: [],
       pagination: {

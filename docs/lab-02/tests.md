@@ -24,19 +24,18 @@ E2E/Responsive/Keyboard (planned):
 
 ### Server My Tickets tests
 - **Command**: `npx vitest run tests/lab-02/` (from `server/`)
-- **Result**: 18 test files, 251 tests passed, 0 failed
+- **Result**: 18 test files, 256 tests passed, 0 failed
 - **Real-DB suite**: Executed with `DATABASE_URL` present — all `itIfDb` tests ran (not skipped)
-- **Real-DB My Tickets tests**: All 9 test groups executed against real database, including literal search semantics for `%`, `_`, `\`, response shape verification, summary ordering with distinct values, pagination slice correctness, and empty/no-results metadata
+- **Real-DB My Tickets tests**: All 12 test groups executed against real database, including literal search semantics for `%`, `_`, `\`, response shape verification, summary ordering with distinct values, pagination slice correctness, empty/no-results metadata, zero-totalPages giant-page safety, and duplicate query parameter handling
 
-### Safe-integer page guard tests (BLOCKING ISSUE #2 — 2026-08-27)
+### Safe-integer page guard tests (BLOCKING ISSUE #1 — 2026-08-27)
 - **Added `Number.isSafeInteger()` guard** in the controller: pages exceeding `Number.MAX_SAFE_INTEGER` now fall back to `page=1` instead of being passed to the service
-- **Added early return in the service**: when `page > totalPages` and `totalPages > 0`, returns empty `data` with correct pagination metadata — no SQL `OFFSET` is executed
-- **New test cases in `API-MY-07`**:
-  - `Number.MAX_SAFE_INTEGER` (9007199254740991) — accepted as a valid page value
-  - `Number.MAX_SAFE_INTEGER + 1` (9007199254740992) — falls back to `page=1`
-  - Large finite decimal string exceeding safe integer range — falls back to `page=1`
-  - 400-digit string (Infinity) — falls back to `page=1`
-- All new tests verify the controller does not pass an unsafe/invalid page to the service, and the service does not execute SQL with a giant offset
+- **Added early return in the service**: when `totalPages === 0` or `page > totalPages`, returns empty `data` with correct pagination metadata — no SQL `OFFSET` is executed
+- **Consolidated the early-return condition**: the original `page > totalPages && totalPages > 0` was merged with `totalPages === 0` into a single branch: `totalPages === 0 || params.page > totalPages`. This ensures that when `totalPages === 0` (no matching data), the service returns immediately without calculating a potentially huge `OFFSET`.
+- **New test cases added to `my-tickets-real-db.integration.test.ts`**:
+  - `Number.MAX_SAFE_INTEGER` (9007199254740991) with a requester having zero tickets (`totalPages=0`) — returns `200` with empty data and correct metadata, no SQL OFFSET executed
+  - `Number.MAX_SAFE_INTEGER` (9007199254740991) with a requester having tickets but a filter that matches nothing (`totalItems=0`, `unfilteredTotalItems>0`) — also returns `200` with empty data and correct metadata
+- All new tests verify the service returns early without executing a SQL query containing a giant `OFFSET`
 
 ### Client My Tickets tests
 - **Command**: `npx vitest run src/lab-02-tests/MyTickets.test.tsx` (from `client/`)
@@ -146,6 +145,8 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-MY-06 | API | Default pagination/sort values and invalid-value fallback | Omitted pagination/sort params use `page=1`, `pageSize=10`, `sort=createdAt`, `order=desc`; invalid `sort`, `order`, `page`, or `pageSize` values fall back to these same documented defaults. (Invalid `categoryId`/`requestedPriority`/`status` filter values are validation errors, not fallback defaults — see `API-MY-07`.) | `server/tests/lab-02/my-tickets.api.test.ts` | FR-07, FR-08 | BR-22 | AC-19, AC-20 | Passed |
 | API-MY-07 | API | Invalid filter parameter values and pagination (including safe-integer page guard) | Malformed categoryId → 400; invalid requestedPriority/status enums → 400; page missing/malformed/non-positive uses page 1; valid out-of-range page → 200 with empty data and accurate metadata; pages exceeding `Number.MAX_SAFE_INTEGER` fall back to `page=1`; `Number.MAX_SAFE_INTEGER` itself is accepted as a valid page value. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-06, FR-08 | BR-22, BR-23 | — | Passed |
 | API-MY-08 | API | Search normalization and returned Empty/No-Results metadata values (API layer only) | Search is trimmed; blank-after-trim is inactive. Every list response includes accurate `totalItems` and `unfilteredTotalItems` values: a requester with no ticket history returns `unfilteredTotalItems=0` even with an active filter; a requester with ticket history and a zero-match filter returns `unfilteredTotalItems>0`. This test asserts only the returned numbers — which UI state those numbers should render is proven separately by `UI-MY-01`/`UI-MY-02`. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05, FR-16 | BR-22, BR-23 | — | Passed |
+| MY-RDB-01 | Integration | Zero totalPages with giant page: requester with zero tickets (totalPages=0) | Given a requester with zero tickets, `?page=9007199254740991&pageSize=50` returns `200` with empty `data`, correct pagination metadata, and no SQL OFFSET is executed. | `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-08, FR-16 | BR-22 | AC-20 | Passed |
+| MY-RDB-02 | Integration | Zero totalPages with giant page: requester with tickets but filter matches nothing (totalItems=0, unfilteredTotalItems>0) | Given a requester with ticket history but a filter that yields zero matches, `?page=9007199254740991&pageSize=50&search=ZZZZNONEXISTENT` returns `200` with empty `data`, correct pagination metadata, and no SQL OFFSET is executed. | `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-08, FR-16 | BR-22 | AC-20 | Passed |
 | API-ATT-09 | API | Attachment list ordering is deterministic (uploadedAt asc, id asc) | Attachment listing returns results in deterministic order for stable display ordering and reproducible tests. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | — | — | Planned |
 | ATT-PERSIST-01 | Integration | Attachment metadata-persistence compensation on failure | Given the physical file write succeeds and metadata persistence then fails, the request fails safely, no Active attachment metadata row is created, and the newly written physical file is deleted (no orphaned file remains). | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-31 | — | Planned |
 | API-ATT-OWN-01 | API | Cross-requester Attachment ownership enforcement | Requester B attempting upload, list, download, preview, or soft-remove against Requester A's ticket/attachment each receive `404 NOT_FOUND` with the same shape as a missing resource, and no data or file bytes are exposed. | `server/tests/lab-02/attachment-ownership.api.test.ts` | FR-09, FR-10, FR-11, FR-12, FR-13 | BR-24 | AC-03 | Planned |
@@ -267,6 +268,8 @@ Rows that belong to downstream issues (not #12) are intentionally left `Planned`
 **Pagination edge cases:**
 - missing, malformed, non-integer, `page=0`, or negative → fallback to 1
 - `page=999` when totalPages=3 → 200 with empty data array; totalPages=3 in metadata
+- `page=9007199254740991` with `totalPages=0` (requester has zero tickets) → 200 with empty data; `totalPages=0` in metadata; no SQL OFFSET executed
+- `page=9007199254740991` with `totalItems=0` and `unfilteredTotalItems>0` (filter matches nothing) → 200 with empty data; `totalPages=0` in metadata; no SQL OFFSET executed
 - `pageSize=0` → fallback to 10
 - `pageSize=51` → fallback to 10 (max is 50)
 - `pageSize=-1` → fallback to 10
@@ -312,6 +315,7 @@ exists and passes; it does **not** distinguish mock from real integration.
 | API-TKT-INT-04 | `create-ticket-real-db.integration.test.ts` | Real DB: owner 200 with full detail, non-owner 404 with no data through real `getTicketByNumber()` |
 | DB-01, DB-02 | `database-migration.integration.test.ts` | Real DB: runs Prisma migrations |
 | SEED-01, SEED-02 | `seed.integration.test.ts` | Real DB: runs seed, verifies idempotency |
+| MY-RDB-01, MY-RDB-02 | `my-tickets-real-db.integration.test.ts` | Real DB: verifies zero totalPages with giant safe-integer page number returns empty data without executing SQL OFFSET; tests both empty (zero-ticket requester) and no-results (filter matches nothing) variants |
 | API-REF-01, API-REF-02 | `reference-data.api.test.ts` | Mocked: verifies HTTP response shape, not real DB queries |
 | API-REQ-01 | `dev-requesters.api.test.ts` | Mocked: verifies HTTP response shape |
 | API-REQ-01 | `dev-requesters.service.test.ts` | Mocked: verifies Prisma query shape |
