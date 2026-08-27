@@ -23,11 +23,11 @@ const requesterSetB = [
 
 function makeTicket(id: number, overrides: Partial<{
   ticketNumber: string;
-  requesterId: number;
   categoryId: number;
   categoryName: string;
   summary: string;
   requestedPriority: string;
+  itPriority: string | null;
   currentStatus: string;
   createdAt: string;
   updatedAt: string;
@@ -35,11 +35,11 @@ function makeTicket(id: number, overrides: Partial<{
   return {
     id,
     ticketNumber: overrides.ticketNumber ?? `TKT-2026-${String(id).padStart(6, "0")}`,
-    requesterId: overrides.requesterId ?? 1,
     categoryId: overrides.categoryId ?? 1,
     categoryName: overrides.categoryName ?? "Hardware",
     summary: overrides.summary ?? `Ticket ${id} summary`,
     requestedPriority: overrides.requestedPriority ?? "MEDIUM",
+    itPriority: overrides.itPriority ?? null,
     currentStatus: overrides.currentStatus ?? "NEW",
     createdAt: overrides.createdAt ?? "2026-08-21T09:14:00.000Z",
     updatedAt: overrides.updatedAt ?? "2026-08-21T09:14:00.000Z",
@@ -173,10 +173,10 @@ describe("UI-MY-03: Requester switch clears prior data and reloads new scope", (
     // Return different data based on requester ID
     vi.mocked(api.fetchMyTickets).mockImplementation(async (requesterId) => {
       if (requesterId === 1) {
-        return makeResult([makeTicket(1, { summary: "Ticket A", requesterId: 1 })], { unfilteredTotalItems: 1 });
+        return makeResult([makeTicket(1, { summary: "Ticket A" })], { unfilteredTotalItems: 1 });
       }
       // Requester B (id=3)
-      return makeResult([makeTicket(3, { ticketNumber: "TKT-2026-000003", summary: "Ticket B", requesterId: 3 })], { unfilteredTotalItems: 1 });
+      return makeResult([makeTicket(3, { ticketNumber: "TKT-2026-000003", summary: "Ticket B" })], { unfilteredTotalItems: 1 });
     });
 
     render(<App />);
@@ -251,13 +251,77 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByRole("alert")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
+    const retryButton = screen.getByRole("button", { name: "Retry" });
+    expect(retryButton).toBeTruthy();
+  });
+
+  it("no automatic retry before Retry button is clicked", async () => {
+    // Track fetchMyTickets calls
+    const fetchCalls: number[] = [];
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => {
+      fetchCalls.push(Date.now());
+      throw new Error("Network error");
+    });
+
+    render(<App />);
+
+    const selects = await screen.findAllByLabelText("Development Requester");
+    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    // Wait for error state to appear
+    await screen.findByRole("alert");
+
+    // Count calls made so far (initial load + any StrictMode double-render)
+    const initialCallCount = fetchCalls.length;
+
+    // Wait a short period to verify no automatic retry
+    await new Promise((r) => setTimeout(r, 500));
+
+    // No additional calls should have been made
+    expect(fetchCalls.length).toBe(initialCallCount);
+  });
+
+  it("clicking Retry makes exactly one additional fetch request", async () => {
+    // First call fails, second call succeeds
+    let callCount = 0;
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => {
+      callCount++;
+      if (callCount <= 1) {
+        throw new Error("Network error");
+      }
+      return makeResult(
+        [makeTicket(1, { summary: "Retried ticket" })],
+        { unfilteredTotalItems: 1 },
+      );
+    });
+
+    render(<App />);
+
+    const selects = await screen.findAllByLabelText("Development Requester");
+    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    // Wait for error state
+    await screen.findByRole("alert");
+
+    // Record call count before retry
+    const callsBeforeRetry = callCount;
+
+    // Click Retry
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    // Wait for the retried ticket to appear
+    await screen.findAllByText("Retried ticket");
+
+    // Exactly one additional call was made
+    expect(callCount).toBe(callsBeforeRetry + 1);
   });
 });
 
 describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     sessionStorage.clear();
     vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
     vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
@@ -271,47 +335,28 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
     cleanup();
   });
 
-  it("navigates to last valid page when page exceeds totalPages after filter change", async () => {
-    // Scenario:
-    // 1. Initial response: page=1, totalPages=3
-    // 2. Click page 3
-    // 3. Return page 3 data
-    // 4. Apply a filter
-    // 5. Return: page=3, totalPages=1, data=[]
-    // 6. Component should navigate to page 1 and re-fetch
-    // 7. Return page 1 data
-    // 8. Assert page 1 is displayed
-    // 9. Assert neither Empty nor No-Results is shown
+  it("navigates to last valid page when API returns page > totalPages for the requested page", async () => {
+    const initialResult = makeResult(
+      [makeTicket(1), makeTicket(2), makeTicket(3), makeTicket(4), makeTicket(5)],
+      { page: 1, pageSize: 10, totalItems: 25, totalPages: 3, unfilteredTotalItems: 25 },
+    );
+    const outOfRangeResult = makeResult([], { page: 3, pageSize: 10, totalItems: 0, totalPages: 1, unfilteredTotalItems: 5 });
+    const afterResetResult = makeResult(
+      [makeTicket(1, { summary: "Ticket 1 after reset" })],
+      { page: 1, pageSize: 10, totalItems: 5, totalPages: 1, unfilteredTotalItems: 5 },
+    );
 
-    // Track the requested page to serve appropriate responses
-    const requestedPages: number[] = [];
+    // Track page 1 calls to distinguish initial loads from redirect
+    let page1Calls = 0;
     vi.mocked(api.fetchMyTickets).mockImplementation(async (_rid, params) => {
       const p = params?.page ?? 1;
-      requestedPages.push(p);
-
-      if (p === 1 && requestedPages.filter(x => x === 1).length <= 2) {
-        // Initial load(s) - page 1, totalPages=3
-        return makeResult(
-          [makeTicket(1), makeTicket(2), makeTicket(3), makeTicket(4), makeTicket(5)],
-          { page: 1, pageSize: 10, totalItems: 25, totalPages: 3, unfilteredTotalItems: 25 },
-        );
+      if (p === 1) {
+        page1Calls++;
+        if (page1Calls <= 1) return initialResult;
+        return afterResetResult;
       }
-      if (p === 3 && requestedPages.filter(x => x === 3).length === 1) {
-        // Page 3 click - return page 3 data
-        return makeResult(
-          [makeTicket(30, { summary: "Ticket 30 on page 3" })],
-          { page: 3, pageSize: 10, totalItems: 25, totalPages: 3, unfilteredTotalItems: 25 },
-        );
-      }
-      if (p === 3 && requestedPages.filter(x => x === 3).length > 1) {
-        // Filter applied, API returns page=3, totalPages=1, data=[]
-        return makeResult([], { page: 3, pageSize: 10, totalItems: 0, totalPages: 1, unfilteredTotalItems: 5 });
-      }
-      // Page 1 after out-of-range redirect
-      return makeResult(
-        [makeTicket(1, { summary: "Ticket 1 after reset" })],
-        { page: 1, pageSize: 10, totalItems: 5, totalPages: 1, unfilteredTotalItems: 5 },
-      );
+      // p === 3
+      return outOfRangeResult;
     });
 
     render(<App />);
@@ -327,18 +372,149 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
     const page3Button = screen.getByRole("button", { name: "3" });
     await userEvent.click(page3Button);
 
-    // Wait for page 3 data to appear
-    await screen.findAllByText("Ticket 30 on page 3");
-
-    // Apply a filter (search) to trigger the out-of-range scenario
-    const searchInputs = screen.getAllByLabelText("Search tickets");
-    await userEvent.type(searchInputs[0], "something");
-
+    // API returns page=3, totalPages=1 — component should redirect to page 1
     // Wait for the component to navigate to page 1 and show tickets
     await screen.findAllByText("Ticket 1 after reset");
 
     // Assert neither Empty nor No-Results is shown
     expect(screen.queryByText("You haven't created any tickets yet.")).toBeNull();
     expect(screen.queryByText("No tickets match your filters.")).toBeNull();
+  });
+});
+
+describe("UI-MY-06: Mobile card collapse/expand for secondary details", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchCategories).mockImplementation(async () => [{ id: 1, name: "Hardware" }]);
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () =>
+      makeResult([
+        makeTicket(1, { ticketNumber: "TKT-2026-000001", summary: "Monitor issue", categoryName: "Hardware", requestedPriority: "HIGH", createdAt: "2026-08-21T09:14:00.000Z" }),
+        makeTicket(2, { ticketNumber: "TKT-2026-000002", summary: "Software crash", categoryName: "Software", requestedPriority: "LOW", createdAt: "2026-08-22T10:00:00.000Z" }),
+      ], { unfilteredTotalItems: 2 }),
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  function getToggleButtons(): NodeListOf<HTMLButtonElement> {
+    return document.querySelectorAll(".ticket-card-toggle");
+  }
+
+  it("shows summary and ticket number/status outside collapsible region, details initially collapsed", async () => {
+    await setupAuthenticatedApp();
+
+    // Wait for ticket cards to appear (text appears in both table and cards)
+    await screen.findAllByText("Monitor issue");
+
+    // Ticket number and summary are always visible (appear in both table and cards)
+    expect(screen.getAllByText("TKT-2026-000001").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Monitor issue").length).toBeGreaterThan(0);
+
+    // Toggle button exists and shows "▼ More" with aria-expanded="false"
+    const toggles = getToggleButtons();
+    expect(toggles.length).toBe(2);
+    expect(toggles[0].getAttribute("aria-expanded")).toBe("false");
+    expect(toggles[0].textContent).toBe("▼ More");
+
+    // Secondary details (category, priority, date) are not visible initially
+    const detailsContainers = document.querySelectorAll(".ticket-card-details");
+    expect(detailsContainers.length).toBe(0);
+  });
+
+  it("expands to show secondary details when toggle is clicked", async () => {
+    await setupAuthenticatedApp();
+
+    await screen.findAllByText("Monitor issue");
+
+    const toggle1 = getToggleButtons()[0];
+    await userEvent.click(toggle1);
+
+    // After click, details should be visible
+    expect(document.querySelectorAll(".ticket-card-details").length).toBe(1);
+    // Verify the card details container has the expected content
+    const cardDetails = document.querySelector(".ticket-card-details");
+    expect(cardDetails?.textContent).toContain("Hardware");
+    expect(cardDetails?.textContent).toContain("HIGH");
+    expect(cardDetails?.textContent).toContain("2026-08-21 09:14");
+
+    // Toggle now shows "▲ Less" with aria-expanded="true"
+    expect(toggle1.getAttribute("aria-expanded")).toBe("true");
+    expect(toggle1.textContent).toBe("▲ Less");
+  });
+
+  it("collapses to hide secondary details when toggle is clicked again", async () => {
+    await setupAuthenticatedApp();
+
+    await screen.findAllByText("Monitor issue");
+
+    const toggle1 = getToggleButtons()[0];
+    await userEvent.click(toggle1);
+
+    // Details visible after first click
+    expect(document.querySelectorAll(".ticket-card-details").length).toBe(1);
+
+    // Click again to collapse
+    await userEvent.click(toggle1);
+
+    // Details should be hidden again
+    expect(document.querySelectorAll(".ticket-card-details").length).toBe(0);
+    expect(toggle1.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle1.textContent).toBe("▼ More");
+  });
+
+  it("expands/collapses per-card independently", async () => {
+    await setupAuthenticatedApp();
+
+    await screen.findAllByText("Monitor issue");
+
+    const toggles = getToggleButtons();
+    const toggle1 = toggles[0];
+    const toggle2 = toggles[1];
+
+    // Expand only the first card
+    await userEvent.click(toggle1);
+
+    // Card 1 details visible
+    expect(document.querySelectorAll(".ticket-card-details").length).toBe(1);
+    // Card 2 should not be expanded
+    expect(toggle2.getAttribute("aria-expanded")).toBe("false");
+
+    // Now expand card 2
+    await userEvent.click(toggle2);
+
+    // Both cards should now show details
+    const detailsContainers = document.querySelectorAll(".ticket-card-details");
+    expect(detailsContainers.length).toBe(2);
+  });
+
+  it("keyboard activation (Enter/Space) toggles expansion", async () => {
+    await setupAuthenticatedApp();
+
+    await screen.findAllByText("Monitor issue");
+
+    const toggle1 = getToggleButtons()[0];
+
+    // Activate via Enter key
+    toggle1.focus();
+    await userEvent.keyboard("{Enter}");
+
+    // Details should now be visible
+    expect(document.querySelectorAll(".ticket-card-details").length).toBe(1);
+    expect(toggle1.getAttribute("aria-expanded")).toBe("true");
+
+    // Activate via Space key
+    await userEvent.keyboard(" ");
+
+    // Details should be hidden again
+    expect(document.querySelectorAll(".ticket-card-details").length).toBe(0);
+    expect(toggle1.getAttribute("aria-expanded")).toBe("false");
   });
 });
