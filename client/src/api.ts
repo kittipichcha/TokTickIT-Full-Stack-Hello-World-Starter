@@ -43,11 +43,11 @@ export interface TicketResponse {
 export interface MyTicketItem {
   id: number;
   ticketNumber: string;
-  requesterId: number;
   categoryId: number;
   categoryName: string;
   summary: string;
   requestedPriority: string;
+  itPriority: string | null;
   currentStatus: string;
   createdAt: string;
   updatedAt: string;
