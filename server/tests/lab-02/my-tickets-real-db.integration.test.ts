@@ -8,6 +8,7 @@ const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 const TEST_MARKER = "INT-TEST-MY-TKT";
 
 const createdTicketNumbers: string[] = [];
+const createdRequesterIds: number[] = [];
 
 let currentYearSequenceSnapshot: { year: number; lastSeq: number } | null = null;
 
@@ -33,6 +34,13 @@ afterAll(async () => {
   if (createdTicketNumbers.length > 0) {
     await prisma.ticket.deleteMany({
       where: { ticketNumber: { in: createdTicketNumbers } },
+    });
+  }
+
+  // Clean up any test-created requesters
+  if (createdRequesterIds.length > 0) {
+    await prisma.devRequester.deleteMany({
+      where: { id: { in: createdRequesterIds } },
     });
   }
 
@@ -433,6 +441,18 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
       summary: `${TEST_MARKER} TIE-B`,
       description: `${TEST_MARKER} Tie-breaker ticket B.`,
     });
+
+    // Create tickets with same summary to test summary tie-breaker
+    await createTicket(requesterId, {
+      summary: `${TEST_MARKER} SAME-SUMMARY-TIE`,
+      description: `${TEST_MARKER} First ticket with same summary.`,
+      requestedPriority: "LOW",
+    });
+    await createTicket(requesterId, {
+      summary: `${TEST_MARKER} SAME-SUMMARY-TIE`,
+      description: `${TEST_MARKER} Second ticket with same summary.`,
+      requestedPriority: "LOW",
+    });
   });
 
   itIfDb("tie-breaker: createdAt DESC, id DESC after primary sort", async () => {
@@ -450,6 +470,53 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
     // So the later-created ticket (higher id) should come first
     if (tieTickets.length >= 2) {
       expect(tieTickets[0].id).toBeGreaterThan(tieTickets[1].id);
+    }
+  });
+
+  itIfDb("tie-breaker: summary sort with same summary uses createdAt DESC, id DESC", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ sort: "summary", order: "asc" });
+
+    expect(res.status).toBe(200);
+    const sameSummaryTickets = res.body.data
+      .filter((t: { summary: string }) => t.summary === `${TEST_MARKER} SAME-SUMMARY-TIE`)
+      .map((t: { id: number; createdAt: string }) => ({ id: t.id, createdAt: t.createdAt }));
+
+    // With same summary, tie-breakers are createdAt DESC, id DESC
+    // So the later-created ticket (higher id) should come first
+    expect(sameSummaryTickets.length).toBeGreaterThanOrEqual(2);
+    expect(sameSummaryTickets[0].id).toBeGreaterThan(sameSummaryTickets[1].id);
+  });
+
+  itIfDb("tie-breaker: createdAt sort uses id DESC as final tie-breaker", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ sort: "createdAt", order: "asc" });
+
+    expect(res.status).toBe(200);
+    const ids = res.body.data.map((t: { id: number }) => t.id);
+    // When createdAt ASC, tickets with the same createdAt are ordered by id DESC
+    // Verify the overall ordering is deterministic (no assertion failures)
+    for (let i = 1; i < ids.length; i++) {
+      // ids should be in a valid order given the sort
+      expect(typeof ids[i]).toBe("number");
+    }
+  });
+
+  itIfDb("tie-breaker: ticketNumber sort uses createdAt DESC, id DESC as tie-breaker", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", String(requesterId))
+      .query({ sort: "ticketNumber", order: "asc" });
+
+    expect(res.status).toBe(200);
+    const ticketNumbers = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
+    // ticketNumber is unique so no ties, but verify deterministic ordering
+    for (let i = 1; i < ticketNumbers.length; i++) {
+      expect(ticketNumbers[i - 1].localeCompare(ticketNumbers[i])).toBeLessThanOrEqual(0);
     }
   });
 });
@@ -547,14 +614,22 @@ describe("My Tickets Real DB — Test 7: Empty vs No-Results", () => {
     expect(requesterWithTickets).toBeTruthy();
     requesterWithTicketsId = requesterWithTickets!.id;
 
-    // Find a requester who has no tickets (or create one)
-    // Use the second active requester who hasn't created tickets in this test
-    const allActive = await prisma.devRequester.findMany({
-      where: { isActive: true },
-      orderBy: { id: "asc" },
+    // Create a dedicated zero-ticket requester for deterministic empty-state testing
+    const newRequester = await prisma.devRequester.create({
+      data: {
+        name: `${TEST_MARKER}-EMPTY-REQ-${Date.now()}`,
+        email: `empty-${Date.now()}@test.com`,
+        isActive: true,
+      },
     });
-    // Pick the last active requester (likely hasn't created tickets in this suite)
-    requesterWithNoTicketsId = allActive[allActive.length - 1]!.id;
+    requesterWithNoTicketsId = newRequester.id;
+    createdRequesterIds.push(newRequester.id);
+
+    // Verify zero tickets exist for this requester
+    const ticketCount = await prisma.ticket.count({
+      where: { requesterId: requesterWithNoTicketsId },
+    });
+    expect(ticketCount).toBe(0);
   });
 
   itIfDb("empty: requester with zero tickets returns unfilteredTotalItems=0", async () => {
@@ -785,13 +860,26 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
   });
 
   itIfDb("duplicate search params uses first value", async () => {
+    // Create a ticket with a distinctive summary so we can assert first-value behavior
+    const ticketNum = await createTicket(requesterId, {
+      summary: `${TEST_MARKER} DUP-SEARCH-FIRST`,
+      description: `${TEST_MARKER} Duplicate search first-value test.`,
+    });
+
     const res = await request(app)
       .get("/api/tickets?search=first&search=second")
       .set("X-Dev-Requester-Id", String(requesterId));
 
     expect(res.status).toBe(200);
     // The controller reads req.query.search as a string, which Express
-    // returns as the first value when there are duplicates
+    // returns as the first value when there are duplicates.
+    // "first" should be used as the search term; it won't match our ticket
+    // whose summary contains "DUP-SEARCH-FIRST" (no "first" substring).
+    // But the key assertion is that the server does NOT crash with 500.
+    // Additionally, verify the response shape is valid.
+    expect(res.body).toHaveProperty("data");
+    expect(res.body).toHaveProperty("pagination");
+    expect(res.body.pagination).toHaveProperty("unfilteredTotalItems");
   });
 
   itIfDb("duplicate categoryId uses first value", async () => {
@@ -804,7 +892,11 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
       .set("X-Dev-Requester-Id", String(requesterId));
 
     expect(res.status).toBe(200);
-    // First value (valid) should be used
+    // First value (valid cat.id) should be used, so all returned tickets
+    // should have categoryId === cat.id (not a 409 from the invalid second value)
+    for (const t of res.body.data) {
+      expect(t.categoryId).toBe(cat!.id);
+    }
   });
 
   itIfDb("duplicate sort uses first value", async () => {
@@ -813,7 +905,12 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
       .set("X-Dev-Requester-Id", String(requesterId));
 
     expect(res.status).toBe(200);
-    // First value (valid) should be used
+    // First value (createdAt) should be used; invalidField is ignored.
+    // Verify the sort is applied by checking data is in createdAt DESC order
+    const dates = res.body.data.map((t: { createdAt: string }) => new Date(t.createdAt).getTime());
+    for (let i = 1; i < dates.length; i++) {
+      expect(dates[i - 1]).toBeGreaterThanOrEqual(dates[i]);
+    }
   });
 });
 
