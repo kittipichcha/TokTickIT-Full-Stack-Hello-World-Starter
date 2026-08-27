@@ -106,18 +106,22 @@ describe("API-ATT-03: Oversized file rejected with 413", () => {
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
   });
 
-  it("returns 413 FILE_TOO_LARGE for oversized file", async () => {
-    vi.mocked(service.uploadAttachment).mockRejectedValue(
-      new service.FileTooLargeError("File exceeds the maximum allowed size."),
-    );
+  it("returns 413 FILE_TOO_LARGE for oversized file via multer limit", async () => {
+    // Upload a buffer larger than the 5MB multer limit (5,000,000 bytes).
+    // Multer will reject it with LIMIT_FILE_SIZE before it reaches the handler.
+    const oversizedBuffer = Buffer.alloc(5_000_001, 0xff);
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1");
+      .set("X-Dev-Requester-Id", "1")
+      .attach("file", oversizedBuffer, "large.jpg");
 
-    // Mock the multer error path for size limit
-    // The multer middleware handles size limit as 413
-    expect(res.status).toBe(400); // Mocked path
+    // Multer returns 413 with FILE_TOO_LARGE — the controller never runs
+    expect(res.status).toBe(413);
+    expect(res.body.error.code).toBe("FILE_TOO_LARGE");
+
+    // Verify no attachment row was persisted — uploadAttachment was never called
+    expect(service.uploadAttachment).not.toHaveBeenCalled();
   });
 });
 
