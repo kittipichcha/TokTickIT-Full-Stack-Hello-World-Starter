@@ -117,7 +117,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-REQ-01 | API | Selector returns only active development requesters | Returns only active requesters and excludes inactive ones from the selector payload. | `server/tests/lab-02/dev-requesters.api.test.ts`, `server/tests/lab-02/dev-requesters.service.test.ts` | FR-01, FR-15 | BR-03, BR-04 | AC-15 | Passed |
 | UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | Missing requester context redirects to the selector screen without crashing. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-21, BR-05 | AC-02 | Passed |
 | UI-REQ-02 | UI | Stale/inactive requester context clears sessionStorage and shows explanatory message | Stored requester is cleared, the app redirects to selector, and the user sees a clear inactive-requester message. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-15 | BR-05, BR-21 | AC-02, AC-15 | Passed |
-| API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Passed |
+| API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. The real-DB test verifies: inactive requester remains persisted; historical ticket remains persisted; requester context returns `422`; My Tickets returns `422`; the historical ticket remains in the database after rejection. | `server/tests/lab-02/requester-context.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Passed |
 | API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | — | Passed |
 | API-CONTRACT-01 | API | Canonical error body and request parsing matrix for every endpoint class | Each requester-scoped endpoint rejects missing, malformed, duplicate, unknown, and inactive requester headers with the canonical `422` body; malformed route IDs/numbers return canonical `404`; JSON endpoints reject malformed JSON, non-object bodies, and wrong content type with canonical `400`; duplicate query keys use the first value; all `500` responses are safe. | `server/tests/lab-02/api-contract.api.test.ts` | FR-01, FR-09 | BR-21, BR-24 | AC-02, AC-03 | Passed |
 | DB-01 | Integration | Fresh database migrates to the Lab 2 schema | Forward migration creates all required tables, fields, constraints, relations, and indexes without resetting the database. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Passed |
@@ -437,8 +437,29 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
   - `client/src/lab-02-tests/MyTickets.test.tsx`: Fixed `UI-MY-05` mock metadata — changed `totalItems: 0, totalPages: 1` to `totalItems: 5, totalPages: 1` for internal consistency.
   - `docs/lab-02/tests.md`: Added real-DB integration test evidence (`server/tests/lab-02/my-tickets-real-db.integration.test.ts`) to all `API-MY-01..08` matrix rows. Added this Results Log entry.
   - `agent.md`: Removed the mandatory workflow rule from §3.1 ("When adding new test rows to tests.md, the initial status must be Planned...") — this governance rule belongs in a separate governance PR per the re-review verdict.
-- **Command(s) run**: Pending — see below.
-- **Result**: Pending — see below.
+- **Command(s) run**:
+  ```
+  cd server
+  npx vitest run tests/lab-02/
+  ```
+  ```
+  cd server
+  npx tsc --noEmit
+  ```
+  ```
+  cd client
+  npx vitest run
+  ```
+  ```
+  cd client
+  npx tsc --noEmit
+  ```
+- **Result**:
+  - Server: 18 test files, 256 tests passed, 0 failed
+  - Server TypeScript: No type errors
+  - Client: 15 tests passed, 0 failed
+  - Client TypeScript: No type errors
+  - Real-DB suite: Executed with `DATABASE_URL` present — all `itIfDb` tests ran (not skipped)
 - **Follow-up**: Run full Lab 2 regression after all changes are applied.
 - **Scope**: Fix race condition where an older asynchronous `loadTickets()` request could overwrite newer results.
 - **Changes**:
