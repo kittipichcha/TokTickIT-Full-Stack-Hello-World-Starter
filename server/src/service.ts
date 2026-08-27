@@ -11,6 +11,7 @@ import {
   getMimeType,
   sanitizeDownloadFilename,
 } from "./attachment-storage.js";
+import sharp from "sharp";
 
 export interface Category {
   id: number;
@@ -856,11 +857,17 @@ export async function previewAttachment(
     return { buffer, mimeType: attachment.mimeType };
   }
 
-  // For PDFs, we'd render the first page as an image.
-  // In Lab 2, we return the PDF bytes with application/pdf MIME type as a fallback
-  // since PDF-to-image rendering requires additional dependencies.
-  // The endpoint contract specifies that PDF preview returns the first page as an image.
-  // For now, return the PDF with a note that full preview rendering is deferred.
+  // For PDFs, render the first page as a PNG image using sharp
+  if (attachment.mimeType === "application/pdf") {
+    try {
+      const page1Buffer = await sharp(buffer, { page: 0 }).png().toBuffer();
+      return { buffer: page1Buffer, mimeType: "image/png" };
+    } catch {
+      // If PDF rendering fails, fall back to returning the PDF bytes
+      return { buffer, mimeType: attachment.mimeType };
+    }
+  }
+
   return { buffer, mimeType: attachment.mimeType };
 }
 
