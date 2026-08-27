@@ -1,62 +1,69 @@
 ---
 name: review-pr
-description: "Use when: reviewing a PR for merge readiness — validates acceptance criteria against codebase, verifies test.md accuracy, checks for unused imports/dependencies, detects out-of-scope changes, and suggests actionable fixes. Trigger phrases: review PR, merge check, PR review, is this ready to merge, reviewer agent."
+description: "Use when: reviewing a PR for merge readiness — validates acceptance criteria against codebase, verifies test.md accuracy, checks for unused imports/dependencies, detects out-of-scope changes, checks for bugs, invalid test cases, edge cases, and suggests actionable fixes. Trigger phrases: review PR, merge check, PR review, is this ready to merge, reviewer agent."
 agent: "agent"
 argument-hint: "Review the active PR for merge readiness"
 ---
 
 ## Step 1 — Gather Context
 
-1. Use `github-pull-request_currentActivePullRequest` to get the active PR (title, description, branch, changed files).
-2. From the PR description, extract:
-   - The linked GitHub Issue number(s) (e.g., `Closes #4`, `Fixes #12`).
-   - Any acceptance criteria or checklist written in the PR body.
-   - **If no issue is linked**, stop and ask the user to provide the issue number(s) before continuing. Do not proceed without an issue reference.
-3. Fetch each linked issue with `mcp_github_mcp_se_issue_read` and extract its **acceptance criteria**, **definition of done**, and **requirements**.
-4. Read the project `README.md` at the repository root.
-5. Read `AGENTS.md` at the repository root for technology-stack constraints and lab-scope restrictions.
+1. Use `github-pull-request_currentActivePullRequest` to get the active PR (title, description, branch, changed files, comments).
+2. **Identify the latest request change comment**:
+   - From the PR's comments array, filter for comments where `commentType` is `"CHANGES_REQUESTED"` (or where the body contains a clear review verdict requesting changes).
+   - Select the most recent such comment by timestamp (`createdAt` or `updatedAt`).
+   - Extract the comment body and parse it for specific requested changes (e.g., P1/P2 blockers, bullet points, numbered items). This becomes the **latest requested changes** list.
+   - **If no request change comment exists**, stop and ask the user for clarification. The review cannot proceed without a specific change request to validate against.
+3. Read `AGENTS.md` at the repository root for technology-stack constraints and lab-scope restrictions (optional but recommended for context).
+4. **Do not fetch linked issues or acceptance criteria**. The review is based solely on the latest request change comment.
 
 ---
 
-## Step 2 — Acceptance Criteria vs. Codebase & README
+## Step 2 — Validate Requested Changes
 
-For every acceptance criterion found in the issue(s) and PR description:
+**Focus only on the latest request change comment identified in Step 1.** For each requested change (e.g., P1/P2 blockers, bullet points, numbered items):
 
-1. **Trace it to the codebase** — find the exact file(s) and line(s) that implement it.
-2. **Check README alignment** — does the README document the feature correctly? Are setup steps, environment variables, and run commands accurate?
-3. **Check AGENTS.md compliance** — does the implementation respect the required technology stack (React + TypeScript + Vite + Bootstrap, Node.js + Express + TypeScript, PostgreSQL + Prisma, REST, Vitest + Supertest)? Are any forbidden libraries or frameworks introduced?
-4. **Flag gaps** — any criterion with no corresponding implementation, or any implementation with no corresponding criterion or documentation (including requirements.md, api-spec.md, ui-spec.md and tests.md), should be flagged as an issue. Please note that small refactors, renames, helper extractions, or formatting changes are considered out-of-scope unless explicitly mentioned in the issue.
+1. **Trace it to the codebase** — find the exact file(s) and line(s) that implement the fix or address the change.
+2. **Verify the change is addressed** — locate the code changes that directly respond to each requested change. If the requested change is about a bug, ensure the bug is fixed; if about missing test coverage, ensure tests are added; if about architectural issues, ensure the architecture is corrected.
+3. **Check that the fix does not introduce regressions** — ensure the fix does not break existing functionality or tests.
+4. **Check AGENTS.md compliance** — does the implementation respect the required technology stack (React + TypeScript + Vite + Bootstrap, Node.js + Express + TypeScript, PostgreSQL + Prisma, REST, Vitest + Supertest)? Are any forbidden libraries or frameworks introduced? (Optional but recommended for context.)
 
 Report findings in a table:
 
-| # | Criterion | Status | Evidence (file:line) | Issue |
+| # | Requested Change | Status | Evidence (file:line) | Issue |
 |---|-----------|--------|----------------------|-------|
 | 1 | ... | ✅ Pass / ❌ Fail / ⚠️ Partial | ... | ... |
 
 ---
 
-## Step 3 — Test Plan Validation (`tests.md`)
+## Step 3 — Test Validation (Optional)
 
-1. Locate the relevant `docs/lab-XX/tests.md` file for the current lab.
-2. Read every test file referenced or implied by `tests.md` in both `server/tests/` and `client/tests/`.
-3. For each test case listed in `tests.md`:
+**Only perform this step if the latest request change comment involves test-related changes.** If the requested change mentions missing tests, test coverage, or bug validation, then:
+
+1. Locate the relevant test files (`.test.ts`, `.test.tsx`, `.integration.test.ts`) in `server/tests/` and `client/tests/`.
+2. For each requested change that involves tests:
    - **Exists?** — does the corresponding test file and test case actually exist?
    - **Runs?** — is the test wired into the test runner (Vitest config)?
-   - **Aligns?** — does the test verify behavior that matches an acceptance criterion from the issue?
-   - **No conflicts?** — does the test conflict with any other test (e.g., shared mutable state, port conflicts)?
-4. **Check for unnecessary tests** — are there test cases that test behavior outside the scope of the linked issues?
-5. **Check for missing coverage** — are there acceptance criteria with no corresponding test?
-6. **E2E coverage** — if Playwright/E2E tests are expected, verify they exist and cover the required user flows.
-7. **Check the requested changed in the PR** -- check whether the test and codebase cover the change requested in the PR.
+   - **Valid?** — does the test case correctly test the intended functionality? Check for:
+     - Logical bugs in test assertions
+     - Misuse of mocking or test doubles
+     - Incorrect expected values or edge cases
+   - **Edge Cases Covered?** — does the test include edge cases relevant to the requested change?
+3. **Check for bugs in implementation** — review the implementation code for:
+   - Common bugs (off-by-one errors, race conditions, memory leaks)
+   - Security vulnerabilities (SQL injection, XSS, improper validation)
+   - Performance issues (unnecessary re-renders, N+1 queries)
+   - Error handling gaps (unhandled exceptions, missing validation)
 
 Report findings in a table:
 
-| # | Test (from tests.md) | Exists? | Aligns with Criterion? | Issue |
+| # | Test / Implementation Check | Status | Evidence (file:line) | Issue |
 |---|----------------------|---------|------------------------|-------|
 
 ---
 
-## Step 4 — Unused Imports & Dependencies
+## Step 4 — Code Quality Check (Optional)
+
+**Only perform this step if the latest request change comment mentions code quality issues (unused imports, dependencies, TypeScript errors).** If not, skip.
 
 1. For every changed source file (`.ts`, `.tsx`):
    - Check for **unused imports** — symbols imported but never referenced in the file.
@@ -73,17 +80,16 @@ Report findings:
 
 ---
 
-## Step 5 — Out-of-Scope Detection
+## Step 5 — Scope Relevance Check (Optional)
 
-Apply **strict** scope checking: every change must be traceable to an acceptance criterion from a linked issue.
+**Only perform this step if the latest request change comment mentions scope creep or out-of-scope changes.** If not, skip.
 
-1. Compare every changed file against the PR description and linked issues.
-2. Flag any file or change that:
-   - Implements functionality not mentioned in any acceptance criterion (including small refactors, renames, helper extractions, or formatting changes — if it's not in the issue, flag it).
-   - Belongs to a later lab (e.g., authentication before it's assigned, image upload before it's assigned).
-   - Modifies infrastructure/config in ways unrelated to the issue (e.g., reformatting unrelated files, changing CI config without reason).
-   - Introduces new dependencies not justified by the issue.
-3. Check `AGENTS.md` lab-scope restrictions — flag anything that implements later-lab functionality early.
+Check whether any changed files or modifications are unrelated to the requested change. Flag any change that:
+
+- Implements functionality not mentioned in the requested change comment.
+- Belongs to a later lab (e.g., authentication before it's assigned, image upload before it's assigned).
+- Modifies infrastructure/config in ways unrelated to the requested change.
+- Introduces new dependencies not justified by the requested change.
 
 Report findings:
 
@@ -96,7 +102,7 @@ Report findings:
 
 Summarize with one of:
 
-- **✅ Approved** — all criteria pass, tests align, no unused code, no scope creep.
+- **✅ Approved** — all requested changes from the latest comment are addressed, no regressions introduced.
 - **⚠️ Changes Requested** — issues found; each has a concrete, actionable fix suggestion below.
 - **🔴 Needs Discussion** — ambiguous requirements, conflicting criteria, or decisions the reviewer cannot resolve alone.
 

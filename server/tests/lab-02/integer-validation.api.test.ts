@@ -211,6 +211,35 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
     expect(rawRes.status).toBe(201);
   });
 
+  // ── Leading zeros ───────────────────────────────────────────────────────
+
+  it("rejects categoryId: 01 with 400 VALIDATION_ERROR (leading zero)", async () => {
+    const rawRes = await request(app)
+      .post("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .set("Content-Type", "application/json")
+      .send('{"categoryId":01,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
+
+    console.log('Response:', rawRes.status, rawRes.body);
+    expect(rawRes.status).toBe(400);
+    expect(rawRes.body.error.code).toBe("VALIDATION_ERROR");
+    // Leading zero causes JSON syntax error, fields should be empty object
+    expect(rawRes.body.error.fields).toEqual({});
+  });
+
+  it("rejects relatedSystemId: 01 with 400 VALIDATION_ERROR (leading zero)", async () => {
+    const rawRes = await request(app)
+      .post("/api/tickets")
+      .set("X-Dev-Requester-Id", "1")
+      .set("Content-Type", "application/json")
+      .send('{"categoryId":1,"relatedSystemId":01,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
+
+    console.log('Response:', rawRes.status, rawRes.body);
+    expect(rawRes.status).toBe(400);
+    expect(rawRes.body.error.code).toBe("VALIDATION_ERROR");
+    expect(rawRes.body.error.fields).toEqual({});
+  });
+
   // ── Valid integer forms ─────────────────────────────────────────────────
 
   it("accepts valid integer categoryId and relatedSystemId", async () => {
