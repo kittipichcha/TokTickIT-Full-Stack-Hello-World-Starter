@@ -11,6 +11,7 @@ import {
   type TicketDetailResponse,
 } from "./api";
 import CreateTicket from "./CreateTicket";
+import MyTickets from "./MyTickets";
 import { formatUtcDate, formatFileSize } from "./format";
 
 type SelectorState = "loading" | "ready" | "empty" | "error";
@@ -29,6 +30,7 @@ export default function App() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailRetryCounter, setDetailRetryCounter] = useState(0);
+  const [myTicketsResetKey, setMyTicketsResetKey] = useState(0);
 
   const loadRequesters = async () => {
     setSelectorState("loading");
@@ -83,6 +85,7 @@ export default function App() {
     setSelectedId(null);
     setError(null);
     setView("home");
+    setMyTicketsResetKey((k) => k + 1);
     void loadRequesters();
   };
 
@@ -200,10 +203,12 @@ export default function App() {
         <div className="identity">{activeRequester.name}<button className="header-button" onClick={changeRequester}>Change Requester</button></div>
       </header>
       {view === "home" && (
-        <main className="app-container">
-          <h1>Welcome, {activeRequester.name}</h1>
-          <p>Select a feature from the navigation above to get started.</p>
-        </main>
+        <MyTickets
+          requester={activeRequester}
+          onViewTicket={handleViewTicket}
+          onCreateTicket={() => setView("create-ticket")}
+          resetKey={myTicketsResetKey}
+        />
       )}
       {view === "create-ticket" && (
         <CreateTicket

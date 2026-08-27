@@ -26,20 +26,16 @@ Implemented in code right now:
 - `GET /api/requester-context` (requires `X-Dev-Requester-Id`, returns `422` if missing/unknown/inactive)
 - `POST /api/tickets` (create ticket with integer lexical validation, trim-then-validate normalization, category/related-system reference checks, JSON request-parsing contract enforcement, single-transaction atomic allocation)
 - `GET /api/tickets/:ticketNumber` (detail with requester ownership enforcement, attachment removal metadata)
+- `GET /api/tickets` (My Tickets list with search, filter, sort, pagination, ownership enforcement, `unfilteredTotalItems`)
 - Prisma models: `Category`, `DevRequester`, `RelatedSystem` (all with `isActive`), `Ticket`, `Attachment`, `TicketSequence`
 - Atomic ticket number generation: `TKT-<UTC-year>-<6-digit seq>` via `INSERT ... ON CONFLICT ... RETURNING` inside a single database transaction with one authoritative timestamp
 - Ticket indexes: `@@index([requesterId])`, `@@index([currentStatus])`, `@@index([createdAt])`
 - Attachment model: `storedFilename @unique`, `@@index([ticketId])`, `uploaderRequester` and `removedByRequester` relations to `DevRequester`
 - Seed data: 4 categories, 4 active + 1 inactive development requesters, related systems (idempotent upserts)
-- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester) + Create Ticket form + Ticket Detail view
+- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester) + Create Ticket form + Ticket Detail view + My Tickets screen
 - Requester context is persisted in `sessionStorage` and sent via the `X-Dev-Requester-Id` header on requester-scoped calls
 - View Ticket action navigates to Ticket Detail with loading/error/not-found states
-
-Implemented:
-
-- Basic requester-owned Ticket Detail view reached from the Create Ticket success panel.
-- Loading, not-found, failure, and manual Retry states.
-- Read-only Ticket fields and embedded attachment metadata.
+- My Tickets frontend screen with sortable table, mobile cards, loading/empty/no-results/error states, pagination footer, and requester-switch data reset
 
 Deferred to Issue #15:
 
@@ -47,10 +43,9 @@ Deferred to Issue #15:
 - Full attachment action controls on Ticket Detail.
 
 Not yet implemented for Lab 2 (downstream issues):
-- `GET /api/tickets` (My Tickets list with search, filter, sort, pagination)
 - Attachment endpoints (upload, list, download, preview, soft-remove)
-- My Tickets and Ticket Detail UI
-- Remaining Lab 2 test suites for tickets list/attachments (unit/api/ui/e2e/responsive/visual)
+- Full attachment action controls on Ticket Detail.
+- Remaining Lab 2 test suites for attachments (unit/api/ui/e2e/responsive/visual)
 
 ## 3. Repository Structure
 
@@ -199,7 +194,7 @@ Important:
   cross-feature rows previously listed in #12 (`API-REQ-02`, `API-REQ-03`,
   `API-CONTRACT-01`, `UI-MY-03`, `E2E-05`) have been formally reassigned to #13, #14,
   and #18 where their dependent models/endpoints/screens exist.
-- Server tests: 145 across 18 files; client tests: 24 across 6 files.
+- Server tests: 256 passing across 18 files; client tests: 38 passing across 5 files.
 
 ## 8. API Implemented Today
 
@@ -242,8 +237,8 @@ Returns active related systems only (no requester header required). Response exa
 ```json
 {
   "data": [
-    { "id": 1, "name": "Email" },
-    { "id": 2, "name": "Payroll" }
+    { "id": 1, "name": "Corporate Laptop" },
+    { "id": 2, "name": "Campus Wi-Fi" }
   ]
 }
 ```
@@ -272,6 +267,12 @@ Returns ticket detail for the active requester (requires `X-Dev-Requester-Id`).
 Enforces ownership: a ticket owned by another requester returns `404 NOT_FOUND`.
 Malformed `ticketNumber` path parameters return `404 NOT_FOUND`.
 
+### `GET /api/tickets`
+Returns the active requester's paginated ticket list (requires `X-Dev-Requester-Id`).
+Supports search (`?search=`), filter (`?categoryId=`, `?requestedPriority=`, `?status=`),
+sort (`?sort=createdAt|ticketNumber|summary|requestedPriority`, `?order=asc|desc`),
+and pagination (`?page=`, `?pageSize=`). Returns `{ data: [...], pagination: { page, pageSize, totalItems, totalPages, unfilteredTotalItems } }`.
+
 ## 9. Lab 2 Implementation Order (Recommended)
 1. ~~Requirement baseline + docs alignment~~ ✅
 2. ~~Requester identity mechanism (`X-Dev-Requester-Id`) and selector flow~~ ✅
@@ -279,7 +280,7 @@ Malformed `ticketNumber` path parameters return `404 NOT_FOUND`.
 4. ~~Ticket creation API + UI + validation~~ ✅
 5. ~~Ticket number generation (`ticket-number.ts`)~~ ✅
 6. ~~Ticket detail API~~ ✅
-7. My Tickets API + UI + query behavior
+7. ~~My Tickets API + UI + query behavior~~ ✅
 8. Attachment lifecycle API + UI
 9. Responsive/visual/accessibility pass
 10. Full Lab 2 test evidence and docs completion

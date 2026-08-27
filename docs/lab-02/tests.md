@@ -20,6 +20,48 @@ E2E/Responsive/Keyboard (planned):
 - Runner: Playwright
 - Planned folder: `e2e/lab-02/`
 
+## 2a. Execution Evidence (2026-08-27)
+
+### Server My Tickets tests
+- **Command**: `npx vitest run tests/lab-02/` (from `server/`)
+- **Result**: 18 test files, 256 tests passed, 0 failed
+- **Real-DB suite**: Executed with `DATABASE_URL` present — all `itIfDb` tests ran (not skipped)
+- **Real-DB My Tickets tests**: All 12 test groups executed against real database, including literal search semantics for `%`, `_`, `\`, response shape verification, summary ordering with distinct values, pagination slice correctness, empty/no-results metadata, zero-totalPages giant-page safety, and duplicate query parameter handling
+
+### Safe-integer page guard tests (BLOCKING ISSUE #1 — 2026-08-27)
+- **Added `Number.isSafeInteger()` guard** in the controller: pages exceeding `Number.MAX_SAFE_INTEGER` now fall back to `page=1` instead of being passed to the service
+- **Added early return in the service**: when `totalPages === 0` or `page > totalPages`, returns empty `data` with correct pagination metadata — no SQL `OFFSET` is executed
+- **Consolidated the early-return condition**: the original `page > totalPages && totalPages > 0` was merged with `totalPages === 0` into a single branch: `totalPages === 0 || params.page > totalPages`. This ensures that when `totalPages === 0` (no matching data), the service returns immediately without calculating a potentially huge `OFFSET`.
+- **New test cases added to `my-tickets-real-db.integration.test.ts`**:
+  - `Number.MAX_SAFE_INTEGER` (9007199254740991) with a requester having zero tickets (`totalPages=0`) — returns `200` with empty data and correct metadata, no SQL OFFSET executed
+  - `Number.MAX_SAFE_INTEGER` (9007199254740991) with a requester having tickets but a filter that matches nothing (`totalItems=0`, `unfilteredTotalItems>0`) — also returns `200` with empty data and correct metadata
+- All new tests verify the service returns early without executing a SQL query containing a giant `OFFSET`
+
+### Client My Tickets tests
+- **Command**: `npx vitest run src/lab-02-tests/MyTickets.test.tsx` (from `client/`)
+- **Result**: 15 tests passed, 0 failed
+- **All tests executed**: No tests skipped unexpectedly
+- **Mobile expansion tests**: All 5 tests (initially collapsed, expansion, collapse, keyboard activation, independent per-card state) executed and passed
+- **Out-of-range page test**: Executes the intended branch — component requests page > totalPages, detects out-of-range, redirects to last valid page
+- **Retry test**: Proves no automatic retry (waits and counts calls) and exactly one additional request after clicking Retry
+- **Stale-response test (UI-MY-07)**: Uses deferred promises to verify that a slow earlier request cannot overwrite a newer result
+
+### PR #28 Review Status (2026-08-27)
+
+**Reviewer:** @oangsa — **State:** `CHANGES_REQUESTED`
+
+@oangsa reviewed PR #28 at head `1a70c7dab43831d82356b88fe6b520a00ebbe861` and raised five blocking (P1) findings. All five have been addressed at the current head `0042f782857f2f2033e94a93621869005c589d1e`:
+
+| # | Finding | Status | Evidence |
+|---|---------|--------|----------|
+| 1 | **API response shape** — My Tickets response missing `itPriority`, adds undocumented `requesterId` | ✅ **Fixed** | `itPriority: string \| null` added to SQL query (`service.ts` line 481), service `MyTicketItem`, and client `api.ts` interface. Response-shape verification tests in both `my-tickets.api.test.ts` and `my-tickets-real-db.integration.test.ts`. |
+| 2 | **Literal search** — `ILIKE` treats `%` and `_` as SQL wildcards, violating BR-23 | ✅ **Fixed** | Replaced `ILIKE` with `POSITION(LOWER($N) IN LOWER(column)) > 0` (`service.ts` line 393). Real-DB tests for literal `%`, `_`, and `\` added. |
+| 3 | **Stale responses** — No guard against slow old requests overwriting newer results | ✅ **Fixed** | Added `requestSeqRef` (monotonically increasing `useRef`) in `MyTickets.tsx` (line 52). Every state update checks `if (seqId !== requestSeqRef.current) return`. `UI-MY-07` test verifies with deferred promises. |
+| 4 | **Unsafe pagination** — Large finite `page` values can produce invalid SQL `OFFSET` | ✅ **Fixed** | `Number.isSafeInteger()` guard in controller (line 233). Early return in service when `totalPages === 0 \|\| params.page > totalPages` (line 448). Tests for `MAX_SAFE_INTEGER`, `MAX_SAFE_INTEGER + 1`, large finite decimal strings. |
+| 5 | **Insufficient test evidence** — Summary sort not tested with distinct values; pagination not slice-correct; `UI-MY-05` doesn't exercise redirect; Retry test doesn't click Retry | ✅ **Fixed** | Distinct Summary ascending/descending ordering tested. Pagination asserts exact non-overlapping slices. `UI-MY-05` simulates out-of-range page redirect. Retry test (`UI-MY-04`) verifies no auto-retry + exactly one additional request on click. |
+
+**Current verdict:** All five blocking findings resolved. Awaiting re-review from @oangsa. No approval has been recorded yet.
+
 ## 3. AC Retirement Note
 - **AC-16 was retired** due to requester-context contract conflict.
 - Historical tickets for inactive requesters are preserved in data but not reachable in Lab 2 requester-facing flows.
@@ -75,7 +117,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-REQ-01 | API | Selector returns only active development requesters | Returns only active requesters and excludes inactive ones from the selector payload. | `server/tests/lab-02/dev-requesters.api.test.ts`, `server/tests/lab-02/dev-requesters.service.test.ts` | FR-01, FR-15 | BR-03, BR-04 | AC-15 | Passed |
 | UI-REQ-01 | UI | Route guard redirects to selector when requester context missing | Missing requester context redirects to the selector screen without crashing. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01 | BR-21, BR-05 | AC-02 | Passed |
 | UI-REQ-02 | UI | Stale/inactive requester context clears sessionStorage and shows explanatory message | Stored requester is cleared, the app redirects to selector, and the user sees a clear inactive-requester message. | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-15 | BR-05, BR-21 | AC-02, AC-15 | Passed |
-| API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Planned |
+| API-REQ-02 | API | Requester-scoped endpoints reject missing/unknown/inactive `X-Dev-Requester-Id` with 422 while historical tickets remain persisted and unreachable through requester flows | Missing/invalid/inactive requester headers are rejected, while historical records remain persisted but non-reachable in requester flows. The real-DB test verifies: inactive requester remains persisted; historical ticket remains persisted; requester context returns `422`; My Tickets returns `422`; the historical ticket remains in the database after rejection. | `server/tests/lab-02/requester-context.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-15 | BR-04, BR-05, BR-21, BR-29 | AC-15 | Passed |
 | API-REQ-03 | API | Bootstrap/reference endpoints do not require requester headers | `GET /api/dev-requesters` and reference-data endpoints still function without `X-Dev-Requester-Id`. | `server/tests/lab-02/requester-context.api.test.ts` | FR-15 | BR-21 | — | Passed |
 | API-CONTRACT-01 | API | Canonical error body and request parsing matrix for every endpoint class | Each requester-scoped endpoint rejects missing, malformed, duplicate, unknown, and inactive requester headers with the canonical `422` body; malformed route IDs/numbers return canonical `404`; JSON endpoints reject malformed JSON, non-object bodies, and wrong content type with canonical `400`; duplicate query keys use the first value; all `500` responses are safe. | `server/tests/lab-02/api-contract.api.test.ts` | FR-01, FR-09 | BR-21, BR-24 | AC-02, AC-03 | Passed |
 | DB-01 | Integration | Fresh database migrates to the Lab 2 schema | Forward migration creates all required tables, fields, constraints, relations, and indexes without resetting the database. | `server/tests/lab-02/database-migration.integration.test.ts` | — | — | — | Passed |
@@ -111,14 +153,16 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-TKT-INT-02 | Integration | Real normalization and persistence against production service | Trim-before-persistence verified; all summary/description boundaries exercised through real `createTicket()`; whitespace-only values create no ticket. | `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02 | BR-08, BR-09 | — | Passed |
 | API-TKT-INT-03 | Integration | Real ownership and defaults against production service | `requesterId` from `X-Dev-Requester-Id` persisted; client-supplied `requesterId`/`ticketOwnerId` ignored; `itPriority`/`ticketOwnerId` remain `null`; `currentStatus` is `NEW`. | `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02, FR-04 | BR-06, BR-11, BR-21, BR-24 | — | Passed |
 | API-TKT-INT-04 | Integration | Real Ticket Detail ownership enforcement against production service | Requester A → `200` with full Ticket Detail; Requester B → `404 NOT_FOUND` with no ticket data exposed. | `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-09 | BR-24 | AC-03 | Passed |
-| API-MY-01 | API | My Tickets returns only current requester-owned tickets (ownership isolation) | Only tickets belonging to the current requester are returned, even when other tickets exist. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-04 | BR-24 | AC-03 | Planned |
-| API-MY-02 | API | Search by ticket number/summary substring | Search matches ticket numbers and summary substrings for the current requester only, after applying the BR-23 normalization rule. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05 | BR-23 | AC-17 | Planned |
-| API-MY-03 | API | Category/Priority/Status filters are conjunctive | The list applies all selected filters together and returns only intersection matches. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-06 | BR-23 | AC-18 | Planned |
-| API-MY-04 | API | Deterministic sort order with tie-breakers and priority ordering | Sort order is deterministic using selected field/direction and then `createdAt desc`, `id desc` as tie-breakers. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-07 | BR-22 | AC-19 | Planned |
-| API-MY-05 | API | Pagination returns correct page metadata and slices | Page and pageSize metadata are returned accurately and the correct slice of results is delivered. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-08 | BR-22 | AC-20 | Planned |
-| API-MY-06 | API | Default pagination/sort values and invalid-value fallback | Omitted pagination/sort params use `page=1`, `pageSize=10`, `sort=createdAt`, `order=desc`; invalid `sort`, `order`, `page`, or `pageSize` values fall back to these same documented defaults. (Invalid `categoryId`/`requestedPriority`/`status` filter values are validation errors, not fallback defaults — see `API-MY-07`.) | `server/tests/lab-02/my-tickets.api.test.ts` | FR-07, FR-08 | BR-22 | AC-19, AC-20 | Planned |
-| API-MY-07 | API | Invalid filter parameter values and pagination | Malformed categoryId → 400; invalid requestedPriority/status enums → 400; page missing/malformed/non-positive uses page 1; valid out-of-range page → 200 with empty data and accurate metadata. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-06, FR-08 | BR-22, BR-23 | — | Planned |
-| API-MY-08 | API | Search normalization and returned Empty/No-Results metadata values (API layer only) | Search is trimmed; blank-after-trim is inactive. Every list response includes accurate `totalItems` and `unfilteredTotalItems` values: a requester with no ticket history returns `unfilteredTotalItems=0` even with an active filter; a requester with ticket history and a zero-match filter returns `unfilteredTotalItems>0`. This test asserts only the returned numbers — which UI state those numbers should render is proven separately by `UI-MY-01`/`UI-MY-02`. | `server/tests/lab-02/my-tickets.api.test.ts` | FR-05, FR-16 | BR-22, BR-23 | — | Planned |
+| API-MY-01 | API | My Tickets returns only current requester-owned tickets (ownership isolation) | Only tickets belonging to the current requester are returned, even when other tickets exist. | `server/tests/lab-02/my-tickets.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-04 | BR-24 | AC-03 | Passed |
+| API-MY-02 | API | Search by ticket number/summary substring | Search matches ticket numbers and summary substrings for the current requester only, after applying the BR-23 normalization rule. | `server/tests/lab-02/my-tickets.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-05 | BR-23 | AC-17 | Passed |
+| API-MY-03 | API | Category/Priority/Status filters are conjunctive | The list applies all selected filters together and returns only intersection matches. | `server/tests/lab-02/my-tickets.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-06 | BR-23 | AC-18 | Passed |
+| API-MY-04 | API | Deterministic sort order with tie-breakers and priority ordering | Sort order is deterministic using selected field/direction and then `createdAt desc`, `id desc` as tie-breakers. | `server/tests/lab-02/my-tickets.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-07 | BR-22 | AC-19 | Passed |
+| API-MY-05 | API | Pagination returns correct page metadata and slices | Page and pageSize metadata are returned accurately and the correct slice of results is delivered. | `server/tests/lab-02/my-tickets.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-08 | BR-22 | AC-20 | Passed |
+| API-MY-06 | API | Default pagination/sort values and invalid-value fallback | Omitted pagination/sort params use `page=1`, `pageSize=10`, `sort=createdAt`, `order=desc`; invalid `sort`, `order`, `page`, or `pageSize` values fall back to these same documented defaults. (Invalid `categoryId`/`requestedPriority`/`status` filter values are validation errors, not fallback defaults — see `API-MY-07`.) | `server/tests/lab-02/my-tickets.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-07, FR-08 | BR-22 | AC-19, AC-20 | Passed |
+| API-MY-07 | API | Invalid filter parameter values and pagination (including safe-integer page guard) | Malformed categoryId → 400; invalid requestedPriority/status enums → 400; page missing/malformed/non-positive uses page 1; valid out-of-range page → 200 with empty data and accurate metadata; pages exceeding `Number.MAX_SAFE_INTEGER` fall back to `page=1`; `Number.MAX_SAFE_INTEGER` itself is accepted as a valid page value. | `server/tests/lab-02/my-tickets.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-06, FR-08 | BR-22, BR-23 | — | Passed |
+| API-MY-08 | API | Search normalization and returned Empty/No-Results metadata values (API layer only) | Search is trimmed; blank-after-trim is inactive. Every list response includes accurate `totalItems` and `unfilteredTotalItems` values: a requester with no ticket history returns `unfilteredTotalItems=0` even with an active filter; a requester with ticket history and a zero-match filter returns `unfilteredTotalItems>0`. This test asserts only the returned numbers — which UI state those numbers should render is proven separately by `UI-MY-01`/`UI-MY-02`. | `server/tests/lab-02/my-tickets.api.test.ts`, `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-05, FR-16 | BR-22, BR-23 | — | Passed |
+| MY-RDB-01 | Integration | Zero totalPages with giant page: requester with zero tickets (totalPages=0) | Given a requester with zero tickets, `?page=9007199254740991&pageSize=50` returns `200` with empty `data`, correct pagination metadata, and no SQL OFFSET is executed. | `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-08, FR-16 | BR-22 | AC-20 | Passed |
+| MY-RDB-02 | Integration | Zero totalPages with giant page: requester with tickets but filter matches nothing (totalItems=0, unfilteredTotalItems>0) | Given a requester with ticket history but a filter that yields zero matches, `?page=9007199254740991&pageSize=50&search=ZZZZNONEXISTENT` returns `200` with empty `data`, correct pagination metadata, and no SQL OFFSET is executed. | `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-08, FR-16 | BR-22 | AC-20 | Passed |
 | API-ATT-09 | API | Attachment list ordering is deterministic (uploadedAt asc, id asc) | Attachment listing returns results in deterministic order for stable display ordering and reproducible tests. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | — | — | Planned |
 | ATT-PERSIST-01 | Integration | Attachment metadata-persistence compensation on failure | Given the physical file write succeeds and metadata persistence then fails, the request fails safely, no Active attachment metadata row is created, and the newly written physical file is deleted (no orphaned file remains). | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-31 | — | Planned |
 | API-ATT-OWN-01 | API | Cross-requester Attachment ownership enforcement | Requester B attempting upload, list, download, preview, or soft-remove against Requester A's ticket/attachment each receive `404 NOT_FOUND` with the same shape as a missing resource, and no data or file bytes are exposed. | `server/tests/lab-02/attachment-ownership.api.test.ts` | FR-09, FR-10, FR-11, FR-12, FR-13 | BR-24 | AC-03 | Planned |
@@ -128,11 +172,12 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-ATT-12 | API | Soft-remove idempotency: removing twice returns 409 Conflict on second attempt | A removed attachment cannot be removed again; second DELETE returns 409 rather than silently succeeding. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | Planned |
 | API-ATT-13 | API | Removal sets removedByRequesterId to the current requester | When soft-removing an attachment, `removedByRequesterId` is set to the `X-Dev-Requester-Id` of the caller. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | Planned |
 | API-ATT-14 | Integration | Attachment signature/filename and concurrent-limit matrix | Fixed valid/corrupt fixtures verify the extension-to-signature matrix, case-insensitive extension handling, no/double extension rejection, safe stored/download filenames, and PDF-preview failure behavior. Concurrent uploads when four attachments are active yield exactly one success and never expose more than five active rows. | `server/tests/lab-02/attachment-concurrency.integration.test.ts` | FR-10, FR-12, FR-13 | BR-12, BR-13, BR-26, BR-27, BR-28 | AC-07, AC-08, AC-13, AC-24 | Planned |
-| UI-MY-01 | UI | Empty state shown when `unfilteredTotalItems = 0`, even with an active normalized search/filter | Given `unfilteredTotalItems = 0`, with or without an active normalized search/filter, the UI renders the Empty state with the Create Ticket CTA. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-30 | AC-21 | Planned |
-| UI-MY-02 | UI | No-results state shown when `unfilteredTotalItems > 0` and filtered results are zero | Given `unfilteredTotalItems > 0` and `totalItems = 0` after normalized search/filtering, the UI renders the No-Results state with the Clear Filters CTA. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-30 | AC-22 | Planned |
-| UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | Switching Requester clears the previous list and reloads the current Requester's tickets. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 | Planned |
-| UI-MY-04 | UI | My Tickets loading and API failure states show skeleton/error with manual Retry | The list shows loading and failure states and requires a manual retry action instead of automatic reload. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04, FR-17 | — | — | Planned |
-| UI-MY-05 | UI | Valid out-of-range page does not display Empty or No-Results | When a valid page exceeds `totalPages`, the UI navigates to and reloads the last valid page; it does not mislabel the response as Empty or No-Results. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-08, FR-16 | BR-22, BR-30 | — | Planned |
+| UI-MY-01 | UI | Empty state shown when `unfilteredTotalItems = 0`, even with an active normalized search/filter | Given `unfilteredTotalItems = 0`, with or without an active normalized search/filter, the UI renders the Empty state with the Create Ticket CTA. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-30 | AC-21 | Passed |
+| UI-MY-02 | UI | No-results state shown when `unfilteredTotalItems > 0` and filtered results are zero | Given `unfilteredTotalItems > 0` and `totalItems = 0` after normalized search/filtering, the UI renders the No-Results state with the Clear Filters CTA. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-16 | BR-30 | AC-22 | Passed |
+| UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | Switching Requester clears the previous list and reloads the current Requester's tickets. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 | Passed |
+| UI-MY-04 | UI | My Tickets loading and API failure states show skeleton/error with manual Retry | The list shows loading and failure states and requires a manual retry action instead of automatic reload. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04, FR-17 | — | — | Passed |
+| UI-MY-05 | UI | Valid out-of-range page does not display Empty or No-Results | When a valid page exceeds `totalPages`, the UI navigates to and reloads the last valid page; it does not mislabel the response as Empty or No-Results. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-08, FR-16 | BR-22, BR-30 | — | Passed |
+| UI-MY-07 | UI | Stale-response protection — older request must not overwrite newer results | When a slow earlier request resolves after a newer request, the stale response is discarded and the newer result remains displayed. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04 | — | — | Passed |
 | API-ATT-01 | API | Attachment type/content validation matrix | Allowed extension + invalid content is rejected; disallowed extension + valid content is rejected; allowed extension + matching content is accepted; a multipart request with no `file` part is rejected with `400 VALIDATION_ERROR` and creates no metadata or stored file. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12, BR-13 | AC-07 | Planned |
 | UI-ATT-01 | UI | Disallowed attachment type rejected client-side | The client blocks an unsupported file type before upload and shows a clear explanation. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12, BR-13 | AC-07 | Planned |
 | API-ATT-02 | API | Sixth active attachment rejected by server limit | Uploading the sixth active attachment is rejected with the server limit message. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-08 | Planned |
@@ -166,13 +211,13 @@ foundation only. The following rows, originally listed as Issue #12 required tes
 been formally reassigned to the downstream issues that own their dependent models,
 endpoints, and screens:
 
-| Row | Moved to | Rationale |
-|---|---|---|
-| `API-REQ-02` | #14 (My Tickets) | BR-29 historical inactive-requester tickets requires `Ticket` model |
-| `API-REQ-03` | #13 (Ticket Creation) | Reference endpoint exemption requires `RelatedSystem` model |
-| `API-CONTRACT-01` | #18 (Integration) | Full parsing matrix spans tickets + attachments endpoint classes |
-| `UI-MY-03` | #14 (My Tickets) | Requester switch → My Tickets reload requires My Tickets feature |
-| `E2E-05` | #18 (Integration) | Keyboard create-ticket flow requires Create Ticket feature |
+| Row | Moved to | Rationale | Current Status |
+|---|---|---|---|
+| `API-REQ-02` | #14 (My Tickets) | BR-29 historical inactive-requester tickets requires `Ticket` model | **Passed** (implemented in #14) |
+| `API-REQ-03` | #13 (Ticket Creation) | Reference endpoint exemption requires `RelatedSystem` model | **Passed** (implemented in #13) |
+| `API-CONTRACT-01` | #18 (Integration) | Full parsing matrix spans tickets + attachments endpoint classes | **Passed** (implemented across #13/#14) |
+| `UI-MY-03` | #14 (My Tickets) | Requester switch → My Tickets reload requires My Tickets feature | **Passed** (implemented in #14) |
+| `E2E-05` | #18 (Integration) | Keyboard create-ticket flow requires Create Ticket feature | Planned |
 
 Issue #12 is complete when `API-REQ-01` and `UI-REQ-01..07` are implemented and
 passing. These rows remain `Planned` in this branch until their owning feature exists;
@@ -193,7 +238,7 @@ been formally reassigned:
 Rows that belong to downstream issues (not #12) are intentionally left `Planned`:
 
 - **Create Ticket** (`feature/lab2-ticket-creation`, #13): `API-REF-01/02`, `API-TKT-NOR-01/02`, `API-TKT-01..07`, `UI-TKT-01..05`, `UI-TKT-07`, `UI-ERR-01`.
-- **My Tickets** (`feature/lab2-my-tickets`, #14): `API-MY-01..08`, `UI-MY-01..05`.
+- **My Tickets** (`feature/lab2-my-tickets`, #14): `API-MY-01..08`, `UI-MY-01..05`. **All Passed** as of 2026-08-27.
 - **Attachments / Ticket Detail** (`feature/lab2-attachments`, #15): `API-ATT-*`, `UNIT-ATT-01`, `ATT-PERSIST-01`, `UI-ATT-*`, `UI-DETAIL-01`, `UI-TKT-06`, `UI-TKT-08`.
 - **Database / Seed / Migration**: `DB-01/02`, `SEED-01/02` (schema for `Ticket`/`Attachment`/`RelatedSystem` created in #13).
 - **Integration / Visual / E2E** (#18): `API-CONTRACT-01`, `STATIC-01`, `UI-STYLE-01..03`, `VISUAL-01`, `E2E-01..06`.
@@ -239,6 +284,8 @@ Rows that belong to downstream issues (not #12) are intentionally left `Planned`
 **Pagination edge cases:**
 - missing, malformed, non-integer, `page=0`, or negative → fallback to 1
 - `page=999` when totalPages=3 → 200 with empty data array; totalPages=3 in metadata
+- `page=9007199254740991` with `totalPages=0` (requester has zero tickets) → 200 with empty data; `totalPages=0` in metadata; no SQL OFFSET executed
+- `page=9007199254740991` with `totalItems=0` and `unfilteredTotalItems>0` (filter matches nothing) → 200 with empty data; `totalPages=0` in metadata; no SQL OFFSET executed
 - `pageSize=0` → fallback to 10
 - `pageSize=51` → fallback to 10 (max is 50)
 - `pageSize=-1` → fallback to 10
@@ -284,6 +331,7 @@ exists and passes; it does **not** distinguish mock from real integration.
 | API-TKT-INT-04 | `create-ticket-real-db.integration.test.ts` | Real DB: owner 200 with full detail, non-owner 404 with no data through real `getTicketByNumber()` |
 | DB-01, DB-02 | `database-migration.integration.test.ts` | Real DB: runs Prisma migrations |
 | SEED-01, SEED-02 | `seed.integration.test.ts` | Real DB: runs seed, verifies idempotency |
+| MY-RDB-01, MY-RDB-02 | `my-tickets-real-db.integration.test.ts` | Real DB: verifies zero totalPages with giant safe-integer page number returns empty data without executing SQL OFFSET; tests both empty (zero-ticket requester) and no-results (filter matches nothing) variants |
 | API-REF-01, API-REF-02 | `reference-data.api.test.ts` | Mocked: verifies HTTP response shape, not real DB queries |
 | API-REQ-01 | `dev-requesters.api.test.ts` | Mocked: verifies HTTP response shape |
 | API-REQ-01 | `dev-requesters.service.test.ts` | Mocked: verifies Prisma query shape |
@@ -379,6 +427,89 @@ npx playwright test e2e/lab-02
 Playwright note: run the E2E command only after Playwright scaffolding/dependencies are added for this branch.
 
 ## 6. Results Log (Newest First)
+
+### 2026-08-27 — Non-blocking suggestion: Normalize whitespace-only search on the client
+- **Scope**: Fixed `hasActiveFilters` and API call to use `search.trim()` instead of raw `search`, preventing whitespace-only input from being treated as an active filter.
+- **Changes**:
+  - `client/src/MyTickets.tsx`: Added `const trimmedSearch = search.trim()` before the API call; changed `search: search || undefined` to `search: trimmedSearch || undefined`; changed `hasActiveFilters` from `search || ...` to `search.trim() || ...`.
+- **Command(s) run**:
+  ```sh
+  cd client && npx vitest run src/lab-02-tests/MyTickets.test.tsx
+  ```
+- **Result**: 15/15 My Tickets client tests passed.
+- **Follow-up**: None.
+
+### 2026-08-27 — Issue #14: My Tickets — Exact response-shape assertion (BLOCKING ISSUE #1 fix)
+- **Scope**: Replaced `toMatchObject()` with exact `Object.keys(item).sort()` assertion in the response-shape test to fail when any undocumented key is present. Removed redundant individual `not.toHaveProperty()` checks for `requesterId`, `description`, and `relatedSystemId` since the exact-key assertion covers them.
+- **Changes**:
+  - `server/tests/lab-02/my-tickets-real-db.integration.test.ts`: Replaced `toMatchObject()` with `expect(Object.keys(item).sort()).toEqual(DOCUMENTED_KEYS)` where `DOCUMENTED_KEYS` is the sorted list of the 10 documented fields (`id`, `ticketNumber`, `categoryId`, `categoryName`, `summary`, `requestedPriority`, `itPriority`, `currentStatus`, `createdAt`, `updatedAt`). Removed the three individual `not.toHaveProperty()` checks as redundant.
+- **Command(s) run**:
+  ```sh
+  cd server && npx vitest run tests/lab-02/my-tickets-real-db.integration.test.ts
+  cd server && npx vitest run tests/lab-02/
+  ```
+- **Result**: 55/55 My Tickets real-DB tests passed; 256/256 full lab-02 server tests passed.
+- **Follow-up**: The test now fails if any undocumented field is added to the API response.
+
+### 2026-08-27 - Issue #14: My Tickets — Re-review fixes: bounded pagination, mobile CSS, exact-slice tests, evidence mapping
+- **Scope**: Addressed all P1 findings from the re-review verdict. Fixed bounded pagination window, mobile-safe pagination wrapping, 44px card toggle, vertical mobile filter stacking, exact-slice pagination assertions in real-DB tests, UI-MY-05 metadata consistency, evidence matrix updates, and governance rule isolation.
+- **Changes**:
+  - `client/src/MyTickets.tsx`: Added `getPaginationItems()` helper that produces a bounded window of page numbers with ellipsis markers. The number of rendered pagination controls stays bounded regardless of `totalPages`. Replaced unbounded `Array.from({ length: totalPages })` with the bounded helper.
+  - `client/src/App.css`: Changed `.ticket-card-toggle` `min-height` from `36px` to `44px` (AC-23). Added `.pagination-ellipsis` style. Added `flex-wrap: wrap` and `justify-content: center` to `.pagination-controls` at mobile breakpoint. Changed `.toolbar-filters` to `flex-direction: column` at mobile breakpoint for vertical filter stacking.
+  - `server/tests/lab-02/my-tickets-real-db.integration.test.ts`: Replaced non-overlap-only pagination assertions with exact ordered slice assertions. Page 2 and page 3 tests now query the authoritative Prisma ordering and assert `toEqual(expectedSlice)`.
+  - `client/src/lab-02-tests/MyTickets.test.tsx`: Fixed `UI-MY-05` mock metadata — changed `totalItems: 0, totalPages: 1` to `totalItems: 5, totalPages: 1` for internal consistency.
+  - `docs/lab-02/tests.md`: Added real-DB integration test evidence (`server/tests/lab-02/my-tickets-real-db.integration.test.ts`) to all `API-MY-01..08` matrix rows. Added this Results Log entry.
+  - `agent.md`: Removed the mandatory workflow rule from §3.1 ("When adding new test rows to tests.md, the initial status must be Planned...") — this governance rule belongs in a separate governance PR per the re-review verdict.
+- **Command(s) run**:
+  ```
+  cd server
+  npx vitest run tests/lab-02/
+  ```
+  ```
+  cd server
+  npx tsc --noEmit
+  ```
+  ```
+  cd client
+  npx vitest run
+  ```
+  ```
+  cd client
+  npx tsc --noEmit
+  ```
+- **Result**:
+  - Server: 18 test files, 256 tests passed, 0 failed
+  - Server TypeScript: No type errors
+  - Client: 15 tests passed, 0 failed
+  - Client TypeScript: No type errors
+  - Real-DB suite: Executed with `DATABASE_URL` present — all `itIfDb` tests ran (not skipped)
+- **Follow-up**: Run full Lab 2 regression after all changes are applied.
+- **Scope**: Fix race condition where an older asynchronous `loadTickets()` request could overwrite newer results.
+- **Changes**:
+  - `client/src/MyTickets.tsx`: Added `requestSeqRef` (monotonically increasing `useRef`) to guard against stale responses. Incremented on each `loadTickets()` call. After `fetchMyTickets()` resolves, updates state only if the captured sequence ID is still the latest. Same guard applied to error-state updates.
+  - `client/src/lab-02-tests/MyTickets.test.tsx`: Added `UI-MY-07` test suite with one test that uses deferred promises to verify the race condition is resolved.
+- **Command(s) run**:
+  - `cd client && npx vitest run src/lab-02-tests/MyTickets.test.tsx`
+  - `cd client && npx tsc --noEmit`
+- **Result**: 15 tests passed, 0 failed; TypeScript: 0 errors
+- **Follow-up**: Also updated `agent.md` change documentation in the PR description per Issue #14 process requirement.
+
+### 2026-08-27 - Issue #14: My Tickets — Backend API + Frontend UI implemented
+- **Scope**: Backend `GET /api/tickets` endpoint with search, filter, sort, pagination, and ownership enforcement. Frontend My Tickets screen with toolbar, sortable table, mobile cards, pagination, loading/empty/no-results/error states, requester-switch data reset, and out-of-range page handling.
+- **Server changes**:
+  - `server/src/service.ts`: Added `getMyTickets()`, `MyTicketsParams`, `MyTicketItem`, `MyTicketsResult` interfaces
+  - `server/src/controller.ts`: Added `getMyTicketsHandler` with full query param validation (categoryId malformed→400, nonexistent/inactive→409; priority/status invalid→400; sort/order/page/pageSize invalid→silent fallback)
+  - `server/src/module.ts`: Added `GET /api/tickets` route with `requireDevRequesterContext` middleware
+  - `server/tests/lab-02/my-tickets.api.test.ts`: 27 tests covering API-MY-01 through API-MY-08
+- **Client changes**:
+  - `client/src/api.ts`: Added `fetchMyTickets()`, `MyTicketsResponse`, `MyTicketItem`, `MyTicketsParams` interfaces
+  - `client/src/MyTickets.tsx`: New component with sortable desktop table, mobile cards, search/filter toolbar, pagination, loading/empty/no-results/error states, requester-switch reset
+  - `client/src/App.tsx`: Replaced welcome screen with `<MyTickets>`, added `myTicketsResetKey` for requester-switch clearing
+  - `client/src/App.css`: Added My Tickets styles (table, cards, pagination, skeleton, toolbar, responsive)
+  - `client/src/lab-02-tests/MyTickets.test.tsx`: 7 tests covering UI-MY-01 through UI-MY-05
+  - Updated `App.test.tsx`, `CreateTicket.test.tsx`, `RequesterSelection.test.tsx`, `RequesterSelection.integration.test.tsx` to mock `fetchMyTickets`
+- Tests added/updated: 27 server API tests + 7 client UI tests = 34 new tests, all passing
+- Test status: `API-MY-01..08` and `UI-MY-01..05` marked from `Planned` → `Passed`
 
 ### 2026-08-27 - PR #25 fix plan: TicketSequence isolation, oversized-ID handling, validator unit tests, cleanup
 - Scope: Implemented the 5-phase fix plan for PR #25 merge readiness.

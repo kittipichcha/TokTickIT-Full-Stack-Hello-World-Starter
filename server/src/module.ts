@@ -5,6 +5,7 @@ import {
   getRelatedSystemsHandler,
   getRequesterContextHandler,
   createTicketHandler,
+  getMyTicketsHandler,
   getTicketDetailHandler,
 } from "./controller.js";
 import { requireDevRequesterContext } from "./requester-context.js";
@@ -21,5 +22,6 @@ router.get("/related-systems", getRelatedSystemsHandler);
 router.get("/requester-context", requireDevRequesterContext, getRequesterContextHandler);
 
 // Ticket endpoints
+router.get("/tickets", requireDevRequesterContext, getMyTicketsHandler);
 router.post("/tickets", requireDevRequesterContext, createTicketHandler);
 router.get("/tickets/:ticketNumber", requireDevRequesterContext, getTicketDetailHandler);

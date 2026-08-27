@@ -34,6 +34,20 @@ describe("Requester Selection Integration Test - UI & Storage Persistence", () =
         );
       }
 
+      if (urlString.includes("/api/categories")) {
+        return new Response(
+          JSON.stringify([]),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      if (urlString.includes("/api/tickets")) {
+        return new Response(
+          JSON.stringify({ data: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 } }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response("Not Found", { status: 404 });
     });
   });

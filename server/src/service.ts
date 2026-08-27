@@ -338,6 +338,179 @@ export async function createTicket(
   });
 }
 
+export interface MyTicketItem {
+  id: number;
+  ticketNumber: string;
+  categoryId: number;
+  categoryName: string;
+  summary: string;
+  requestedPriority: string;
+  itPriority: string | null;
+  currentStatus: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MyTicketsResult {
+  data: MyTicketItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    unfilteredTotalItems: number;
+  };
+}
+
+export interface MyTicketsParams {
+  search?: string;
+  categoryId?: number;
+  requestedPriority?: string;
+  status?: string;
+  sort: string;
+  order: string;
+  page: number;
+  pageSize: number;
+}
+
+export async function getMyTickets(
+  requesterId: number,
+  params: MyTicketsParams,
+): Promise<MyTicketsResult> {
+  const prisma = getPrisma();
+
+  // Count unfiltered (all tickets for this requester, before any search/filter)
+  const unfilteredTotalItems = await prisma.ticket.count({
+    where: { requesterId },
+  });
+
+  // Build WHERE clause conditions
+  const conditions: string[] = [`t."requesterId" = $1`];
+  const filterValues: unknown[] = [requesterId];
+  let paramIndex = 2;
+
+  if (params.search) {
+    conditions.push(`(POSITION(LOWER($${paramIndex}) IN LOWER(t."ticketNumber")) > 0 OR POSITION(LOWER($${paramIndex}) IN LOWER(t."summary")) > 0)`);
+    filterValues.push(params.search);
+    paramIndex++;
+  }
+
+  if (params.categoryId !== undefined) {
+    conditions.push(`t."categoryId" = $${paramIndex}`);
+    filterValues.push(params.categoryId);
+    paramIndex++;
+  }
+
+  if (params.requestedPriority) {
+    conditions.push(`t."requestedPriority" = $${paramIndex}::"Priority"`);
+    filterValues.push(params.requestedPriority);
+    paramIndex++;
+  }
+
+  if (params.status) {
+    conditions.push(`t."currentStatus" = $${paramIndex}::"TicketStatus"`);
+    filterValues.push(params.status);
+    paramIndex++;
+  }
+
+  const whereClause = conditions.join(" AND ");
+
+  // Count filtered results
+  const countRows = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+    `SELECT COUNT(*) FROM "Ticket" t WHERE ${whereClause}`,
+    ...filterValues,
+  );
+  const totalItems = Number(countRows[0]!.count);
+
+  // Build ORDER BY
+  const orderDir = params.order === "asc" ? "ASC" : "DESC";
+  let primaryOrder: string;
+  switch (params.sort) {
+    case "ticketNumber":
+      primaryOrder = `t."ticketNumber" ${orderDir}`;
+      break;
+    case "summary":
+      primaryOrder = `t."summary" ${orderDir}`;
+      break;
+    case "requestedPriority":
+      primaryOrder = `CASE t."requestedPriority" WHEN 'LOW' THEN 1 WHEN 'MEDIUM' THEN 2 WHEN 'HIGH' THEN 3 END ${orderDir}`;
+      break;
+    default:
+      primaryOrder = `t."createdAt" ${orderDir}`;
+      break;
+  }
+  // Tie-breakers: secondary createdAt desc, tertiary id desc
+  const orderClause = `${primaryOrder}, t."createdAt" DESC, t."id" DESC`;
+
+  const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / params.pageSize);
+
+  // If totalPages === 0 (no data) or the requested page is beyond the last valid page,
+  // return empty data with correct pagination metadata — avoid issuing SQL with a giant OFFSET.
+  if (totalPages === 0 || params.page > totalPages) {
+    return {
+      data: [],
+      pagination: {
+        page: params.page,
+        pageSize: params.pageSize,
+        totalItems,
+        totalPages,
+        unfilteredTotalItems,
+      },
+    };
+  }
+
+  const offset = (params.page - 1) * params.pageSize;
+
+  // Fetch paginated data
+  const rows = await prisma.$queryRawUnsafe<
+    Array<{
+      id: number;
+      ticketNumber: string;
+      categoryId: number;
+      categoryName: string;
+      summary: string;
+      requestedPriority: string;
+      itPriority: string | null;
+      currentStatus: string;
+      createdAt: Date;
+      updatedAt: Date;
+    }>
+  >(
+    `SELECT t."id", t."ticketNumber", t."categoryId",
+            c."name" AS "categoryName", t."summary",
+            t."requestedPriority", t."itPriority", t."currentStatus",
+            t."createdAt", t."updatedAt"
+     FROM "Ticket" t
+     JOIN "Category" c ON c."id" = t."categoryId"
+     WHERE ${whereClause}
+     ORDER BY ${orderClause}
+     LIMIT ${params.pageSize} OFFSET ${offset}`,
+    ...filterValues,
+  );
+
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      ticketNumber: row.ticketNumber,
+      categoryId: row.categoryId,
+      categoryName: row.categoryName,
+      summary: row.summary,
+      requestedPriority: row.requestedPriority,
+      itPriority: row.itPriority,
+      currentStatus: row.currentStatus,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    })),
+    pagination: {
+      page: params.page,
+      pageSize: params.pageSize,
+      totalItems,
+      totalPages,
+      unfilteredTotalItems,
+    },
+  };
+}
+
 export async function getTicketByNumber(
   ticketNumber: string,
   requesterId: number,

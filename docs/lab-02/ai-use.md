@@ -26,6 +26,7 @@
 | 19 | Fix REQUESTER_STORAGE_KEY undefined error, update agent.md working agreement, and create DB/UI integration tests | Added missing `REQUESTER_STORAGE_KEY` export to `client/src/api.ts`, updated `agent.md` with real DB and UI integration rules, created server database integration test and client storage integration test. |
 | 20 | Remove all health check system and Lab 1 leftover artifacts from the codebase | Removed `.health-box` CSS from `App.css`, removed `GET /api/health` from server and README, removed health test files, cleaned up unused imports in `App.test.tsx`, and verified no health references remain across the codebase. |
 | 21 | Fix agent.md section hierarchy, narrow Tests.md cross-reference rule, and clean up unused imports | Fixed duplicate `## 4` heading and misplaced `3.3`/`3.4` sections, narrowed the Tests.md rule to apply only to Lab 2 contract matrix tests (excluding legacy Lab 1 tests), and removed unused `fireEvent`/`waitFor` imports from `App.test.tsx`. |
+| 22 | Fix BLOCKING ISSUE #2 — Large finite `page` values can still produce an unsafe SQL offset | Added `Number.isSafeInteger()` guard in the controller to reject pages beyond the safe integer range; added early return in the service to return empty data with correct metadata when `page > totalPages` without executing a giant SQL `OFFSET`; added test cases for `MAX_SAFE_INTEGER`, `MAX_SAFE_INTEGER + 1`, large finite decimal strings, and overflow scenarios. |
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
@@ -43,6 +44,7 @@
 13. Combining unit testing with live database integration tests and explicit UI storage persistence tests ensures end-to-end reliability across both backend database queries and frontend state transitions.
 14. Removing legacy artifacts requires a systematic grep-based verification across all source directories to ensure no stale references remain — a single missed import or CSS class can silently break the build.
 15. A governance change in agent.md that conflicts with the current repository state (e.g., a mandatory rule that existing files cannot satisfy) must be scoped correctly or it will immediately fail its own requirement; narrowing the rule to the relevant subset of files avoids false positives from intentional legacy files.
+16. A safe-integer guard is necessary for any numeric input that could produce a large SQL offset, even when the `Infinity` case is already handled — `Number.isSafeInteger()` catches values that are finite but exceed JavaScript's precise integer range, preventing silent data corruption and runaway database queries.
 
 ## Issue #12 Implementation Entry
 
@@ -87,3 +89,27 @@
   7. **Test updates**: Updated `api-contract.api.test.ts` to test against `POST /api/tickets`; updated `ticket-detail.api.test.ts` to include removal metadata; added index assertions to `database-migration.integration.test.ts`.
   8. **Documentation**: Updated `README.md`, `tests.md`, `ai-use.md`, and `reviewer.md`.
 - Reflection: The review identified critical contract violations that were invisible in the mocked test suite. The atomic transaction fix is the most impactful — without it, sequence gaps and year mismatches would silently violate BR-01. The JSON parsing contract enforcement prevents `TypeError` crashes from non-object bodies. The View Ticket fix completes the create-to-detail flow that was stubbed out. All changes are backward-compatible with the existing test suite.
+
+## Issue #14 Implementation Entry
+
+- Prompt summary: Implement Lab 2 Issue #14, My Tickets feature, from the documented FR/BR/API/UI/test contract.
+- What was done with output: Implemented `GET /api/tickets` endpoint with search, filter, sort, pagination, and ownership enforcement. Added `getMyTickets()` service function with Prisma query supporting case-insensitive substring search, conjunctive category/priority/status filters, deterministic sort with tie-breakers, and pagination with `unfilteredTotalItems`. Created `MyTickets.tsx` frontend component with sortable table, mobile card layout, loading/empty/no-results/error states, pagination footer, and requester-switch data reset. Added `format.ts` with `formatUtcDate()` and `formatFileSize()` utilities. Wrote `my-tickets.api.test.ts` (8 API test suites) and `MyTickets.test.tsx` (5 UI test suites). Updated `tests.md` traceability matrix with `Passed` status for all My Tickets rows.
+- Reflection: The My Tickets feature was well-specified with clear BR-22/BR-23/BR-30 rules for sort defaults, search normalization, and Empty/No-Results semantics. The `unfilteredTotalItems` distinction was critical for correct UI state rendering. The out-of-range page navigation (redirect to last valid page) required careful state management to avoid infinite re-render loops.
+
+## Issue #14 BLOCKING ISSUE #1 Fix — Exact Response-Shape Assertion Entry
+
+- Prompt summary: Fix BLOCKING ISSUE #1 — Replace `toMatchObject()` with exact `Object.keys(item).sort()` assertion in the My Tickets response-shape test so the test fails if any undocumented field is added to the API response.
+- What was done with output: Replaced `toMatchObject()` with `expect(Object.keys(item).sort()).toEqual(DOCUMENTED_KEYS)` in `my-tickets-real-db.integration.test.ts`. Removed redundant individual `not.toHaveProperty()` checks. Verified 55/55 My Tickets real-DB tests and 256/256 full lab-02 server tests pass.
+- Reflection: `toMatchObject()` only checks that documented properties exist — it does not fail when undocumented properties are added. An exact key-set assertion using `Object.keys().sort()` is the correct approach for response-shape verification, as it enforces both completeness and the absence of extra fields.
+
+## Issue #14 Review Fix — Stale-Response Protection Entry
+
+- Prompt summary: Fix BLOCKING ISSUE #1 — Stale My Tickets requests can overwrite newer results. Add a monotonically increasing request sequence ID (`useRef`) to guard against stale async responses. Apply the same guard to error-state updates. Add a UI test (`UI-MY-07`) that uses deferred promises to verify the race condition is resolved.
+- What was done with output: Added `requestSeqRef` (useRef) to MyTickets.tsx, incremented before each `loadTickets()` call, and checked `seqId !== requestSeqRef.current` after fetch resolves (and again after potential `setPage` redirect) before updating state. Error-state updates are also guarded. Added `UI-MY-07` test verifying that a slow request A (search="old") resolving after fast request B (search="new") does not overwrite the newer result. All 15 tests pass. TypeScript: 0 errors.
+- Reflection: The `useRef`-based request sequence ID approach is lightweight and avoids the complexity of `AbortController` (which could introduce a separate problem where aborting an obsolete request incorrectly triggers the error handler). The guard-after-setPage pattern was necessary because the out-of-range redirect triggers a new `loadTickets` via state change, which invalidates the current request's sequence ID before it can proceed to update state. The deferred-promise test pattern is a clean way to verify race conditions in unit tests without introducing arbitrary timers.
+
+## Non-Blocking Suggestion Fix — Whitespace-Only Search Normalization Entry
+
+- Prompt summary: Normalize whitespace-only search on the client — `hasActiveFilters` was truthy for whitespace-only input, and the API call used `search || undefined` instead of `search.trim() || undefined`.
+- What was done with output: Added `const trimmedSearch = search.trim()` before the API call in `MyTickets.tsx`; changed `search: search || undefined` to `search: trimmedSearch || undefined`; changed `hasActiveFilters` from `search || ...` to `search.trim() || ...`. All 15 My Tickets client tests pass.
+- Reflection: The server already correctly trims search input, so this was functionally safe. However, the client's `hasActiveFilters` could show the "Clear Filters" button for whitespace-only input, which is a minor UX inconsistency. Using `search.trim()` for both the API call and the filter check aligns client behavior with the server's normalization rule (BR-23).
