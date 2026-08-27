@@ -9,7 +9,7 @@ import {
   InactiveReferenceError,
 } from "./service.js";
 import { TicketSequenceExhaustedError } from "./ticket-number.js";
-import { validateIntegerFields } from "./integer-validation.js";
+import { inspectIntegerFields } from "./integer-validation.js";
 
 export async function getCategoriesHandler(req: Request, res: Response): Promise<void> {
   try {
@@ -79,10 +79,12 @@ export async function createTicketHandler(req: Request, res: Response): Promise<
 
     // Integer lexical validation: reject 1.0, 1e0, etc. per api-spec §0
     const rawBody = (req as unknown as Record<string, unknown>).rawBody as string | undefined;
-    const invalidIntFields = validateIntegerFields(rawBody, ["categoryId", "relatedSystemId"]);
-    if (invalidIntFields.length > 0) {
+    const inspection = inspectIntegerFields(rawBody, ["categoryId", "relatedSystemId"]);
+    
+    // Invalid lexical fields return 400
+    if (inspection.invalidFields.length > 0) {
       const fields: Record<string, string> = {};
-      for (const f of invalidIntFields) {
+      for (const f of inspection.invalidFields) {
         fields[f] = `${f} must be a valid integer.`;
       }
       res.status(400).json({
@@ -90,6 +92,22 @@ export async function createTicketHandler(req: Request, res: Response): Promise<
           code: "VALIDATION_ERROR",
           message: "Validation failed.",
           fields,
+        },
+      });
+      return;
+    }
+    
+    // Positive out-of-range references return 409 (no fields envelope)
+    if (inspection.outOfRangeFields.length > 0) {
+      const field = inspection.outOfRangeFields[0];
+      const message =
+        field === "categoryId"
+          ? "The specified category does not exist or is inactive."
+          : "The specified related system does not exist or is inactive.";
+      res.status(409).json({
+        error: {
+          code: "INACTIVE_REFERENCE",
+          message,
         },
       });
       return;

@@ -260,4 +260,34 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
 
     expect(rawRes.status).toBe(201);
   });
+
+  // ── Oversized positive references ───────────────────────────────────────
+
+  it.each([
+    ["categoryId", "2147483648"],
+    ["categoryId", "9007199254740993"],
+    ["categoryId", "9".repeat(400)],
+    ["relatedSystemId", "2147483648"],
+    ["relatedSystemId", "9007199254740993"],
+    ["relatedSystemId", "9".repeat(400)],
+  ])(
+    "returns 409 for positive out-of-range %s=%s",
+    async (field, token) => {
+      const body =
+        field === "categoryId"
+          ? `{"categoryId":${token},"relatedSystemId":1,"summary":"Valid summary","description":"Valid description text","requestedPriority":"MEDIUM"}`
+          : `{"categoryId":1,"relatedSystemId":${token},"summary":"Valid summary","description":"Valid description text","requestedPriority":"MEDIUM"}`;
+
+      const response = await request(app)
+        .post("/api/tickets")
+        .set("X-Dev-Requester-Id", "1")
+        .set("Content-Type", "application/json")
+        .send(body);
+
+      expect(response.status).toBe(409);
+      expect(response.body.error.code).toBe("INACTIVE_REFERENCE");
+      expect(response.body.error).not.toHaveProperty("fields");
+      expect(service.createTicket).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -1,3 +1,5 @@
+import { MAX_DATABASE_ID_BIGINT } from "./id-domain.js";
+
 /**
  * Validate that integer fields in a raw JSON body use strict decimal grammar.
  * JSON.parse converts 1.0 → 1 and 1e0 → 1, losing the lexical distinction.
@@ -9,20 +11,28 @@
  * Per api-spec §0: integer values accept only the decimal grammar `0|[1-9][0-9]*`
  * with no sign, decimal point, whitespace, or exponent.
  */
-export function validateIntegerFields(
+
+export interface IntegerFieldInspection {
+  invalidFields: string[];
+  outOfRangeFields: string[];
+}
+
+export function inspectIntegerFields(
   rawBody: string | undefined,
   integerFields: string[],
-): string[] {
-  if (!rawBody) return [];
+): IntegerFieldInspection {
+  const invalidFields = new Set<string>();
+  const outOfRangeFields = new Set<string>();
 
-  const invalid: string[] = [];
+  if (!rawBody) return { invalidFields: [], outOfRangeFields: [] };
+
   const fieldSet = new Set(integerFields);
 
   // Verify the body is valid JSON before attempting to walk it.
   try {
     JSON.parse(rawBody);
   } catch {
-    return invalid;
+    return { invalidFields: [], outOfRangeFields: [] };
   }
 
   // Capture narrowed type for use in nested closures.
@@ -170,11 +180,11 @@ export function validateIntegerFields(
   // normal JSON.parse-based request handling proceed.
   try {
     skipWhitespace();
-    if (pos >= len || body[pos] !== "{") return invalid;
+    if (pos >= len || body[pos] !== "{") return { invalidFields: [], outOfRangeFields: [] };
     pos++; // skip opening {
 
     skipWhitespace();
-    if (body[pos] === "}") return invalid; // empty object
+    if (body[pos] === "}") return { invalidFields: [], outOfRangeFields: [] }; // empty object
 
     while (true) {
       skipWhitespace();
@@ -188,7 +198,12 @@ export function validateIntegerFields(
         const rawValue = readNumberToken();
         // Strict integer grammar: 0 or [1-9][0-9]* with no sign, dot, or exponent
         if (!/^(?:0|[1-9]\d*)$/.test(rawValue)) {
-          invalid.push(key);
+          invalidFields.add(key);
+        } else {
+          const exactValue = BigInt(rawValue);
+          if (exactValue > MAX_DATABASE_ID_BIGINT) {
+            outOfRangeFields.add(key);
+          }
         }
       } else {
         // Non-integer or nested field — skip the entire value.
@@ -204,8 +219,23 @@ export function validateIntegerFields(
     }
   } catch {
     // Defensive: never propagate a walker error to the request handler.
-    return invalid;
+    return { invalidFields: [], outOfRangeFields: [] };
   }
 
-  return invalid;
+  return {
+    invalidFields: [...invalidFields],
+    outOfRangeFields: [...outOfRangeFields],
+  };
+}
+
+/**
+ * Legacy wrapper — returns only invalid lexical fields.
+ * Kept for backward compatibility.
+ */
+export function validateIntegerFields(
+  rawBody: string | undefined,
+  integerFields: string[],
+): string[] {
+  const inspection = inspectIntegerFields(rawBody, integerFields);
+  return inspection.invalidFields;
 }
