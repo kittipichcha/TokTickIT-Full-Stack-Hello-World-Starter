@@ -24,6 +24,14 @@ import { formatUtcDate, formatFileSize } from "./format";
 type SelectorState = "loading" | "ready" | "empty" | "error";
 type AppView = "home" | "create-ticket" | "ticket-detail";
 
+interface FailedAttachment {
+  id: string;
+  fileName: string;
+  file: File;
+  ticketNumber: string;
+  error: string;
+}
+
 export default function App() {
   const [requesters, setRequesters] = useState<DevRequester[]>([]);
   const [selectorState, setSelectorState] = useState<SelectorState>("loading");
@@ -46,6 +54,10 @@ export default function App() {
   const [addAttachmentError, setAddAttachmentError] = useState<string | null>(null);
   const [isAddingAttachment, setIsAddingAttachment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Failed attachment retry state (from Create Ticket partial upload)
+  const [failedAttachments, setFailedAttachments] = useState<FailedAttachment[]>([]);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
 
   const loadRequesters = async () => {
     setSelectorState("loading");
@@ -104,9 +116,30 @@ export default function App() {
     void loadRequesters();
   };
 
-  const handleViewTicket = (ticketNumber: string) => {
+  const handleViewTicket = (ticketNumber: string, failedFiles?: Array<{ file: File; fileName: string; id: string; error: string }>) => {
     setDetailTicketNumber(ticketNumber);
     setView("ticket-detail");
+    if (failedFiles && failedFiles.length > 0) {
+      setFailedAttachments(failedFiles.map((f) => ({ ...f, ticketNumber })));
+    }
+  };
+
+  // Handle retry of a failed attachment from Create Ticket flow
+  const handleRetryFailedAttachment = async (failedAtt: FailedAttachment) => {
+    if (!activeRequester || !detailTicketNumber) return;
+    setRetryingId(failedAtt.id);
+    try {
+      await uploadAttachment(activeRequester.id, detailTicketNumber, failedAtt.file);
+      // Remove from failed list
+      setFailedAttachments((prev) => prev.filter((f) => f.id !== failedAtt.id));
+      // Refresh ticket detail to show new attachment
+      const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
+      setTicketDetail(data);
+    } catch (err) {
+      setAddAttachmentError(err instanceof Error ? err.message : "Retry failed.");
+    } finally {
+      setRetryingId(null);
+    }
   };
 
   // Load ticket detail when entering the ticket-detail view
@@ -331,7 +364,7 @@ export default function App() {
               {/* Attachments section */}
               <section className="attachments-section" aria-label="Attachments">
                 <h2>Attachments</h2>
-                {ticketDetail.attachments.length === 0 && !isAddingAttachment ? (
+                {ticketDetail.attachments.length === 0 && failedAttachments.length === 0 && !isAddingAttachment ? (
                   <p className="placeholder-text">No attachments.</p>
                 ) : (
                   <ul className="attachment-list">
@@ -415,6 +448,25 @@ export default function App() {
                             </button>
                           </>
                         )}
+                      </li>
+                    ))}
+                    {/* Failed attachments with retry */}
+                    {failedAttachments.map((fAtt) => (
+                      <li key={fAtt.id} className="attachment-row attachment-failed">
+                        <span className="attachment-icon">{"📄"}</span>
+                        <span className="attachment-name">{fAtt.fileName}</span>
+                        <span className="attachment-size">{formatFileSize(fAtt.file.size)}</span>
+                        <span className="attachment-date">—</span>
+                        <span className="failed-badge">
+                          Failed — {fAtt.error}
+                        </span>
+                        <button
+                          className="tertiary-button"
+                          onClick={() => void handleRetryFailedAttachment(fAtt)}
+                          disabled={retryingId === fAtt.id}
+                        >
+                          {retryingId === fAtt.id ? "Retrying…" : "Retry"}
+                        </button>
                       </li>
                     ))}
                   </ul>
