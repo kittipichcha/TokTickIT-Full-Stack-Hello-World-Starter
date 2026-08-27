@@ -90,9 +90,9 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | UI-REQ-06 | UI | Requester Selection stores selected requester in sessionStorage and sends X-Dev-Requester-Id header | The client persists the selected ID, sends the header (asserted on the actual `/api/requester-context` fetch request), shows the selected Requester name in the application shell, and exposes an operable Change Requester action. | `client/src/lab-02-tests/RequesterSelection.integration.test.tsx` | FR-01, FR-14 | BR-14, BR-21 | — | Passed |
 | UI-REQ-07 | UI | Requester Selection keyboard and post-selection flow | Testing-only explanatory text is visible; Continue is disabled before selection and enabled after selection; the full selector → Continue → shell → Change Requester → selector path is keyboard-operable (Enter/Space activation) with focus reachable on each control; after Continue the selected name and Change Requester action are visible. Browser-rendered visible-focus styling is deferred to `E2E-05` (AC-25). | `client/src/lab-02-tests/RequesterSelection.test.tsx` | FR-01, FR-14 | BR-03, BR-14 | — | Passed |
 | API-TKT-NOR-01 | API | Summary/Description trimming and boundary behavior | Summary and Description are trimmed before validation; trimmed values are validated and persisted. Boundary: 5/4/120/121 chars for summary; 10/9/2000/2001 chars for description (inclusive/exclusive). Whitespace-only input rejected. | `server/tests/lab-02/create-ticket-normalization.api.test.ts`, `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02 | BR-08, BR-09 | — | Passed |
-| API-TKT-NOR-02 | API | CategoryId/RelatedSystemId validation with malformed, nonexistent, and inactive cases | Malformed (non-integer) → 400; well-formed but nonexistent → 409; existent but inactive → 409. | `server/tests/lab-02/create-ticket-normalization.api.test.ts` | FR-02 | BR-07 | — | Passed |
+| API-TKT-NOR-02 | API | CategoryId/RelatedSystemId validation with malformed, nonexistent, and inactive cases | Malformed (non-integer) → 400; well-formed but nonexistent → 409; existent but inactive → 409. | `server/tests/lab-02/create-ticket-normalization.api.test.ts`, `server/tests/lab-02/create-ticket-validation.unit.test.ts` | FR-02 | BR-07 | — | Passed |
 | API-TKT-01 | API | Create ticket success: returns generated ticket number matching TKT-{YYYY}-{6-digit} format, verifies uniqueness | A valid create request creates exactly one ticket, returns the official backend-generated ticket number matching the format pattern, verifies two tickets receive different numbers, and explicitly asserts `currentStatus === "NEW"` in the response. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 | Passed |
-| API-TKT-07 | API | Requested Priority server-side validation | Missing `requestedPriority` → 400; invalid enum value (e.g. `URGENT`) → 400; `LOW`/`MEDIUM`/`HIGH` are each accepted and persisted as submitted. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02 | BR-10 | — | Passed |
+| API-TKT-07 | API | Requested Priority server-side validation | Missing `requestedPriority` → 400; invalid enum value (e.g. `URGENT`) → 400; `LOW`/`MEDIUM`/`HIGH` are each accepted and persisted as submitted. | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-validation.unit.test.ts` | FR-02 | BR-10 | — | Passed |
 | API-TKT-06 | Integration | Ticket-number UTC allocation, concurrent uniqueness, contiguity, year matching, and sequence exhaustion | Frozen UTC boundary timestamps produce the correct year; the first ticket created in a frozen year receives sequence `000001` and the next ticket in the same year receives `000002` (increment of exactly 1); a frozen rollover to a new UTC year resets the sequence to `000001`; concurrent creates all receive distinct, contiguous numbers; each number's year equals its persisted `createdAt` UTC year; an exhausted yearly sequence returns `409 TICKET_SEQUENCE_EXHAUSTED` and creates no ticket. | `server/tests/lab-02/ticket-number-concurrency.integration.test.ts` | FR-03 | BR-01 | AC-01 | Passed |
 | STATIC-01 | Static/Doc | BR-25 Lab 3 authentication-transition boundary is a documented, non-runtime contract | Confirms no Lab 2 code path treats a client-supplied `X-Dev-Requester-Id` as authentication, and that the Lab 3 transition boundary is documented; verified by code/documentation review rather than an executable assertion. | `docs/lab-02/specification.md` (BR-25) | — | BR-25 | — | Planned |
 | API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation | The server persists ownership from the validated caller header; the test does not introduce an undocumented `requesterId` request field. | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | — | Passed |
@@ -380,29 +380,39 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
-### 2026-08-27 - PR #25 review completion: all blockers resolved, ready for merge
-- Scope: Completed PR #25 review and addressed all remaining issues. Verified all three P1 blockers are resolved:
-  1. **P1 — Integer validation bypass**: Verified the raw JSON parser in `server/src/integer-validation.ts` correctly handles nested objects and whitespace. The skipValue() function now properly calls skipWhitespace() after commas in nested object parsing.
-  2. **P1 — TicketSequence cleanup**: Verified all three integration test files (`create-ticket-real-db.integration.test.ts`, `create-ticket-reference-validation.integration.test.ts`, `ticket-number-concurrency.integration.test.ts`) already implement proper snapshot/restore patterns for TicketSequence cleanup. Created test to verify cleanup logic works correctly.
-  3. **P1 — Parser fails on valid requests**: Fixed by ensuring skipWhitespace() is called before readString() in nested object traversal loops.
-  4. **P2 issues verified**: 
-     - Ticket Detail includes removal metadata (removedAt, removalReason, removedByRequesterId) in AttachmentData
-     - Migration includes required Ticket indexes (@@index([requesterId]), @@index([currentStatus]), @@index([createdAt]))
-     - Tests appropriately verify real behavior vs mocked behavior
+### 2026-08-27 - PR #25 fix plan: TicketSequence isolation, oversized-ID handling, validator unit tests, cleanup
+- Scope: Implemented the 5-phase fix plan for PR #25 merge readiness.
+  1. **Phase 1 — TicketSequence test isolation**: Fixed all three real-DB integration test files to snapshot/restore the current-year `TicketSequence` using the database clock (`SELECT NOW()`), track created tickets by Ticket Number, and assert restoration success. Removed the standalone cleanup simulation test (`test-ticket-sequence-cleanup.test.ts`). Removed nested `afterAll` hooks that called `disconnectPrisma()` mid-file.
+  2. **Phase 2 — Oversized IDs**: Created `server/src/id-domain.ts` with `MAX_DATABASE_ID`. Updated `integer-validation.ts` with `inspectIntegerFields()` returning `{ invalidFields, outOfRangeFields }`. Controller returns `409 INACTIVE_REFERENCE` for out-of-range positive IDs. Service-layer defense-in-depth rejects IDs > `MAX_DATABASE_ID`. Requester-context uses `BigInt` to reject oversized headers before Prisma.
+  3. **Phase 3 — Validator unit tests**: Exported `validateCreateTicketInput` from `service.ts`. Created `create-ticket-validation.unit.test.ts` covering both reference fields with the same matrix (missing, null, string, decimal, zero, negative), requestedPriority (missing, invalid, LOW/MEDIUM/HIGH), and trimming output.
+  4. **Phase 4 — Cleanup**: Removed `.agents/skills/review-pr/SKILL.md`, `server/debug-integer.cjs`, `server/test-edge-cases.js`. Removed PR #25 status section from `agent.md`. Removed scratch `.gitignore` entry. Updated README to remove self-declared merge readiness and clarify Ticket Detail scope.
+  5. **Phase 5 — Documentation**: Updated `tests.md` to include the new unit test file in `API-TKT-NOR-02` and `API-TKT-07` rows.
 - Tests added/updated:
-  - `server/tests/lab-02/test-ticket-sequence-cleanup.test.ts`: Created to verify TicketSequence snapshot/restore logic
-  - Verified all existing tests pass
+  - `server/src/id-domain.ts`: new
+  - `server/src/integer-validation.ts`: added `inspectIntegerFields()` with out-of-range detection
+  - `server/src/controller.ts`: uses `inspectIntegerFields`, returns 409 for out-of-range
+  - `server/src/service.ts`: exported `validateCreateTicketInput`, added defense-in-depth range checks
+  - `server/src/requester-context.ts`: uses `BigInt` for exact range checking
+  - `server/tests/lab-02/create-ticket-validation.unit.test.ts`: new (21 tests)
+  - `server/tests/lab-02/create-ticket-real-db.integration.test.ts`: root-level hooks, database clock, ticket-number tracking
+  - `server/tests/lab-02/create-ticket-reference-validation.integration.test.ts`: database clock, ticket-number tracking
+  - `server/tests/lab-02/ticket-number-concurrency.integration.test.ts`: database clock, ticket-number tracking, restoration assertion
+  - `server/tests/lab-02/integer-validation.api.test.ts`: added 6 oversized-reference tests
+  - `server/tests/lab-02/requester-context.api.test.ts`: added 3 oversized-header tests
+  - Removed: `test-ticket-sequence-cleanup.test.ts`, `debug-integer.cjs`, `test-edge-cases.js`, `.agents/skills/review-pr/SKILL.md`
 - Command(s) run:
-  - `cd server && npm test -- --run test-ticket-sequence-cleanup.test.ts`
-  - `cd server && npm test`
-  - `cd client && npm test`
+  - `cd server && npx tsc --noEmit`
+  - `cd server && npx vitest run tests/lab-02/create-ticket-validation.unit.test.ts`
+  - `cd server && npx vitest run tests/lab-02/integer-validation.api.test.ts`
+  - `cd server && npx vitest run tests/lab-02/requester-context.api.test.ts`
 - Result:
-  - Server: 145 passed, 0 failed
-  - Client: 24 passed, 0 failed
+  - TypeScript: 0 errors
+  - create-ticket-validation.unit: 21 passed
+  - integer-validation.api: 19 passed
+  - requester-context.api: 15 passed
 - Notes and follow-up:
-  - All P1 blockers from PR #25 review are resolved
-  - All P2 issues verified as addressed
-  - PR #25 is ready for merge
+  - All database integration tests must be run against a test database to verify TicketSequence isolation.
+  - The real-DB integration tests should be run together to confirm no cross-file sequence interference.
 
 ### 2026-08-26 - PR #25 re-review: nested-object parser fix, boundary-test and cleanup corrections, E2E reassignment
 - Scope: Addressed the PR #25 re-review "Request changes" remaining blockers and follow-ups.
