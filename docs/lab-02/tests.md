@@ -46,6 +46,22 @@ E2E/Responsive/Keyboard (planned):
 - **Retry test**: Proves no automatic retry (waits and counts calls) and exactly one additional request after clicking Retry
 - **Stale-response test (UI-MY-07)**: Uses deferred promises to verify that a slow earlier request cannot overwrite a newer result
 
+### PR #28 Review Status (2026-08-27)
+
+**Reviewer:** @oangsa — **State:** `CHANGES_REQUESTED`
+
+@oangsa reviewed PR #28 at head `1a70c7dab43831d82356b88fe6b520a00ebbe861` and raised five blocking (P1) findings. All five have been addressed at the current head `0042f782857f2f2033e94a93621869005c589d1e`:
+
+| # | Finding | Status | Evidence |
+|---|---------|--------|----------|
+| 1 | **API response shape** — My Tickets response missing `itPriority`, adds undocumented `requesterId` | ✅ **Fixed** | `itPriority: string \| null` added to SQL query (`service.ts` line 481), service `MyTicketItem`, and client `api.ts` interface. Response-shape verification tests in both `my-tickets.api.test.ts` and `my-tickets-real-db.integration.test.ts`. |
+| 2 | **Literal search** — `ILIKE` treats `%` and `_` as SQL wildcards, violating BR-23 | ✅ **Fixed** | Replaced `ILIKE` with `POSITION(LOWER($N) IN LOWER(column)) > 0` (`service.ts` line 393). Real-DB tests for literal `%`, `_`, and `\` added. |
+| 3 | **Stale responses** — No guard against slow old requests overwriting newer results | ✅ **Fixed** | Added `requestSeqRef` (monotonically increasing `useRef`) in `MyTickets.tsx` (line 52). Every state update checks `if (seqId !== requestSeqRef.current) return`. `UI-MY-07` test verifies with deferred promises. |
+| 4 | **Unsafe pagination** — Large finite `page` values can produce invalid SQL `OFFSET` | ✅ **Fixed** | `Number.isSafeInteger()` guard in controller (line 233). Early return in service when `totalPages === 0 \|\| params.page > totalPages` (line 448). Tests for `MAX_SAFE_INTEGER`, `MAX_SAFE_INTEGER + 1`, large finite decimal strings. |
+| 5 | **Insufficient test evidence** — Summary sort not tested with distinct values; pagination not slice-correct; `UI-MY-05` doesn't exercise redirect; Retry test doesn't click Retry | ✅ **Fixed** | Distinct Summary ascending/descending ordering tested. Pagination asserts exact non-overlapping slices. `UI-MY-05` simulates out-of-range page redirect. Retry test (`UI-MY-04`) verifies no auto-retry + exactly one additional request on click. |
+
+**Current verdict:** All five blocking findings resolved. Awaiting re-review from @oangsa. No approval has been recorded yet.
+
 ## 3. AC Retirement Note
 - **AC-16 was retired** due to requester-context contract conflict.
 - Historical tickets for inactive requesters are preserved in data but not reachable in Lab 2 requester-facing flows.
