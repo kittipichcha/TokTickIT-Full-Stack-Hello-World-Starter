@@ -29,7 +29,7 @@ interface UploadResult {
 
 interface CreateTicketProps {
   requester: DevRequester;
-  onViewTicket: (ticketNumber: string) => void;
+  onViewTicket: (ticketNumber: string, failedFiles?: Array<{ file: File; fileName: string; id: string; error: string }>) => void;
   onCreateAnother: () => void;
 }
 
@@ -149,7 +149,9 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
 
   const validFiles = selectedFiles.filter((f) => !f.error);
   const invalidFiles = selectedFiles.filter((f) => f.error);
-  const activeFileCount = validFiles.length + uploadResults.filter((r) => r.status === "success").length;
+  // activeFileCount tracks only files yet to be uploaded; already-uploaded files are
+  // no longer in selectedFiles, so this is simply the count of valid pending files.
+  const activeFileCount = validFiles.length;
 
   const handleSubmit = async () => {
     const errors = validate();
@@ -218,6 +220,20 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
       setFormState("error");
       setIsUploading(false);
     }
+  };
+
+  const getFailedFiles = (): Array<{ file: File; fileName: string; id: string; error: string }> => {
+    return uploadResults
+      .filter((r) => r.status === "failed")
+      .map((r) => {
+        const fileEntry = selectedFiles.find((f) => f.id === r.id);
+        return {
+          file: fileEntry?.file ?? new File([], r.fileName),
+          fileName: r.fileName,
+          id: r.id,
+          error: r.error || "Upload failed.",
+        };
+      });
   };
 
   const handleCancel = () => {
