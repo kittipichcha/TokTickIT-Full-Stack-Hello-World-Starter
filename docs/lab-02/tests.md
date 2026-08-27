@@ -30,11 +30,12 @@ E2E/Responsive/Keyboard (planned):
 
 ### Client My Tickets tests
 - **Command**: `npx vitest run src/lab-02-tests/MyTickets.test.tsx` (from `client/`)
-- **Result**: 14 tests passed, 0 failed
+- **Result**: 15 tests passed, 0 failed
 - **All tests executed**: No tests skipped unexpectedly
 - **Mobile expansion tests**: All 5 tests (initially collapsed, expansion, collapse, keyboard activation, independent per-card state) executed and passed
 - **Out-of-range page test**: Executes the intended branch — component requests page > totalPages, detects out-of-range, redirects to last valid page
 - **Retry test**: Proves no automatic retry (waits and counts calls) and exactly one additional request after clicking Retry
+- **Stale-response test (UI-MY-07)**: Uses deferred promises to verify that a slow earlier request cannot overwrite a newer result
 
 ## 3. AC Retirement Note
 - **AC-16 was retired** due to requester-context contract conflict.
@@ -149,6 +150,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | UI-MY-03 | UI | Requester switch clears prior data and reloads new scope | Switching Requester clears the previous list and reloads the current Requester's tickets. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-14 | BR-14 | AC-14 | Passed |
 | UI-MY-04 | UI | My Tickets loading and API failure states show skeleton/error with manual Retry | The list shows loading and failure states and requires a manual retry action instead of automatic reload. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04, FR-17 | — | — | Passed |
 | UI-MY-05 | UI | Valid out-of-range page does not display Empty or No-Results | When a valid page exceeds `totalPages`, the UI navigates to and reloads the last valid page; it does not mislabel the response as Empty or No-Results. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-08, FR-16 | BR-22, BR-30 | — | Passed |
+| UI-MY-07 | UI | Stale-response protection — older request must not overwrite newer results | When a slow earlier request resolves after a newer request, the stale response is discarded and the newer result remains displayed. | `client/src/lab-02-tests/MyTickets.test.tsx` | FR-04 | — | — | Passed |
 | API-ATT-01 | API | Attachment type/content validation matrix | Allowed extension + invalid content is rejected; disallowed extension + valid content is rejected; allowed extension + matching content is accepted; a multipart request with no `file` part is rejected with `400 VALIDATION_ERROR` and creates no metadata or stored file. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12, BR-13 | AC-07 | Planned |
 | UI-ATT-01 | UI | Disallowed attachment type rejected client-side | The client blocks an unsupported file type before upload and shows a clear explanation. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12, BR-13 | AC-07 | Planned |
 | API-ATT-02 | API | Sixth active attachment rejected by server limit | Uploading the sixth active attachment is rejected with the server limit message. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-08 | Planned |
@@ -395,6 +397,17 @@ npx playwright test e2e/lab-02
 Playwright note: run the E2E command only after Playwright scaffolding/dependencies are added for this branch.
 
 ## 6. Results Log (Newest First)
+
+### 2026-08-27 - Issue #14: My Tickets — Fix BLOCKING ISSUE #1: stale-response protection + UI-MY-07 test
+- **Scope**: Fix race condition where an older asynchronous `loadTickets()` request could overwrite newer results.
+- **Changes**:
+  - `client/src/MyTickets.tsx`: Added `requestSeqRef` (monotonically increasing `useRef`) to guard against stale responses. Incremented on each `loadTickets()` call. After `fetchMyTickets()` resolves, updates state only if the captured sequence ID is still the latest. Same guard applied to error-state updates.
+  - `client/src/lab-02-tests/MyTickets.test.tsx`: Added `UI-MY-07` test suite with one test that uses deferred promises to verify the race condition is resolved.
+- **Command(s) run**:
+  - `cd client && npx vitest run src/lab-02-tests/MyTickets.test.tsx`
+  - `cd client && npx tsc --noEmit`
+- **Result**: 15 tests passed, 0 failed; TypeScript: 0 errors
+- **Follow-up**: Also updated `agent.md` change documentation in the PR description per Issue #14 process requirement.
 
 ### 2026-08-27 - Issue #14: My Tickets — Backend API + Frontend UI implemented
 - **Scope**: Backend `GET /api/tickets` endpoint with search, filter, sort, pagination, and ownership enforcement. Frontend My Tickets screen with toolbar, sortable table, mobile cards, pagination, loading/empty/no-results/error states, requester-switch data reset, and out-of-range page handling.
