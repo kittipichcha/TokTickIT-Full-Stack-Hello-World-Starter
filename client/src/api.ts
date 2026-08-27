@@ -40,6 +40,41 @@ export interface TicketResponse {
   };
 }
 
+export interface MyTicketItem {
+  id: number;
+  ticketNumber: string;
+  requesterId: number;
+  categoryId: number;
+  categoryName: string;
+  summary: string;
+  requestedPriority: string;
+  currentStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MyTicketsResponse {
+  data: MyTicketItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    unfilteredTotalItems: number;
+  };
+}
+
+export interface MyTicketsParams {
+  search?: string;
+  categoryId?: number;
+  requestedPriority?: string;
+  status?: string;
+  sort?: string;
+  order?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface TicketDetailResponse {
   data: {
     id: number;
@@ -89,6 +124,34 @@ export async function fetchTicketDetail(
   }
   const result = (await response.json()) as TicketDetailResponse;
   return result.data;
+}
+
+export async function fetchMyTickets(
+  requesterId: number,
+  params: MyTicketsParams = {},
+): Promise<MyTicketsResponse> {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const url = new URL("/api/tickets", apiBaseUrl);
+
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.categoryId !== undefined) url.searchParams.set("categoryId", String(params.categoryId));
+  if (params.requestedPriority) url.searchParams.set("requestedPriority", params.requestedPriority);
+  if (params.status) url.searchParams.set("status", params.status);
+  if (params.sort) url.searchParams.set("sort", params.sort);
+  if (params.order) url.searchParams.set("order", params.order);
+  if (params.page !== undefined) url.searchParams.set("page", String(params.page));
+  if (params.pageSize !== undefined) url.searchParams.set("pageSize", String(params.pageSize));
+
+  const response = await fetch(url, {
+    headers: requesterHeaders(requesterId),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const err = new Error(body?.error?.message || `Failed to fetch tickets: ${response.status}`) as Error & { code?: string };
+    err.code = body?.error?.code;
+    throw err;
+  }
+  return (await response.json()) as MyTicketsResponse;
 }
 
 export const REQUESTER_STORAGE_KEY = "toktickit.requesterId";

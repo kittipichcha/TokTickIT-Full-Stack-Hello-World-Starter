@@ -21,20 +21,24 @@ const relatedSystems = [
 ];
 
 async function setupAuthenticatedApp() {
-  vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
-  vi.mocked(api.fetchRequesterContext).mockResolvedValue({ requesterId: 1 });
-  vi.mocked(api.fetchCategories).mockResolvedValue(categories);
-  vi.mocked(api.fetchRelatedSystems).mockResolvedValue(relatedSystems);
+  vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+  vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
+  vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
+  vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
+  vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
+    data: [],
+    pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
+  }));
 
   render(<App />);
 
   // Wait for requester selector to load and select a requester
-  const select = await screen.findByLabelText("Development Requester");
-  await userEvent.selectOptions(select, "1");
+  const selects = await screen.findAllByLabelText("Development Requester");
+  await userEvent.selectOptions(selects[0], "1");
   await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
-  // Wait for app shell to appear
-  await screen.findByText("Welcome, Ada Lovelace");
+  // Wait for app shell to appear — look for the Ada Lovelace text
+  await screen.findAllByText(/Ada Lovelace/);
 }
 
 describe("UI-TKT-01: Empty summary blocks submit", () => {
@@ -54,7 +58,7 @@ describe("UI-TKT-01: Empty summary blocks submit", () => {
     await setupAuthenticatedApp();
 
     // Navigate to Create Ticket
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
 
     // Wait for form to load
     await screen.findByLabelText(/Summary/);
@@ -88,7 +92,7 @@ describe("UI-TKT-02: Summary over 120 chars blocks submit", () => {
 
   it("shows length error when summary exceeds 120 characters", async () => {
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
@@ -118,7 +122,7 @@ describe("UI-TKT-03: Description under 10 chars blocks submit", () => {
 
   it("shows field error when description is too short", async () => {
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
@@ -151,7 +155,7 @@ describe("UI-TKT-04: Submit busy state prevents duplicate submission", () => {
     vi.mocked(api.createTicket).mockReturnValue(new Promise(() => undefined));
 
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
@@ -184,7 +188,7 @@ describe("UI-TKT-05: Case A — failed create preserves form and shows inline er
     vi.mocked(api.createTicket).mockRejectedValue(new Error("Server error"));
 
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
@@ -222,7 +226,7 @@ describe("UI-TKT-07: Requested Priority defaults to MEDIUM", () => {
 
   it("defaults requested priority to MEDIUM", async () => {
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     const prioritySelect = screen.getByLabelText(/Requested Priority/) as HTMLSelectElement;
@@ -247,7 +251,7 @@ describe("UI-ERR-01: Case A — ticket create API failure preserves form state",
     vi.mocked(api.createTicket).mockRejectedValue(new Error("Network error"));
 
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
@@ -300,7 +304,7 @@ describe("UI-TKT-SUCCESS: Success flow — Ticket Number display, date formattin
     });
 
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
@@ -333,7 +337,7 @@ describe("UI-TKT-SUCCESS: Success flow — Ticket Number display, date formattin
     });
 
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
@@ -388,7 +392,7 @@ describe("UI-TKT-SUCCESS: Success flow — Ticket Number display, date formattin
     });
 
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
@@ -429,7 +433,7 @@ describe("UI-TKT-SUCCESS: Success flow — Ticket Number display, date formattin
     });
 
     await setupAuthenticatedApp();
-    await userEvent.click(screen.getByText("Create Ticket"));
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
     await screen.findByLabelText(/Summary/);
 
     await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");

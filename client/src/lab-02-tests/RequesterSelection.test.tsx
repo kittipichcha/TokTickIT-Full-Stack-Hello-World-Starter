@@ -22,6 +22,11 @@ describe("Requester Selection", () => {
     vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
     vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
+      data: [],
+      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
+    }));
+    vi.mocked(api.fetchCategories).mockImplementation(async () => []);
   });
 
   afterEach(() => {
@@ -38,34 +43,39 @@ describe("Requester Selection", () => {
   });
 
   it("shows an empty state when there are no active requesters", async () => {
-    vi.mocked(api.fetchDevRequesters).mockResolvedValue([]);
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => []);
     render(<App />);
     expect(await screen.findByText("No active development requesters are available.")).toBeTruthy();
     expect(screen.queryByLabelText("Development Requester")).toBeNull();
   });
 
   it("shows a manual retry after loading fails", async () => {
-    vi.mocked(api.fetchDevRequesters).mockRejectedValueOnce(new Error("Network unavailable"));
+    let callCount = 0;
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => {
+      callCount++;
+      if (callCount === 1) throw new Error("Network unavailable");
+      return requesters;
+    });
     render(<App />);
     expect((await screen.findByRole("alert")).textContent).toContain("Network unavailable");
     expect((screen.getByRole("button", { name: "Retry" }) as HTMLButtonElement).disabled).toBe(false);
-    vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByLabelText("Development Requester")).toBeTruthy();
   });
 
   it("clears stale context and explains why selection is required", async () => {
     sessionStorage.setItem("toktickit.requesterId", "99");
-    vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
     render(<App />);
     expect(await screen.findByText(/no longer active/)).toBeTruthy();
     expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
   });
 
   it("persists the selected requester and supports keyboard selection and switching", async () => {
-    vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
     render(<App />);
-    const select = await screen.findByLabelText("Development Requester");
+    const selects = await screen.findAllByLabelText("Development Requester");
+    const select = selects[0];
     const continueButton = screen.getByRole("button", { name: "Continue" });
     expect((continueButton as HTMLButtonElement).disabled).toBe(true);
     select.focus();
@@ -82,10 +92,11 @@ describe("Requester Selection", () => {
   });
 
   it("keyboard-only Continue triggers selection with visible focus on dropdown and button", async () => {
-    vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
     render(<App />);
 
-    const select = (await screen.findByLabelText("Development Requester")) as HTMLSelectElement;
+    const selects = (await screen.findAllByLabelText("Development Requester")) as HTMLSelectElement[];
+    const select = selects[0];
 
     // Focus the dropdown and make a selection
     select.focus();
@@ -111,12 +122,12 @@ describe("Requester Selection", () => {
   });
 
   it("activates Change Requester using only the keyboard and returns to the selector", async () => {
-    vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
     render(<App />);
 
     // Select a requester and reach the shell
-    const select = await screen.findByLabelText("Development Requester");
-    fireEvent.change(select, { target: { value: "1" } });
+    const selects = await screen.findAllByLabelText("Development Requester");
+    fireEvent.change(selects[0], { target: { value: "1" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     const changeButton = await screen.findByRole("button", { name: "Change Requester" });
@@ -136,12 +147,12 @@ describe("Requester Selection", () => {
   });
 
   it("shows an explanatory message when selected requester context is rejected", async () => {
-    vi.mocked(api.fetchDevRequesters).mockResolvedValue(requesters);
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
     vi.mocked(api.fetchRequesterContext).mockRejectedValue(new Error("Requester inactive"));
 
     render(<App />);
-    const select = await screen.findByLabelText("Development Requester");
-    fireEvent.change(select, { target: { value: "1" } });
+    const selects = await screen.findAllByLabelText("Development Requester");
+    fireEvent.change(selects[0], { target: { value: "1" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByText(/no longer active/i)).toBeTruthy();
