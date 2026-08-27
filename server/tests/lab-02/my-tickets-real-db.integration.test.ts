@@ -794,61 +794,82 @@ describe("My Tickets Real DB — Test 6: Pagination", () => {
     expect(res.body.pagination.unfilteredTotalItems).toBeGreaterThanOrEqual(21);
   });
 
-  itIfDb("page 2 returns next 10 items, non-overlapping with page 1", async () => {
-    // Fetch page 1 and page 2 with deterministic sort
+  itIfDb("page 2 returns next 10 items, exact ordered slice matching Prisma ordering", async () => {
+    const prisma = getPrisma();
+
+    // Build the authoritative expected ordering using the same query semantics as the service
+    const paginatedSearch = `${TEST_MARKER} PAG-`;
+    const allExpected = await prisma.$queryRawUnsafe<
+      Array<{ id: number; ticketNumber: string }>
+    >(
+      `SELECT t."id", t."ticketNumber"
+       FROM "Ticket" t
+       WHERE t."requesterId" = $1
+         AND (POSITION(LOWER($2) IN LOWER(t."summary")) > 0)
+       ORDER BY t."createdAt" ASC, t."createdAt" DESC, t."id" DESC`,
+      requesterId,
+      paginatedSearch,
+    );
+
+    const pageSize = 10;
+    const expectedPage1 = allExpected.slice(0, pageSize).map((r) => r.id);
+    const expectedPage2 = allExpected.slice(pageSize, pageSize * 2).map((r) => r.id);
+
     const res1 = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ page: "1", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
+      .query({ page: "1", pageSize: String(pageSize), sort: "createdAt", order: "asc", search: paginatedSearch });
 
     const res2 = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ page: "2", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
+      .query({ page: "2", pageSize: String(pageSize), sort: "createdAt", order: "asc", search: paginatedSearch });
 
     expect(res1.status).toBe(200);
     expect(res2.status).toBe(200);
-    expect(res2.body.data).toHaveLength(10);
+    expect(res2.body.data).toHaveLength(expectedPage2.length);
     expect(res2.body.pagination.page).toBe(2);
 
-    // Assert non-overlapping: no ticket from page 1 appears on page 2
-    const page1Ids = new Set(res1.body.data.map((t: { id: number }) => t.id));
+    // Exact slice assertion: page 2 must contain exactly the expected records in the correct order
     const page2Ids = res2.body.data.map((t: { id: number }) => t.id);
-    for (const id of page2Ids) {
-      expect(page1Ids.has(id)).toBe(false);
-    }
+    expect(page2Ids).toEqual(expectedPage2);
 
-    // Assert ordering: page 1 items come before page 2 items by id
-    const page1MaxId = Math.max(...res1.body.data.map((t: { id: number }) => t.id));
-    const page2MinId = Math.min(...res2.body.data.map((t: { id: number }) => t.id));
-    expect(page1MaxId).toBeLessThan(page2MinId);
+    // Also verify page 1 exactly matches the expected first slice
+    const page1Ids = res1.body.data.map((t: { id: number }) => t.id);
+    expect(page1Ids).toEqual(expectedPage1);
   });
 
-  itIfDb("page 3 returns remaining items (1 or more), non-overlapping with pages 1 and 2", async () => {
-    const res1 = await request(app)
-      .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ page: "1", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
-    const res2 = await request(app)
-      .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ page: "2", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
+  itIfDb("page 3 returns remaining items, exact ordered slice matching Prisma ordering", async () => {
+    const prisma = getPrisma();
+
+    const paginatedSearch = `${TEST_MARKER} PAG-`;
+    const allExpected = await prisma.$queryRawUnsafe<
+      Array<{ id: number; ticketNumber: string }>
+    >(
+      `SELECT t."id", t."ticketNumber"
+       FROM "Ticket" t
+       WHERE t."requesterId" = $1
+         AND (POSITION(LOWER($2) IN LOWER(t."summary")) > 0)
+       ORDER BY t."createdAt" ASC, t."createdAt" DESC, t."id" DESC`,
+      requesterId,
+      paginatedSearch,
+    );
+
+    const pageSize = 10;
+    const expectedPage3 = allExpected.slice(pageSize * 2, pageSize * 3).map((r) => r.id);
+
     const res3 = await request(app)
       .get("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
-      .query({ page: "3", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
+      .query({ page: "3", pageSize: String(pageSize), sort: "createdAt", order: "asc", search: paginatedSearch });
 
     expect(res3.status).toBe(200);
     expect(res3.body.data.length).toBeGreaterThanOrEqual(1);
     expect(res3.body.pagination.page).toBe(3);
 
-    // Assert non-overlapping with pages 1 and 2
-    const page1Ids = new Set(res1.body.data.map((t: { id: number }) => t.id));
-    const page2Ids = new Set(res2.body.data.map((t: { id: number }) => t.id));
-    for (const t of res3.body.data) {
-      expect(page1Ids.has(t.id)).toBe(false);
-      expect(page2Ids.has(t.id)).toBe(false);
-    }
+    // Exact slice assertion: page 3 must contain exactly the expected records in the correct order
+    const page3Ids = res3.body.data.map((t: { id: number }) => t.id);
+    expect(page3Ids).toEqual(expectedPage3);
   });
 
   itIfDb("valid out-of-range page returns empty data with correct metadata", async () => {
