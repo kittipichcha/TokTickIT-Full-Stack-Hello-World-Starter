@@ -34,6 +34,8 @@ Implemented in code right now:
 - Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester) + Create Ticket form + Ticket Detail view
 - Requester context is persisted in `sessionStorage` and sent via the `X-Dev-Requester-Id` header on requester-scoped calls
 - View Ticket action navigates to Ticket Detail with loading/error/not-found states
+- My Tickets list (`GET /api/tickets`) with search, filter, sort, pagination, and ownership enforcement
+- My Tickets frontend screen with sortable table, mobile cards, loading/empty/no-results/error states, pagination footer, and requester-switch data reset
 
 Implemented:
 
@@ -47,7 +49,8 @@ Deferred to Issue #15:
 - Full attachment action controls on Ticket Detail.
 
 Not yet implemented for Lab 2 (downstream issues):
-- `GET /api/tickets` (My Tickets list with search, filter, sort, pagination)
+- Attachment upload, preview, download, and soft-removal endpoints.
+- Full attachment action controls on Ticket Detail.
 - Attachment endpoints (upload, list, download, preview, soft-remove)
 - My Tickets and Ticket Detail UI
 - Remaining Lab 2 test suites for tickets list/attachments (unit/api/ui/e2e/responsive/visual)
