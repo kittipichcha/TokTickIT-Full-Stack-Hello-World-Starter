@@ -109,9 +109,18 @@ Test/build evidence is recorded in the PR description, but no GitHub status chec
 
 ### Review Comments Received and Responses
 
-No reviews have been submitted for PR #28 as of 2026-08-27. The PR was opened on 2026-08-27 and has not yet been reviewed by a peer or Copilot Pull Request Reviewer.
+| Review source | Summary of feedback | Response / current evidence |
+|---|---|---|
+| @oangsa — CHANGES_REQUESTED (2026-08-27, head `1a70c7da`) | **P1 — API response shape:** My Tickets response missing `itPriority` and adds undocumented `requesterId`. | **Fixed.** `itPriority: string | null` added to SQL query (`service.ts` line 481), service `MyTicketItem` interface, and client `api.ts` interface. `requesterId` is not included in the My Tickets API response — it is only present in the `service.ts` internal `TicketData` type for Ticket Detail. Response-shape verification test added to `my-tickets.api.test.ts` and `my-tickets-real-db.integration.test.ts`. |
+| @oangsa — CHANGES_REQUESTED (2026-08-27, head `1a70c7da`) | **P1 — Literal search:** `ILIKE` treats `%` and `_` as SQL wildcards, violating BR-23 literal substring requirement. | **Fixed.** `ILIKE` replaced with `POSITION(LOWER($N) IN LOWER(column)) > 0` in `service.ts` line 393, which performs case-insensitive literal substring matching without SQL wildcard interpretation. Real-database tests added for literal `%`, `_`, and `\` search characters. |
+| @oangsa — CHANGES_REQUESTED (2026-08-27, head `1a70c7da`) | **P1 — Stale responses:** No abort controller or request ID guard — a slow old request can overwrite newer results. | **Fixed.** Added `requestSeqRef` (monotonically increasing `useRef`) in `MyTickets.tsx` (line 52). Each `loadTickets()` call captures a sequence ID before the async fetch; state updates are guarded by `if (seqId !== requestSeqRef.current) return`. UI test `UI-MY-07` uses deferred promises to verify that a slow earlier request cannot overwrite a newer result. |
+| @oangsa — CHANGES_REQUESTED (2026-08-27, head `1a70c7da`) | **P1 — Unsafe pagination:** Large finite `page` values can produce invalid SQL `OFFSET`; no early return when `page > totalPages`. | **Fixed.** Added `Number.isSafeInteger()` guard in controller (line 233) — pages exceeding `Number.MAX_SAFE_INTEGER` fall back to `page=1`. Added early return in service when `totalPages === 0 || params.page > totalPages` (line 448) — returns empty `data` with correct metadata without executing SQL `OFFSET`. Tests added for `Number.MAX_SAFE_INTEGER`, `Number.MAX_SAFE_INTEGER + 1`, and large finite decimal strings. |
+| @oangsa — CHANGES_REQUESTED (2026-08-27, head `1a70c7da`) | **P1 — Insufficient test evidence:** Summary sorting not tested with distinct values; pagination only checks page lengths; `UI-MY-05` doesn't exercise the out-of-range redirect branch; Retry test doesn't click Retry. | **Fixed.** Distinct Summary values tested in ascending and descending order (`my-tickets-real-db.integration.test.ts` Test 4b). Pagination asserts exact, ordered, non-overlapping page slices. `UI-MY-05` directly simulates an out-of-range response for the currently requested page (component requests page > totalPages, detects it, redirects to last valid page). Retry test (`UI-MY-04`) proves no automatic retry (waits and counts calls) and verifies exactly one additional request after clicking Retry. |
 
 ### Review Evidence
 - Review comments and discussions: [PR #28 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/28)
-- Review status: Open; no reviews have been submitted yet. This record must be updated with review feedback, responses, and approval/merge evidence before the Lab 2 course submission.
+- Reviewer: @oangsa — review state: `CHANGES_REQUESTED` (2026-08-27)
+- Current head at time of review: `1a70c7dab43831d82356b88fe6b520a00ebbe861`
+- Current head after fixes: `0042f782857f2f2033e94a93621869005c589d1e`
+- Review status: **Open; all five blocking findings have been addressed. Re-review pending.** This record must be updated with the final approval/merge evidence before the Lab 2 course submission.
 
