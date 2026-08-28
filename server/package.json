@@ -28,6 +28,7 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^22.10.2",
     "@types/supertest": "^6.0.2",
+    "pdfkit": "^0.20.1",
     "prisma": "^5.22.0",
     "supertest": "^7.0.0",
     "tsx": "^4.19.2",

@@ -274,6 +274,34 @@ describe("API-ATT-05: Preview/download for active vs removed", () => {
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/jpeg");
   });
+
+  it("preview returns 200 image/png for active PDF attachment (first page rendered)", async () => {
+    vi.mocked(service.previewAttachment).mockResolvedValue({
+      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+      mimeType: "image/png",
+    });
+
+    const res = await request(app)
+      .get("/api/attachments/1/preview")
+      .set("X-Dev-Requester-Id", "1");
+
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toBe("image/png");
+  });
+
+  it("preview returns 500 when PDF rendering fails (never returns original PDF)", async () => {
+    vi.mocked(service.previewAttachment).mockRejectedValue(
+      new Error("PDF preview rendering failed"),
+    );
+
+    const res = await request(app)
+      .get("/api/attachments/1/preview")
+      .set("X-Dev-Requester-Id", "1");
+
+    expect(res.status).toBe(500);
+    expect(res.headers["content-type"]).not.toBe("application/pdf");
+    expect(res.body.error.code).toBe("INTERNAL_ERROR");
+  });
 });
 
 describe("API-ATT-06: BR-17 partial success — ticket persists after attachment failure", () => {
