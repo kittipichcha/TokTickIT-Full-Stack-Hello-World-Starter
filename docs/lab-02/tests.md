@@ -48,7 +48,7 @@ E2E/Responsive/Keyboard (planned):
 
 ### Execution Evidence (2026-08-28) — Post-Review Fixes and Issue #15 Completion
 
-All six blocking issues from the code review have been resolved. Below is the final execution evidence.
+All seven blocking issues from the code review have been resolved. Below is the final execution evidence.
 
 #### Server attachment tests (API-layer mocked)
 - **Command**: `npx vitest run tests/lab-02/attachments.api.test.ts tests/lab-02/attachment-validation.unit.test.ts` (from `server/`)
