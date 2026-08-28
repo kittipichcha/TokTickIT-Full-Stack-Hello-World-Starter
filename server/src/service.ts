@@ -11,7 +11,7 @@ import {
   getMimeType,
   sanitizeDownloadFilename,
 } from "./attachment-storage.js";
-import sharp from "sharp";
+import { openPdf } from "clawpdf";
 import { testSeams } from "./test-seams.js";
 
 export interface Category {
@@ -951,11 +951,14 @@ export async function previewAttachment(
     return { buffer, mimeType: attachment.mimeType };
   }
 
-  // For PDFs, render the first page as a PNG image using sharp
+  // For PDFs, render the first page as a PNG image using a PDFium renderer.
+  // clawpdf bundles a PDFium WebAssembly runtime (no native/system deps), so
+  // this is reproducible across environments.
   if (attachment.mimeType === "application/pdf") {
     try {
-      const page1Buffer = await sharp(buffer, { page: 0 }).png().toBuffer();
-      return { buffer: page1Buffer, mimeType: "image/png" };
+      await using pdf = await openPdf(new Uint8Array(buffer));
+      const png = await pdf.page(1).png({ dpi: 144 });
+      return { buffer: Buffer.from(png), mimeType: "image/png" };
     } catch {
       throw new Error("PDF preview rendering failed");
     }

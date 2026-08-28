@@ -304,7 +304,7 @@ describe("API-ATT-14-PDF: PDF preview returns first page as image/png (real DB)"
     });
   });
 
-  itIfDb("uploads a PDF and verifies preview never returns application/pdf", async () => {
+  itIfDb("uploads a valid PDF and preview returns 200 image/png (first page rendered)", async () => {
     const fixturePath = path.join(__dirname, "..", "fixtures", "multi-page-preview.pdf");
     const pdfBuffer = fs.readFileSync(fixturePath);
 
@@ -317,33 +317,27 @@ describe("API-ATT-14-PDF: PDF preview returns first page as image/png (real DB)"
     expect(uploadRes.status).toBe(201);
     const attachmentId = uploadRes.body.data.id;
 
-    // Preview the PDF — must NEVER return application/pdf
+    // Preview the PDF — AC-24 requires the first page rendered as PNG.
+    // With a reproducible PDFium renderer this MUST succeed (200 image/png),
+    // never return the original PDF, and never be a 500.
     const previewRes = await request(app)
       .get(`/api/attachments/${attachmentId}/preview`)
       .set("X-Dev-Requester-Id", String(testRequesterId));
 
-    // The critical contract: never return the original PDF
-    expect(previewRes.headers["content-type"]).not.toBe("application/pdf");
-
-    if (previewRes.status === 200) {
-      // If rendering succeeded, it must be image/png with PNG magic bytes
-      expect(previewRes.headers["content-type"]).toBe("image/png");
-      expect(previewRes.body).toBeInstanceOf(Buffer);
-      expect(previewRes.body.length).toBeGreaterThan(0);
-      expect(previewRes.body[0]).toBe(0x89);
-      expect(previewRes.body[1]).toBe(0x50);
-      expect(previewRes.body[2]).toBe(0x4e);
-      expect(previewRes.body[3]).toBe(0x47);
-    } else {
-      // If rendering failed, it must be a server error (500), never the PDF
-      expect(previewRes.status).toBe(500);
-      expect(previewRes.body.error.code).toBe("INTERNAL_ERROR");
-    }
+    expect(previewRes.status).toBe(200);
+    expect(previewRes.headers["content-type"]).toBe("image/png");
+    expect(previewRes.body).toBeInstanceOf(Buffer);
+    expect(previewRes.body.length).toBeGreaterThan(0);
+    // PNG magic bytes
+    expect(previewRes.body[0]).toBe(0x89);
+    expect(previewRes.body[1]).toBe(0x50);
+    expect(previewRes.body[2]).toBe(0x4e);
+    expect(previewRes.body[3]).toBe(0x47);
   });
 
-  itIfDb("preview of a PDF never returns application/pdf even when rendering fails", async () => {
-    // Upload a minimal PDF that is valid enough to pass content-signature
-    // but may fail sharp rendering (e.g., a PDF with no pages)
+  itIfDb("preview of a corrupt PDF returns 500 INTERNAL_ERROR (never the original PDF)", async () => {
+    // Upload a minimal PDF that passes the %PDF- content-signature check but
+    // has no renderable pages, so the PDFium renderer fails.
     const corruptPdfBuffer = Buffer.from(
       "%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\nxref\n0 3\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \ntrailer\n<< /Size 3 /Root 1 0 R >>\nstartxref\n107\n%%EOF",
       "ascii",
@@ -357,21 +351,14 @@ describe("API-ATT-14-PDF: PDF preview returns first page as image/png (real DB)"
     expect(uploadRes.status).toBe(201);
     const attachmentId = uploadRes.body.data.id;
 
-    // Preview — must NOT return the original PDF
+    // Preview — rendering must fail, so it must be a 500 INTERNAL_ERROR,
+    // and it must NEVER return the original PDF.
     const previewRes = await request(app)
       .get(`/api/attachments/${attachmentId}/preview`)
       .set("X-Dev-Requester-Id", String(testRequesterId));
 
-    // sharp may or may not fail on this PDF, but the key assertion:
-    // it must NEVER return application/pdf
+    expect(previewRes.status).toBe(500);
     expect(previewRes.headers["content-type"]).not.toBe("application/pdf");
-
-    if (previewRes.status === 200) {
-      // If it succeeded, it must be image/png
-      expect(previewRes.headers["content-type"]).toBe("image/png");
-    } else {
-      // If it failed, it must be a server error (500)
-      expect(previewRes.status).toBe(500);
-    }
+    expect(previewRes.body.error.code).toBe("INTERNAL_ERROR");
   });
 });
