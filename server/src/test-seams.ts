@@ -15,4 +15,13 @@ export const testSeams = {
    * that error instead of writing to the database.
    */
   forceCreateAttachmentMetadataError: null as Error | null,
+
+  /**
+   * When set to a non-null Error, the upload transaction will throw that
+   * error AFTER the attachment metadata row has been created but BEFORE the
+   * transaction commits. This deterministically exercises the transaction-wide
+   * filesystem compensation boundary (BR-31): the physical file must be deleted
+   * even though the metadata insert succeeded.
+   */
+  forcePostInsertTransactionError: null as Error | null,
 };

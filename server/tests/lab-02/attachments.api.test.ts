@@ -8,6 +8,7 @@ vi.mock("../../src/service.js", async () => {
   return {
     ...actual,
     isActiveDevRequester: vi.fn(),
+    ticketOwnedByRequester: vi.fn(),
     uploadAttachment: vi.fn(),
     listAttachments: vi.fn(),
     getAttachmentById: vi.fn(),
@@ -24,6 +25,7 @@ describe("API-ATT-01: Attachment type/content validation matrix", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("rejects when file part is missing with 400 VALIDATION_ERROR", async () => {
@@ -82,6 +84,7 @@ describe("API-ATT-02: Sixth active attachment rejected by server", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("returns 400 ATTACHMENT_LIMIT_REACHED when limit exceeded", async () => {
@@ -104,6 +107,7 @@ describe("API-ATT-03: Oversized file rejected with 413", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("returns 413 FILE_TOO_LARGE for oversized file via multer limit", async () => {
@@ -129,6 +133,7 @@ describe("ATT-SIZE-01: Maximum accepted size boundary (4,999,999 bytes)", () => 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("accepts a 4,999,999-byte file with 201", async () => {
@@ -162,6 +167,7 @@ describe("ATT-SIZE-02: Maximum accepted size boundary (5,000,000 bytes)", () => 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("accepts a 5,000,000-byte file with 201", async () => {
@@ -199,6 +205,7 @@ describe("API-ATT-04: Soft remove sets metadata and blocks access", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("soft-removes an attachment with metadata", async () => {
@@ -231,6 +238,7 @@ describe("API-ATT-05: Preview/download for active vs removed", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("download returns 200 for active attachment", async () => {
@@ -308,6 +316,7 @@ describe("API-ATT-06: BR-17 partial success — ticket persists after attachment
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("ticket POST succeeds even when attachment upload fails", async () => {
@@ -332,6 +341,7 @@ describe("API-ATT-07: Attachment metadata and stored filename", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("returns attachment metadata without exposing stored filename", async () => {
@@ -363,6 +373,7 @@ describe("API-ATT-09: Attachment list ordering", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("returns attachments in deterministic order (uploadedAt ASC, id ASC)", async () => {
@@ -397,6 +408,7 @@ describe("API-ATT-10: Removal reason normalization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.normalizeRemovalReason).mockImplementation(
       (reason: unknown) => {
         if (reason === undefined || reason === null) return null;
@@ -456,6 +468,7 @@ describe("API-ATT-12: Second removal returns 409 CONFLICT", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("removing an already-removed attachment returns 409", async () => {
@@ -476,6 +489,7 @@ describe("API-ATT-13: Removal sets removedByRequesterId", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("records the removing requester ID", async () => {
@@ -498,6 +512,7 @@ describe("API-ATT-15: Removed slot becomes reusable", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("can upload after removing an attachment", async () => {
@@ -520,6 +535,7 @@ describe("API-ATT-OWN-01: Cross-requester ownership enforcement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   it("upload returns 404 for non-owned ticket", async () => {
@@ -583,6 +599,7 @@ describe("API-ATT-08: Removal reason 200-char boundary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.normalizeRemovalReason).mockImplementation(
       (reason: unknown) => {
         if (reason === undefined || reason === null) return null;
