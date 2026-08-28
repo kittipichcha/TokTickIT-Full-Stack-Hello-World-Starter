@@ -52,8 +52,10 @@ Implemented in code right now:
 - **Fixed `activeFileCount` double-counting**: `validFiles.length` already includes all valid pending files; the old code incorrectly added `uploadResults.filter(r.status === "success").length` on top of it.
 - Client-side attachment validation (type/size before network), drag-and-drop, sequential upload with per-file status, Case B partial-success UI
 - Ticket Detail: Preview/Download/Remove actions, add attachment control with validation, removal confirmation dialog with optional reason
+- **Unavailable attachment state (ui-spec §5.3)**: A Preview/Download failure against an active attachment renders an Unavailable badge with Preview/Download disabled and no Retry action; an Add Attachment upload failure in Ticket Detail renders an Unavailable row with a Retry action that re-uploads only that file
+- **Removal dialog accessibility**: focus moves into the dialog on open, Tab/Shift+Tab trap focus within it, Escape closes it, and focus is restored to the Remove button on close
 - **Server tests**: 38 tests across 4 attachment test files (29 API-layer + 4 unit + 3 real-DB integration + 2 persistence) — all 303 server tests pass
-- **Client tests**: 43 tests across 6 files — 5 new AttachmentSection tests (UI-ATT-01 through 05) covering disallowed type, removed badge, oversized rejection, removal dialog, and multi-file partial success
+- **Client tests**: 52 tests across 6 files — 14 AttachmentSection tests (UI-ATT-01 through 08) covering disallowed type, removed badge, oversized rejection, removal dialog, multi-file partial success, failed-attachment retry from Ticket Detail, removal-dialog accessibility (focus trap/Escape/focus restore), and the Unavailable state on Preview/Download failure
 - **API-ATT-03** now tests the real multer `413 FILE_TOO_LARGE` path with a 5,000,001-byte buffer instead of a mocked 400 expectation
 - **ATT-SIZE-01/02**: Explicit 4,999,999 (accepted) and 5,000,000 (accepted) boundary tests — the Multer transport limit is set slightly above the business maximum so the service-level validator can accept the exact 5,000,000-byte boundary.
 - **ATT-PERSIST-02**: Real persistence-compensation test — injects metadata failure after physical write, verifies file deletion, zero Attachment rows, and no API exposure

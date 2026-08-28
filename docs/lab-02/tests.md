@@ -68,19 +68,20 @@ All six blocking issues from the code review have been resolved. Below is the fi
 
 #### Client attachment UI tests
 - **Command**: `npx vitest run src/lab-02-tests/AttachmentSection.test.tsx` (from `client/`)
-- **Result**: 5 tests passed, 0 failed
-- **Covers**: UI-ATT-01 (disallowed type rejection), UI-ATT-02 (removed badge + disabled controls), UI-ATT-03 (oversized rejection), UI-ATT-04 (removal dialog cancel), UI-ATT-05 (multi-file A/B/C partial success)
+- **Result**: 14 tests passed, 0 failed
+- **Covers**: UI-ATT-01 (disallowed type rejection), UI-ATT-02 (removed badge + disabled controls), UI-ATT-03 (oversized rejection), UI-ATT-04 (removal dialog cancel), UI-ATT-05 (multi-file A/B/C partial success), UI-ATT-06 (failed attachment retry from Ticket Detail), UI-ATT-07 (removal dialog accessibility — focus trap, Escape, focus restore), UI-ATT-08 (Unavailable state on Preview/Download failure + Add Attachment upload failure retry)
 
 #### Full server suite with real database
 - **Command**: `npx vitest run` (from `server/`)
-- **Result**: 25 test files, 299 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
+- **Result**: 25 test files, 303 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
 - **Key additions**: 2 new real-DB integration test files for attachment concurrency and persistence compensation; 2 new size-boundary API tests
 - **No regressions**: All 192 prior #13/#14 tests continue to pass alongside new #15 attachment tests
 
 #### Full client suite
 - **Command**: `npx vitest run` (from `client/`)
-- **Result**: 6 test files, 43 tests passed, 0 failed
-- **Key additions**: `AttachmentSection.test.tsx` (5 tests), `CreateTicket.test.tsx` updates for partial-success verification
+- **Result**: 6 test files, 52 tests passed, 0 failed
+- **Key additions**: `AttachmentSection.test.tsx` (14 tests covering UI-ATT-01 through 08), `CreateTicket.test.tsx` updates for partial-success verification
+- **Note**: Stale compiled `.js` artifacts in `client/src/` were removed so Vitest resolves the current `.tsx` sources (Vite resolves `.js` before `.tsx`, which previously caused tests to run against outdated compiled output).
 
 #### Client build verification
 - **Command**: `npm run build` (from `client/`)
@@ -230,6 +231,8 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-ATT-10 | API | Removal reason normalization and boundary behavior | Omitted/blank-after-trim reason → null; 200-char reason → accepted; 201-char reason → rejected; non-string → 400 validation error. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-19 | — | **Passed** |
 | UI-ATT-05 | UI | Multi-file attachment partial success orchestration | The Create Ticket UI uploads A, B, and C sequentially; after B fails it continues to C, keeps A/C successful, reports B separately, and offers B retry from Ticket Detail. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10, FR-17 | BR-17 | — | **Passed** |
 | UI-ATT-06 | UI | Failed attachment retry from Ticket Detail | After Case B partial success, View Ticket passes failed B into Ticket Detail. B is rendered as failed with a Retry button. Retry calls uploadAttachment(B) without calling createTicket again. Successful retry removes B from failed state. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10, FR-17 | BR-17 | AC-26 | **Passed** |
+| UI-ATT-07 | UI | Removal dialog accessibility — focus trap, Escape, focus restore | Opening the removal dialog moves focus into the dialog; Tab/Shift+Tab cycle within the dialog; Escape closes it; closing restores focus to the Remove button. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-11 | BR-19 | — | **Passed** |
+| UI-ATT-08 | UI | Unavailable attachment state on Preview/Download failure and Add Attachment upload failure | A Preview/Download failure against an active attachment renders the Unavailable badge with Preview/Download disabled and no Retry action (ui-spec §5.3); an Add Attachment upload failure in Ticket Detail renders an Unavailable row with a Retry action that re-uploads only that file. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10, FR-12, FR-13, FR-17 | BR-17 | — | **Passed** |
 | API-ATT-12 | API | Soft-remove idempotency: removing twice returns 409 Conflict on second attempt | A removed attachment cannot be removed again; second DELETE returns 409 rather than silently succeeding. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | **Passed** |
 | API-ATT-13 | API | Removal sets removedByRequesterId to the current requester | When soft-removing an attachment, `removedByRequesterId` is set to the `X-Dev-Requester-Id` of the caller. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | **Passed** |
 | API-ATT-14 | Integration | Attachment signature/filename and concurrent-limit matrix | Fixed valid/corrupt fixtures verify the extension-to-signature matrix, case-insensitive extension handling, no/double extension rejection, safe stored/download filenames, and PDF-preview failure behavior. Concurrent uploads when four attachments are active yield exactly one success and never expose more than five active rows. | `server/tests/lab-02/attachment-concurrency.integration.test.ts` | FR-10, FR-12, FR-13 | BR-12, BR-13, BR-26, BR-27, BR-28 | AC-07, AC-08, AC-13, AC-24 | **Passed** |
