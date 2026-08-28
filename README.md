@@ -55,7 +55,7 @@ Implemented in code right now:
 - **Server tests**: 34 tests across 4 files (31 API-layer + 3 real-DB integration) — all 299 server tests pass
 - **Client tests**: 43 tests across 6 files — 5 new AttachmentSection tests (UI-ATT-01 through 05) covering disallowed type, removed badge, oversized rejection, removal dialog, and multi-file partial success
 - **API-ATT-03** now tests the real multer `413 FILE_TOO_LARGE` path with a 5,000,001-byte buffer instead of a mocked 400 expectation
-- **ATT-SIZE-01/02**: Explicit 4,999,999 (accepted) and 5,000,000 (multer-exclusive-limit) boundary tests
+- **ATT-SIZE-01/02**: Explicit 4,999,999 (accepted) and 5,000,000 (accepted) boundary tests — the Multer transport limit is set slightly above the business maximum so the service-level validator can accept the exact 5,000,000-byte boundary.
 - **ATT-PERSIST-02**: Real persistence-compensation test — injects metadata failure after physical write, verifies file deletion, zero Attachment rows, and no API exposure
 - **Real-DB integration tests** (`attachment-concurrency`, `attachment-persistence-compensation`) executed against live PostgreSQL — all `itIfDb` tests ran (not skipped)
 - Server tests: 31 new attachment tests across `attachments.api.test.ts` and `attachment-validation.unit.test.ts`
