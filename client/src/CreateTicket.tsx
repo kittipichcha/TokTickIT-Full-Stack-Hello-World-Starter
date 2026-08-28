@@ -318,7 +318,7 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
           </p>
 
           <div className="success-actions">
-            <button className="primary-button" onClick={() => onViewTicket(createdTicketNumber)}>View Ticket</button>
+            <button className="primary-button" onClick={() => onViewTicket(createdTicketNumber, getFailedFiles())}>View Ticket</button>
             <button className="secondary-button" onClick={() => { handleCancel(); onCreateAnother(); }}>Create Another</button>
           </div>
         </div>
