@@ -131,6 +131,7 @@ The following cases are mandatory and part of the implemented contract; the impl
 - Remaining files continue to upload.
 - Failures are reported per file.
 - Failed files may be retried later from Ticket Detail.
+- **Traceability note:** the attachment and ticket-creation endpoints are separate routes. An attachment upload failure therefore has no server-side effect on ticket persistence — the endpoint-isolation behavior is proven by the client Case-B orchestration tests (`UI-TKT-06`, `UI-ATT-05`, `UI-ATT-06`, `UI-ATT-RETRY-OWN`), which run the real post-create attachment flow and assert the created ticket is kept without a duplicate create. The server `API-ATT-06` test is an endpoint-isolation check only.
 
 **Attachment filename and content rules**
 | Extension (case-insensitive) | Stored MIME type | Required leading bytes |

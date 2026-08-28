@@ -67,6 +67,7 @@ Implemented in code right now:
 - **Upload-result type alignment**: the client `AttachmentUploadResult` now matches the server contract (`ticketId` present, `storedFilename` absent).
 - **Server tests**: 332 tests across 26 files pass (including real-DB ownership, concurrent-removal, transaction-wide compensation, UUID stored-filename, cross-requester list/download/preview/delete ownership, extension/signature validation matrix, DELETE content-type, and attachment-ID range tests)
 - **Client tests**: 83 tests across 7 files — AttachmentSection and CreateTicket cover the full attachment state matrix, five-file capacity, retry ownership scoping, mutation/refresh separation, retry terminal-state, the complete UI-DETAIL-01 matrix, UI-TKT-08 submission orchestration, and RFC 5987 filename parsing
+- **Case B ticket-persistence traceability**: the created ticket is kept on attachment failure (no duplicate create) is proven by the executable client Case-B tests (`UI-TKT-06`, `UI-ATT-05`, `UI-ATT-06`, `UI-ATT-RETRY-OWN`, which run the real post-create attachment flow). The server `API-ATT-06` test is an endpoint-isolation check only and does not by itself assert ticket persistence.
 
 Deferred to Issue #18 (final integration/release verification):
 - Full E2E test suite (Playwright)
