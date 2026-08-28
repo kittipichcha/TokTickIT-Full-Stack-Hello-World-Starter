@@ -919,8 +919,7 @@ export async function previewAttachment(
       const page1Buffer = await sharp(buffer, { page: 0 }).png().toBuffer();
       return { buffer: page1Buffer, mimeType: "image/png" };
     } catch {
-      // If PDF rendering fails, fall back to returning the PDF bytes
-      return { buffer, mimeType: attachment.mimeType };
+      throw new Error("PDF preview rendering failed");
     }
   }
 
