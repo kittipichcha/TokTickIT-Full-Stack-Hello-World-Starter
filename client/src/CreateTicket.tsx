@@ -110,7 +110,14 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
   const handleAddFiles = (files: FileList | null) => {
     if (!files) return;
 
+    // Enforce the five-active-attachment capacity. Only valid pending files
+    // occupy a slot; invalid files are excluded from the upload set but still
+    // shown with their validation error.
+    const currentValidCount = selectedFiles.filter((f) => !f.error).length;
+    const remainingSlots = 5 - currentValidCount;
+
     const newFiles: SelectedFile[] = [];
+    let validAdded = 0;
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       let error: string | undefined;
@@ -119,6 +126,15 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
         error = `File type "${file.name.split(".").pop()}" is not supported. Allowed: JPG, PNG, WEBP, PDF.`;
       } else if (!isWithinSizeLimit(file.size)) {
         error = `File exceeds the 5 MB size limit.`;
+      }
+
+      if (!error) {
+        // This is a valid file — it consumes a slot. If no slots remain, reject it.
+        if (validAdded >= remainingSlots) {
+          error = "The ticket already has the maximum number of active attachments.";
+        } else {
+          validAdded++;
+        }
       }
 
       newFiles.push({ file, id: nextFileId(), error });

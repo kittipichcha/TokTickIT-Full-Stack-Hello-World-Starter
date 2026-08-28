@@ -836,3 +836,366 @@ describe("UI-ATT-08: Unavailable attachment state on Preview/Download failure", 
     expect(screen.getByText("Retry")).toBeTruthy();
   });
 });
+
+describe("UI-ATT-CAP-01: Ticket Detail five-active-attachment capacity", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
+      data: [{
+        id: 1,
+        ticketNumber: testTicketNumber,
+        categoryId: 1,
+        categoryName: "Hardware",
+        summary: "Test ticket",
+        requestedPriority: "MEDIUM",
+        itPriority: null,
+        currentStatus: "NEW",
+        createdAt: "2026-08-27T00:00:00.000Z",
+        updatedAt: "2026-08-27T00:00:00.000Z",
+      }],
+      pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 },
+    }));
+    vi.mocked(api.isAllowedAttachmentType).mockReturnValue(true);
+    vi.mocked(api.isWithinSizeLimit).mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  async function openDetail(attachments: api.AttachmentItem[]) {
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, attachments),
+    );
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+  }
+
+  it("disables Add Attachment at five active attachments", async () => {
+    await setupAuthenticatedApp();
+    const fiveActive = Array.from({ length: 5 }, (_, i) =>
+      makeAttachment(i + 1, { originalFilename: `active-${i}.jpg` }),
+    );
+    await openDetail(fiveActive);
+
+    const addBtn = screen.getByRole("button", { name: "+ Add Attachment" });
+    expect(addBtn.hasAttribute("disabled")).toBe(true);
+  });
+
+  it("rejects a direct file selection at five active attachments — no upload request", async () => {
+    await setupAuthenticatedApp();
+    const fiveActive = Array.from({ length: 5 }, (_, i) =>
+      makeAttachment(i + 1, { originalFilename: `active-${i}.jpg` }),
+    );
+    await openDetail(fiveActive);
+
+    const fileInput = getFileInput();
+    expect(fileInput).not.toBeNull();
+    fireEvent.change(fileInput!, {
+      target: { files: [new File(["content"], "sixth.jpg", { type: "image/jpeg" })] },
+    });
+
+    // No upload request should be made.
+    expect(api.uploadAttachment).not.toHaveBeenCalled();
+    // The capacity error is shown.
+    await waitFor(() => {
+      expect(screen.getByText(/maximum number of active attachments/)).toBeTruthy();
+    });
+  });
+
+  it("re-enables Add Attachment after removing one of five", async () => {
+    await setupAuthenticatedApp();
+    const fiveActive = Array.from({ length: 5 }, (_, i) =>
+      makeAttachment(i + 1, { originalFilename: `active-${i}.jpg` }),
+    );
+    await openDetail(fiveActive);
+
+    const addBtn = screen.getByRole("button", { name: "+ Add Attachment" });
+    expect(addBtn.hasAttribute("disabled")).toBe(true);
+
+    // Remove one attachment.
+    vi.mocked(api.removeAttachment).mockResolvedValue({
+      id: 1,
+      originalFilename: "active-0.jpg",
+      mimeType: "image/jpeg",
+      fileSizeBytes: 1024,
+      uploadedAt: "2026-08-27T00:00:00.000Z",
+      isRemoved: true,
+      removedAt: "2026-08-27T01:00:00.000Z",
+      removalReason: "test",
+      removedByRequesterId: 1,
+    });
+    // After removal, the detail refresh returns four active attachments.
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, fiveActive.slice(1)),
+    );
+
+    await userEvent.click(screen.getAllByText("Remove")[0]);
+    await screen.findByText(/Are you sure/);
+    const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+    const confirmBtn = within(dialog).getByRole("button", { name: "Remove" });
+    await userEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "+ Add Attachment" }).hasAttribute("disabled")).toBe(false);
+    });
+  });
+
+  it("does not count removed attachments toward the active limit", async () => {
+    await setupAuthenticatedApp();
+    const attachments = [
+      ...Array.from({ length: 4 }, (_, i) => makeAttachment(i + 1, { originalFilename: `active-${i}.jpg` })),
+      makeAttachment(5, { originalFilename: "removed.jpg", isRemoved: true }),
+    ];
+    await openDetail(attachments);
+
+    // 4 active + 1 removed = Add Attachment enabled.
+    const addBtn = screen.getByRole("button", { name: "+ Add Attachment" });
+    expect(addBtn.hasAttribute("disabled")).toBe(false);
+  });
+});
+
+describe("UI-ATT-RETRY-OWN: Failed attachment retry is scoped to requester + ticket", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
+    vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
+    vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
+    vi.mocked(api.isAllowedAttachmentType).mockReturnValue(true);
+    vi.mocked(api.isWithinSizeLimit).mockReturnValue(true);
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => emptyTicketsResponse);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("failed attachment from Ticket A is absent when viewing Ticket B", async () => {
+    await setupAuthenticatedApp();
+
+    vi.mocked(api.createTicket).mockResolvedValue({
+      id: 1,
+      ticketNumber: testTicketNumber,
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "Retry ownership",
+      description: "Testing retry ownership scoping.",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-27T00:00:00.000Z",
+      updatedAt: "2026-08-27T00:00:00.000Z",
+    });
+
+    // File A upload fails → Case B.
+    vi.mocked(api.uploadAttachment).mockRejectedValue(new Error("Upload failed for A"));
+
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
+    await screen.findByLabelText(/Summary/);
+    await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
+    await userEvent.selectOptions(screen.getByLabelText(/Related System/), "1");
+    await userEvent.type(screen.getByLabelText(/Summary/), "Retry ownership scenario");
+    await userEvent.type(screen.getByLabelText(/Description/), "Testing failed retry ownership scoping.");
+
+    const fileInput = getFileInput();
+    fireEvent.change(fileInput!, {
+      target: { files: [new File(["content"], "a.jpg", { type: "image/jpeg" })] },
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => expect(screen.getByText(/Ticket Created/)).toBeTruthy());
+    await userEvent.click(screen.getByRole("button", { name: "View Ticket" }));
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // A's failed retry is present on ticket A.
+    expect(screen.getByText("a.jpg")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+
+    // Navigate to a different ticket (B). Set up My Tickets to list both A and B,
+    // and fetchTicketDetail to return the correct detail per ticket.
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
+      data: [
+        {
+          id: 1,
+          ticketNumber: testTicketNumber,
+          categoryId: 1,
+          categoryName: "Hardware",
+          summary: "Ticket A",
+          requestedPriority: "MEDIUM",
+          itPriority: null,
+          currentStatus: "NEW",
+          createdAt: "2026-08-27T00:00:00.000Z",
+          updatedAt: "2026-08-27T00:00:00.000Z",
+        },
+        {
+          id: 2,
+          ticketNumber: "TKT-2026-000002",
+          categoryId: 1,
+          categoryName: "Hardware",
+          summary: "Ticket B",
+          requestedPriority: "MEDIUM",
+          itPriority: null,
+          currentStatus: "NEW",
+          createdAt: "2026-08-27T00:00:00.000Z",
+          updatedAt: "2026-08-27T00:00:00.000Z",
+        },
+      ],
+      pagination: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1, unfilteredTotalItems: 2 },
+    }));
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async (rid, tn) =>
+      makeTicketDetail(tn, tn === testTicketNumber ? [] : []),
+    );
+
+    // Go back to My Tickets.
+    await userEvent.click(screen.getByRole("link", { name: "My Tickets" }));
+    await waitFor(async () => {
+      const links = screen.getAllByText("TKT-2026-000002");
+      expect(links.length).toBeGreaterThan(0);
+    });
+
+    // Open ticket B.
+    const ticketB = screen.getAllByText("TKT-2026-000002")[0];
+    await userEvent.click(ticketB);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // A's failed retry must NOT appear on ticket B.
+    expect(screen.queryByText("a.jpg")).toBeNull();
+    expect(screen.queryByText("Retry")).toBeNull();
+  });
+});
+
+describe("UI-ATT-MUT-REF: Mutation success is terminal — refresh failure is not a mutation failure", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
+      data: [{
+        id: 1,
+        ticketNumber: testTicketNumber,
+        categoryId: 1,
+        categoryName: "Hardware",
+        summary: "Test ticket",
+        requestedPriority: "MEDIUM",
+        itPriority: null,
+        currentStatus: "NEW",
+        createdAt: "2026-08-27T00:00:00.000Z",
+        updatedAt: "2026-08-27T00:00:00.000Z",
+      }],
+      pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 },
+    }));
+    vi.mocked(api.isAllowedAttachmentType).mockReturnValue(true);
+    vi.mocked(api.isWithinSizeLimit).mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("upload succeeds but refresh fails — no retry for the uploaded file, refresh error shown", async () => {
+    await setupAuthenticatedApp();
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, []),
+    );
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // Upload succeeds, but the subsequent refresh fails.
+    vi.mocked(api.uploadAttachment).mockResolvedValue({
+      id: 1,
+      originalFilename: "new.jpg",
+      mimeType: "image/jpeg",
+      fileSizeBytes: 10,
+      uploadedAt: "2026-08-27T00:00:00.000Z",
+      isRemoved: false,
+      storedFilename: "stored.jpg",
+    });
+    vi.mocked(api.fetchTicketDetail).mockRejectedValue(new Error("Refresh failed"));
+
+    const fileInput = getFileInput();
+    fireEvent.change(fileInput!, {
+      target: { files: [new File(["content"], "new.jpg", { type: "image/jpeg" })] },
+    });
+
+    // The uploaded file must NOT enter the retry state.
+    await waitFor(() => {
+      expect(screen.queryByText("Retry")).toBeNull();
+    });
+    // The refresh error is shown as a detail error.
+    await waitFor(() => {
+      expect(screen.getByText("Refresh failed")).toBeTruthy();
+    });
+  });
+
+  it("remove succeeds but refresh fails — removed operation is not retryable, refresh error shown", async () => {
+    await setupAuthenticatedApp();
+    const activeAtt = makeAttachment(1, { originalFilename: "remove-me.jpg" });
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, [activeAtt]),
+    );
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // Remove succeeds; refresh fails.
+    vi.mocked(api.removeAttachment).mockResolvedValue({
+      id: 1,
+      originalFilename: "remove-me.jpg",
+      mimeType: "image/jpeg",
+      fileSizeBytes: 1024,
+      uploadedAt: "2026-08-27T00:00:00.000Z",
+      isRemoved: true,
+      removedAt: "2026-08-27T01:00:00.000Z",
+      removalReason: "test",
+      removedByRequesterId: 1,
+    });
+    vi.mocked(api.fetchTicketDetail).mockRejectedValue(new Error("Refresh failed after remove"));
+
+    await userEvent.click(screen.getAllByText("Remove")[0]);
+    await screen.findByText(/Are you sure/);
+    // The dialog's confirm button is the destructive-button inside the modal.
+    const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+    const confirmBtn = within(dialog).getByRole("button", { name: "Remove" });
+    await userEvent.click(confirmBtn);
+
+    // The dialog closes (mutation succeeded) and no attachment retry appears.
+    await waitFor(() => {
+      expect(screen.queryByText(/Are you sure/)).toBeNull();
+    });
+    // No failed-attachment row (with an attachment Retry button) is rendered.
+    expect(document.querySelector(".attachment-failed")).toBeNull();
+    expect(document.querySelector(".attachment-unavailable")).toBeNull();
+    // Refresh error shown.
+    await waitFor(() => {
+      expect(screen.getByText("Refresh failed after remove")).toBeTruthy();
+    });
+  });
+});
