@@ -20,7 +20,10 @@ export const router = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5_000_000 },
+  // Transport-level guard: set slightly above the business maximum (5,000,000 bytes)
+  // so that a valid 5,000,000-byte file reaches the service-level validateFileSize().
+  // The authoritative business limit is enforced by service.validateFileSize().
+  limits: { fileSize: 5_000_001 },
 });
 
 // Categories endpoint

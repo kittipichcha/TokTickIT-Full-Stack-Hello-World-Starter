@@ -158,14 +158,26 @@ describe("ATT-SIZE-01: Maximum accepted size boundary (4,999,999 bytes)", () => 
   });
 });
 
-describe("ATT-SIZE-02: Multer file-size limit boundary (5,000,000 bytes)", () => {
+describe("ATT-SIZE-02: Maximum accepted size boundary (5,000,000 bytes)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
   });
 
-  it("rejects a 5,000,000-byte file with 413 FILE_TOO_LARGE", async () => {
-    // Multer's fileSize limit is exclusive — 5,000,000 bytes triggers LIMIT_FILE_SIZE.
+  it("accepts a 5,000,000-byte file with 201", async () => {
+    // The business maximum is 5,000,000 bytes — this file must be accepted.
+    // Multer's transport limit is set slightly above the business maximum so
+    // that this exact-boundary file reaches the service-level validateFileSize().
+    const mockResult = {
+      id: 1,
+      originalFilename: "exact-max.jpg",
+      mimeType: "image/jpeg",
+      fileSizeBytes: 5_000_000,
+      uploadedAt: new Date("2026-08-27T00:00:00.000Z"),
+      isRemoved: false,
+    };
+    vi.mocked(service.uploadAttachment).mockResolvedValue(mockResult as never);
+
     const buffer = Buffer.alloc(5_000_000, 0xff);
     buffer[0] = 0xff;
     buffer[1] = 0xd8;
@@ -176,9 +188,10 @@ describe("ATT-SIZE-02: Multer file-size limit boundary (5,000,000 bytes)", () =>
       .set("X-Dev-Requester-Id", "1")
       .attach("file", buffer, "exact-max.jpg");
 
-    expect(res.status).toBe(413);
-    expect(res.body.error.code).toBe("FILE_TOO_LARGE");
-    expect(service.uploadAttachment).not.toHaveBeenCalled();
+    expect(res.status).toBe(201);
+    expect(res.body.data.fileSizeBytes).toBe(5_000_000);
+    // Verify the attachment was actually persisted — uploadAttachment was called
+    expect(service.uploadAttachment).toHaveBeenCalledTimes(1);
   });
 });
 
