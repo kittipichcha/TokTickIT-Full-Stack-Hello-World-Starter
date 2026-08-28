@@ -125,6 +125,63 @@ describe("API-ATT-03: Oversized file rejected with 413", () => {
   });
 });
 
+describe("ATT-SIZE-01: Maximum accepted size boundary (4,999,999 bytes)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+  });
+
+  it("accepts a 4,999,999-byte file with 201", async () => {
+    const mockResult = {
+      id: 1,
+      originalFilename: "large.jpg",
+      mimeType: "image/jpeg",
+      fileSizeBytes: 4_999_999,
+      uploadedAt: new Date("2026-08-27T00:00:00.000Z"),
+      isRemoved: false,
+    };
+    vi.mocked(service.uploadAttachment).mockResolvedValue(mockResult as never);
+
+    const buffer = Buffer.alloc(4_999_999, 0xff);
+    // Overwrite the first 3 bytes with JPEG signature so content validation passes
+    buffer[0] = 0xff;
+    buffer[1] = 0xd8;
+    buffer[2] = 0xff;
+
+    const res = await request(app)
+      .post("/api/tickets/TKT-2026-000001/attachments")
+      .set("X-Dev-Requester-Id", "1")
+      .attach("file", buffer, "large.jpg");
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.fileSizeBytes).toBe(4_999_999);
+  });
+});
+
+describe("ATT-SIZE-02: Multer file-size limit boundary (5,000,000 bytes)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+  });
+
+  it("rejects a 5,000,000-byte file with 413 FILE_TOO_LARGE", async () => {
+    // Multer's fileSize limit is exclusive — 5,000,000 bytes triggers LIMIT_FILE_SIZE.
+    const buffer = Buffer.alloc(5_000_000, 0xff);
+    buffer[0] = 0xff;
+    buffer[1] = 0xd8;
+    buffer[2] = 0xff;
+
+    const res = await request(app)
+      .post("/api/tickets/TKT-2026-000001/attachments")
+      .set("X-Dev-Requester-Id", "1")
+      .attach("file", buffer, "exact-max.jpg");
+
+    expect(res.status).toBe(413);
+    expect(res.body.error.code).toBe("FILE_TOO_LARGE");
+    expect(service.uploadAttachment).not.toHaveBeenCalled();
+  });
+});
+
 describe("API-ATT-04: Soft remove sets metadata and blocks access", () => {
   beforeEach(() => {
     vi.clearAllMocks();
