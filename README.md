@@ -54,13 +54,14 @@ Implemented in code right now:
 - Ticket Detail: Preview/Download/Remove actions, add attachment control with validation, removal confirmation dialog with optional reason
 - **Unavailable attachment state (ui-spec §5.3)**: A Preview/Download failure against an active attachment renders an Unavailable badge with Preview/Download disabled and no Retry action; an Add Attachment upload failure in Ticket Detail renders an Unavailable row with a Retry action that re-uploads only that file
 - **Removal dialog accessibility**: focus moves into the dialog on open, Tab/Shift+Tab trap focus within it, Escape closes it, and focus is restored to the Remove button on close
-- **Server tests**: 38 tests across 4 attachment test files (29 API-layer + 4 unit + 3 real-DB integration + 2 persistence) — all 303 server tests pass
-- **Client tests**: 52 tests across 6 files — 14 AttachmentSection tests (UI-ATT-01 through 08) covering disallowed type, removed badge, oversized rejection, removal dialog, multi-file partial success, failed-attachment retry from Ticket Detail, removal-dialog accessibility (focus trap/Escape/focus restore), and the Unavailable state on Preview/Download failure
-- **API-ATT-03** now tests the real multer `413 FILE_TOO_LARGE` path with a 5,000,001-byte buffer instead of a mocked 400 expectation
-- **ATT-SIZE-01/02**: Explicit 4,999,999 (accepted) and 5,000,000 (accepted) boundary tests — the Multer transport limit is set slightly above the business maximum so the service-level validator can accept the exact 5,000,000-byte boundary.
-- **ATT-PERSIST-02**: Real persistence-compensation test — injects metadata failure after physical write, verifies file deletion, zero Attachment rows, and no API exposure
-- **Real-DB integration tests** (`attachment-concurrency`, `attachment-persistence-compensation`) executed against live PostgreSQL — all `itIfDb` tests ran (not skipped)
-- Server tests: 31 new attachment tests across `attachments.api.test.ts` and `attachment-validation.unit.test.ts`
+- **Ownership before multipart validation**: the upload route now performs a ticket-ownership pre-check BEFORE multer parses the request body, so a non-owned/missing ticket returns the same `404 NOT_FOUND` regardless of whether the file is valid, missing, oversized, or an unsupported type (no information leakage). The transactional ownership check inside the service remains authoritative.
+- **Atomic conditional soft removal**: `removeAttachment` now uses a single conditional `UPDATE ... WHERE isRemoved = false` instead of a read-then-unconditional-update, so exactly one concurrent removal wins (one `200`, one `409`).
+- **Transaction-wide filesystem compensation**: every physical file written during an upload is tracked and deleted if ANY part of the transaction fails — including a failure AFTER the metadata insert succeeds but before commit (no orphaned files).
+- **Client attachment capacity enforcement**: Create Ticket and Ticket Detail both enforce the five-active-attachment limit client-side; the sixth file is rejected and never reaches the upload API.
+- **Scoped failed-attachment retry**: failed uploads are scoped to the requester + ticket that produced them; navigating to another ticket or switching requester never shows or retries another ticket's failure.
+- **Mutation/refresh separation**: a successful upload/remove is terminal — a subsequent refresh failure is shown as a detail error, never as a retryable mutation failure.
+- **Server tests**: 308 tests across 25 files pass (including real-DB ownership, concurrent-removal, transaction-wide compensation, and UUID stored-filename integration tests)
+- **Client tests**: 64 tests across 6 files — AttachmentSection and CreateTicket cover the full attachment state matrix, five-file capacity, retry ownership scoping, and mutation/refresh separation
 
 Deferred to Issue #18 (final integration/release verification):
 - Full E2E test suite (Playwright)

@@ -60,32 +60,40 @@ All six blocking issues from the code review have been resolved. Below is the fi
 
 #### Server attachment integration tests (real database — `itIfDb` all executed)
 - **Command**: `npx vitest run tests/lab-02/attachment-concurrency.integration.test.ts tests/lab-02/attachment-persistence-compensation.integration.test.ts` (from `server/`)
-- **Result**: 2 test files, 3 tests passed, 0 failed
+- **Result**: 2 test files, 10 tests passed, 0 failed
 - **Real-DB suite**: Executed with `DATABASE_URL` present — all `itIfDb` tests ran (not skipped)
 - **Concurrency test** (`API-ATT-14`): Creates a real ticket, populates 4 active attachments, sends 2 concurrent uploads via `Promise.all`. Asserts exactly 1 succeeds (201) and exactly 1 receives `ATTACHMENT_LIMIT_REACHED` (400). Queries the real database to verify active count never exceeds 5. This proves the `SELECT ... FOR UPDATE` row lock works.
-- **Persistence compensation test** (`ATT-PERSIST-01`): Uploads a valid JPEG to a real ticket, asserts 201 with correct metadata, verifies the attachment row exists in the database, and confirms `storedFilename` is not API-exposed.
-- **Persistence compensation test** (`ATT-PERSIST-02`): Injects a deterministic metadata-persistence failure after the physical file write, asserts 500 INTERNAL_ERROR, verifies the physical file was deleted (filesystem count unchanged), confirms no Attachment row exists in the database, and verifies the failed attachment is not API-exposed via the list endpoint. Uses a shared test seam (`test-seams.ts`) rather than mocking Prisma.
+- **Ownership isolation** (`API-ATT-OWN-INT`): Non-owned uploads return identical `404 NOT_FOUND` for valid, missing, oversized, and invalid-media files — proving the ownership pre-check runs before multipart validation.
+- **Concurrent removal** (`API-ATT-REM-CONC`): Two simultaneous DELETEs produce exactly one `200` and one `409`, with correct persisted `isRemoved`, `removedAt`, `removedByRequesterId`, and `removalReason` metadata.
+- **Persistence compensation** (`ATT-PERSIST-01`): Uploads a valid JPEG to a real ticket, asserts 201 with correct metadata, verifies the attachment row exists in the database, and confirms `storedFilename` is not API-exposed.
+- **Persistence compensation** (`ATT-PERSIST-02`): Injects a deterministic metadata-persistence failure after the physical file write, asserts 500 INTERNAL_ERROR, verifies the physical file was deleted (filesystem count unchanged), confirms no Attachment row exists in the database, and verifies the failed attachment is not API-exposed via the list endpoint. Uses a shared test seam (`test-seams.ts`) rather than mocking Prisma.
+- **Transaction-wide compensation** (`ATT-PERSIST-03`): Injects a failure AFTER the metadata insert succeeds but BEFORE the transaction commits, and verifies the physical file is deleted and the Attachment row is rolled back — proving compensation covers the entire transaction, not just the metadata insert.
+- **UUID stored filename** (`ATT-PERSIST-04`): Inspects the real Attachment row to verify the stored filename is a UUID + allowed extension, the original filename is preserved as metadata, the physical file exists on disk, and `storedFilename` is never API-exposed.
+- **Removed access** (`ATT-PERSIST-05`): Soft-removes a real attachment and verifies download/preview return `410 ATTACHMENT_REMOVED` while the list still shows the removed metadata.
 
 #### Client attachment UI tests
-- **Command**: `npx vitest run src/lab-02-tests/AttachmentSection.test.tsx` (from `client/`)
-- **Result**: 14 tests passed, 0 failed
-- **Covers**: UI-ATT-01 (disallowed type rejection), UI-ATT-02 (removed badge + disabled controls), UI-ATT-03 (oversized rejection), UI-ATT-04 (removal dialog cancel), UI-ATT-05 (multi-file A/B/C partial success), UI-ATT-06 (failed attachment retry from Ticket Detail), UI-ATT-07 (removal dialog accessibility — focus trap, Escape, focus restore), UI-ATT-08 (Unavailable state on Preview/Download failure + Add Attachment upload failure retry)
+- **Command**: `npx vitest run src/lab-02-tests/AttachmentSection.test.tsx src/lab-02-tests/CreateTicket.test.tsx` (from `client/`)
+- **Result**: 2 test files, 37 tests passed, 0 failed
+- **Covers**: UI-ATT-01 (disallowed type rejection), UI-ATT-02 (removed badge + disabled controls), UI-ATT-03 (oversized rejection), UI-ATT-04 (removal dialog cancel), UI-ATT-05 (multi-file A/B/C partial success), UI-ATT-06 (failed attachment retry from Ticket Detail), UI-ATT-07 (removal dialog accessibility — focus trap, Escape, focus restore), UI-ATT-08 (Unavailable state on Preview/Download failure + Add Attachment upload failure retry), UI-TKT-CAP-01 (Create Ticket five-file capacity), UI-ATT-CAP-01 (Ticket Detail five-file capacity), UI-ATT-RETRY-OWN (retry scoped to requester + ticket), UI-ATT-MUT-REF (mutation success is terminal — refresh failure is not a mutation failure)
 
 #### Full server suite with real database
 - **Command**: `npx vitest run` (from `server/`)
-- **Result**: 25 test files, 303 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
-- **Key additions**: 2 new real-DB integration test files for attachment concurrency and persistence compensation; 2 new size-boundary API tests
-- **No regressions**: All 192 prior #13/#14 tests continue to pass alongside new #15 attachment tests
+- **Result**: 25 test files, 308 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
+- **Key additions**: real-DB ownership, concurrent-removal, transaction-wide compensation, and UUID stored-filename integration tests
+- **No regressions**: All prior #13/#14 tests continue to pass alongside new #15 attachment tests
 
 #### Full client suite
 - **Command**: `npx vitest run` (from `client/`)
-- **Result**: 6 test files, 52 tests passed, 0 failed
-- **Key additions**: `AttachmentSection.test.tsx` (14 tests covering UI-ATT-01 through 08), `CreateTicket.test.tsx` updates for partial-success verification
-- **Note**: Stale compiled `.js` artifacts in `client/src/` were removed so Vitest resolves the current `.tsx` sources (Vite resolves `.js` before `.tsx`, which previously caused tests to run against outdated compiled output).
+- **Result**: 6 test files, 64 tests passed, 0 failed
+- **Key additions**: `AttachmentSection.test.tsx` and `CreateTicket.test.tsx` expanded to cover the full attachment state matrix, five-file capacity, retry ownership scoping, and mutation/refresh separation
 
 #### Client build verification
 - **Command**: `npm run build` (from `client/`)
-- **Result**: TypeScript compilation passes, Vite production build succeeds (181.89 kB JS, 245.07 kB CSS gzipped)
+- **Result**: TypeScript compilation passes, Vite production build succeeds
+
+#### Server build verification
+- **Command**: `npm run build` (from `server/`)
+- **Result**: TypeScript compilation passes
 
 ### PR #28 Review Status (2026-08-27)
 
@@ -102,25 +110,6 @@ All six blocking issues from the code review have been resolved. Below is the fi
 | 5 | **Insufficient test evidence** — Summary sort not tested with distinct values; pagination not slice-correct; `UI-MY-05` doesn't exercise redirect; Retry test doesn't click Retry | ✅ **Fixed** | Distinct Summary ascending/descending ordering tested. Pagination asserts exact non-overlapping slices. `UI-MY-05` simulates out-of-range page redirect. Retry test (`UI-MY-04`) verifies no auto-retry + exactly one additional request on click. |
 
 **Current verdict:** All five blocking findings resolved. Awaiting re-review from @oangsa. No approval has been recorded yet.
-
-### Execution Evidence (2026-08-28) — Attachment Lifecycle & Ticket Detail (#15)
-
-### Server attachment tests
-- **Command**: `npx vitest run tests/lab-02/attachments.api.test.ts tests/lab-02/attachment-validation.unit.test.ts` (from `server/`)
-- **Result**: 2 test files, 34 tests passed, 0 failed
-- **New test files**: `attachments.api.test.ts` (32 tests covering API-ATT-01..10, API-ATT-12..15, API-ATT-OWN-01, ATT-SIZE-01, ATT-SIZE-02, plus PDF preview regression tests), `attachment-validation.unit.test.ts` (1 test — UNIT-ATT-01)
-- **Full server suite**: `npx vitest run` (from `server/`) — 25 passed, 299 tests passed, no regressions
-
-### PDF preview fix (AC-24)
-- **Fix applied**: `server/src/service.ts` — PDF preview rendering failure now throws an error instead of returning the original PDF as a fallback
-- **Mocked API tests**: 3 new tests in `attachments.api.test.ts` — PDF preview returns `200 image/png`, PDF rendering failure returns `500 INTERNAL_ERROR` (never `application/pdf`)
-- **Real-DB integration tests**: 2 new `itIfDb` tests in `attachment-concurrency.integration.test.ts` — uploads a real two-page PDF fixture and verifies preview never returns `application/pdf`; uploads a zero-page PDF and verifies the response is never `application/pdf`
-- **Test fixture**: `server/tests/fixtures/multi-page-preview.pdf` — two-page PDF generated via `pdfkit`
-
-### Full test pass (server)
-- **Command**: `npx vitest run` (from `server/`)
-- **Result**: 25 test files passed, 299 tests passed, 0 failed
-- **No regressions**: All prior #13/#14 tests continue to pass alongside new #15 attachment tests
 
 ## 3. AC Retirement Note
 - **AC-16 was retired** due to requester-context contract conflict.
@@ -226,6 +215,11 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-ATT-09 | API | Attachment list ordering is deterministic (uploadedAt asc, id asc) | Attachment listing returns results in deterministic order for stable display ordering and reproducible tests. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | — | — | **Passed** |
 | ATT-PERSIST-01 | Integration | Successful attachment metadata persistence | Given a valid JPEG upload, the request succeeds (201), the Attachment row exists in the database with correct metadata, and `storedFilename` is not exposed in the API response. | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-26, BR-27 | — | **Passed** |
 | ATT-PERSIST-02 | Integration | Metadata persistence failure compensates physical storage | Given the physical file write succeeds and metadata persistence then fails, the request returns 500 INTERNAL_ERROR, no Attachment row is created, the newly written physical file is deleted (filesystem count unchanged), and the failed attachment is not API-exposed via the list endpoint. | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-31 | — | **Passed** |
+| ATT-PERSIST-03 | Integration | Transaction-wide compensation — failure AFTER metadata insert | Given the metadata insert succeeds but the transaction then fails before commit, the request returns 500 INTERNAL_ERROR, the Attachment row is rolled back, and the physical file is deleted (filesystem count unchanged). Proves compensation covers the entire transaction, not just the metadata insert. | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-31 | — | **Passed** |
+| ATT-PERSIST-04 | Integration | UUID stored filename and metadata persistence | Inspects the real Attachment row to verify the stored filename is a UUID + allowed extension, the original filename is preserved as metadata, the physical file exists on disk, and `storedFilename` is never API-exposed. | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-26, BR-27 | — | **Passed** |
+| ATT-PERSIST-05 | Integration | Removed attachment access (real DB) | Soft-removes a real attachment and verifies download/preview return `410 ATTACHMENT_REMOVED` while the list still shows the removed metadata. | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-11, FR-12, FR-13 | BR-18 | AC-13 | **Passed** |
+| API-ATT-OWN-INT | Integration | Ownership isolation before multipart validation (real DB) | Non-owned uploads return identical `404 NOT_FOUND` for valid, missing, oversized, and invalid-media files — proving the ownership pre-check runs before multipart validation and cannot leak ticket existence. | `server/tests/lab-02/attachment-concurrency.integration.test.ts` | FR-09, FR-10 | BR-24 | AC-03 | **Passed** |
+| API-ATT-REM-CONC | Integration | Concurrent soft removal — exactly one 200, one 409 | Two simultaneous DELETEs produce exactly one `200` and one `409`, with correct persisted `isRemoved`, `removedAt`, `removedByRequesterId`, and `removalReason` metadata. Proves the atomic conditional soft-removal transition. | `server/tests/lab-02/attachment-concurrency.integration.test.ts` | FR-11 | BR-18 | — | **Passed** |
 | API-ATT-OWN-01 | API | Cross-requester Attachment ownership enforcement | Requester B attempting upload, list, download, preview, or soft-remove against Requester A's ticket/attachment each receive `404 NOT_FOUND` with the same shape as a missing resource, and no data or file bytes are exposed. | `server/tests/lab-02/attachments.api.test.ts` | FR-09, FR-10, FR-11, FR-12, FR-13 | BR-24 | AC-03 | **Passed** |
 | API-ATT-15 | API | Active-attachment limit counts only active rows after soft removal | With 5 active attachments, soft-removing 1 drops the active count to 4; uploading a new valid attachment is then accepted (`201`) and the active count returns to 5. | `server/tests/lab-02/attachments.api.test.ts` | FR-10, FR-11 | BR-12, BR-18 | AC-08 | **Passed** |
 | API-ATT-10 | API | Removal reason normalization and boundary behavior | Omitted/blank-after-trim reason → null; 200-char reason → accepted; 201-char reason → rejected; non-string → 400 validation error. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-19 | — | **Passed** |
@@ -233,6 +227,10 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | UI-ATT-06 | UI | Failed attachment retry from Ticket Detail | After Case B partial success, View Ticket passes failed B into Ticket Detail. B is rendered as failed with a Retry button. Retry calls uploadAttachment(B) without calling createTicket again. Successful retry removes B from failed state. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10, FR-17 | BR-17 | AC-26 | **Passed** |
 | UI-ATT-07 | UI | Removal dialog accessibility — focus trap, Escape, focus restore | Opening the removal dialog moves focus into the dialog; Tab/Shift+Tab cycle within the dialog; Escape closes it; closing restores focus to the Remove button. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-11 | BR-19 | — | **Passed** |
 | UI-ATT-08 | UI | Unavailable attachment state on Preview/Download failure and Add Attachment upload failure | A Preview/Download failure against an active attachment renders the Unavailable badge with Preview/Download disabled and no Retry action (ui-spec §5.3); an Add Attachment upload failure in Ticket Detail renders an Unavailable row with a Retry action that re-uploads only that file. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10, FR-12, FR-13, FR-17 | BR-17 | — | **Passed** |
+| UI-TKT-CAP-01 | UI | Create Ticket five-active-attachment capacity | Exactly five valid files are accepted (5/5); a sixth valid file is rejected and cannot enter the upload set; invalid files are excluded from the upload set while valid ones remain; removing a selected file frees a slot; the excluded sixth file is never submitted to the upload API. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-10 | BR-12 | AC-08 | **Passed** |
+| UI-ATT-CAP-01 | UI | Ticket Detail five-active-attachment capacity | Add Attachment is disabled at five active attachments; a direct file selection at five active is rejected with no upload request; removing one of five re-enables Add Attachment; removed attachments do not count toward the active limit. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12 | AC-08 | **Passed** |
+| UI-ATT-RETRY-OWN | UI | Failed attachment retry is scoped to requester + ticket | A failed attachment from Ticket A is absent when viewing Ticket B; retry always targets the failed attachment's own requester + ticket identity, never the currently displayed detail ticket. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10, FR-17 | BR-17 | AC-26 | **Passed** |
+| UI-ATT-MUT-REF | UI | Mutation success is terminal — refresh failure is not a mutation failure | A successful upload/remove is terminal: a subsequent refresh failure is shown as a detail error, never as a retryable mutation failure. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10, FR-11 | BR-17 | — | **Passed** |
 | API-ATT-12 | API | Soft-remove idempotency: removing twice returns 409 Conflict on second attempt | A removed attachment cannot be removed again; second DELETE returns 409 rather than silently succeeding. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | **Passed** |
 | API-ATT-13 | API | Removal sets removedByRequesterId to the current requester | When soft-removing an attachment, `removedByRequesterId` is set to the `X-Dev-Requester-Id` of the caller. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-18 | — | **Passed** |
 | API-ATT-14 | Integration | Attachment signature/filename and concurrent-limit matrix | Fixed valid/corrupt fixtures verify the extension-to-signature matrix, case-insensitive extension handling, no/double extension rejection, safe stored/download filenames, and PDF-preview failure behavior. Concurrent uploads when four attachments are active yield exactly one success and never expose more than five active rows. | `server/tests/lab-02/attachment-concurrency.integration.test.ts` | FR-10, FR-12, FR-13 | BR-12, BR-13, BR-26, BR-27, BR-28 | AC-07, AC-08, AC-13, AC-24 | **Passed** |
