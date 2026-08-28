@@ -111,6 +111,24 @@ All six blocking issues from the code review have been resolved. Below is the fi
 
 **Current verdict:** All five blocking findings resolved. Awaiting re-review from @oangsa. No approval has been recorded yet.
 
+### PR #29 Review Status (2026-08-28)
+
+**Reviewer:** @oangsa — **State:** `CHANGES_REQUESTED`
+
+@oangsa reviewed PR #29 (Attachment Lifecycle & Ticket Detail) at head `9e5d41c4cdc535480152cc9c434e50ffd3514ef6` and raised seven blocking (P1) findings. All seven have been addressed at the current head:
+
+| # | Finding | Status | Evidence |
+|---|---------|--------|----------|
+| 1 | **Failed attachment retry state not scoped to owning ticket/requester** — global `failedAttachments`/`failedAddAttachment` could retry a file to the wrong ticket | ✅ **Fixed** | Scoped by `requesterId + ticketNumber` in `App.tsx`; rendering filtered by `fAtt.requesterId === activeRequester.id && fAtt.ticketNumber === detailTicketNumber`; retry uses the failed item's own ticket; state cleared on requester switch. Test `UI-ATT-RETRY-OWN` covers ticket switching and requester switching after Case B. |
+| 2 | **Upload ownership masking after multipart validation** — multer ran before ownership check, leaking behavior differences for non-owned tickets | ✅ **Fixed** | Added `requireTicketOwnership` pre-check before multer in `controller.ts`; drains request body on non-owned tickets so identical `404 NOT_FOUND` is returned regardless of file payload. Real-DB test `API-ATT-OWN-INT` proves identical `404` for valid, missing, oversized, and invalid-media files. |
+| 3 | **Soft removal not concurrency-safe** — read-then-unconditional-update allowed two concurrent DELETEs to both succeed | ✅ **Fixed** | `removeAttachment()` uses a single conditional `UPDATE ... WHERE isRemoved = false`. Real-DB test `API-ATT-REM-CONC` proves exactly one `200` and one `409` with correct removal metadata. |
+| 4 | **Compensation does not cover transaction commit failure** — post-insert/pre-commit failure left orphaned physical file | ✅ **Fixed** | Transaction-wide filesystem compensation via `test-seams.ts`. Real-DB test `ATT-PERSIST-03` injects post-insert transaction failure and verifies file deletion + row rollback. |
+| 5 | **Client does not enforce five-active-attachment limit** — Create Ticket accepted unlimited files; Ticket Detail left Add Attachment enabled at five | ✅ **Fixed** | Both Create Ticket and Ticket Detail enforce the limit client-side; sixth file rejected before reaching the API; Add Attachment disabled at five and re-enabled after removal. Tests `UI-TKT-CAP-01` and `UI-ATT-CAP-01`. |
+| 6 | **Successful upload followed by refresh failure becomes retryable** — could offer duplicate retry | ✅ **Fixed** | Mutation success is terminal; refresh failure shown as detail error, never retryable. Test `UI-ATT-MUT-REF` covers upload-success + refresh-failure and remove-success + refresh-failure. |
+| 7 | **Feature-level verification boundary incomplete** — mocked API tests didn't verify ownership, storage persistence, removed access, second removal, UUID filename, full compensation; `tests.md` had conflicting totals | ✅ **Fixed** | Added real-DB integration tests: ownership (`API-ATT-OWN-INT`), concurrent removal (`API-ATT-REM-CONC`), persistence compensation (`ATT-PERSIST-01/02/03`), UUID stored filename (`ATT-PERSIST-04`), removed access (`ATT-PERSIST-05`). `tests.md` corrected to 308 server / 64 client tests. |
+
+**Current verdict:** All seven blocking findings resolved. Awaiting re-review from @oangsa. No approval has been recorded yet.
+
 ## 3. AC Retirement Note
 - **AC-16 was retired** due to requester-context contract conflict.
 - Historical tickets for inactive requesters are preserved in data but not reachable in Lab 2 requester-facing flows.

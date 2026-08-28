@@ -124,3 +124,36 @@ Test/build evidence is recorded in the PR description, but no GitHub status chec
 - Current head after fixes: `0042f782857f2f2033e94a93621869005c589d1e`
 - Review status: **Open; all five blocking findings have been addressed. Re-review pending.** This record must be updated with the final approval/merge evidence before the Lab 2 course submission.
 
+---
+
+## Pull Request — Attachment Lifecycle & Ticket Detail (PR #29)
+
+- **PR:** [#29 — feat: Issue #15 — Attachment Lifecycle & Ticket Detail](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/29)
+- **Source branch:** `feature/lab2-attachments`
+- **Target branch:** `lab2-staging`
+- **Scope:** Complete Issue #15 attachment lifecycle and Ticket Detail feature (upload/list/download/preview/soft-remove, secure filesystem storage with compensating persistence, Create Ticket Case B partial-success handling, client-side attachment validation and drag-and-drop).
+
+### Review Comments Received and Responses
+
+| Review source | Summary of feedback | Response / current evidence |
+|---|---|---|
+| @oangsa — CHANGES_REQUESTED (2026-08-28, head `9e5d41c4`) | **P1 — Failed attachment retry state is not scoped to its owning ticket/requester:** `failedAttachments`/`failedAddAttachment` stored globally in `App`; retry could upload a failed file to the wrong ticket; requester switching left stale state. | **Fixed.** Failed-attachment state is now scoped by `requesterId + ticketNumber` (`App.tsx`). Rendering filters by `fAtt.requesterId === activeRequester.id && fAtt.ticketNumber === detailTicketNumber` (lines 557–580). Retry uses the failed item's own `requesterId`/`ticketNumber` (lines 159, 595). State is cleared on requester switch (lines 135–136). Component tests `UI-ATT-RETRY-OWN` cover switching between tickets and switching requester after Case B. |
+| @oangsa — `CHANGES_REQUESTED` (2026-08-28, head `9e5d41c4`) | **P1 — Upload ownership masking happens after multipart/file validation:** Multer ran before ownership validation, so missing/wrong-type/oversized files could leak behavior differences for non-owned tickets. | **Fixed.** Added `requireTicketOwnership` pre-check in `controller.ts` (line 52) that runs BEFORE multer parses the body, draining the request body on non-owned tickets so the same `404 NOT_FOUND` is returned regardless of file payload. The transactional ownership check inside `uploadAttachment()` remains authoritative. Real-DB test `API-ATT-OWN-INT` proves identical `404` for valid, missing, oversized, and invalid-media files. |
+| @oangsa — `CHANGES_REQUESTED` (2026-08-28, head `9e5d41c4`) | **P1 — Soft removal is not concurrency-safe:** read-then-unconditional-update allowed two concurrent DELETEs to both succeed. | **Fixed.** `removeAttachment()` now uses a single conditional `UPDATE ... WHERE isRemoved = false` (service.ts line 996) so exactly one concurrent removal wins. Real-DB test `API-ATT-REM-CONC` proves exactly one `200` and one `409` with correct persisted removal metadata. |
+| @oangsa — `CHANGES_REQUESTED` (2026-08-28, head `9e5d41c4`) | **P1 — Compensation does not cover transaction commit failure:** a failure after `attachment.create` succeeded but before commit left an orphaned physical file. | **Fixed.** Transaction-wide filesystem compensation tracks every written file and deletes it if ANY part of the transaction fails, including post-insert/pre-commit failures (via `test-seams.ts`). Real-DB test `ATT-PERSIST-03` injects a post-insert transaction failure and verifies the physical file is deleted and the row rolled back. |
+| @oangsa — `CHANGES_REQUESTED` (2026-08-28, head `9e5d41c4`) | **P1 — Client does not enforce the five-active-attachment limit:** Create Ticket accepted unlimited files; Ticket Detail left Add Attachment enabled at five active. | **Fixed.** Create Ticket and Ticket Detail both enforce the five-active limit client-side; the sixth file is rejected and never reaches the upload API; Add Attachment is disabled at five active and re-enabled after removal. Tests `UI-TKT-CAP-01` and `UI-ATT-CAP-01` cover exactly five, selecting a sixth, full Ticket Detail, and slot reuse after removal. |
+| @oangsa — `CHANGES_REQUESTED` (2026-08-28, head `9e5d41c4`) | **P1 — Successful upload followed by refresh failure becomes retryable:** a failed refresh after a successful mutation could offer a duplicate retry. | **Fixed.** Mutation success is now terminal — a subsequent refresh failure is shown as a detail error, never as a retryable mutation failure. Test `UI-ATT-MUT-REF` covers upload-success + refresh-failure and remove-success + refresh-failure. |
+| @oangsa — `CHANGES_REQUESTED` (2026-08-28, head `9e5d41c4`) | **P1 — Feature-level verification boundary incomplete:** `attachments.api.test.ts` mocked the service, so ownership, storage persistence, removed access, second removal, UUID filename persistence, and full compensation were not actually verified; `tests.md` had conflicting totals. | **Fixed.** Added real-DB integration coverage for ownership (`API-ATT-OWN-INT`), concurrent removal (`API-ATT-REM-CONC`), persistence compensation (`ATT-PERSIST-01/02/03`), UUID stored filename (`ATT-PERSIST-04`), and removed access (`ATT-PERSIST-05`). Deterministic PDF preview, exact `UI-TKT-08` flow, and complete Ticket Detail state matrix covered. `tests.md` corrected to match actual implementation (308 server / 64 client tests). |
+
+### Minor Follow-ups (Non-blocking)
+- Upload response contract and implementation disagree about `ticketId` — reconciled in the API contract.
+- Oversized numeric attachment IDs validated before Prisma to avoid a possible `500`.
+- Client prefers parsing `filename*` for downloads.
+- Remove errors shown inside the removal dialog instead of under Add Attachment.
+
+### Review Evidence
+- Review comments and discussions: [PR #29 review conversation](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/29)
+- Reviewer: @oangsa — review state: `CHANGES_REQUESTED` (2026-08-28)
+- Current head at time of review: `9e5d41c4cdc535480152cc9c434e50ffd3514ef6`
+- Review status: **Open; all seven blocking findings have been addressed. Re-review pending.** This record must be updated with the final approval/merge evidence before the Lab 2 course submission.
+
