@@ -456,3 +456,162 @@ describe("UI-TKT-SUCCESS: Success flow — Ticket Number display, date formattin
     expect((screen.getByLabelText(/Requested Priority/) as HTMLSelectElement).value).toBe("MEDIUM");
   });
 });
+
+describe("UI-TKT-CAP-01: Create Ticket five-active-attachment capacity", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.isAllowedAttachmentType).mockImplementation((filename) => {
+      const allowed = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+      const lower = filename.toLowerCase();
+      return allowed.some((ext) => lower.endsWith(ext));
+    });
+    vi.mocked(api.isWithinSizeLimit).mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  function getFileInput(): HTMLInputElement | null {
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[type="file"]');
+    return inputs.length > 0 ? inputs[inputs.length - 1] : null;
+  }
+
+  it("accepts exactly five valid attachments and displays 5/5", async () => {
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
+    await screen.findByLabelText(/Summary/);
+
+    const fileInput = getFileInput();
+    expect(fileInput).not.toBeNull();
+
+    const files = Array.from({ length: 5 }, (_, i) =>
+      new File([`content-${i}`], `file-${i}.jpg`, { type: "image/jpeg" }),
+    );
+    fireEvent.change(fileInput!, { target: { files } });
+
+    expect(screen.getByText("(5/5)")).toBeTruthy();
+    for (let i = 0; i < 5; i++) {
+      expect(screen.getByText(`file-${i}.jpg`)).toBeTruthy();
+    }
+  });
+
+  it("rejects a sixth valid file — it cannot enter the upload set", async () => {
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
+    await screen.findByLabelText(/Summary/);
+
+    const fileInput = getFileInput();
+    expect(fileInput).not.toBeNull();
+
+    const files = Array.from({ length: 6 }, (_, i) =>
+      new File([`content-${i}`], `file-${i}.jpg`, { type: "image/jpeg" }),
+    );
+    fireEvent.change(fileInput!, { target: { files } });
+
+    // Only 5 valid files may be accepted; the sixth is rejected with an error.
+    expect(screen.getByText("(5/5)")).toBeTruthy();
+    expect(screen.getAllByText(/maximum number of active attachments/).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("excludes invalid files from the upload set while keeping valid ones", async () => {
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
+    await screen.findByLabelText(/Summary/);
+
+    const fileInput = getFileInput();
+    expect(fileInput).not.toBeNull();
+
+    fireEvent.change(fileInput!, {
+      target: {
+        files: [
+          new File(["content"], "valid.jpg", { type: "image/jpeg" }),
+          new File(["content"], "bad.txt", { type: "text/plain" }),
+        ],
+      },
+    });
+
+    expect(screen.getByText("valid.jpg")).toBeTruthy();
+    expect(screen.getByText("bad.txt")).toBeTruthy();
+    expect(screen.getByText(/not supported/)).toBeTruthy();
+    // Only the valid file counts toward the capacity.
+    expect(screen.getByText("(1/5)")).toBeTruthy();
+  });
+
+  it("removing a selected file frees a slot", async () => {
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
+    await screen.findByLabelText(/Summary/);
+
+    const fileInput = getFileInput();
+    expect(fileInput).not.toBeNull();
+
+    const files = Array.from({ length: 5 }, (_, i) =>
+      new File([`content-${i}`], `file-${i}.jpg`, { type: "image/jpeg" }),
+    );
+    fireEvent.change(fileInput!, { target: { files } });
+    expect(screen.getByText("(5/5)")).toBeTruthy();
+
+    // Remove one file.
+    await userEvent.click(screen.getByRole("button", { name: "Remove file-0.jpg" }));
+    expect(screen.getByText("(4/5)")).toBeTruthy();
+    expect(screen.queryByText("file-0.jpg")).toBeNull();
+  });
+
+  it("never submits the excluded sixth file to the upload API", async () => {
+    vi.mocked(api.createTicket).mockResolvedValue({
+      id: 1,
+      ticketNumber: "TKT-2026-000001",
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "Capacity test",
+      description: "Testing that the sixth file is never uploaded.",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-27T00:00:00.000Z",
+      updatedAt: "2026-08-27T00:00:00.000Z",
+    });
+    vi.mocked(api.uploadAttachment).mockResolvedValue({
+      id: 1,
+      originalFilename: "file-0.jpg",
+      mimeType: "image/jpeg",
+      fileSizeBytes: 10,
+      uploadedAt: "2026-08-27T00:00:00.000Z",
+      isRemoved: false,
+      storedFilename: "stored.jpg",
+    });
+
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
+    await screen.findByLabelText(/Summary/);
+
+    await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
+    await userEvent.selectOptions(screen.getByLabelText(/Related System/), "1");
+    await userEvent.type(screen.getByLabelText(/Summary/), "Capacity test scenario");
+    await userEvent.type(screen.getByLabelText(/Description/), "Testing that the sixth file is never uploaded.");
+
+    const fileInput = getFileInput();
+    expect(fileInput).not.toBeNull();
+
+    const files = Array.from({ length: 6 }, (_, i) =>
+      new File([`content-${i}`], `file-${i}.jpg`, { type: "image/jpeg" }),
+    );
+    fireEvent.change(fileInput!, { target: { files } });
+
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Ticket Created/)).toBeTruthy();
+    });
+
+    // Only 5 uploads may be attempted — the sixth file is excluded.
+    expect(api.uploadAttachment).toHaveBeenCalledTimes(5);
+  });
+});

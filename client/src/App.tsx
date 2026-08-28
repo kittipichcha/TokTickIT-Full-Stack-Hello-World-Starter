@@ -28,6 +28,7 @@ interface FailedAttachment {
   id: string;
   fileName: string;
   file: File;
+  requesterId: number;
   ticketNumber: string;
   error: string;
 }
@@ -62,11 +63,13 @@ export default function App() {
   const [unavailableAttachmentIds, setUnavailableAttachmentIds] = useState<number[]>([]);
   const [unavailableAttachmentErrors, setUnavailableAttachmentErrors] = useState<Record<number, string>>({});
 
-  // Failed Add Attachment upload in Ticket Detail
+  // Failed Add Attachment upload in Ticket Detail — scoped to requester + ticket
   const [failedAddAttachment, setFailedAddAttachment] = useState<{
     id: string;
     fileName: string;
     file: File;
+    requesterId: number;
+    ticketNumber: string;
     error: string;
   } | null>(null);
 
@@ -128,29 +131,38 @@ export default function App() {
     setError(null);
     setView("home");
     setMyTicketsResetKey((k) => k + 1);
+    // Clear all attachment failure/retry state — it is scoped to the previous requester.
+    setFailedAttachments([]);
+    setFailedAddAttachment(null);
+    setUnavailableAttachmentIds([]);
+    setUnavailableAttachmentErrors({});
+    setAddAttachmentError(null);
     void loadRequesters();
   };
 
   const handleViewTicket = (ticketNumber: string, failedFiles?: Array<{ file: File; fileName: string; id: string; error: string }>) => {
     setDetailTicketNumber(ticketNumber);
     setView("ticket-detail");
-    if (failedFiles && failedFiles.length > 0) {
-      setFailedAttachments(failedFiles.map((f) => ({ ...f, ticketNumber })));
+    if (failedFiles && failedFiles.length > 0 && activeRequester) {
+      // Scope each failed attachment to the requester + ticket that produced it.
+      setFailedAttachments(failedFiles.map((f) => ({ ...f, requesterId: activeRequester.id, ticketNumber })));
     }
   };
 
-  // Handle retry of a failed attachment from Create Ticket flow
+  // Handle retry of a failed attachment from Create Ticket flow.
+  // The retry ALWAYS targets the failed attachment's own requester + ticket
+  // identity — never the currently displayed detail ticket.
   const handleRetryFailedAttachment = async (failedAtt: FailedAttachment) => {
-    if (!activeRequester || !detailTicketNumber) return;
+    if (!activeRequester) return;
     setRetryingId(failedAtt.id);
     try {
-      await uploadAttachment(activeRequester.id, detailTicketNumber, failedAtt.file);
+      await uploadAttachment(failedAtt.requesterId, failedAtt.ticketNumber, failedAtt.file);
       // Remove from failed list
       setFailedAttachments((prev) => prev.filter((f) => f.id !== failedAtt.id));
       // Refresh ticket detail to show new attachment
       setUnavailableAttachmentIds([]);
       setUnavailableAttachmentErrors({});
-      const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
+      const data = await fetchTicketDetail(failedAtt.requesterId, failedAtt.ticketNumber);
       setTicketDetail(data);
     } catch (err) {
       setAddAttachmentError(err instanceof Error ? err.message : "Retry failed.");
@@ -540,8 +552,11 @@ export default function App() {
                         )}
                       </li>
                     ))}
-                    {/* Failed attachments with retry */}
-                    {failedAttachments.map((fAtt) => (
+                    {/* Failed attachments with retry — only those scoped to the
+                        current requester AND the currently displayed ticket */}
+                    {failedAttachments
+                      .filter((fAtt) => fAtt.requesterId === activeRequester!.id && fAtt.ticketNumber === detailTicketNumber)
+                      .map((fAtt) => (
                       <li key={fAtt.id} className="attachment-row attachment-failed">
                         <span className="attachment-icon">{"📄"}</span>
                         <span className="attachment-name">{fAtt.fileName}</span>
@@ -559,8 +574,10 @@ export default function App() {
                         </button>
                       </li>
                     ))}
-                    {/* Failed Add Attachment upload */}
-                    {failedAddAttachment && (
+                    {/* Failed Add Attachment upload — only when scoped to current requester + ticket */}
+                    {failedAddAttachment &&
+                      failedAddAttachment.requesterId === activeRequester!.id &&
+                      failedAddAttachment.ticketNumber === detailTicketNumber && (
                       <li key={failedAddAttachment.id} className="attachment-row attachment-unavailable">
                         <span className="attachment-icon">{"📄"}</span>
                         <span className="attachment-name">{failedAddAttachment.fileName}</span>
@@ -571,14 +588,14 @@ export default function App() {
                         <button
                           className="tertiary-button"
                           onClick={async () => {
-                            if (!activeRequester || !detailTicketNumber) return;
+                            if (!activeRequester) return;
                             setFailedAddAttachment(null);
                             setIsAddingAttachment(true);
                             try {
-                              await uploadAttachment(activeRequester.id, detailTicketNumber, failedAddAttachment.file);
+                              await uploadAttachment(failedAddAttachment.requesterId, failedAddAttachment.ticketNumber, failedAddAttachment.file);
                               setUnavailableAttachmentIds([]);
                               setUnavailableAttachmentErrors({});
-                              const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
+                              const data = await fetchTicketDetail(failedAddAttachment.requesterId, failedAddAttachment.ticketNumber);
                               setTicketDetail(data);
                             } catch (err) {
                               setFailedAddAttachment({
@@ -609,6 +626,13 @@ export default function App() {
                       if (!file || !activeRequester || !detailTicketNumber) return;
                       e.target.value = "";
 
+                      // Enforce the five-active-attachment capacity client-side.
+                      const activeCount = ticketDetail.attachments.filter((a) => !a.isRemoved).length;
+                      if (activeCount >= 5) {
+                        setAddAttachmentError("The ticket already has the maximum number of active attachments.");
+                        return;
+                      }
+
                       // Validate
                       if (!isAllowedAttachmentType(file.name)) {
                         setAddAttachmentError(`File type "${file.name.split(".").pop()}" is not supported. Allowed: JPG, PNG, WEBP, PDF.`);
@@ -623,17 +647,29 @@ export default function App() {
                       setIsAddingAttachment(true);
 
                       try {
+                        // Phase 1: the mutation itself. A successful upload is
+                        // terminal — it must never enter the retry state merely
+                        // because the subsequent refresh failed.
                         await uploadAttachment(activeRequester.id, detailTicketNumber, file);
-                        // Refresh ticket detail to show new attachment
+                        // Mutation succeeded — clear any prior failed state.
+                        setFailedAddAttachment(null);
+                        // Phase 2: refresh. A refresh failure is a detail error
+                        // only, NOT a mutation failure.
                         setUnavailableAttachmentIds([]);
                         setUnavailableAttachmentErrors({});
-                        const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
-                        setTicketDetail(data);
+                        try {
+                          const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
+                          setTicketDetail(data);
+                        } catch (refreshErr) {
+                          setDetailError(refreshErr instanceof Error ? refreshErr.message : "Failed to refresh ticket detail.");
+                        }
                       } catch (err) {
                         setFailedAddAttachment({
                           id: `failed-upload-${Date.now()}`,
                           fileName: file.name,
                           file,
+                          requesterId: activeRequester.id,
+                          ticketNumber: detailTicketNumber,
                           error: err instanceof Error ? err.message : "Upload failed.",
                         });
                       } finally {
@@ -645,7 +681,7 @@ export default function App() {
                   <button
                     className="secondary-button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isAddingAttachment}
+                    disabled={isAddingAttachment || ticketDetail.attachments.filter((a) => !a.isRemoved).length >= 5}
                   >
                     {isAddingAttachment ? "Uploading…" : "+ Add Attachment"}
                   </button>
@@ -703,18 +739,24 @@ export default function App() {
                       if (!activeRequester) return;
                       setIsRemoving(true);
                       try {
+                        // Phase 1: the mutation. A successful removal is terminal.
                         await removeAttachment(
                           activeRequester.id,
                           removeDialogAttachment.id,
                           removeReason.trim() || undefined,
                         );
-                        // Refresh ticket detail
-                        setUnavailableAttachmentIds([]);
-                        setUnavailableAttachmentErrors({});
-                        const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber!);
-                        setTicketDetail(data);
+                        // Mutation succeeded — close the dialog regardless of refresh outcome.
                         setRemoveDialogAttachment(null);
                         setRemoveReason("");
+                        // Phase 2: refresh. A refresh failure is a detail error only.
+                        setUnavailableAttachmentIds([]);
+                        setUnavailableAttachmentErrors({});
+                        try {
+                          const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber!);
+                          setTicketDetail(data);
+                        } catch (refreshErr) {
+                          setDetailError(refreshErr instanceof Error ? refreshErr.message : "Failed to refresh ticket detail.");
+                        }
                       } catch (err) {
                         setAddAttachmentError(err instanceof Error ? err.message : "Failed to remove attachment.");
                       } finally {
