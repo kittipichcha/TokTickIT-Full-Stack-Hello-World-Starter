@@ -604,20 +604,29 @@ export async function removeAttachmentHandler(req: Request, res: Response): Prom
       return;
     }
 
-    // Parse body for removalReason
+    // Decide whether a request body is present from the request framing (not from
+    // `req.body`): a non-JSON body is never parsed by express.json(), so it would
+    // otherwise be indistinguishable from an omitted body. A body is present when
+    // chunked transfer-encoding is used or when Content-Length is a positive number.
     const contentType = (req.headers["content-type"] ?? "").toLowerCase();
+    const hasTransferEncoding = (req.headers["transfer-encoding"] ?? "").length > 0;
+    const contentLength = Number(req.headers["content-length"]);
+    const hasBody = hasTransferEncoding || (Number.isFinite(contentLength) && contentLength > 0);
+
     let removalReason: unknown = undefined;
 
-    if (req.body !== undefined && contentType.includes("application/json")) {
-      removalReason = (req.body as Record<string, unknown>).removalReason;
-    } else if (req.body !== undefined && !contentType.includes("multipart/form-data")) {
-      // Body present with non-JSON content type → error
-      if (Object.keys(req.body).length > 0 || req.headers["content-length"] !== undefined) {
+    if (hasBody) {
+      // A body present with any non-JSON media type is rejected per api-spec §0.
+      // Use exact media-type parsing: "application/json" is valid, so is
+      // "application/json; charset=utf-8", but "application/json-invalid" is not.
+      const mediaType = contentType.split(";")[0]?.trim() ?? "";
+      if (mediaType !== "application/json") {
         res.status(400).json({
           error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: {} },
         });
         return;
       }
+      removalReason = (req.body as Record<string, unknown> | undefined)?.removalReason;
     }
 
     const normalizedReason = normalizeRemovalReason(removalReason);

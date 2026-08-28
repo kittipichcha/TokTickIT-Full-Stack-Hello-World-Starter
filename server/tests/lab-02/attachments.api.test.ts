@@ -570,18 +570,31 @@ describe("API-ATT-11: DELETE content-type handling (api-spec §0)", () => {
     expect(res.status).toBe(200);
   });
 
-  it("rejects a body with a non-JSON content type with 400 VALIDATION_ERROR", async () => {
+  it("accepts a JSON body with a charset parameter", async () => {
     const res = await request(app)
       .delete("/api/attachments/1")
       .set("X-Dev-Requester-Id", "1")
-      .set("Content-Type", "text/plain")
-      .send("not json");
+      .set("Content-Type", "application/json; charset=utf-8")
+      .send({ removalReason: "Replaced" });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe("VALIDATION_ERROR");
-    // The removal must not proceed for a non-JSON body.
-    expect(service.removeAttachment).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
   });
+
+  it.each(["text/plain", "text/html", "application/xml"])(
+    "rejects a body with non-JSON content type %s with 400 VALIDATION_ERROR",
+    async (mediaType) => {
+      const res = await request(app)
+        .delete("/api/attachments/1")
+        .set("X-Dev-Requester-Id", "1")
+        .set("Content-Type", mediaType)
+        .send("not json");
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
+      // The removal must not proceed for a non-JSON body.
+      expect(service.removeAttachment).not.toHaveBeenCalled();
+    },
+  );
 
   it("rejects a body with no content type with 400 VALIDATION_ERROR", async () => {
     const res = await request(app)
