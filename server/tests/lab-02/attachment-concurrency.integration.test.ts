@@ -11,6 +11,7 @@ let testRequesterId: number;
 let testCategoryId: number;
 let testSystemId: number;
 let testTicketNumber: string;
+let otherRequesterId: number;
 const cleanupTicketNumbers: string[] = [];
 
 function getStorageDir(): string {
@@ -28,6 +29,17 @@ beforeAll(async () => {
     });
   }
   testRequesterId = requester.id;
+
+  // Create a second active requester for ownership-isolation tests.
+  let otherRequester = await prisma.devRequester.findFirst({
+    where: { isActive: true, id: { not: testRequesterId } },
+  });
+  if (!otherRequester) {
+    otherRequester = await prisma.devRequester.create({
+      data: { name: "Other Requester", email: `other-${Date.now()}@example.com`, isActive: true },
+    });
+  }
+  otherRequesterId = otherRequester.id;
 
   let cat = await prisma.category.findFirst({ where: { isActive: true } });
   if (!cat) {
@@ -128,6 +140,132 @@ describe("API-ATT-14: Concurrent attachment limit enforcement", () => {
         where: { ticket: { ticketNumber: testTicketNumber }, isRemoved: false },
       });
       expect(finalCount).toBe(5);
+    },
+  );
+});
+
+describe("API-ATT-OWN-INT: Ownership isolation before multipart validation (real DB)", () => {
+  itIfDb(
+    "non-owned uploads return identical 404 regardless of file payload",
+    async () => {
+      const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+      const oversizedBuffer = Buffer.alloc(5_000_001, 0xff);
+      oversizedBuffer[0] = 0xff;
+      oversizedBuffer[1] = 0xd8;
+      oversizedBuffer[2] = 0xff;
+
+      // Requester B (otherRequesterId) attempts uploads against Requester A's
+      // ticket. Every permutation must return the SAME 404 NOT_FOUND shape —
+      // the ownership check runs BEFORE multipart validation, so a malformed,
+      // missing, or oversized file cannot reveal the ticket's existence.
+      const cases: Array<{ name: string; req: request.Test }> = [
+        {
+          name: "valid file",
+          req: request(app)
+            .post(`/api/tickets/${testTicketNumber}/attachments`)
+            .set("X-Dev-Requester-Id", String(otherRequesterId))
+            .attach("file", jpegBuffer, "owned.jpg"),
+        },
+        {
+          name: "missing file",
+          req: request(app)
+            .post(`/api/tickets/${testTicketNumber}/attachments`)
+            .set("X-Dev-Requester-Id", String(otherRequesterId)),
+        },
+        {
+          name: "oversized file",
+          req: request(app)
+            .post(`/api/tickets/${testTicketNumber}/attachments`)
+            .set("X-Dev-Requester-Id", String(otherRequesterId))
+            .attach("file", oversizedBuffer, "oversized.jpg"),
+        },
+        {
+          name: "invalid media type",
+          req: request(app)
+            .post(`/api/tickets/${testTicketNumber}/attachments`)
+            .set("X-Dev-Requester-Id", String(otherRequesterId))
+            .attach("file", Buffer.from("not an image"), "bad.txt"),
+        },
+      ];
+
+      for (const c of cases) {
+        const res = await c.req;
+        expect(res.status, `case: ${c.name}`).toBe(404);
+        expect(res.body.error.code, `case: ${c.name}`).toBe("NOT_FOUND");
+        expect(res.body.error.message, `case: ${c.name}`).toBe("Ticket not found.");
+      }
+
+      // Verify no attachment was created for the non-owned ticket.
+      const prisma = getPrisma();
+      const count = await prisma.attachment.count({
+        where: { ticket: { ticketNumber: testTicketNumber } },
+      });
+      expect(count).toBe(5); // only the 5 from the concurrency test above
+    },
+  );
+});
+
+describe("API-ATT-REM-CONC: Concurrent soft removal — exactly one 200, one 409", () => {
+  itIfDb(
+    "two simultaneous DELETEs produce exactly one 200 and one 409 with correct persisted metadata",
+    async () => {
+      const prisma = getPrisma();
+      const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+
+      // Create a fresh ticket for this test to avoid interference.
+      const rows = await prisma.$queryRaw<Array<{ now: Date }>>`SELECT NOW() AS "now"`;
+      const now = rows[0]!.now;
+      const seq = await prisma.ticketSequence.upsert({
+        where: { year: now.getUTCFullYear() },
+        create: { year: now.getUTCFullYear(), lastSeq: 1 },
+        update: { lastSeq: { increment: 1 } },
+      });
+      const ticketNumber = `TKT-${now.getUTCFullYear()}-${String(seq.lastSeq).padStart(6, "0")}`;
+      cleanupTicketNumbers.push(ticketNumber);
+      await prisma.ticket.create({
+        data: {
+          ticketNumber,
+          requesterId: testRequesterId,
+          categoryId: testCategoryId,
+          relatedSystemId: testSystemId,
+          summary: "Concurrent removal test ticket",
+          description: "Testing atomic conditional soft removal.",
+          requestedPriority: "MEDIUM",
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+
+      const uploadRes = await request(app)
+        .post(`/api/tickets/${ticketNumber}/attachments`)
+        .set("X-Dev-Requester-Id", String(testRequesterId))
+        .attach("file", jpegBuffer, "remove-me.jpg");
+      expect(uploadRes.status).toBe(201);
+      const attachmentId = uploadRes.body.data.id;
+
+      const [res1, res2] = await Promise.all([
+        request(app)
+          .delete(`/api/attachments/${attachmentId}`)
+          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .send({ removalReason: "concurrent removal" }),
+        request(app)
+          .delete(`/api/attachments/${attachmentId}`)
+          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .send({ removalReason: "concurrent removal" }),
+      ]);
+
+      const statuses = [res1.status, res2.status].sort();
+      expect(statuses).toEqual([200, 409]);
+
+      // Verify persisted metadata: exactly one removal, correct requester/reason.
+      const persisted = await prisma.attachment.findUnique({
+        where: { id: attachmentId },
+      });
+      expect(persisted).not.toBeNull();
+      expect(persisted!.isRemoved).toBe(true);
+      expect(persisted!.removedAt).not.toBeNull();
+      expect(persisted!.removedByRequesterId).toBe(testRequesterId);
+      expect(persisted!.removalReason).toBe("concurrent removal");
     },
   );
 });

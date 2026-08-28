@@ -577,6 +577,25 @@ export async function getTicketByNumber(
   };
 }
 
+/**
+ * Checks whether a ticket exists and is owned by the given requester.
+ * Used by the controller as an authorization pre-check BEFORE multipart
+ * validation so that malformed/missing/oversized files cannot reveal
+ * information about a non-owned ticket (defense in depth — the transactional
+ * ownership check inside uploadAttachment remains authoritative).
+ */
+export async function ticketOwnedByRequester(
+  ticketNumber: string,
+  requesterId: number,
+): Promise<boolean> {
+  const prisma = getPrisma();
+  const ticket = await prisma.ticket.findUnique({
+    where: { ticketNumber },
+    select: { id: true, requesterId: true },
+  });
+  return ticket !== null && ticket.requesterId === requesterId;
+}
+
 export class AttachmentLimitError extends Error {
   constructor(message: string) {
     super(message);
@@ -721,32 +740,40 @@ export async function uploadAttachment(
 
   // Use a transaction with row lock for count check + metadata insert to prevent
   // concurrent uploads from exceeding the active attachment limit.
-  return prisma.$transaction(async (tx) => {
-    // Lock the parent Ticket row to serialize concurrent attachment-limit checks.
-    // SELECT … FOR UPDATE prevents two transactions from both seeing count=4
-    // and both inserting, which would violate the 5-active-attachment invariant.
-    const lockedTicket = await tx.$queryRaw<
-      Array<{ id: number }>
-    >`SELECT id FROM "Ticket" WHERE id = ${ticket.id} FOR UPDATE`;
+  //
+  // Compensation boundary: every physical file written during this operation is
+  // tracked and deleted if ANY part of the transaction fails — including a
+  // failure AFTER the metadata insert succeeds but before the transaction
+  // commits. This prevents orphaned files on commit failure.
+  const writtenFiles: string[] = [];
 
-    if (lockedTicket.length === 0) {
-      throw new ValidationError("Ticket not found.", {});
-    }
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // Lock the parent Ticket row to serialize concurrent attachment-limit checks.
+      // SELECT … FOR UPDATE prevents two transactions from both seeing count=4
+      // and both inserting, which would violate the 5-active-attachment invariant.
+      const lockedTicket = await tx.$queryRaw<
+        Array<{ id: number }>
+      >`SELECT id FROM "Ticket" WHERE id = ${ticket.id} FOR UPDATE`;
 
-    // Count active (non-removed) attachments
-    const activeCount = await tx.attachment.count({
-      where: { ticketId: ticket.id, isRemoved: false },
-    });
+      if (lockedTicket.length === 0) {
+        throw new ValidationError("Ticket not found.", {});
+      }
 
-    if (activeCount >= MAX_ACTIVE_ATTACHMENTS) {
-      throw new AttachmentLimitError("The ticket already has the maximum number of active attachments.");
-    }
+      // Count active (non-removed) attachments
+      const activeCount = await tx.attachment.count({
+        where: { ticketId: ticket.id, isRemoved: false },
+      });
 
-    // Write physical file first (compensating strategy)
-    const storedFilename = await writeAttachmentFile(fileBuffer, ext);
-    const mimeType = getMimeType(ext);
+      if (activeCount >= MAX_ACTIVE_ATTACHMENTS) {
+        throw new AttachmentLimitError("The ticket already has the maximum number of active attachments.");
+      }
 
-    try {
+      // Write physical file first (compensating strategy)
+      const storedFilename = await writeAttachmentFile(fileBuffer, ext);
+      writtenFiles.push(storedFilename);
+      const mimeType = getMimeType(ext);
+
       // Insert metadata
       const attachment = await createAttachmentMetadata(tx, {
         ticketId: ticket.id,
@@ -757,6 +784,12 @@ export async function uploadAttachment(
         uploaderRequesterId: requesterId,
       });
 
+      // Test seam: force a failure AFTER the metadata row is created but before
+      // the transaction commits, to verify transaction-wide compensation.
+      if (testSeams.forcePostInsertTransactionError) {
+        throw testSeams.forcePostInsertTransactionError;
+      }
+
       return {
         id: attachment.id,
         originalFilename: attachment.originalFilename,
@@ -766,12 +799,15 @@ export async function uploadAttachment(
         isRemoved: attachment.isRemoved,
         storedFilename: attachment.storedFilename,
       };
-    } catch (err) {
-      // Metadata insert failed — delete the physical file (compensation)
+    });
+  } catch (err) {
+    // Compensate for EVERY physical file written during this operation. This
+    // covers both metadata-insert failure and transaction-commit failure.
+    for (const storedFilename of writtenFiles) {
       await deleteAttachmentFile(storedFilename);
-      throw err;
     }
-  });
+    throw err;
+  }
 }
 
 /**
@@ -956,6 +992,10 @@ export function normalizeRemovalReason(reason: unknown): string | null {
  * Sets isRemoved=true, removedAt, removalReason, removedByRequesterId.
  * Returns the updated attachment data, or null if not found/not owned.
  * Throws ConflictError if already removed.
+ *
+ * Uses a single conditional UPDATE (WHERE isRemoved = false) so that exactly
+ * one concurrent removal can win — this is an atomic ACTIVE → REMOVED state
+ * transition rather than a read-then-unconditional-update (TOCTOU race).
  */
 export async function removeAttachment(
   attachmentId: number,
@@ -964,6 +1004,9 @@ export async function removeAttachment(
 ): Promise<AttachmentData | null> {
   const prisma = getPrisma();
 
+  // First resolve ownership. This is a read, but the authoritative state
+  // transition below is conditional, so a concurrent removal cannot be
+  // double-applied even if this read is stale.
   const attachment = await prisma.attachment.findUnique({
     where: { id: attachmentId },
     include: {
@@ -975,18 +1018,28 @@ export async function removeAttachment(
     return null;
   }
 
-  if (attachment.isRemoved) {
-    throw new ConflictError("This attachment has already been removed.");
-  }
-
-  const updated = await prisma.attachment.update({
-    where: { id: attachmentId },
+  // Atomic conditional state transition: only an ACTIVE attachment can be
+  // removed. If two concurrent removals race, exactly one UPDATE matches
+  // (isRemoved = false) and wins; the other matches zero rows.
+  const result = await prisma.attachment.updateMany({
+    where: { id: attachmentId, isRemoved: false },
     data: {
       isRemoved: true,
       removedAt: new Date(),
       removalReason,
       removedByRequesterId: requesterId,
     },
+  });
+
+  if (result.count === 0) {
+    // No active row matched — the attachment was already removed by a
+    // concurrent request (or removed between the ownership read and update).
+    throw new ConflictError("This attachment has already been removed.");
+  }
+
+  // Re-read the authoritative row to return the persisted metadata.
+  const updated = await prisma.attachment.findUnique({
+    where: { id: attachmentId },
     select: {
       id: true,
       originalFilename: true,

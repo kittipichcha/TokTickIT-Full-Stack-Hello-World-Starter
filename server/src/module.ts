@@ -13,6 +13,7 @@ import {
   downloadAttachmentHandler,
   previewAttachmentHandler,
   removeAttachmentHandler,
+  requireTicketOwnership,
 } from "./controller.js";
 import { requireDevRequesterContext } from "./requester-context.js";
 
@@ -44,6 +45,7 @@ router.get("/tickets/:ticketNumber", requireDevRequesterContext, getTicketDetail
 router.post(
   "/tickets/:ticketNumber/attachments",
   requireDevRequesterContext,
+  requireTicketOwnership,
   (req, res, next) => {
     upload.single("file")(req, res, (err) => {
       if (err) {

@@ -161,6 +161,62 @@ describe("ATT-PERSIST-02: Metadata persistence failure compensates physical stor
       const filesAfter = fs.readdirSync(storageDir);
       expect(filesAfter.length).toBe(filesBefore.length);
 
+// Assert API exposure: list attachments returns empty
+      const listRes = await request(app)
+        .get(`/api/tickets/${ticketNumber}/attachments`)
+        .set("X-Dev-Requester-Id", String(testRequesterId));
+      expect(listRes.status).toBe(200);
+      expect(Array.isArray(listRes.body)).toBe(true);
+      expect(listRes.body.length).toBe(0);
+    },
+  );
+});
+
+describe("ATT-PERSIST-03: Transaction-wide compensation — failure AFTER metadata insert", () => {
+  itIfDb(
+    "deletes the physical file and rolls back the Attachment row when the transaction fails after the metadata insert succeeds",
+    async () => {
+      const prisma = getPrisma();
+      const ticketNumber = await createTestTicket(prisma);
+
+      // Inject a deterministic failure AFTER the metadata row is created but
+      // BEFORE the transaction commits. This exercises the transaction-wide
+      // compensation boundary (BR-31): the physical file must be deleted even
+      // though the metadata insert succeeded.
+      testSeams.forcePostInsertTransactionError = new Error("Simulated post-insert transaction failure");
+
+      const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+
+      const storageDir = getStorageDir();
+      let filesBefore: string[] = [];
+      try {
+        filesBefore = fs.readdirSync(storageDir);
+      } catch {
+        // Directory may not exist yet
+      }
+
+      let failRes: any;
+      try {
+        failRes = await request(app)
+          .post(`/api/tickets/${ticketNumber}/attachments`)
+          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .attach("file", jpegBuffer, "photo.jpg");
+      } finally {
+        // Reset the test seam — critical even if assertions fail
+        testSeams.forcePostInsertTransactionError = null;
+      }
+
+      // Assert HTTP behavior: the error propagates as 500 INTERNAL_ERROR
+      expect(failRes!.status).toBe(500);
+      expect(failRes!.body.error.code).toBe("INTERNAL_ERROR");
+
+      // Assert database state: the transaction rolled back, so no Attachment row
+      expect(await prisma.attachment.count({ where: { ticket: { ticketNumber } } })).toBe(0);
+
+      // Assert filesystem state: the physical file was compensated (deleted)
+      const filesAfter = fs.readdirSync(storageDir);
+      expect(filesAfter.length).toBe(filesBefore.length);
+
       // Assert API exposure: list attachments returns empty
       const listRes = await request(app)
         .get(`/api/tickets/${ticketNumber}/attachments`)
@@ -168,6 +224,101 @@ describe("ATT-PERSIST-02: Metadata persistence failure compensates physical stor
       expect(listRes.status).toBe(200);
       expect(Array.isArray(listRes.body)).toBe(true);
       expect(listRes.body.length).toBe(0);
+    },
+  );
+});
+
+describe("ATT-PERSIST-04: UUID stored filename and metadata persistence (real DB)", () => {
+  itIfDb(
+    "persists a UUID+extension stored filename, preserves original filename as metadata, and never exposes storedFilename via the API",
+    async () => {
+      const prisma = getPrisma();
+      const ticketNumber = await createTestTicket(prisma);
+
+      const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+
+      const uploadRes = await request(app)
+        .post(`/api/tickets/${ticketNumber}/attachments`)
+        .set("X-Dev-Requester-Id", String(testRequesterId))
+        .attach("file", jpegBuffer, "original-name.jpg");
+      expect(uploadRes.status).toBe(201);
+
+      // The API response must NOT expose storedFilename.
+      expect(uploadRes.body.data.storedFilename).toBeUndefined();
+
+      // Inspect the real Attachment row directly.
+      const row = await prisma.attachment.findFirst({
+        where: { ticket: { ticketNumber } },
+      });
+      expect(row).not.toBeNull();
+
+      // Original filename preserved as metadata.
+      expect(row!.originalFilename).toBe("original-name.jpg");
+
+      // Stored filename is a generated safe name: UUID + allowed extension.
+      expect(row!.storedFilename).not.toBe("original-name.jpg");
+      expect(row!.storedFilename).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/);
+
+      // The physical file exists on disk under the stored filename.
+      const filePath = path.join(getStorageDir(), row!.storedFilename);
+      expect(fs.existsSync(filePath)).toBe(true);
+
+      // The list endpoint does not expose storedFilename either.
+      const listRes = await request(app)
+        .get(`/api/tickets/${ticketNumber}/attachments`)
+        .set("X-Dev-Requester-Id", String(testRequesterId));
+      expect(listRes.status).toBe(200);
+      expect(Array.isArray(listRes.body)).toBe(true);
+      expect(listRes.body[0].storedFilename).toBeUndefined();
+    },
+  );
+});
+
+describe("ATT-PERSIST-05: Removed attachment access (real DB)", () => {
+  itIfDb(
+    "soft-removed attachment returns 410 for download and preview, but remains listed with metadata",
+    async () => {
+      const prisma = getPrisma();
+      const ticketNumber = await createTestTicket(prisma);
+
+      const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+
+      const uploadRes = await request(app)
+        .post(`/api/tickets/${ticketNumber}/attachments`)
+        .set("X-Dev-Requester-Id", String(testRequesterId))
+        .attach("file", jpegBuffer, "remove-access.jpg");
+      expect(uploadRes.status).toBe(201);
+      const attachmentId = uploadRes.body.data.id;
+
+      const removeRes = await request(app)
+        .delete(`/api/attachments/${attachmentId}`)
+        .set("X-Dev-Requester-Id", String(testRequesterId))
+        .send({ removalReason: "no longer needed" });
+      expect(removeRes.status).toBe(200);
+
+      // Download → 410 ATTACHMENT_REMOVED
+      const dlRes = await request(app)
+        .get(`/api/attachments/${attachmentId}/download`)
+        .set("X-Dev-Requester-Id", String(testRequesterId));
+      expect(dlRes.status).toBe(410);
+      expect(dlRes.body.error.code).toBe("ATTACHMENT_REMOVED");
+
+      // Preview → 410 ATTACHMENT_REMOVED
+      const prevRes = await request(app)
+        .get(`/api/attachments/${attachmentId}/preview`)
+        .set("X-Dev-Requester-Id", String(testRequesterId));
+      expect(prevRes.status).toBe(410);
+      expect(prevRes.body.error.code).toBe("ATTACHMENT_REMOVED");
+
+      // List still shows the removed attachment with its metadata.
+      const listRes = await request(app)
+        .get(`/api/tickets/${ticketNumber}/attachments`)
+        .set("X-Dev-Requester-Id", String(testRequesterId));
+      expect(listRes.status).toBe(200);
+      expect(listRes.body.length).toBe(1);
+      expect(listRes.body[0].isRemoved).toBe(true);
+      expect(listRes.body[0].removalReason).toBe("no longer needed");
+      expect(listRes.body[0].removedByRequesterId).toBe(testRequesterId);
     },
   );
 });

@@ -21,6 +21,7 @@ import {
   previewAttachment,
   removeAttachment,
   normalizeRemovalReason,
+  ticketOwnedByRequester,
 } from "./service.js";
 import { TicketSequenceExhaustedError } from "./ticket-number.js";
 import { inspectIntegerFields } from "./integer-validation.js";
@@ -35,6 +36,74 @@ function firstQueryParam(val: unknown): string | undefined {
   if (typeof val === "string") return val;
   if (Array.isArray(val) && val.length > 0 && typeof val[0] === "string") return val[0];
   return undefined;
+}
+
+/**
+ * Authorization pre-check for attachment uploads.
+ *
+ * Runs BEFORE the multipart/multer middleware so that malformed, missing, or
+ * oversized files cannot reveal whether a ticket exists or belongs to another
+ * requester. A non-owned or missing ticket always returns the same 404 shape
+ * regardless of the file payload.
+ *
+ * This is only a pre-check: the transactional ownership validation inside
+ * uploadAttachment() remains the authoritative correctness boundary.
+ */
+export async function requireTicketOwnership(
+  req: Request,
+  res: Response,
+  next: import("express").NextFunction,
+): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+    const ticketNumber = req.params.ticketNumber;
+
+    if (!/^TKT-\d{4}-\d{6}$/.test(ticketNumber)) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found." },
+      });
+      return;
+    }
+
+    const owned = await ticketOwnedByRequester(ticketNumber, requesterId);
+    if (!owned) {
+      // Drain the request body before responding so the client can finish
+      // uploading without a connection reset. This keeps the 404 response
+      // readable even for large/malformed multipart payloads.
+      await drainRequestBody(req);
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found." },
+      });
+      return;
+    }
+
+    next();
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
+/**
+ * Consumes the remainder of the request body so the connection can be closed
+ * cleanly after an early authorization rejection. Without this, a client still
+ * streaming a large multipart body would receive a connection reset instead of
+ * the intended HTTP response.
+ */
+function drainRequestBody(req: Request): Promise<void> {
+  return new Promise((resolve) => {
+    if (req.readableEnded || req.complete) {
+      resolve();
+      return;
+    }
+    req.on("data", () => {
+      // discard
+    });
+    req.on("end", () => resolve());
+    req.on("error", () => resolve());
+    req.resume();
+  });
 }
 
 export async function getCategoriesHandler(req: Request, res: Response): Promise<void> {
@@ -343,7 +412,6 @@ export async function uploadAttachmentHandler(req: Request, res: Response): Prom
       });
       return;
     }
-
     // Access the file from multer
     const uploadedFile = (req as unknown as Record<string, unknown>).uploadedFile as
       { buffer: Buffer; originalname: string } | undefined;
