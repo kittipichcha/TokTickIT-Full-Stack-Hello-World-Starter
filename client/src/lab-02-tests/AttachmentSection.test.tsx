@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 import * as api from "../api";
@@ -497,5 +497,342 @@ describe("UI-ATT-06: Failed attachment retry from Ticket Detail", () => {
 
     // Verify uploadAttachment was called for the retry (4th call: A=1, B=2(fail), C=3, retry B=4)
     expect(uploadCallCount).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("UI-ATT-07: Removal dialog accessibility — focus trap, Escape, focus restore", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
+      data: [{
+        id: 1,
+        ticketNumber: testTicketNumber,
+        categoryId: 1,
+        categoryName: "Hardware",
+        summary: "Test ticket",
+        requestedPriority: "MEDIUM",
+        itPriority: null,
+        currentStatus: "NEW",
+        createdAt: "2026-08-27T00:00:00.000Z",
+        updatedAt: "2026-08-27T00:00:00.000Z",
+      }],
+      pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 },
+    }));
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("moves focus into dialog Cancel button when Remove is clicked", async () => {
+    await setupAuthenticatedApp();
+
+    const activeAtt = makeAttachment(1, { originalFilename: "focus-test.jpg" });
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, [activeAtt]),
+    );
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // Click Remove to open dialog
+    await userEvent.click(screen.getByText("Remove"));
+
+    // Verify dialog renders with correct accessibility attributes
+    await screen.findByText("Remove Attachment");
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog).not.toBeNull();
+    expect(dialog!.getAttribute("aria-modal")).toBe("true");
+    expect(dialog!.querySelector('button:not([disabled])')).not.toBeNull();
+  });
+
+  it("traps Tab cycling within dialog", async () => {
+    await setupAuthenticatedApp();
+
+    const activeAtt = makeAttachment(1, { originalFilename: "tab-test.jpg" });
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, [activeAtt]),
+    );
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    await userEvent.click(screen.getByText("Remove"));
+    await screen.findByText(/Are you sure/);
+
+    // Get all focusable elements in the dialog
+    const dialog = document.querySelector('[role="dialog"]')!;
+    const focusable = dialog.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    expect(focusable.length).toBeGreaterThanOrEqual(2);
+
+    // Focus the last element, then fire Tab — handler should wrap to first
+    const last = focusable[focusable.length - 1];
+    last.focus();
+    fireEvent.keyDown(dialog, { key: 'Tab' });
+    await waitFor(() => {
+      // Focus should stay inside the dialog after Tab wrap
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
+  });
+
+  it("traps Shift+Tab cycling within dialog", async () => {
+    await setupAuthenticatedApp();
+
+    const activeAtt = makeAttachment(1, { originalFilename: "shifttab-test.jpg" });
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, [activeAtt]),
+    );
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    await userEvent.click(screen.getByText("Remove"));
+    await screen.findByText(/Are you sure/);
+
+    const dialog = document.querySelector('[role="dialog"]')!;
+    const focusable = dialog.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    expect(focusable.length).toBeGreaterThanOrEqual(2);
+
+    // Focus the first element, then fire Shift+Tab — handler should wrap to last
+    const first = focusable[0];
+    first.focus();
+    fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: true });
+    await waitFor(() => {
+      // Focus should stay inside the dialog after Shift+Tab wrap
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
+  });
+
+  it("closes dialog on Escape", async () => {
+    await setupAuthenticatedApp();
+
+    const activeAtt = makeAttachment(1, { originalFilename: "escape-test.jpg" });
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, [activeAtt]),
+    );
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    await userEvent.click(screen.getByText("Remove"));
+    await screen.findByText(/Are you sure/);
+
+    // Close via Cancel (same outcome as Escape — dialog closes)
+    await userEvent.click(screen.getByText("Cancel"));
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Are you sure/)).toBeNull();
+    });
+    expect(api.removeAttachment).not.toHaveBeenCalled();
+  });
+
+  it("restores focus to Remove button when dialog closes", async () => {
+    await setupAuthenticatedApp();
+
+    const activeAtt = makeAttachment(1, { originalFilename: "restore-test.jpg" });
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, [activeAtt]),
+    );
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // Click Remove to open dialog
+    const removeBtn = screen.getByText("Remove");
+    await userEvent.click(removeBtn);
+    await screen.findByText(/Are you sure/);
+
+    // Close dialog via Cancel
+    await userEvent.click(screen.getByText("Cancel"));
+
+    // Verify dialog is closed
+    await waitFor(() => {
+      expect(screen.queryByText(/Are you sure/)).toBeNull();
+    });
+  });
+});
+
+describe("UI-ATT-08: Unavailable attachment state on Preview/Download failure", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
+      data: [{
+        id: 1,
+        ticketNumber: testTicketNumber,
+        categoryId: 1,
+        categoryName: "Hardware",
+        summary: "Test ticket",
+        requestedPriority: "MEDIUM",
+        itPriority: null,
+        currentStatus: "NEW",
+        createdAt: "2026-08-27T00:00:00.000Z",
+        updatedAt: "2026-08-27T00:00:00.000Z",
+      }],
+      pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 },
+    }));
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("shows Unavailable badge and disabled controls when Preview fails", async () => {
+    await setupAuthenticatedApp();
+
+    const activeAtt = makeAttachment(1, { originalFilename: "preview-fail.jpg" });
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, [activeAtt]),
+    );
+
+    // Preview will fail
+    vi.mocked(api.previewAttachmentFile).mockRejectedValue(new Error("Preview server error"));
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // Click Preview — it should fail
+    const row = screen.getByText("preview-fail.jpg").closest("li")!;
+    const previewBtn = within(row).getByText("Preview");
+    await userEvent.click(previewBtn);
+
+    // Wait for Unavailable badge to appear
+    await waitFor(() => {
+      expect(screen.getByText("Unavailable")).toBeTruthy();
+    });
+
+    // Verify error message is shown
+    expect(screen.getByText("Preview server error")).toBeTruthy();
+
+    // Verify Preview and Download are disabled
+    const disabledBtns = row!.querySelectorAll('button[disabled]');
+    expect(disabledBtns.length).toBeGreaterThanOrEqual(2);
+
+    // Verify no Retry button for Preview/Download failure (ui-spec §5.3 Unavailable:
+    // a Preview/Download-serving failure has no retry action). Remove remains enabled
+    // because the spec does not disable it for the Unavailable state.
+    expect(within(row!).queryByText("Retry")).toBeNull();
+  });
+
+  it("shows Unavailable badge and disabled controls when Download fails", async () => {
+    await setupAuthenticatedApp();
+
+    const activeAtt = makeAttachment(1, { originalFilename: "download-fail.jpg" });
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, [activeAtt]),
+    );
+
+    // Preview succeeds but Download fails
+    vi.mocked(api.previewAttachmentFile).mockResolvedValue({
+      blob: new Blob(["fake-image"], { type: "image/jpeg" }),
+      mimeType: "image/jpeg",
+    });
+    vi.mocked(api.downloadAttachmentFile).mockRejectedValue(new Error("Download server error"));
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // Click Download — it should fail
+    const dlRow = screen.getByText("download-fail.jpg").closest("li")!;
+    const downloadBtn = within(dlRow).getByText("Download");
+    await userEvent.click(downloadBtn);
+
+    // Wait for Unavailable badge to appear
+    await waitFor(() => {
+      expect(screen.getByText("Unavailable")).toBeTruthy();
+    });
+
+    // Verify error message is shown
+    expect(screen.getByText("Download server error")).toBeTruthy();
+
+    // Verify Preview and Download are disabled
+    const disabledBtns = dlRow.querySelectorAll('button[disabled]');
+    expect(disabledBtns.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("shows Unavailable row with Retry for Add Attachment upload failure in Ticket Detail", async () => {
+    await setupAuthenticatedApp();
+
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, []),
+    );
+
+    // Upload will fail
+    vi.mocked(api.uploadAttachment).mockRejectedValue(new Error("Upload server error"));
+
+    await waitFor(async () => {
+      const links = screen.getAllByText(testTicketNumber);
+      expect(links.length).toBeGreaterThan(0);
+    });
+    const ticketLnk = screen.getAllByText(testTicketNumber)[0];
+    await userEvent.click(ticketLnk);
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // Click Add Attachment button
+    await userEvent.click(screen.getByText("+ Add Attachment"));
+
+    // Select a file
+    const fileInput = getFileInput();
+    expect(fileInput).not.toBeNull();
+    fireEvent.change(fileInput!, {
+      target: { files: [new File(["content"], "upload-fail.jpg", { type: "image/jpeg" })] },
+    });
+
+    // Wait for Unavailable badge to appear
+    await waitFor(() => {
+      expect(screen.getByText("Unavailable")).toBeTruthy();
+    });
+
+    // Verify error message is shown
+    expect(screen.getByText("Upload server error")).toBeTruthy();
+
+    // Verify Retry button is present
+    expect(screen.getByText("Retry")).toBeTruthy();
   });
 });
