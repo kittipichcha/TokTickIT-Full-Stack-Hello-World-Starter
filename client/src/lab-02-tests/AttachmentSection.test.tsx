@@ -368,3 +368,134 @@ describe("UI-ATT-05: Multi-file attachment partial success orchestration", () =>
     expect(api.createTicket).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("UI-ATT-06: Failed attachment retry from Ticket Detail", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
+    vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
+    vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
+    vi.mocked(api.isAllowedAttachmentType).mockReturnValue(true);
+    vi.mocked(api.isWithinSizeLimit).mockReturnValue(true);
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () => emptyTicketsResponse);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("A succeeds, B fails, C succeeds, View Ticket shows B as retryable, Retry succeeds without recreating ticket", async () => {
+    await setupAuthenticatedApp();
+
+    vi.mocked(api.createTicket).mockImplementation(async () => ({
+      id: 1,
+      ticketNumber: testTicketNumber,
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "Test retry scenario",
+      description: "Testing retry of failed attachment B.",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-27T00:00:00.000Z",
+      updatedAt: "2026-08-27T00:00:00.000Z",
+    }));
+
+    let uploadCallCount = 0;
+    vi.mocked(api.uploadAttachment).mockImplementation(async () => {
+      uploadCallCount++;
+      if (uploadCallCount === 2) {
+        const err = new Error("Upload failed for file B") as api.AttachmentError;
+        err.code = "UNSUPPORTED_MEDIA_TYPE";
+        throw err;
+      }
+      return {
+        id: uploadCallCount,
+        originalFilename: `file-${uploadCallCount}.jpg`,
+        mimeType: "image/jpeg",
+        fileSizeBytes: 1024,
+        uploadedAt: "2026-08-27T00:00:00.000Z",
+        isRemoved: false,
+        storedFilename: `stored-${uploadCallCount}.jpg`,
+      };
+    });
+
+    // Mock ticket detail for after View Ticket
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
+      makeTicketDetail(testTicketNumber, [
+        makeAttachment(1, { originalFilename: "a.jpg" }),
+        makeAttachment(3, { originalFilename: "c.jpg" }),
+      ]),
+    );
+
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
+    await screen.findByLabelText(/Summary/);
+
+    await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
+    await userEvent.selectOptions(screen.getByLabelText(/Related System/), "1");
+    await userEvent.type(screen.getByLabelText(/Summary/), "Test retry scenario");
+    await userEvent.type(screen.getByLabelText(/Description/), "Testing retry of failed attachment B.");
+
+    const fileInput = getFileInput();
+    expect(fileInput).not.toBeNull();
+
+    fireEvent.change(fileInput!, {
+      target: {
+        files: [
+          new File(["content-a"], "a.jpg", { type: "image/jpeg" }),
+          new File(["content-b"], "b.jpg", { type: "image/jpeg" }),
+          new File(["content-c"], "c.jpg", { type: "image/jpeg" }),
+        ],
+      },
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Ticket Created/)).toBeTruthy();
+    });
+
+    // Verify ticket was created exactly once
+    expect(api.createTicket).toHaveBeenCalledTimes(1);
+
+    // Verify A and C succeeded, B failed
+    expect(screen.getAllByText(/Uploaded/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/Upload failed/).length).toBeGreaterThanOrEqual(1);
+
+    // Click View Ticket — this should pass failed B into Ticket Detail
+    await userEvent.click(screen.getByRole("button", { name: "View Ticket" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Attachments")).toBeTruthy();
+    });
+
+    // Verify B appears as a failed attachment with Retry button
+    expect(screen.getByText("b.jpg")).toBeTruthy();
+    expect(screen.getByText(/Failed/)).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+
+    // Verify A and C appear as active attachments
+    expect(screen.getByText("a.jpg")).toBeTruthy();
+    expect(screen.getByText("c.jpg")).toBeTruthy();
+
+    // Click Retry for B
+    await userEvent.click(screen.getByText("Retry"));
+
+    // Wait for retry to complete — B should disappear from failed list
+    await waitFor(() => {
+      expect(screen.queryByText(/Failed/)).toBeNull();
+    });
+
+    // Verify createTicket was NOT called again during retry
+    expect(api.createTicket).toHaveBeenCalledTimes(1);
+
+    // Verify uploadAttachment was called for the retry (4th call: A=1, B=2(fail), C=3, retry B=4)
+    expect(uploadCallCount).toBeGreaterThanOrEqual(4);
+  });
+});
