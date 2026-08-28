@@ -1,3 +1,5 @@
+import { parseContentDispositionFilename } from "./format";
+
 export interface Category {
   id: number;
   name: string;
@@ -255,12 +257,12 @@ export interface AttachmentItem {
 export interface AttachmentUploadResult {
   data: {
     id: number;
+    ticketId: number;
     originalFilename: string;
     mimeType: string;
     fileSizeBytes: number;
     uploadedAt: string;
     isRemoved: boolean;
-    storedFilename: string;
   };
 }
 
@@ -386,8 +388,7 @@ export async function downloadAttachmentFile(
   }
 
   const disposition = response.headers.get("content-disposition") || "";
-  const match = disposition.match(/filename\*?=([^;]+)/);
-  const filename = match ? decodeURIComponent(match[1].replace(/UTF-8''/i, "").trim()) : "download";
+  const filename = parseContentDispositionFilename(disposition) ?? "download";
 
   const blob = await response.blob();
   return { blob, filename };

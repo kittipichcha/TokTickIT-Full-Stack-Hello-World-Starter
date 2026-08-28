@@ -580,12 +580,12 @@ describe("UI-TKT-CAP-01: Create Ticket five-active-attachment capacity", () => {
     });
     vi.mocked(api.uploadAttachment).mockResolvedValue({
       id: 1,
+      ticketId: 1,
       originalFilename: "file-0.jpg",
       mimeType: "image/jpeg",
       fileSizeBytes: 10,
       uploadedAt: "2026-08-27T00:00:00.000Z",
       isRemoved: false,
-      storedFilename: "stored.jpg",
     });
 
     await setupAuthenticatedApp();
@@ -613,5 +613,105 @@ describe("UI-TKT-CAP-01: Create Ticket five-active-attachment capacity", () => {
 
     // Only 5 uploads may be attempted — the sixth file is excluded.
     expect(api.uploadAttachment).toHaveBeenCalledTimes(5);
+  });
+});
+
+describe("UI-TKT-08: Valid + invalid pre-submit attachments submit the ticket with only the valid file", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
+    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
+    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
+    vi.mocked(api.isAllowedAttachmentType).mockImplementation((filename) => {
+      const allowed = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+      const lower = filename.toLowerCase();
+      return allowed.some((ext) => lower.endsWith(ext));
+    });
+    vi.mocked(api.isWithinSizeLimit).mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  function getFileInput(): HTMLInputElement | null {
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[type="file"]');
+    return inputs.length > 0 ? inputs[inputs.length - 1] : null;
+  }
+
+  it("submits the ticket once and uploads only the valid file, never the invalid one", async () => {
+    vi.mocked(api.createTicket).mockResolvedValue({
+      id: 501,
+      ticketNumber: "TKT-2026-000123",
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "Mixed attachment submission",
+      description: "One valid and one invalid file are selected before submit.",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-21T09:14:00.000Z",
+      updatedAt: "2026-08-21T09:14:00.000Z",
+    });
+    vi.mocked(api.uploadAttachment).mockResolvedValue({
+      id: 1,
+      ticketId: 501,
+      originalFilename: "valid.jpg",
+      mimeType: "image/jpeg",
+      fileSizeBytes: 10,
+      uploadedAt: "2026-08-21T09:14:00.000Z",
+      isRemoved: false,
+    });
+
+    await setupAuthenticatedApp();
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
+    await screen.findByLabelText(/Summary/);
+
+    await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
+    await userEvent.selectOptions(screen.getByLabelText(/Related System/), "1");
+    await userEvent.type(screen.getByLabelText(/Summary/), "Mixed attachment submission");
+    await userEvent.type(screen.getByLabelText(/Description/), "One valid and one invalid file are selected before submit.");
+
+    const fileInput = getFileInput();
+    expect(fileInput).not.toBeNull();
+
+    // Arrange: one valid + one invalid file.
+    fireEvent.change(fileInput!, {
+      target: {
+        files: [
+          new File(["content"], "valid.jpg", { type: "image/jpeg" }),
+          new File(["content"], "invalid.txt", { type: "text/plain" }),
+        ],
+      },
+    });
+
+    // 1. The invalid file is visibly rejected.
+    expect(screen.getByText("invalid.txt")).toBeTruthy();
+    expect(screen.getByText(/not supported/)).toBeTruthy();
+    // 2. The valid file remains accepted.
+    expect(screen.getByText("valid.jpg")).toBeTruthy();
+    // Only the valid file counts toward capacity.
+    expect(screen.getByText("(1/5)")).toBeTruthy();
+
+    // 3. Submit the form.
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    // 4. Success state is displayed.
+    await waitFor(() => {
+      expect(screen.getByText(/Ticket Created/)).toBeTruthy();
+    });
+
+    // 5. createTicket() executes exactly once.
+    expect(api.createTicket).toHaveBeenCalledTimes(1);
+    // 6. uploadAttachment() executes exactly once.
+    expect(api.uploadAttachment).toHaveBeenCalledTimes(1);
+    // 7. Its argument is the valid file.
+    const uploadArg = vi.mocked(api.uploadAttachment).mock.calls[0];
+    expect(uploadArg[2].name).toBe("valid.jpg");
+    // 8. The invalid file is never passed to uploadAttachment().
+    expect(uploadArg[2].name).not.toBe("invalid.txt");
   });
 });
