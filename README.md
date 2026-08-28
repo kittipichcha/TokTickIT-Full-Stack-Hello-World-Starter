@@ -52,11 +52,13 @@ Implemented in code right now:
 - **Fixed `activeFileCount` double-counting**: `validFiles.length` already includes all valid pending files; the old code incorrectly added `uploadResults.filter(r.status === "success").length` on top of it.
 - Client-side attachment validation (type/size before network), drag-and-drop, sequential upload with per-file status, Case B partial-success UI
 - Ticket Detail: Preview/Download/Remove actions, add attachment control with validation, removal confirmation dialog with optional reason
-- **Server tests**: 31 tests across 4 files (29 API-layer + 2 real-DB integration) — all 296 server tests pass
+- **Server tests**: 34 tests across 4 files (31 API-layer + 3 real-DB integration) — all 299 server tests pass
 - **Client tests**: 43 tests across 6 files — 5 new AttachmentSection tests (UI-ATT-01 through 05) covering disallowed type, removed badge, oversized rejection, removal dialog, and multi-file partial success
 - **API-ATT-03** now tests the real multer `413 FILE_TOO_LARGE` path with a 5,000,001-byte buffer instead of a mocked 400 expectation
+- **ATT-SIZE-01/02**: Explicit 4,999,999 (accepted) and 5,000,000 (multer-exclusive-limit) boundary tests
+- **ATT-PERSIST-02**: Real persistence-compensation test — injects metadata failure after physical write, verifies file deletion, zero Attachment rows, and no API exposure
 - **Real-DB integration tests** (`attachment-concurrency`, `attachment-persistence-compensation`) executed against live PostgreSQL — all `itIfDb` tests ran (not skipped)
-- Server tests: 29 new attachment tests across `attachments.api.test.ts` and `attachment-validation.unit.test.ts`
+- Server tests: 31 new attachment tests across `attachments.api.test.ts` and `attachment-validation.unit.test.ts`
 
 Deferred to Issue #18 (final integration/release verification):
 - Full E2E test suite (Playwright)

@@ -2,6 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { testSeams } from "../../src/test-seams.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
@@ -9,6 +12,10 @@ const createdTicketNumbers: string[] = [];
 let testCategoryId: number;
 let testSystemId: number;
 let testRequesterId: number;
+
+function getStorageDir(): string {
+  return process.env.ATTACHMENT_STORAGE_DIR || path.join(process.cwd(), "attachment-storage");
+}
 
 beforeAll(async () => {
   if (!process.env.DATABASE_URL) return;
@@ -78,9 +85,9 @@ async function createTestTicket(prisma: ReturnType<typeof getPrisma>): Promise<s
   return ticketNumber;
 }
 
-describe("ATT-PERSIST-01: Attachment persistence compensation on metadata failure", () => {
+describe("ATT-PERSIST-01: Successful attachment metadata persistence", () => {
   itIfDb(
-    "deletes physical file when metadata insert fails after successful file write",
+    "uploads a valid JPEG, persists metadata, and does not expose storedFilename",
     async () => {
       const prisma = getPrisma();
       const ticketNumber = await createTestTicket(prisma);
@@ -101,7 +108,66 @@ describe("ATT-PERSIST-01: Attachment persistence compensation on metadata failur
       });
       expect(attachments.length).toBeGreaterThanOrEqual(1);
 
+      // storedFilename must not be exposed in the API response
       expect(successRes.body.data.storedFilename).toBeUndefined();
+    },
+  );
+});
+
+describe("ATT-PERSIST-02: Metadata persistence failure compensates physical storage", () => {
+  itIfDb(
+    "deletes physical file and leaves no Attachment row when metadata insert fails after successful file write",
+    async () => {
+      const prisma = getPrisma();
+      const ticketNumber = await createTestTicket(prisma);
+
+      // Inject a deterministic persistence failure via the shared test seam
+      testSeams.forceCreateAttachmentMetadataError = new Error("Simulated metadata persistence failure");
+
+      const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+
+      // Count files in storage directory before the request
+      const storageDir = getStorageDir();
+      let filesBefore: string[] = [];
+      try {
+        filesBefore = fs.readdirSync(storageDir);
+      } catch {
+        // Directory may not exist yet
+      }
+
+      let failRes: any;
+
+      try {
+        failRes = await request(app)
+          .post(`/api/tickets/${ticketNumber}/attachments`)
+          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .attach("file", jpegBuffer, "photo.jpg");
+      } finally {
+        // Reset the test seam — critical even if assertions fail
+        testSeams.forceCreateAttachmentMetadataError = null;
+      }
+
+      // Assert HTTP behavior: the error propagates as 500 INTERNAL_ERROR
+      expect(failRes!.status).toBe(500);
+      expect(failRes!.body.error.code).toBe("INTERNAL_ERROR");
+
+      // Assert database state: no Attachment row for this ticket
+      const attachments = await prisma.attachment.findMany({
+        where: { ticket: { ticketNumber } },
+      });
+      expect(attachments.length).toBe(0);
+
+      // Assert filesystem state: no new files remain in storage directory
+      const filesAfter = fs.readdirSync(storageDir);
+      expect(filesAfter.length).toBe(filesBefore.length);
+
+      // Assert API exposure: list attachments returns empty
+      const listRes = await request(app)
+        .get(`/api/tickets/${ticketNumber}/attachments`)
+        .set("X-Dev-Requester-Id", String(testRequesterId));
+      expect(listRes.status).toBe(200);
+      expect(Array.isArray(listRes.body)).toBe(true);
+      expect(listRes.body.length).toBe(0);
     },
   );
 });

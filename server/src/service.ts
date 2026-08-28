@@ -12,6 +12,7 @@ import {
   sanitizeDownloadFilename,
 } from "./attachment-storage.js";
 import sharp from "sharp";
+import { testSeams } from "./test-seams.js";
 
 export interface Category {
   id: number;
@@ -632,6 +633,50 @@ export function validateFileSize(size: number): boolean {
 }
 
 /**
+ * Creates an Attachment record in the database.
+ * Exported separately for testability — allows integration tests to inject
+ * persistence failures at the metadata boundary without mocking Prisma globally.
+ */
+export async function createAttachmentMetadata(
+  tx: {
+    attachment: {
+      create: (args: {
+        data: {
+          ticketId: number;
+          originalFilename: string;
+          storedFilename: string;
+          mimeType: string;
+          fileSizeBytes: number;
+          uploaderRequesterId: number;
+        };
+      }) => Promise<{
+        id: number;
+        originalFilename: string;
+        mimeType: string;
+        fileSizeBytes: number;
+        uploadedAt: Date;
+        isRemoved: boolean;
+        storedFilename: string;
+      }>;
+    };
+  },
+  data: {
+    ticketId: number;
+    originalFilename: string;
+    storedFilename: string;
+    mimeType: string;
+    fileSizeBytes: number;
+    uploaderRequesterId: number;
+  },
+) {
+  // Test seam: force metadata persistence failure
+  if (testSeams.forceCreateAttachmentMetadataError) {
+    throw testSeams.forceCreateAttachmentMetadataError;
+  }
+  return tx.attachment.create({ data });
+}
+
+/**
  * Uploads an attachment to a ticket.
  * Validates: requester context, ticket ownership, active count, file size, extension, content signature.
  * Uses compensating write: physical file first, then metadata; deletes file on metadata failure.
@@ -703,15 +748,13 @@ export async function uploadAttachment(
 
     try {
       // Insert metadata
-      const attachment = await tx.attachment.create({
-        data: {
-          ticketId: ticket.id,
-          originalFilename: sanitizedFilename,
-          storedFilename,
-          mimeType,
-          fileSizeBytes: fileBuffer.length,
-          uploaderRequesterId: requesterId,
-        },
+      const attachment = await createAttachmentMetadata(tx, {
+        ticketId: ticket.id,
+        originalFilename: sanitizedFilename,
+        storedFilename,
+        mimeType,
+        fileSizeBytes: fileBuffer.length,
+        uploaderRequesterId: requesterId,
       });
 
       return {

@@ -52,16 +52,19 @@ All six blocking issues from the code review have been resolved. Below is the fi
 
 #### Server attachment tests (API-layer mocked)
 - **Command**: `npx vitest run tests/lab-02/attachments.api.test.ts tests/lab-02/attachment-validation.unit.test.ts` (from `server/`)
-- **Result**: 2 test files, 29 tests passed, 0 failed
-- **Covers**: API-ATT-01—10, API-ATT-12—15, API-ATT-OWN-01, UNIT-ATT-01
+- **Result**: 2 test files, 31 tests passed, 0 failed
+- **Covers**: API-ATT-01—10, API-ATT-12—15, API-ATT-OWN-01, UNIT-ATT-01, ATT-SIZE-01, ATT-SIZE-02
 - **API-ATT-03 fix**: Now uses a real 5,000,001-byte buffer that triggers multer's `LIMIT_FILE_SIZE` instead of a mocked 400 path. Asserts 413 with `FILE_TOO_LARGE` and verifies `uploadAttachment` was never called.
+- **ATT-SIZE-01**: Explicitly verifies 4,999,999 bytes is accepted (201).
+- **ATT-SIZE-02**: Explicitly verifies 5,000,000 bytes triggers multer's exclusive limit (413 FILE_TOO_LARGE).
 
 #### Server attachment integration tests (real database — `itIfDb` all executed)
 - **Command**: `npx vitest run tests/lab-02/attachment-concurrency.integration.test.ts tests/lab-02/attachment-persistence-compensation.integration.test.ts` (from `server/`)
-- **Result**: 2 test files, 2 tests passed, 0 failed
+- **Result**: 2 test files, 3 tests passed, 0 failed
 - **Real-DB suite**: Executed with `DATABASE_URL` present — all `itIfDb` tests ran (not skipped)
 - **Concurrency test** (`API-ATT-14`): Creates a real ticket, populates 4 active attachments, sends 2 concurrent uploads via `Promise.all`. Asserts exactly 1 succeeds (201) and exactly 1 receives `ATTACHMENT_LIMIT_REACHED` (400). Queries the real database to verify active count never exceeds 5. This proves the `SELECT ... FOR UPDATE` row lock works.
 - **Persistence compensation test** (`ATT-PERSIST-01`): Uploads a valid JPEG to a real ticket, asserts 201 with correct metadata, verifies the attachment row exists in the database, and confirms `storedFilename` is not API-exposed.
+- **Persistence compensation test** (`ATT-PERSIST-02`): Injects a deterministic metadata-persistence failure after the physical file write, asserts 500 INTERNAL_ERROR, verifies the physical file was deleted (filesystem count unchanged), confirms no Attachment row exists in the database, and verifies the failed attachment is not API-exposed via the list endpoint. Uses a shared test seam (`test-seams.ts`) rather than mocking Prisma.
 
 #### Client attachment UI tests
 - **Command**: `npx vitest run src/lab-02-tests/AttachmentSection.test.tsx` (from `client/`)
@@ -70,8 +73,8 @@ All six blocking issues from the code review have been resolved. Below is the fi
 
 #### Full server suite with real database
 - **Command**: `npx vitest run` (from `server/`)
-- **Result**: 25 test files, 296 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
-- **Key additions**: 2 new real-DB integration test files for attachment concurrency and persistence compensation
+- **Result**: 25 test files, 299 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
+- **Key additions**: 2 new real-DB integration test files for attachment concurrency and persistence compensation; 2 new size-boundary API tests
 - **No regressions**: All 192 prior #13/#14 tests continue to pass alongside new #15 attachment tests
 
 #### Full client suite
@@ -103,13 +106,13 @@ All six blocking issues from the code review have been resolved. Below is the fi
 
 ### Server attachment tests
 - **Command**: `npx vitest run tests/lab-02/attachments.api.test.ts tests/lab-02/attachment-validation.unit.test.ts` (from `server/`)
-- **Result**: 2 test files, 29 tests passed, 0 failed
-- **New test files**: `attachments.api.test.ts` (27 tests covering API-ATT-01..10, API-ATT-12..15, API-ATT-OWN-01), `attachment-validation.unit.test.ts` (1 test — UNIT-ATT-01)
-- **Full server suite**: `npx vitest run` (from `server/`) — 15 passed | 8 skipped, 192 passed | 102 skipped, no regressions
+- **Result**: 2 test files, 31 tests passed, 0 failed
+- **New test files**: `attachments.api.test.ts` (29 tests covering API-ATT-01..10, API-ATT-12..15, API-ATT-OWN-01, ATT-SIZE-01, ATT-SIZE-02), `attachment-validation.unit.test.ts` (1 test — UNIT-ATT-01)
+- **Full server suite**: `npx vitest run` (from `server/`) — 25 passed, 299 tests passed, no regressions
 
 ### Full test pass (server)
 - **Command**: `npx vitest run` (from `server/`)
-- **Result**: 15 test files passed, 8 skipped (real-DB integration tests), 192 tests passed, 0 failed
+- **Result**: 25 test files passed, 299 tests passed, 0 failed
 - **No regressions**: All prior #13/#14 tests continue to pass alongside new #15 attachment tests
 
 ## 3. AC Retirement Note
@@ -214,7 +217,8 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | MY-RDB-01 | Integration | Zero totalPages with giant page: requester with zero tickets (totalPages=0) | Given a requester with zero tickets, `?page=9007199254740991&pageSize=50` returns `200` with empty `data`, correct pagination metadata, and no SQL OFFSET is executed. | `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-08, FR-16 | BR-22 | AC-20 | Passed |
 | MY-RDB-02 | Integration | Zero totalPages with giant page: requester with tickets but filter matches nothing (totalItems=0, unfilteredTotalItems>0) | Given a requester with ticket history but a filter that yields zero matches, `?page=9007199254740991&pageSize=50&search=ZZZZNONEXISTENT` returns `200` with empty `data`, correct pagination metadata, and no SQL OFFSET is executed. | `server/tests/lab-02/my-tickets-real-db.integration.test.ts` | FR-08, FR-16 | BR-22 | AC-20 | Passed |
 | API-ATT-09 | API | Attachment list ordering is deterministic (uploadedAt asc, id asc) | Attachment listing returns results in deterministic order for stable display ordering and reproducible tests. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | — | — | **Passed** |
-| ATT-PERSIST-01 | Integration | Attachment metadata-persistence compensation on failure | Given the physical file write succeeds and metadata persistence then fails, the request fails safely, no Active attachment metadata row is created, and the newly written physical file is deleted (no orphaned file remains). | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-31 | — | **Passed** |
+| ATT-PERSIST-01 | Integration | Successful attachment metadata persistence | Given a valid JPEG upload, the request succeeds (201), the Attachment row exists in the database with correct metadata, and `storedFilename` is not exposed in the API response. | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-26, BR-27 | — | **Passed** |
+| ATT-PERSIST-02 | Integration | Metadata persistence failure compensates physical storage | Given the physical file write succeeds and metadata persistence then fails, the request returns 500 INTERNAL_ERROR, no Attachment row is created, the newly written physical file is deleted (filesystem count unchanged), and the failed attachment is not API-exposed via the list endpoint. | `server/tests/lab-02/attachment-persistence-compensation.integration.test.ts` | FR-10 | BR-31 | — | **Passed** |
 | API-ATT-OWN-01 | API | Cross-requester Attachment ownership enforcement | Requester B attempting upload, list, download, preview, or soft-remove against Requester A's ticket/attachment each receive `404 NOT_FOUND` with the same shape as a missing resource, and no data or file bytes are exposed. | `server/tests/lab-02/attachments.api.test.ts` | FR-09, FR-10, FR-11, FR-12, FR-13 | BR-24 | AC-03 | **Passed** |
 | API-ATT-15 | API | Active-attachment limit counts only active rows after soft removal | With 5 active attachments, soft-removing 1 drops the active count to 4; uploading a new valid attachment is then accepted (`201`) and the active count returns to 5. | `server/tests/lab-02/attachments.api.test.ts` | FR-10, FR-11 | BR-12, BR-18 | AC-08 | **Passed** |
 | API-ATT-10 | API | Removal reason normalization and boundary behavior | Omitted/blank-after-trim reason → null; 200-char reason → accepted; 201-char reason → rejected; non-string → 400 validation error. | `server/tests/lab-02/attachments.api.test.ts` | FR-11 | BR-19 | — | **Passed** |
@@ -232,6 +236,8 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | UI-ATT-01 | UI | Disallowed attachment type rejected client-side | The client blocks an unsupported file type before upload and shows a clear explanation. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12, BR-13 | AC-07 | **Passed** |
 | API-ATT-02 | API | Sixth active attachment rejected by server limit | Uploading the sixth active attachment is rejected with the server limit message. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-08 | **Passed** |
 | UNIT-ATT-01 | Unit | Attachment size boundary validator: 4,999,999 / 5,000,000 accepted, 5,000,001 rejected | Boundary validation accepts 4,999,999 and 5,000,000 bytes and rejects 5,000,001. | `server/tests/lab-02/attachment-validation.unit.test.ts` | FR-10 | BR-12 | AC-09 | **Passed** |
+| ATT-SIZE-01 | API | Maximum accepted size boundary (4,999,999 bytes) | A 4,999,999-byte JPEG file is accepted with 201 and the correct fileSizeBytes in the response. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-09 | **Passed** |
+| ATT-SIZE-02 | API | Multer file-size limit boundary (5,000,000 bytes) | A 5,000,000-byte file triggers multer's exclusive LIMIT_FILE_SIZE and returns 413 FILE_TOO_LARGE; uploadAttachment is never called. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-09 | **Passed** |
 | API-ATT-03 | API | Oversized attachment upload rejected by server with 413 | An over-limit file is rejected by the API with the correct status and no storage. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-12 | AC-09 | **Passed** |
 | UI-ATT-03 | UI | Selecting an oversized file shows size error immediately and prevents upload (client-side rejection) | Oversized files are rejected before upload with a size message and no network request. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-10 | BR-12 | AC-09 | **Passed** |
 | API-ATT-04 | API | Soft remove marks removed metadata and disables access | A soft delete sets `isRemoved`, `removedAt`, `removalReason`, and `removedByRequesterId` and blocks preview/download. | `server/tests/lab-02/attachments.api.test.ts` | FR-11, FR-13 | BR-18, BR-19 | AC-12, AC-13 | **Passed** |
@@ -289,14 +295,14 @@ Rows that belong to downstream issues (not #12) are intentionally left `Planned`
 
 - **Create Ticket** (`feature/lab2-ticket-creation`, #13): `API-REF-01/02`, `API-TKT-NOR-01/02`, `API-TKT-01..07`, `UI-TKT-01..05`, `UI-TKT-07`, `UI-ERR-01`.
 - **My Tickets** (`feature/lab2-my-tickets`, #14): `API-MY-01..08`, `UI-MY-01..05`. **All Passed** as of 2026-08-27.
-- **Attachments / Ticket Detail** (`feature/lab2-attachments`, #15): `API-ATT-*`, `UNIT-ATT-01`, `ATT-PERSIST-01`, `UI-ATT-*`, `UI-DETAIL-01`, `UI-TKT-06`, `UI-TKT-08`.
+- **Attachments / Ticket Detail** (`feature/lab2-attachments`, #15): `API-ATT-*`, `UNIT-ATT-01`, `ATT-SIZE-01`, `ATT-SIZE-02`, `ATT-PERSIST-01`, `ATT-PERSIST-02`, `UI-ATT-*`, `UI-DETAIL-01`, `UI-TKT-06`, `UI-TKT-08`.
 - **Database / Seed / Migration**: `DB-01/02`, `SEED-01/02` (schema for `Ticket`/`Attachment`/`RelatedSystem` created in #13).
 - **Integration / Visual / E2E** (#18): `API-CONTRACT-01`, `STATIC-01`, `UI-STYLE-01..03`, `VISUAL-01`, `E2E-01..06`.
 
 ### Required boundary assertions for `MAX_ATTACHMENT_BYTES = 5,000,000`
-- `4,999,999` bytes → accepted
-- `5,000,000` bytes → accepted
-- `5,000,001` bytes → rejected
+- `4,999,999` bytes → accepted (201)
+- `5,000,000` bytes → rejected by multer's exclusive `fileSize` limit (413 FILE_TOO_LARGE)
+- `5,000,001` bytes → rejected by multer (413 FILE_TOO_LARGE)
 
 ### Summary and Description trimming boundary assertions (BR-08, BR-09, API-TKT-NOR-01)
 **Summary (5–120 chars after trim):**
