@@ -41,7 +41,7 @@ Implemented in code right now:
 - `POST /api/tickets/:ticketNumber/attachments` — Upload attachment (multipart, single file) with type/size/content-signature validation, 5-active limit, sequential processing
 - `GET /api/tickets/:ticketNumber/attachments` — List attachments (active + removed), deterministic `uploadedAt ASC, id ASC` ordering
 - `GET /api/attachments/:attachmentId/download` — Download attachment with ownership re-validation, `Content-Disposition` with RFC 5987 UTF-8 `filename*`, removed → `410 ATTACHMENT_REMOVED`
-- `GET /api/attachments/:attachmentId/preview` — Preview attachment: image inline or **PDF first page rendered as PNG via `sharp`** (replaces the old full-PDF fallback); satisfies FR-12/BR-28/AC-24
+- `GET /api/attachments/:attachmentId/preview` — Preview attachment: image inline or **PDF first page rendered as PNG via `sharp`** (replaces the old full-PDF fallback); satisfies FR-12/BR-28/AC-24; PDF rendering failure returns `500 INTERNAL_ERROR` (never the original PDF)
 - `DELETE /api/attachments/:attachmentId` — Soft-remove with optional reason (normalization: omitted/blank → null, 1–200 chars after trim, non-string → 400), removed → `409 CONFLICT`
 - Secure filesystem storage with compensating write-then-persist strategy (physical file written before metadata; metadata failure deletes the file)
 - Uploaded files renamed to UUID + validated extension; original filename is display metadata only
@@ -52,7 +52,7 @@ Implemented in code right now:
 - **Fixed `activeFileCount` double-counting**: `validFiles.length` already includes all valid pending files; the old code incorrectly added `uploadResults.filter(r.status === "success").length` on top of it.
 - Client-side attachment validation (type/size before network), drag-and-drop, sequential upload with per-file status, Case B partial-success UI
 - Ticket Detail: Preview/Download/Remove actions, add attachment control with validation, removal confirmation dialog with optional reason
-- **Server tests**: 34 tests across 4 files (31 API-layer + 3 real-DB integration) — all 299 server tests pass
+- **Server tests**: 38 tests across 4 attachment test files (29 API-layer + 4 unit + 3 real-DB integration + 2 persistence) — all 303 server tests pass
 - **Client tests**: 43 tests across 6 files — 5 new AttachmentSection tests (UI-ATT-01 through 05) covering disallowed type, removed badge, oversized rejection, removal dialog, and multi-file partial success
 - **API-ATT-03** now tests the real multer `413 FILE_TOO_LARGE` path with a 5,000,001-byte buffer instead of a mocked 400 expectation
 - **ATT-SIZE-01/02**: Explicit 4,999,999 (accepted) and 5,000,000 (accepted) boundary tests — the Multer transport limit is set slightly above the business maximum so the service-level validator can accept the exact 5,000,000-byte boundary.
