@@ -54,6 +54,21 @@ export default function App() {
   const [addAttachmentError, setAddAttachmentError] = useState<string | null>(null);
   const [isAddingAttachment, setIsAddingAttachment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Unavailable attachment state (Preview/Download failures)
+  const [unavailableAttachmentIds, setUnavailableAttachmentIds] = useState<number[]>([]);
+  const [unavailableAttachmentErrors, setUnavailableAttachmentErrors] = useState<Record<number, string>>({});
+
+  // Failed Add Attachment upload in Ticket Detail
+  const [failedAddAttachment, setFailedAddAttachment] = useState<{
+    id: string;
+    fileName: string;
+    file: File;
+    error: string;
+  } | null>(null);
 
   // Failed attachment retry state (from Create Ticket partial upload)
   const [failedAttachments, setFailedAttachments] = useState<FailedAttachment[]>([]);
@@ -133,6 +148,8 @@ export default function App() {
       // Remove from failed list
       setFailedAttachments((prev) => prev.filter((f) => f.id !== failedAtt.id));
       // Refresh ticket detail to show new attachment
+      setUnavailableAttachmentIds([]);
+      setUnavailableAttachmentErrors({});
       const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
       setTicketDetail(data);
     } catch (err) {
@@ -174,6 +191,50 @@ export default function App() {
 
   const handleCreateAnother = () => {
     setView("create-ticket");
+  };
+
+  // Focus management for removal dialog
+  useEffect(() => {
+    if (removeDialogAttachment) {
+      lastFocusedRef.current = document.activeElement as HTMLElement;
+      // Focus the Cancel button (first interactive control in the dialog)
+      const cancelBtn = dialogRef.current?.querySelector('.secondary-button') as HTMLElement | null;
+      if (cancelBtn) {
+        cancelBtn.focus();
+      }
+    } else if (lastFocusedRef.current) {
+      lastFocusedRef.current.focus();
+      lastFocusedRef.current = null;
+    }
+  }, [removeDialogAttachment]);
+
+  const handleDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setRemoveDialogAttachment(null);
+      setRemoveReason('');
+      return;
+    }
+    if (e.key === 'Tab') {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
   };
 
   if (!activeRequester) {
@@ -364,14 +425,14 @@ export default function App() {
               {/* Attachments section */}
               <section className="attachments-section" aria-label="Attachments">
                 <h2>Attachments</h2>
-                {ticketDetail.attachments.length === 0 && failedAttachments.length === 0 && !isAddingAttachment ? (
+                {ticketDetail.attachments.length === 0 && failedAttachments.length === 0 && !isAddingAttachment && !failedAddAttachment ? (
                   <p className="placeholder-text">No attachments.</p>
                 ) : (
                   <ul className="attachment-list">
                     {ticketDetail.attachments.map((att) => (
                       <li
                         key={att.id}
-                        className={`attachment-row ${att.isRemoved ? "attachment-removed" : ""}`}
+                        className={`attachment-row ${att.isRemoved ? "attachment-removed" : ""} ${unavailableAttachmentIds.includes(att.id) ? "attachment-unavailable" : ""}`}
                       >
                         <span className="attachment-icon">
                           {att.mimeType.startsWith("image/") ? "🖼" : "📄"}
@@ -402,6 +463,31 @@ export default function App() {
                               Download
                             </button>
                           </>
+                        ) : unavailableAttachmentIds.includes(att.id) ? (
+                          <>
+                            <span className="unavailable-badge">Unavailable</span>
+                            <span className="field-error">{unavailableAttachmentErrors[att.id]}</span>
+                            <button
+                              className="tertiary-button"
+                              disabled
+                              aria-disabled="true"
+                            >
+                              Preview
+                            </button>
+                            <button
+                              className="tertiary-button"
+                              disabled
+                              aria-disabled="true"
+                            >
+                              Download
+                            </button>
+                            <button
+                              className="destructive-button"
+                              onClick={() => setRemoveDialogAttachment(att)}
+                            >
+                              Remove
+                            </button>
+                          </>
                         ) : (
                           <>
                             <span className="attachment-status-active">Active</span>
@@ -414,7 +500,9 @@ export default function App() {
                                   window.open(url, "_blank");
                                   setTimeout(() => URL.revokeObjectURL(url), 60000);
                                 } catch (err) {
-                                  setAddAttachmentError(err instanceof Error ? err.message : "Preview failed.");
+                                  const msg = err instanceof Error ? err.message : "Preview failed.";
+                                  setUnavailableAttachmentIds(prev => prev.includes(att.id) ? prev : [...prev, att.id]);
+                                  setUnavailableAttachmentErrors(prev => ({ ...prev, [att.id]: msg }));
                                 }
                               }}
                             >
@@ -434,7 +522,9 @@ export default function App() {
                                   document.body.removeChild(a);
                                   URL.revokeObjectURL(url);
                                 } catch (err) {
-                                  setAddAttachmentError(err instanceof Error ? err.message : "Download failed.");
+                                  const msg = err instanceof Error ? err.message : "Download failed.";
+                                  setUnavailableAttachmentIds(prev => prev.includes(att.id) ? prev : [...prev, att.id]);
+                                  setUnavailableAttachmentErrors(prev => ({ ...prev, [att.id]: msg }));
                                 }
                               }}
                             >
@@ -469,6 +559,42 @@ export default function App() {
                         </button>
                       </li>
                     ))}
+                    {/* Failed Add Attachment upload */}
+                    {failedAddAttachment && (
+                      <li key={failedAddAttachment.id} className="attachment-row attachment-unavailable">
+                        <span className="attachment-icon">{"📄"}</span>
+                        <span className="attachment-name">{failedAddAttachment.fileName}</span>
+                        <span className="attachment-size">{formatFileSize(failedAddAttachment.file.size)}</span>
+                        <span className="attachment-date">—</span>
+                        <span className="unavailable-badge">Unavailable</span>
+                        <span className="field-error">{failedAddAttachment.error}</span>
+                        <button
+                          className="tertiary-button"
+                          onClick={async () => {
+                            if (!activeRequester || !detailTicketNumber) return;
+                            setFailedAddAttachment(null);
+                            setIsAddingAttachment(true);
+                            try {
+                              await uploadAttachment(activeRequester.id, detailTicketNumber, failedAddAttachment.file);
+                              setUnavailableAttachmentIds([]);
+                              setUnavailableAttachmentErrors({});
+                              const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
+                              setTicketDetail(data);
+                            } catch (err) {
+                              setFailedAddAttachment({
+                                ...failedAddAttachment,
+                                error: err instanceof Error ? err.message : "Retry failed.",
+                              });
+                            } finally {
+                              setIsAddingAttachment(false);
+                            }
+                          }}
+                          disabled={isAddingAttachment}
+                        >
+                          {isAddingAttachment ? "Retrying…" : "Retry"}
+                        </button>
+                      </li>
+                    )}
                   </ul>
                 )}
 
@@ -499,10 +625,17 @@ export default function App() {
                       try {
                         await uploadAttachment(activeRequester.id, detailTicketNumber, file);
                         // Refresh ticket detail to show new attachment
+                        setUnavailableAttachmentIds([]);
+                        setUnavailableAttachmentErrors({});
                         const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
                         setTicketDetail(data);
                       } catch (err) {
-                        setAddAttachmentError(err instanceof Error ? err.message : "Upload failed.");
+                        setFailedAddAttachment({
+                          id: `failed-upload-${Date.now()}`,
+                          fileName: file.name,
+                          file,
+                          error: err instanceof Error ? err.message : "Upload failed.",
+                        });
                       } finally {
                         setIsAddingAttachment(false);
                       }
@@ -531,9 +664,16 @@ export default function App() {
 
           {/* Removal confirmation dialog */}
           {removeDialogAttachment && (
-            <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Remove attachment">
+            <div
+              className="modal-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Remove attachment"
+              ref={dialogRef}
+              onKeyDown={handleDialogKeyDown}
+            >
               <div className="modal-content">
-                <h2>Remove Attachment</h2>
+                <h2 tabIndex={-1}>Remove Attachment</h2>
                 <p>Are you sure you want to remove <strong>{removeDialogAttachment.originalFilename}</strong>?</p>
                 <div className="form-field">
                   <label htmlFor="removalReason">Reason (optional)</label>
@@ -569,6 +709,8 @@ export default function App() {
                           removeReason.trim() || undefined,
                         );
                         // Refresh ticket detail
+                        setUnavailableAttachmentIds([]);
+                        setUnavailableAttachmentErrors({});
                         const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber!);
                         setTicketDetail(data);
                         setRemoveDialogAttachment(null);
