@@ -60,8 +60,13 @@ Implemented in code right now:
 - **Client attachment capacity enforcement**: Create Ticket and Ticket Detail both enforce the five-active-attachment limit client-side; the sixth file is rejected and never reaches the upload API.
 - **Scoped failed-attachment retry**: failed uploads are scoped to the requester + ticket that produced them; navigating to another ticket or switching requester never shows or retries another ticket's failure.
 - **Mutation/refresh separation**: a successful upload/remove is terminal — a subsequent refresh failure is shown as a detail error, never as a retryable mutation failure.
-- **Server tests**: 308 tests across 25 files pass (including real-DB ownership, concurrent-removal, transaction-wide compensation, and UUID stored-filename integration tests)
-- **Client tests**: 64 tests across 6 files — AttachmentSection and CreateTicket cover the full attachment state matrix, five-file capacity, retry ownership scoping, and mutation/refresh separation
+- **Retry upload terminal-state (re-review fix)**: both retry handlers (Create Ticket Case B and Ticket Detail Add Attachment) now separate the mutation boundary from the refresh boundary — a successful retry upload permanently clears the failed row, and a refresh failure is shown as a detail error that never restores the retry row (no duplicate re-upload).
+- **Attachment ID range validation**: a shared `parseAttachmentId` helper validates the decimal grammar, `Number.isSafeInteger`, and the PostgreSQL `INTEGER` max (`2147483647`) for download/preview/delete, so oversized digit strings return `404 NOT_FOUND` (never a `500`) and never reach Prisma.
+- **DELETE content-type handling**: per api-spec §0, an omitted body (no content type) and a JSON body with `application/json` are accepted; a body with a non-JSON content type or no content type returns `400 VALIDATION_ERROR` and never reaches the removal service.
+- **RFC 5987 download filename parsing**: the client now prefers the `filename*` UTF-8 value (decoded) over the ASCII `filename` fallback via `parseContentDispositionFilename`.
+- **Upload-result type alignment**: the client `AttachmentUploadResult` now matches the server contract (`ticketId` present, `storedFilename` absent).
+- **Server tests**: 332 tests across 26 files pass (including real-DB ownership, concurrent-removal, transaction-wide compensation, UUID stored-filename, cross-requester list/download/preview/delete ownership, extension/signature validation matrix, DELETE content-type, and attachment-ID range tests)
+- **Client tests**: 83 tests across 7 files — AttachmentSection and CreateTicket cover the full attachment state matrix, five-file capacity, retry ownership scoping, mutation/refresh separation, retry terminal-state, the complete UI-DETAIL-01 matrix, UI-TKT-08 submission orchestration, and RFC 5987 filename parsing
 
 Deferred to Issue #18 (final integration/release verification):
 - Full E2E test suite (Playwright)
@@ -85,6 +90,7 @@ Deferred to Issue #18 (final integration/release verification):
 |  |  |- lab-02-tests/
 |  |  |  |- AttachmentSection.test.tsx
 |  |  |  |- CreateTicket.test.tsx
+|  |  |  |- format.test.ts
 |  |  |  |- MyTickets.test.tsx
 |  |  |  |- RequesterSelection.integration.test.tsx
 |  |  |  |- RequesterSelection.test.tsx
@@ -123,6 +129,7 @@ Deferred to Issue #18 (final integration/release verification):
 |  |  |- lab-02/
 |  |  |  |- api-contract.api.test.ts
 |  |  |  |- attachment-concurrency.integration.test.ts
+|  |  |  |- attachment-ownership.integration.test.ts
 |  |  |  |- attachment-persistence-compensation.integration.test.ts
 |  |  |  |- attachment-validation.unit.test.ts
 |  |  |  |- attachments.api.test.ts

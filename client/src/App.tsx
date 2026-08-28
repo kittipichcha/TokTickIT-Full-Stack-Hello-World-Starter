@@ -156,14 +156,22 @@ export default function App() {
     if (!activeRequester) return;
     setRetryingId(failedAtt.id);
     try {
+      // Phase 1: the mutation itself. A successful retry upload is terminal —
+      // the failed row is removed permanently and must never be restored
+      // merely because the subsequent refresh failed.
       await uploadAttachment(failedAtt.requesterId, failedAtt.ticketNumber, failedAtt.file);
-      // Remove from failed list
+      // Mutation succeeded — remove from failed list permanently.
       setFailedAttachments((prev) => prev.filter((f) => f.id !== failedAtt.id));
-      // Refresh ticket detail to show new attachment
+      // Phase 2: refresh. A refresh failure is a detail error only, NOT a
+      // mutation failure, so it must not restore the failed row.
       setUnavailableAttachmentIds([]);
       setUnavailableAttachmentErrors({});
-      const data = await fetchTicketDetail(failedAtt.requesterId, failedAtt.ticketNumber);
-      setTicketDetail(data);
+      try {
+        const data = await fetchTicketDetail(failedAtt.requesterId, failedAtt.ticketNumber);
+        setTicketDetail(data);
+      } catch (refreshErr) {
+        setDetailError(refreshErr instanceof Error ? refreshErr.message : "Failed to refresh ticket detail.");
+      }
     } catch (err) {
       setAddAttachmentError(err instanceof Error ? err.message : "Retry failed.");
     } finally {
@@ -592,11 +600,23 @@ export default function App() {
                             setFailedAddAttachment(null);
                             setIsAddingAttachment(true);
                             try {
+                              // Phase 1: the mutation itself. A successful retry
+                              // upload is terminal — the failed row is cleared
+                              // permanently and must never be restored merely
+                              // because the subsequent refresh failed.
                               await uploadAttachment(failedAddAttachment.requesterId, failedAddAttachment.ticketNumber, failedAddAttachment.file);
+                              // Mutation succeeded — the failed row stays cleared.
                               setUnavailableAttachmentIds([]);
                               setUnavailableAttachmentErrors({});
-                              const data = await fetchTicketDetail(failedAddAttachment.requesterId, failedAddAttachment.ticketNumber);
-                              setTicketDetail(data);
+                              // Phase 2: refresh. A refresh failure is a detail
+                              // error only, NOT a mutation failure, so it must
+                              // not restore the retry row.
+                              try {
+                                const data = await fetchTicketDetail(failedAddAttachment.requesterId, failedAddAttachment.ticketNumber);
+                                setTicketDetail(data);
+                              } catch (refreshErr) {
+                                setDetailError(refreshErr instanceof Error ? refreshErr.message : "Failed to refresh ticket detail.");
+                              }
                             } catch (err) {
                               setFailedAddAttachment({
                                 ...failedAddAttachment,

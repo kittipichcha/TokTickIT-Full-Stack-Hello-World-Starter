@@ -39,6 +39,22 @@ function firstQueryParam(val: unknown): string | undefined {
 }
 
 /**
+ * Parses and validates an `attachmentId` path parameter.
+ *
+ * Per api-spec §0, a malformed `attachmentId` path parameter returns `404
+ * NOT_FOUND`. Beyond the decimal grammar, the value must also be a safe integer
+ * within the PostgreSQL `INTEGER` range (Prisma `Int` maps to `INTEGER`), so an
+ * oversized digit string can never reach Prisma and produce a `500`. Returns
+ * `null` when the ID is malformed or out of range.
+ */
+function parseAttachmentId(rawId: string): number | null {
+  if (!/^(?:[1-9][0-9]*)$/.test(rawId)) return null;
+  const id = Number(rawId);
+  if (!Number.isSafeInteger(id) || id > MAX_DATABASE_ID) return null;
+  return id;
+}
+
+/**
  * Authorization pre-check for attachment uploads.
  *
  * Runs BEFORE the multipart/multer middleware so that malformed, missing, or
@@ -495,15 +511,15 @@ export async function downloadAttachmentHandler(req: Request, res: Response): Pr
     const requesterId = res.locals.devRequesterId as number;
     const rawId = req.params.attachmentId;
 
-    // Validate attachment ID format
-    if (!/^(?:[1-9][0-9]*)$/.test(rawId)) {
+    // Validate attachment ID format + PostgreSQL INTEGER range (never a 500).
+    const attachmentId = parseAttachmentId(rawId);
+    if (attachmentId === null) {
       res.status(404).json({
         error: { code: "NOT_FOUND", message: "Attachment not found." },
       });
       return;
     }
 
-    const attachmentId = Number(rawId);
     const result = await downloadAttachment(attachmentId, requesterId);
 
     if (!result) {
@@ -541,14 +557,15 @@ export async function previewAttachmentHandler(req: Request, res: Response): Pro
     const requesterId = res.locals.devRequesterId as number;
     const rawId = req.params.attachmentId;
 
-    if (!/^(?:[1-9][0-9]*)$/.test(rawId)) {
+    // Validate attachment ID format + PostgreSQL INTEGER range (never a 500).
+    const attachmentId = parseAttachmentId(rawId);
+    if (attachmentId === null) {
       res.status(404).json({
         error: { code: "NOT_FOUND", message: "Attachment not found." },
       });
       return;
     }
 
-    const attachmentId = Number(rawId);
     const result = await previewAttachment(attachmentId, requesterId);
 
     if (!result) {
@@ -578,14 +595,14 @@ export async function removeAttachmentHandler(req: Request, res: Response): Prom
     const requesterId = res.locals.devRequesterId as number;
     const rawId = req.params.attachmentId;
 
-    if (!/^(?:[1-9][0-9]*)$/.test(rawId)) {
+    // Validate attachment ID format + PostgreSQL INTEGER range (never a 500).
+    const attachmentId = parseAttachmentId(rawId);
+    if (attachmentId === null) {
       res.status(404).json({
         error: { code: "NOT_FOUND", message: "Attachment not found." },
       });
       return;
     }
-
-    const attachmentId = Number(rawId);
 
     // Parse body for removalReason
     const contentType = (req.headers["content-type"] ?? "").toLowerCase();

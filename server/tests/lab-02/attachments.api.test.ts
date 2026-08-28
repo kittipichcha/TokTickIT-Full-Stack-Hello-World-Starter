@@ -82,6 +82,72 @@ describe("API-ATT-01: Attachment type/content validation matrix", () => {
   });
 });
 
+describe("API-ATT-16: Attachment ID range validation (never a 500)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
+    vi.mocked(service.downloadAttachment).mockResolvedValue(null);
+    vi.mocked(service.previewAttachment).mockResolvedValue(null);
+    vi.mocked(service.removeAttachment).mockResolvedValue(null);
+    vi.mocked(service.normalizeRemovalReason).mockReturnValue(null);
+  });
+
+  it("accepts a normal valid ID (reaches the service)", async () => {
+    const res = await request(app)
+      .get("/api/attachments/123/download")
+      .set("X-Dev-Requester-Id", "1");
+
+    expect(res.status).toBe(404); // service returns null → 404
+    expect(service.downloadAttachment).toHaveBeenCalledWith(123, 1);
+  });
+
+  it("rejects an ID above the PostgreSQL INTEGER max with 404, never 500", async () => {
+    const res = await request(app)
+      .get("/api/attachments/2147483648/download")
+      .set("X-Dev-Requester-Id", "1");
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe("NOT_FOUND");
+    // The oversized ID must never reach the service / Prisma.
+    expect(service.downloadAttachment).not.toHaveBeenCalled();
+  });
+
+  it("rejects a sufficiently large digit-only ID with 404, never 500", async () => {
+    const res = await request(app)
+      .get("/api/attachments/99999999999999999999/download")
+      .set("X-Dev-Requester-Id", "1");
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe("NOT_FOUND");
+    expect(service.downloadAttachment).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-numeric attachment ID with 404", async () => {
+    const res = await request(app)
+      .get("/api/attachments/abc/download")
+      .set("X-Dev-Requester-Id", "1");
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe("NOT_FOUND");
+    expect(service.downloadAttachment).not.toHaveBeenCalled();
+  });
+
+  it("applies the same range guard to preview and delete", async () => {
+    const previewRes = await request(app)
+      .get("/api/attachments/2147483648/preview")
+      .set("X-Dev-Requester-Id", "1");
+    expect(previewRes.status).toBe(404);
+    expect(service.previewAttachment).not.toHaveBeenCalled();
+
+    const deleteRes = await request(app)
+      .delete("/api/attachments/2147483648")
+      .set("X-Dev-Requester-Id", "1");
+    expect(deleteRes.status).toBe(404);
+    expect(service.removeAttachment).not.toHaveBeenCalled();
+  });
+});
+
 describe("API-ATT-02: Sixth active attachment rejected by server", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -469,6 +535,63 @@ describe("API-ATT-10: Removal reason normalization", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+});
+
+describe("API-ATT-11: DELETE content-type handling (api-spec §0)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
+    vi.mocked(service.removeAttachment).mockResolvedValue({
+      id: 1, originalFilename: "test.jpg", mimeType: "image/jpeg", fileSizeBytes: 100,
+      uploadedAt: new Date(), isRemoved: true, removedAt: new Date(),
+      removalReason: null, removedByRequesterId: 1,
+    } as never);
+    vi.mocked(service.normalizeRemovalReason).mockReturnValue(null);
+  });
+
+  it("accepts an omitted body with no content type", async () => {
+    const res = await request(app)
+      .delete("/api/attachments/1")
+      .set("X-Dev-Requester-Id", "1");
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.isRemoved).toBe(true);
+  });
+
+  it("accepts a JSON body with application/json", async () => {
+    const res = await request(app)
+      .delete("/api/attachments/1")
+      .set("X-Dev-Requester-Id", "1")
+      .set("Content-Type", "application/json")
+      .send({ removalReason: "Replaced" });
+
+    expect(res.status).toBe(200);
+  });
+
+  it("rejects a body with a non-JSON content type with 400 VALIDATION_ERROR", async () => {
+    const res = await request(app)
+      .delete("/api/attachments/1")
+      .set("X-Dev-Requester-Id", "1")
+      .set("Content-Type", "text/plain")
+      .send("not json");
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    // The removal must not proceed for a non-JSON body.
+    expect(service.removeAttachment).not.toHaveBeenCalled();
+  });
+
+  it("rejects a body with no content type with 400 VALIDATION_ERROR", async () => {
+    const res = await request(app)
+      .delete("/api/attachments/1")
+      .set("X-Dev-Requester-Id", "1")
+      .send("not json");
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    expect(service.removeAttachment).not.toHaveBeenCalled();
   });
 });
 
