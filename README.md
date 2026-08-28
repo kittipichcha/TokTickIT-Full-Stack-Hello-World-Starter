@@ -41,7 +41,7 @@ Implemented in code right now:
 - `POST /api/tickets/:ticketNumber/attachments` — Upload attachment (multipart, single file) with type/size/content-signature validation, 5-active limit, sequential processing
 - `GET /api/tickets/:ticketNumber/attachments` — List attachments (active + removed), deterministic `uploadedAt ASC, id ASC` ordering
 - `GET /api/attachments/:attachmentId/download` — Download attachment with ownership re-validation, `Content-Disposition` with RFC 5987 UTF-8 `filename*`, removed → `410 ATTACHMENT_REMOVED`
-- `GET /api/attachments/:attachmentId/preview` — Preview attachment: image inline or **PDF first page rendered as PNG via `sharp`** (replaces the old full-PDF fallback); satisfies FR-12/BR-28/AC-24; PDF rendering failure returns `500 INTERNAL_ERROR` (never the original PDF)
+- `GET /api/attachments/:attachmentId/preview` — Preview attachment: image inline or **PDF first page rendered as PNG via a bundled PDFium WebAssembly renderer (`clawpdf`)** (replaces the old full-PDF fallback); satisfies FR-12/BR-28/AC-24; PDF rendering failure returns `500 INTERNAL_ERROR` (never the original PDF)
 - `DELETE /api/attachments/:attachmentId` — Soft-remove with optional reason (normalization: omitted/blank → null, 1–200 chars after trim, non-string → 400), removed → `409 CONFLICT`
 - Secure filesystem storage with compensating write-then-persist strategy (physical file written before metadata; metadata failure deletes the file)
 - Uploaded files renamed to UUID + validated extension; original filename is display metadata only
