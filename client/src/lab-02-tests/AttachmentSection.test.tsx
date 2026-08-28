@@ -981,6 +981,7 @@ describe("UI-ATT-RETRY-OWN: Failed attachment retry is scoped to requester + tic
     vi.mocked(api.isAllowedAttachmentType).mockReturnValue(true);
     vi.mocked(api.isWithinSizeLimit).mockReturnValue(true);
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => emptyTicketsResponse);
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async () => makeTicketDetail(testTicketNumber, []));
   });
 
   afterEach(() => {
@@ -1079,6 +1080,78 @@ describe("UI-ATT-RETRY-OWN: Failed attachment retry is scoped to requester + tic
 
     // A's failed retry must NOT appear on ticket B.
     expect(screen.queryByText("a.jpg")).toBeNull();
+    expect(screen.queryByText("Retry")).toBeNull();
+  });
+
+  it("failed attachment from prior requester is absent after requester switch", async () => {
+    await setupAuthenticatedApp();
+
+    vi.mocked(api.createTicket).mockResolvedValue({
+      id: 1,
+      ticketNumber: testTicketNumber,
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "Retry ownership",
+      description: "Testing retry ownership scoping.",
+      requestedPriority: "MEDIUM",
+      itPriority: null,
+      ticketOwnerId: null,
+      currentStatus: "NEW",
+      createdAt: "2026-08-27T00:00:00.000Z",
+      updatedAt: "2026-08-27T00:00:00.000Z",
+    });
+
+    // File A upload fails → Case B, creating a failed retry scoped to requester 1 + ticket A.
+    vi.mocked(api.uploadAttachment).mockRejectedValue(new Error("Upload failed for A"));
+
+    await userEvent.click(screen.getByRole("link", { name: "Create Ticket" }));
+    await screen.findByLabelText(/Summary/);
+    await userEvent.selectOptions(screen.getByLabelText(/Category/), "1");
+    await userEvent.selectOptions(screen.getByLabelText(/Related System/), "1");
+    await userEvent.type(screen.getByLabelText(/Summary/), "Retry ownership switch");
+    await userEvent.type(screen.getByLabelText(/Description/), "Testing failed retry requester-switch scoping.");
+    const fileInput = getFileInput();
+    fireEvent.change(fileInput!, {
+      target: { files: [new File(["content"], "a-switch.jpg", { type: "image/jpeg" })] },
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => expect(screen.getByText(/Ticket Created/)).toBeTruthy());
+    await userEvent.click(screen.getByRole("button", { name: "View Ticket" }));
+    await waitFor(() => expect(screen.getByText("Attachments")).toBeTruthy());
+
+    // A's failed retry is present on requester 1's ticket A.
+    expect(screen.getByText("a-switch.jpg")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+
+    // Switch requester. Configure the dev-requester list to include requester 2 BEFORE the
+    // switch triggers a reload, so the selector offers both requesters.
+    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => [
+      { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
+      { id: 2, name: "Grace Hopper", email: "grace@example.com" },
+    ]);
+    await userEvent.click(screen.getByRole("button", { name: "Change Requester" }));
+
+    // Back on the early-selector screen.
+    await screen.findByLabelText("Development Requester");
+
+    // Select requester 2 (Grace Hopper) and continue.
+    vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
+    // Requester 2 (Grace Hopper) is now the active requester; the shell mounts My Tickets
+    // for requester 2's scope right after Continue.
+    vi.mocked(api.fetchMyTickets).mockImplementation(async (rid) => ({
+      data: [],
+      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
+    }));
+
+    await userEvent.selectOptions(screen.getByLabelText("Development Requester"), "2");
+    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    // Requester 2's shell mounts. The prior requester's failed attachment retry must be
+    // cleared by the switch — it must not resurface anywhere in requester 2's scope.
+    await screen.findByText("Grace Hopper");
+    await waitFor(() => expect(screen.queryByText("a-switch.jpg")).toBeNull());
     expect(screen.queryByText("Retry")).toBeNull();
   });
 });
