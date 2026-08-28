@@ -103,6 +103,14 @@ describe("ATT-PERSIST-01: Successful attachment metadata persistence", () => {
       expect(successRes.body.data).toBeDefined();
       expect(successRes.body.data.isRemoved).toBe(false);
 
+      // ticketId must be present and match the persisted ticket's actual ID.
+      const persistedTicket = await prisma.ticket.findUnique({
+        where: { ticketNumber },
+        select: { id: true },
+      });
+      expect(persistedTicket).not.toBeNull();
+      expect(successRes.body.data.ticketId).toBe(persistedTicket!.id);
+
       const attachments = await prisma.attachment.findMany({
         where: { ticket: { ticketNumber } },
       });

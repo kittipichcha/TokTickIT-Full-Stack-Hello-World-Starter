@@ -633,6 +633,7 @@ export class ConflictError extends Error {
 
 export interface AttachmentUploadResult {
   id: number;
+  ticketId: number;
   originalFilename: string;
   mimeType: string;
   fileSizeBytes: number;
@@ -792,6 +793,7 @@ export async function uploadAttachment(
 
       return {
         id: attachment.id,
+        ticketId: ticket.id,
         originalFilename: attachment.originalFilename,
         mimeType: attachment.mimeType,
         fileSizeBytes: attachment.fileSizeBytes,

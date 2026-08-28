@@ -60,6 +60,7 @@ describe("API-ATT-01: Attachment type/content validation matrix", () => {
   it("accepts a valid JPEG file", async () => {
     const mockResult = {
       id: 1,
+      ticketId: 42,
       originalFilename: "test.jpg",
       mimeType: "image/jpeg",
       fileSizeBytes: 1024,
@@ -76,6 +77,7 @@ describe("API-ATT-01: Attachment type/content validation matrix", () => {
     expect(res.status).toBe(201);
     expect(res.body.data).toBeDefined();
     expect(res.body.data.id).toBe(1);
+    expect(res.body.data.ticketId).toBe(42);
     expect(res.body.data.mimeType).toBe("image/jpeg");
   });
 });
@@ -347,6 +349,7 @@ describe("API-ATT-07: Attachment metadata and stored filename", () => {
   it("returns attachment metadata without exposing stored filename", async () => {
     const mockResult = {
       id: 1,
+      ticketId: 42,
       originalFilename: "photo.jpg",
       mimeType: "image/jpeg",
       fileSizeBytes: 204800,
@@ -361,9 +364,14 @@ describe("API-ATT-07: Attachment metadata and stored filename", () => {
       .attach("file", Buffer.from([0xff, 0xd8, 0xff, 0x00]), "photo.jpg");
 
     expect(res.status).toBe(201);
+    // Required response fields per API spec §7
+    expect(res.body.data.id).toBe(1);
+    expect(res.body.data.ticketId).toBe(42);
     expect(res.body.data.originalFilename).toBe("photo.jpg");
     expect(res.body.data.mimeType).toBe("image/jpeg");
     expect(res.body.data.fileSizeBytes).toBe(204800);
+    expect(res.body.data.uploadedAt).toBeDefined();
+    expect(res.body.data.isRemoved).toBe(false);
     // storedFilename must not be exposed
     expect(res.body.data.storedFilename).toBeUndefined();
   });
