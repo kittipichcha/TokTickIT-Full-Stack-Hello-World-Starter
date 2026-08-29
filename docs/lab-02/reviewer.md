@@ -181,11 +181,11 @@ The re-review (2026-08-28) confirmed the prior round is largely resolved and ide
 
 ### Verification Performed (2026-08-29)
 
-Release verification was executed from a **fresh clone** at the current PR #30 head `662c2c0ac8da573dd4ea5c3354ec20006ea1a63d`:
+Release verification was executed from a **fresh clone** at the current PR #30 head `7d6a6978a5f7a9452c69a95f5a8195f4f11706d9`:
 
 | Check | Result |
 |---|---|
-| Fresh clone + checkout | HEAD = `662c2c0` (matches PR #30 head) |
+| Fresh clone + checkout | HEAD = `7d6a697` (matches PR #30 head) |
 | Working tree / whitespace / conflict markers | Clean / `git diff --check` pass / none |
 | Prisma migration status | Up to date (5 migrations) |
 | **Server tests** (`cd server && npm test`) | **26 files, 335 passed, 0 failed** |
