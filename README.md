@@ -18,7 +18,7 @@ In summary, Lab 2 requires:
 - Attachment upload/list/preview/download/soft-remove
 - Responsive Zen Green UI and keyboard-accessible flows
 
-## 2. Current Implementation Status (as of 2026-08-27)
+## 2. Current Implementation Status (as of 2026-08-28)
 Implemented in code right now:
 - `GET /api/categories` (active-only)
 - `GET /api/dev-requesters` (active-only, `{ "data": [...] }` envelope)
@@ -37,15 +37,43 @@ Implemented in code right now:
 - View Ticket action navigates to Ticket Detail with loading/error/not-found states
 - My Tickets frontend screen with sortable table, mobile cards, loading/empty/no-results/error states, pagination footer, and requester-switch data reset
 
-Deferred to Issue #15:
+**New in this release (Issue #15 — Attachment Lifecycle & Ticket Detail — Post-Review Fixes):**
+- `POST /api/tickets/:ticketNumber/attachments` — Upload attachment (multipart, single file) with type/size/content-signature validation, 5-active limit, sequential processing
+- `GET /api/tickets/:ticketNumber/attachments` — List attachments (active + removed), deterministic `uploadedAt ASC, id ASC` ordering
+- `GET /api/attachments/:attachmentId/download` — Download attachment with ownership re-validation, `Content-Disposition` with RFC 5987 UTF-8 `filename*`, removed → `410 ATTACHMENT_REMOVED`
+- `GET /api/attachments/:attachmentId/preview` — Preview attachment: image inline or **PDF first page rendered as PNG via a bundled PDFium WebAssembly renderer (`clawpdf`)** (replaces the old full-PDF fallback); satisfies FR-12/BR-28/AC-24; PDF rendering failure returns `500 INTERNAL_ERROR` (never the original PDF)
+- `DELETE /api/attachments/:attachmentId` — Soft-remove with optional reason (normalization: omitted/blank → null, 1–200 chars after trim, non-string → 400), removed → `409 CONFLICT`
+- Secure filesystem storage with compensating write-then-persist strategy (physical file written before metadata; metadata failure deletes the file)
+- Uploaded files renamed to UUID + validated extension; original filename is display metadata only
+- Content-signature validation (FF D8 FF for JPEG, PNG magic bytes, RIFF+WEBP for WebP, %PDF- for PDF)
+- **Concurrency-safe attachment limit**: `SELECT ... FOR UPDATE` row lock on the parent `Ticket` row serializes concurrent attachment-count checks (BR-12/AC-08). Two concurrent uploads when 4 are active → exactly 1 succeeds, 1 gets `ATTACHMENT_LIMIT_REACHED`, never >5 active rows
+- **Fixed client API argument order**: `previewAttachmentFile(requesterId, attachmentId)` and `downloadAttachmentFile(requesterId, attachmentId)` were called with reversed arguments in `App.tsx`. Both are `number`, so TypeScript could not catch the bug. Fixed to `previewAttachmentFile(activeRequester.id, att.id)` etc.
+- **Failed attachment retry from Ticket Detail (BR-17/UI-ATT-05)**: Failed uploads from Create Ticket Case B are tracked with original file metadata and displayed with a Retry button in Ticket Detail. Retry re-uploads only that file without recreating the ticket.
+- **Fixed `activeFileCount` double-counting**: `validFiles.length` already includes all valid pending files; the old code incorrectly added `uploadResults.filter(r.status === "success").length` on top of it.
+- Client-side attachment validation (type/size before network), drag-and-drop, sequential upload with per-file status, Case B partial-success UI
+- Ticket Detail: Preview/Download/Remove actions, add attachment control with validation, removal confirmation dialog with optional reason
+- **Unavailable attachment state (ui-spec §5.3)**: A Preview/Download failure against an active attachment renders an Unavailable badge with Preview/Download disabled and no Retry action; an Add Attachment upload failure in Ticket Detail renders an Unavailable row with a Retry action that re-uploads only that file
+- **Removal dialog accessibility**: focus moves into the dialog on open, Tab/Shift+Tab trap focus within it, Escape closes it, and focus is restored to the Remove button on close
+- **Ownership before multipart validation**: the upload route now performs a ticket-ownership pre-check BEFORE multer parses the request body, so a non-owned/missing ticket returns the same `404 NOT_FOUND` regardless of whether the file is valid, missing, oversized, or an unsupported type (no information leakage). The transactional ownership check inside the service remains authoritative.
+- **Atomic conditional soft removal**: `removeAttachment` now uses a single conditional `UPDATE ... WHERE isRemoved = false` instead of a read-then-unconditional-update, so exactly one concurrent removal wins (one `200`, one `409`).
+- **Transaction-wide filesystem compensation**: every physical file written during an upload is tracked and deleted if ANY part of the transaction fails — including a failure AFTER the metadata insert succeeds but before commit (no orphaned files).
+- **Client attachment capacity enforcement**: Create Ticket and Ticket Detail both enforce the five-active-attachment limit client-side; the sixth file is rejected and never reaches the upload API.
+- **Scoped failed-attachment retry**: failed uploads are scoped to the requester + ticket that produced them; navigating to another ticket or switching requester never shows or retries another ticket's failure.
+- **Mutation/refresh separation**: a successful upload/remove is terminal — a subsequent refresh failure is shown as a detail error, never as a retryable mutation failure.
+- **Retry upload terminal-state (re-review fix)**: both retry handlers (Create Ticket Case B and Ticket Detail Add Attachment) now separate the mutation boundary from the refresh boundary — a successful retry upload permanently clears the failed row, and a refresh failure is shown as a detail error that never restores the retry row (no duplicate re-upload).
+- **Attachment ID range validation**: a shared `parseAttachmentId` helper validates the decimal grammar, `Number.isSafeInteger`, and the PostgreSQL `INTEGER` max (`2147483647`) for download/preview/delete, so oversized digit strings return `404 NOT_FOUND` (never a `500`) and never reach Prisma.
+- **DELETE content-type handling**: per api-spec §0, an omitted body (no content type) and a JSON body with `application/json` are accepted; a body with a non-JSON content type or no content type returns `400 VALIDATION_ERROR` and never reaches the removal service.
+- **RFC 5987 download filename parsing**: the client now prefers the `filename*` UTF-8 value (decoded) over the ASCII `filename` fallback via `parseContentDispositionFilename`.
+- **Upload-result type alignment**: the client `AttachmentUploadResult` now matches the server contract (`ticketId` present, `storedFilename` absent).
+- **Server tests**: 332 tests across 26 files pass (including real-DB ownership, concurrent-removal, transaction-wide compensation, UUID stored-filename, cross-requester list/download/preview/delete ownership, extension/signature validation matrix, DELETE content-type, and attachment-ID range tests)
+- **Client tests**: 84 tests across 7 files — AttachmentSection and CreateTicket cover the full attachment state matrix, five-file capacity, retry ownership scoping (ticket + requester switch), mutation/refresh separation, retry terminal-state, the complete UI-DETAIL-01 matrix, UI-TKT-08 submission orchestration, and RFC 5987 filename parsing
+- **Case B ticket-persistence traceability**: the created ticket is kept on attachment failure (no duplicate create) is proven by the executable client Case-B tests (`UI-TKT-06`, `UI-ATT-05`, `UI-ATT-06`, `UI-ATT-RETRY-OWN`, which run the real post-create attachment flow). The server `API-ATT-06` test is an endpoint-isolation check only and does not by itself assert ticket persistence.
 
-- Attachment upload, preview, download, and soft-removal endpoints.
-- Full attachment action controls on Ticket Detail.
-
-Not yet implemented for Lab 2 (downstream issues):
-- Attachment endpoints (upload, list, download, preview, soft-remove)
-- Full attachment action controls on Ticket Detail.
-- Remaining Lab 2 test suites for attachments (unit/api/ui/e2e/responsive/visual)
+Deferred to Issue #18 (final integration/release verification):
+- Full E2E test suite (Playwright)
+- Cross-endpoint API contract matrix
+- Visual/responsive screenshot evidence
+- Final release verification checklist
 
 ## 3. Repository Structure
 
@@ -61,7 +89,9 @@ Not yet implemented for Lab 2 (downstream issues):
 |  |  |- main.tsx
 |  |  |- vite-env.d.ts
 |  |  |- lab-02-tests/
+|  |  |  |- AttachmentSection.test.tsx
 |  |  |  |- CreateTicket.test.tsx
+|  |  |  |- format.test.ts
 |  |  |  |- MyTickets.test.tsx
 |  |  |  |- RequesterSelection.integration.test.tsx
 |  |  |  |- RequesterSelection.test.tsx
@@ -99,11 +129,22 @@ Not yet implemented for Lab 2 (downstream issues):
 
 |  |  |- lab-02/
 |  |  |  |- api-contract.api.test.ts
+|  |  |  |- attachment-concurrency.integration.test.ts
+|  |  |  |- attachment-ownership.integration.test.ts
+|  |  |  |- attachment-persistence-compensation.integration.test.ts
+|  |  |  |- attachment-validation.unit.test.ts
+|  |  |  |- attachments.api.test.ts
 |  |  |  |- create-ticket-normalization.api.test.ts
+|  |  |  |- create-ticket-real-db.integration.test.ts
+|  |  |  |- create-ticket-reference-validation.integration.test.ts
+|  |  |  |- create-ticket-validation.unit.test.ts
 |  |  |  |- create-ticket.api.test.ts
 |  |  |  |- database-migration.integration.test.ts
 |  |  |  |- dev-requesters.api.test.ts
 |  |  |  |- dev-requesters.service.test.ts
+|  |  |  |- integer-validation.api.test.ts
+|  |  |  |- my-tickets-real-db.integration.test.ts
+|  |  |  |- my-tickets.api.test.ts
 |  |  |  |- reference-data.api.test.ts
 |  |  |  |- requester-context.api.test.ts
 |  |  |  |- requester-selection.integration.test.ts
