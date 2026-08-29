@@ -107,30 +107,9 @@ async function setupApiMocks(
     sessionStorage.setItem("toktickit.requesterId", "1");
   });
 
-  // Bootstrap endpoints
-  await page.route("**/api/dev-requesters", async (route) => {
-    if (slowRequesters) { await new Promise(() => undefined); return; }
-    await route.fulfill({ status: 200, contentType: "application/json",
-      body: JSON.stringify({ data: devRequesters }) });
-  });
-  await page.route("**/api/requester-context", async (route) => {
-    if (failRequesterContext) {
-      await route.fulfill({ status: 422, contentType: "application/json",
-        body: JSON.stringify({ error: { code: "REQUESTER_CONTEXT_INVALID", message: "A valid active requester is required." } }) });
-      return;
-    }
-    await route.fulfill({ status: 200, contentType: "application/json",
-      body: JSON.stringify({ data: { requesterId: 1 } }) });
-  });
-  await page.route("**/api/categories", async (route) => {
-    await route.fulfill({ status: 200, contentType: "application/json",
-      body: JSON.stringify(categories) });
-  });
-  await page.route("**/api/related-systems", async (route) => {
-    await route.fulfill({ status: 200, contentType: "application/json",
-      body: JSON.stringify({ data: relatedSystems }) });
-  });
-
+  // IMPORTANT: Playwright matches routes in REVERSE registration order (the
+  // last registered route is matched first). The catch-all `**/api/**` must be
+  // registered FIRST so the more specific routes below take precedence.
   // Catch-all API route handler — dispatches by URL path
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
@@ -217,6 +196,31 @@ async function setupApiMocks(
     await route.fulfill({ status: 404, contentType: "application/json",
       body: JSON.stringify({ error: { code: "NOT_FOUND", message: "Not found." } }) });
   });
+
+  // Bootstrap endpoints — registered AFTER the catch-all so they take
+  // precedence (Playwright matches the last-registered route first).
+  await page.route("**/api/dev-requesters", async (route) => {
+    if (slowRequesters) { await new Promise(() => undefined); return; }
+    await route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({ data: devRequesters }) });
+  });
+  await page.route("**/api/requester-context", async (route) => {
+    if (failRequesterContext) {
+      await route.fulfill({ status: 422, contentType: "application/json",
+        body: JSON.stringify({ error: { code: "REQUESTER_CONTEXT_INVALID", message: "A valid active requester is required." } }) });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({ data: { requesterId: 1 } }) });
+  });
+  await page.route("**/api/categories", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify(categories) });
+  });
+  await page.route("**/api/related-systems", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({ data: relatedSystems }) });
+  });
 }
 
 async function screenshotAllViewports(page: Page, basePath: string, action: () => Promise<void>) {
@@ -229,22 +233,33 @@ async function screenshotAllViewports(page: Page, basePath: string, action: () =
   }
 }
 
+/**
+ * Open a ticket from My Tickets by its summary text. The summary is plain text
+ * in a table cell / card; the ticket number is the clickable link.
+ */
+async function openTicketBySummary(page: Page, summary: string): Promise<void> {
+  const row = page.locator("tr:visible, .ticket-card:visible").filter({ hasText: summary }).first();
+  await row.waitFor({ state: "visible", timeout: 10000 });
+  await row.locator("a").first().click();
+  await page.waitForTimeout(2000);
+}
+
 // ─── Requester Selection ───────────────────────────────────────────────────
 
 test.describe("Requester Selection screenshots", () => {
   test("loading state @visual", async ({ page, context }) => {
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await setupApiMocks(page, context, { slowRequesters: true });
+    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await screenshotAllViewports(page, "requester-selection/loading", async () => {});
   });
   test("empty state @visual", async ({ page, context }) => {
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await setupApiMocks(page, context, { devRequesters: [] });
+    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await screenshotAllViewports(page, "requester-selection/empty", async () => {});
   });
   test("failure state @visual", async ({ page, context }) => {
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await setupApiMocks(page, context, { devRequesters: [] });
+    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await page.route("**/api/dev-requesters", async (route) => {
       await route.fulfill({ status: 500, contentType: "application/json",
         body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } }) });
@@ -252,8 +267,10 @@ test.describe("Requester Selection screenshots", () => {
     await screenshotAllViewports(page, "requester-selection/failure", async () => {});
   });
   test("populated state @visual", async ({ page, context }) => {
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await setupApiMocks(page, context, {});
+    // Clear the stored requester AFTER setupApiMocks so its setItem init
+    // script runs first and this removeItem runs last → selector screen shows.
+    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await screenshotAllViewports(page, "requester-selection/populated", async () => {
       await page.waitForSelector("#requester", { timeout: 10000 });
       await page.selectOption("#requester", "2");
@@ -269,7 +286,7 @@ test.describe("Create Ticket screenshots", () => {
     await screenshotAllViewports(page, "create-ticket/initial", async () => {
       await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
       await page.click("a:has-text('Create Ticket')");
-      await page.waitForSelector("input[aria-label*='Summary']", { timeout: 10000 });
+      await page.waitForSelector("#summary", { timeout: 10000 });
     });
   });
   test("validation error @visual", async ({ page, context }) => {
@@ -277,9 +294,9 @@ test.describe("Create Ticket screenshots", () => {
     await screenshotAllViewports(page, "create-ticket/validation-error", async () => {
       await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
       await page.click("a:has-text('Create Ticket')");
-      await page.waitForSelector("input[aria-label*='Summary']", { timeout: 10000 });
-      await page.selectOption("select[aria-label*='Category']", { index: 1 });
-      await page.fill("textarea[aria-label*='Description']", "Valid description text for testing.");
+      await page.waitForSelector("#summary", { timeout: 10000 });
+      await page.selectOption("#categoryId", { index: 1 });
+      await page.fill("#description", "Valid description text for testing.");
       await page.click("button:has-text('Submit')");
       await page.waitForTimeout(500);
     });
@@ -294,11 +311,11 @@ test.describe("Create Ticket screenshots", () => {
     await screenshotAllViewports(page, "create-ticket/submitting", async () => {
       await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
       await page.click("a:has-text('Create Ticket')");
-      await page.waitForSelector("input[aria-label*='Summary']", { timeout: 10000 });
-      await page.selectOption("select[aria-label*='Category']", { index: 1 });
-      await page.selectOption("select[aria-label*='Related System']", { index: 1 });
-      await page.fill("input[aria-label*='Summary']", "Test ticket for screenshot");
-      await page.fill("textarea[aria-label*='Description']", "This is a test description that is long enough to pass validation.");
+      await page.waitForSelector("#summary", { timeout: 10000 });
+      await page.selectOption("#categoryId", { index: 1 });
+      await page.selectOption("#relatedSystemId", { index: 1 });
+      await page.fill("#summary", "Test ticket for screenshot");
+      await page.fill("#description", "This is a test description that is long enough to pass validation.");
       await page.click("button:has-text('Submit')");
       await page.waitForTimeout(800);
     });
@@ -308,11 +325,11 @@ test.describe("Create Ticket screenshots", () => {
     await screenshotAllViewports(page, "create-ticket/success", async () => {
       await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
       await page.click("a:has-text('Create Ticket')");
-      await page.waitForSelector("input[aria-label*='Summary']", { timeout: 10000 });
-      await page.selectOption("select[aria-label*='Category']", { index: 1 });
-      await page.selectOption("select[aria-label*='Related System']", { index: 1 });
-      await page.fill("input[aria-label*='Summary']", "Test ticket for screenshot");
-      await page.fill("textarea[aria-label*='Description']", "This is a test description that is long enough to pass validation.");
+      await page.waitForSelector("#summary", { timeout: 10000 });
+      await page.selectOption("#categoryId", { index: 1 });
+      await page.selectOption("#relatedSystemId", { index: 1 });
+      await page.fill("#summary", "Test ticket for screenshot");
+      await page.fill("#description", "This is a test description that is long enough to pass validation.");
       await page.click("button:has-text('Submit')");
       await page.waitForSelector(".success-panel", { timeout: 10000 });
     });
@@ -331,11 +348,11 @@ test.describe("Create Ticket screenshots", () => {
     await screenshotAllViewports(page, "create-ticket/api-failure", async () => {
       await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
       await page.click("a:has-text('Create Ticket')");
-      await page.waitForSelector("input[aria-label*='Summary']", { timeout: 10000 });
-      await page.selectOption("select[aria-label*='Category']", { index: 1 });
-      await page.selectOption("select[aria-label*='Related System']", { index: 1 });
-      await page.fill("input[aria-label*='Summary']", "Test ticket for screenshot");
-      await page.fill("textarea[aria-label*='Description']", "This is a test description that is long enough to pass validation.");
+      await page.waitForSelector("#summary", { timeout: 10000 });
+      await page.selectOption("#categoryId", { index: 1 });
+      await page.selectOption("#relatedSystemId", { index: 1 });
+      await page.fill("#summary", "Test ticket for screenshot");
+      await page.fill("#description", "This is a test description that is long enough to pass validation.");
       await page.click("button:has-text('Submit')");
       await page.waitForSelector(".error-box", { timeout: 10000 });
     });
@@ -345,7 +362,7 @@ test.describe("Create Ticket screenshots", () => {
     await screenshotAllViewports(page, "create-ticket/invalid-attachment", async () => {
       await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
       await page.click("a:has-text('Create Ticket')");
-      await page.waitForSelector("input[aria-label*='Summary']", { timeout: 10000 });
+      await page.waitForSelector("#summary", { timeout: 10000 });
       const fcPromise = page.waitForEvent("filechooser");
       await page.click("text=Browse files");
       const fc = await fcPromise;
@@ -371,11 +388,11 @@ test.describe("Create Ticket screenshots", () => {
     await screenshotAllViewports(page, "create-ticket/partial-success-attachment-failure", async () => {
       await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
       await page.click("a:has-text('Create Ticket')");
-      await page.waitForSelector("input[aria-label*='Summary']", { timeout: 10000 });
-      await page.selectOption("select[aria-label*='Category']", { index: 1 });
-      await page.selectOption("select[aria-label*='Related System']", { index: 1 });
-      await page.fill("input[aria-label*='Summary']", "Partial success test");
-      await page.fill("textarea[aria-label*='Description']", "This ticket will have a failed attachment.");
+      await page.waitForSelector("#summary", { timeout: 10000 });
+      await page.selectOption("#categoryId", { index: 1 });
+      await page.selectOption("#relatedSystemId", { index: 1 });
+      await page.fill("#summary", "Partial success test");
+      await page.fill("#description", "This ticket will have a failed attachment.");
       const fc1 = page.waitForEvent("filechooser"); await page.click("text=Browse files");
       (await fc1).setFiles({ name: "photo1.png", mimeType: "image/png", buffer: Buffer.from("89504E470D0A1A0A", "hex") });
       await page.waitForTimeout(500);
@@ -455,7 +472,7 @@ test.describe("Ticket Detail screenshots", () => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
     await screenshotAllViewports(page, "ticket-detail/default", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
-      await page.click("text=Detail view test ticket"); await page.waitForTimeout(2000);
+      await openTicketBySummary(page, "Detail view test ticket");
     });
   });
   test("loading state @visual", async ({ page, context }) => {
@@ -464,7 +481,7 @@ test.describe("Ticket Detail screenshots", () => {
     await page.route(/\/api\/tickets\/TKT-\d{4}-\d{6}$/, async () => { await new Promise(() => undefined); });
     await screenshotAllViewports(page, "ticket-detail/loading", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
-      await page.click("text=Detail view test ticket"); await page.waitForTimeout(500);
+      await openTicketBySummary(page, "Detail view test ticket");
     });
   });
   test("failure/not-found state @visual", async ({ page, context }) => {
@@ -472,7 +489,7 @@ test.describe("Ticket Detail screenshots", () => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, failDetail: true });
     await screenshotAllViewports(page, "ticket-detail/failure-or-not-found", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
-      await page.click("text=Detail view test ticket"); await page.waitForTimeout(2000);
+      await openTicketBySummary(page, "Detail view test ticket");
     });
   });
   test("attachment active @visual", async ({ page, context }) => {
@@ -480,7 +497,7 @@ test.describe("Ticket Detail screenshots", () => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
     await screenshotAllViewports(page, "ticket-detail/attachment-active", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
-      await page.click("text=Detail view test ticket"); await page.waitForTimeout(2000);
+      await openTicketBySummary(page, "Detail view test ticket");
     });
   });
   test("attachment uploading @visual", async ({ page, context }) => {
@@ -493,8 +510,8 @@ test.describe("Ticket Detail screenshots", () => {
     });
     await screenshotAllViewports(page, "ticket-detail/attachment-uploading", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
-      await page.click("text=Detail view test ticket"); await page.waitForTimeout(2000);
-      const fc = page.waitForEvent("filechooser"); await page.click("text=Browse files");
+      await openTicketBySummary(page, "Detail view test ticket");
+      const fc = page.waitForEvent("filechooser"); await page.click("button:has-text('+ Add Attachment')");
       (await fc).setFiles({ name: "uploading-test.png", mimeType: "image/png", buffer: Buffer.from("89504E470D0A1A0A", "hex") });
       await page.waitForTimeout(1000);
     });
@@ -504,8 +521,8 @@ test.describe("Ticket Detail screenshots", () => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt });
     await screenshotAllViewports(page, "ticket-detail/attachment-invalid", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
-      await page.click("text=Detail view test ticket"); await page.waitForTimeout(2000);
-      const fc = page.waitForEvent("filechooser"); await page.click("text=Browse files");
+      await openTicketBySummary(page, "Detail view test ticket");
+      const fc = page.waitForEvent("filechooser"); await page.click("button:has-text('+ Add Attachment')");
       (await fc).setFiles({ name: "malicious.exe", mimeType: "application/x-msdownload", buffer: Buffer.from([0x4D, 0x5A]) });
       await page.waitForTimeout(1000);
     });
@@ -516,7 +533,7 @@ test.describe("Ticket Detail screenshots", () => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: removedAttachments });
     await screenshotAllViewports(page, "ticket-detail/attachment-removed", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
-      await page.click("text=Detail view test ticket"); await page.waitForTimeout(2000);
+      await openTicketBySummary(page, "Detail view test ticket");
     });
   });
   test("attachment unavailable @visual", async ({ page, context }) => {
@@ -524,7 +541,7 @@ test.describe("Ticket Detail screenshots", () => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
     await screenshotAllViewports(page, "ticket-detail/attachment-unavailable", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
-      await page.click("text=Detail view test ticket"); await page.waitForTimeout(2000);
+      await openTicketBySummary(page, "Detail view test ticket");
     });
   });
   test("preview modal @visual", async ({ page, context }) => {
@@ -532,7 +549,7 @@ test.describe("Ticket Detail screenshots", () => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
     await screenshotAllViewports(page, "ticket-detail/preview-modal", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
-      await page.click("text=Detail view test ticket"); await page.waitForTimeout(2000);
+      await openTicketBySummary(page, "Detail view test ticket");
       const pv = page.locator("button:has-text('Preview')").first();
       if (await pv.isVisible({ timeout: 3000 }).catch(() => false)) { await pv.click(); await page.waitForTimeout(1000); }
     });
@@ -563,14 +580,14 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/"); await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
       await page.click("a:has-text('Create Ticket')");
-      await page.waitForSelector("input[aria-label*='Summary']", { timeout: 10000 }); await page.waitForTimeout(500);
+      await page.waitForSelector("#summary", { timeout: 10000 }); await page.waitForTimeout(500);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(overflow, `${vp.name}: Create Ticket no horizontal scroll`).toBe(false);
     }
   });
   test("Requester Selection responsive", async ({ page, context }) => {
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await setupApiMocks(page, context, {});
+    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/"); await page.waitForSelector("#requester", { timeout: 10000 }); await page.waitForTimeout(500);

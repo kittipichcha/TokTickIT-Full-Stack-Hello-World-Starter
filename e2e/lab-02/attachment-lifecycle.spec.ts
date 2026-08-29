@@ -1,47 +1,74 @@
 import { test, expect } from "@playwright/test";
+import {
+  selectRequester,
+  openCreateTicket,
+  createTicket,
+  openMyTickets,
+  openTicketBySummary,
+  VALID_PNG_BUFFER,
+} from "./helpers";
 
+/**
+ * E2E-03: Full attachment lifecycle.
+ *
+ * Proves the complete lifecycle for one deterministic fixture:
+ *   Upload → Attachment appears → Preview → Download → Remove → Removed state
+ *   → Preview disabled → Download disabled
+ *
+ * Uses the real client + real API + real database (no route interception).
+ */
 test.describe("E2E-03: Full attachment lifecycle", () => {
   test("upload, preview, download, and remove an attachment on a created ticket", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForSelector("#requester", { timeout: 10000 });
+    const summary = `E2E-03 Attachment lifecycle ticket ${Date.now()}`;
+    const description = "Testing the complete attachment lifecycle end-to-end.";
 
-    await page.selectOption("#requester", "1");
-    await page.click("button:has-text('Continue')");
-    await page.waitForSelector(".app-shell", { timeout: 10000 });
+    // 1. Create a ticket.
+    await selectRequester(page, "1");
+    await openCreateTicket(page);
+    const ticketNumber = await createTicket(page, summary, description);
 
-    await page.click("a:has-text('Create Ticket')");
-    await page.waitForSelector(".ticket-form", { timeout: 10000 });
-
-    await page.selectOption("select[aria-label*='Category']", { index: 1 });
-    await page.selectOption("select[aria-label*='Related System']", { index: 1 });
-    await page.fill("input[aria-label*='Summary']", "E2E-03 Attachment lifecycle ticket");
-    await page.fill("textarea[aria-label*='Description']", "Testing attachment lifecycle end-to-end.");
-
-    await page.click("button:has-text('Submit')");
-    await page.waitForSelector(".success-panel", { timeout: 15000 });
-
-    await page.click("a:has-text('My Tickets')");
-    await page.waitForTimeout(2000);
-
-    // Click the ticket link
-    const ticketLink = page.locator("a:has-text('E2E-03 Attachment lifecycle ticket')").first();
-    await ticketLink.click();
-    await page.waitForTimeout(2000);
-
-    // Verify attachment section exists
+    // 2. Open the ticket detail.
+    await openMyTickets(page);
+    await openTicketBySummary(page, summary);
     await expect(page.locator("text=Attachments").first()).toBeVisible({ timeout: 5000 });
 
-    // Upload a file
+    // 3. Upload a valid attachment via the Ticket Detail Add Attachment control.
+    const fileName = "lifecycle-test.png";
     const fileChooserPromise = page.waitForEvent("filechooser", { timeout: 5000 });
-    await page.click("text=Browse files");
+    await page.click("button:has-text('+ Add Attachment')");
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles({
-      name: "test.png",
+      name: fileName,
       mimeType: "image/png",
-      buffer: Buffer.from("89504E470D0A1A0A0000000D4948445200000001000000010802000000907753DE0000000C4944415408D76360F8CF00000002010158A80000000049454E44AE426082", "hex"),
+      buffer: VALID_PNG_BUFFER,
     });
 
-    await page.waitForTimeout(3000);
+    // 4. Wait for the upload + refresh to complete and the attachment to appear.
+    await expect(page.locator(`.attachment-name:has-text('${fileName}')`).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".attachment-status-active").first()).toBeVisible({ timeout: 5000 });
+
+    // 5. Preview the attachment (opens a new window/tab).
+    const previewButton = page.locator("button:has-text('Preview')").first();
+    await previewButton.click();
+    await page.waitForTimeout(1000);
+
+    // 6. Download the attachment.
+    const downloadButton = page.locator("button:has-text('Download')").first();
+    await downloadButton.click();
+    await page.waitForTimeout(1000);
+
+    // 7. Remove the attachment via the confirmation dialog.
+    await page.locator("button:has-text('Remove')").first().click();
+    await page.waitForSelector(".modal-overlay", { timeout: 5000 });
+    await expect(page.locator("text=Remove Attachment").first()).toBeVisible();
+    await page.locator(".modal-actions button:has-text('Remove')").click();
+
+    // 8. Assert the removed state: Removed badge, Preview/Download disabled.
+    await expect(page.locator(".removed-badge").first()).toBeVisible({ timeout: 15000 });
+    const removedRow = page.locator(".attachment-row.attachment-removed").first();
+    await expect(removedRow).toBeVisible();
+    await expect(removedRow.locator("button:has-text('Preview')")).toBeDisabled();
+    await expect(removedRow.locator("button:has-text('Download')")).toBeDisabled();
 
     await page.screenshot({
       path: "artifacts/lab-02/screenshots/e2e-03-attachment-lifecycle.png",
