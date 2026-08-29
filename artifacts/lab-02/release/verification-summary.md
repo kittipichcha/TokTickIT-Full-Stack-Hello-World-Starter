@@ -14,7 +14,7 @@
 
 | Area | Result | Evidence |
 |---|---|---|
-| Lab 2 E2E suite (desktop/tablet/mobile) | **114 passed, 0 failed** | `npx playwright test e2e/lab-02` |
+| Lab 2 E2E suite (desktop/tablet/mobile) | **132 passed, 0 failed** | `npx playwright test e2e/lab-02` |
 | Client unit/component tests | **100 passed, 0 failed** | `cd client && npm test` |
 | Server unit/integration tests (real DB) | **335 passed, 0 failed** | `cd server && npm test` |
 | Client build (TypeScript + Vite) | **Pass** | `cd client && npm run build` |
@@ -28,8 +28,8 @@
 2. **E2E-02** — now proves both-direction ownership isolation plus direct API ownership verification (404 NOT_FOUND for cross-requester fetch).
 3. **E2E-03** — now proves the complete attachment lifecycle (upload → preview → download → remove → Removed badge → disabled controls).
 4. **E2E-04** — now actually forces the attachment upload to fail (route interception), proves the ticket persists, retry succeeds, the Ticket Number is unchanged, and exactly one ticket exists.
-5. **E2E-05** — fixed selectors and added the removal-dialog focus-trap verification.
-6. **E2E-06 / VISUAL-01** — fixed route-registration order and selectors; generated the complete responsive screenshot matrix.
+5. **E2E-05** — the mandatory keyboard-only flow now uses only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). The native requester `<select>` was replaced with a keyboard-operable radio-button group so the flow needs no arrow keys, mouse, or `selectOption()`.
+6. **E2E-06 / VISUAL-01** — expanded to the full Issue #18 §19 responsive requirements: Ticket Detail responsive, My Tickets table→card conversion, ≥44px mobile touch targets, and required-control visibility. The `attachment-unavailable` screenshot now genuinely depicts the unavailable state (Preview request forced to `500`, Unavailable badge asserted, Preview/Download disabled, no Retry for serving failure).
 
 ## Release Documents
 

@@ -181,18 +181,22 @@ The re-review (2026-08-28) confirmed the prior round is largely resolved and ide
 
 ### Verification Performed (2026-08-29)
 
-Release verification was executed from a **fresh clone** at PR #30 head `662c2c0` and confirmed across subsequent documentation-only commits up to current head `5ca978701dfbd7b752a5098d59f868c83388be42` (all subsequent changes are documentation edits only with no effect on application or test code):
+Release verification was executed against the integrated branch. The PR #30 review (CHANGES_REQUESTED) identified four blocking findings, all of which have been addressed and re-verified:
+
+1. **`attachment-unavailable` visual evidence** — the test now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state.
+2. **Responsive E2E-06** — expanded to the full Issue #18 §19 requirements: Ticket Detail responsive, My Tickets table→card conversion per breakpoint, ≥44px mobile touch targets for required controls, and required-control visibility.
+3. **E2E-05 keyboard-only flow** — the mandatory flow now uses only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). The native requester `<select>` was replaced with a keyboard-operable radio-button group so no arrow keys, mouse, or `selectOption()` are needed.
+4. **Release evidence SHA wording** — corrected to treat verification commits as immutable historical evidence rather than claiming verification at a non-current head.
 
 | Check | Result |
 |---|---|
-| Fresh clone + checkout | Matches PR #30 head (`5ca9787`) |
 | Working tree / whitespace / conflict markers | Clean / `git diff --check` pass / none |
 | Prisma migration status | Up to date (5 migrations) |
 | **Server tests** (`cd server && npm test`) | **26 files, 335 passed, 0 failed** |
 | **Client tests** (`cd client && npm test`) | **8 files, 100 passed, 0 failed** |
 | Server build (`npm run build`) | Pass (TypeScript) |
 | Client build (`npm run build`) | Pass (TypeScript + Vite) |
-| **Playwright `e2e/lab-02`** | **114 passed, 0 failed** (desktop/tablet/mobile) |
+| **Playwright `e2e/lab-02`** | **132 passed, 0 failed** (desktop/tablet/mobile) |
 
 Issue regression re-runs against the current integrated branch: **#13** Create Ticket (80 server + client passes), **#14** My Tickets (91 server passes), **#15** Ticket Detail/Attachments (75 server passes); combined #13/#14/#15 client tests (65 passed). All six E2E scenarios (E2E-01 … E2E-06) ran green across all three viewports. Kanban board columns for #13/#14/#15/#18 were manually verified by the author on 2026-08-29.
 
