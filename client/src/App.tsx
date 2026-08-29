@@ -266,7 +266,7 @@ export default function App() {
         {message && <p className="notice" role="status">{message}</p>}
         {selectorState === "loading" && (
           <div className="selector-form" role="status" aria-label="Loading active requesters">
-            <label htmlFor="requester">Development Requester</label>
+            <span className="requester-label">Development Requester</span>
             <div className="skeleton-select" aria-hidden="true" />
             <button className="primary-button" disabled>Continue</button>
           </div>
@@ -280,22 +280,26 @@ export default function App() {
         {selectorState === "empty" && <p className="empty-state">No active development requesters are available.</p>}
         {selectorState === "ready" && (
           <div className="selector-form">
-            <label htmlFor="requester">Development Requester</label>
-            <select
-              id="requester"
-              value={selectedId ?? ""}
-              onChange={(event) => {
-                const value = event.target.value;
-                setSelectedId(value ? Number(value) : null);
-              }}
-            >
-              <option value="">Select a requester</option>
-              {requesters.map((requester) => (
-                <option key={requester.id} value={requester.id}>
-                  {requester.name}
-                </option>
-              ))}
-            </select>
+            <span className="requester-label" id="requester-label">Development Requester</span>
+            <div className="requester-options" role="radiogroup" aria-labelledby="requester-label">
+              {requesters.map((requester) => {
+                const isSelected = selectedId === requester.id;
+                return (
+                  <button
+                    key={requester.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    aria-label={`Select ${requester.name}`}
+                    className={`requester-option ${isSelected ? "requester-option-selected" : ""}`}
+                    onClick={() => setSelectedId(requester.id)}
+                  >
+                    <span className="requester-option-name">{requester.name}</span>
+                    <span className="requester-option-email">{requester.email}</span>
+                  </button>
+                );
+              })}
+            </div>
             <button
               className="primary-button"
               disabled={selectedId === null || !requesters.some((r) => r.id === selectedId)}

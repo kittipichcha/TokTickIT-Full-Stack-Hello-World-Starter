@@ -71,8 +71,7 @@ async function setupAuthenticatedApp() {
 
   render(<App />);
 
-  const selects = await screen.findAllByLabelText("Development Requester");
-  await userEvent.selectOptions(selects[0], "1");
+  await userEvent.click(await screen.findByRole("radio", { name: "Select Ada Lovelace" }));
   await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
   await screen.findAllByText(/Ada Lovelace/);
@@ -1134,7 +1133,7 @@ describe("UI-ATT-RETRY-OWN: Failed attachment retry is scoped to requester + tic
     await userEvent.click(screen.getByRole("button", { name: "Change Requester" }));
 
     // Back on the early-selector screen.
-    await screen.findByLabelText("Development Requester");
+    await screen.findByRole("radio", { name: "Select Grace Hopper" });
 
     // Select requester 2 (Grace Hopper) and continue.
     vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
@@ -1145,7 +1144,7 @@ describe("UI-ATT-RETRY-OWN: Failed attachment retry is scoped to requester + tic
       pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
     }));
 
-    await userEvent.selectOptions(screen.getByLabelText("Development Requester"), "2");
+    await userEvent.click(screen.getByRole("radio", { name: "Select Grace Hopper" }));
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     // Requester 2's shell mounts. The prior requester's failed attachment retry must be

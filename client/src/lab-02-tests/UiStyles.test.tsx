@@ -32,8 +32,7 @@ async function setupAuthenticatedApp() {
 
   render(<App />);
 
-  const selects = await screen.findAllByLabelText("Development Requester");
-  await userEvent.selectOptions(selects[0], "1");
+  await userEvent.click(await screen.findByRole("radio", { name: "Select Ada Lovelace" }));
   await userEvent.click(screen.getByRole("button", { name: "Continue" }));
   await screen.findAllByText(/Ada Lovelace/);
 }
@@ -280,8 +279,7 @@ describe("UI-STYLE-03: Priority/Status/Removed badge styling and non-color-relia
 
     render(<App />);
 
-    const selects = await screen.findAllByLabelText("Development Requester");
-    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.click(await screen.findByRole("radio", { name: "Select Ada Lovelace" }));
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
     await screen.findAllByText(/Ada Lovelace/);
   }
