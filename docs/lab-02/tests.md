@@ -574,6 +574,7 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
   - **Client build**: TypeScript + Vite production build succeeds
   - **Server build**: TypeScript compilation succeeds
   - **Screenshots**: 84 curated evidence screenshots generated under `artifacts/lab-02/screenshots/` across all four screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile.
+- **Head reconciliation (PR #30 head = `152c3b6`)**: The PR #30 head is `152c3b6f715b13afac6bfb1c36601cdb04f13505` (parent `662c2c0`). The `152c3b6` commit is documentation-only (8 `.md` files; no source, test, or E2E code changed), so the totals above are identical to those recorded at `662c2c0`. All rows in this document were re-executed and confirmed at the exact PR head `152c3b6` on 2026-08-29: server **335/335**, client **100/100**, server build **Pass**, client build **Pass**, Lab 2 E2E **114/114**.
 - **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, clean-checkout verification, and final gate recorded in the release documents.
 
 ### 2026-08-27 — Non-blocking suggestion: Normalize whitespace-only search on the client

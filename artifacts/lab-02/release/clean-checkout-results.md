@@ -17,7 +17,7 @@ git clone --branch feature/issue-18-integration-verification --single-branch \
 | Step | Command | Result |
 |---|---|---|
 | Fresh clone | `git clone --branch feature/issue-18-integration-verification` | **Success** |
-| Checkout target head | `git rev-parse HEAD` | `662c2c0ac8da573dd4ea5c3354ec20006ea1a63d` |
+| Checkout target head | `git rev-parse HEAD` | `152c3b6f715b13afac6bfb1c36601cdb04f13505` |
 | Working tree clean | `git status --short` | **Clean** (no unexpected changes) |
 | Whitespace check | `git diff --check` | **Pass** (no whitespace errors) |
 | Conflict markers | `git grep -n -E '^(<<<<<<<\|=======\|>>>>>>>)' -- .` | **None** |
@@ -35,7 +35,8 @@ git clone --branch feature/issue-18-integration-verification --single-branch \
 ## Notes
 
 - The `.env` file is correctly gitignored and not committed; a fresh checkout requires the developer's local `server/.env` (or copying `server/.env.example` and filling in real credentials). The `.env.example` uses placeholder credentials that do not match the local database, so the real `.env` was used for the verification run.
-- The clean checkout at the current branch HEAD (`662c2c0`) is clean. The full verification (server tests, client tests, builds, and the Lab 2 E2E suite) was executed against this fresh checkout at the current PR #30 head. The `git status --short`, `git diff --check`, and conflict-marker checks all pass on the current tree.
+- The clean checkout at the current branch HEAD (`152c3b6`) is clean. The full verification (server tests, client tests, builds, and the Lab 2 E2E suite) was executed against this fresh checkout at the current PR #30 head. The `git status --short`, `git diff --check`, and conflict-marker checks all pass on the current tree.
+- **Head reconciliation:** The PR #30 head is `152c3b6` (parent `662c2c0`). The `152c3b6` commit is documentation-only (8 `.md` files; no source, test, or E2E code changed), so the test/build/E2E totals are identical to those recorded at `662c2c0`. All results in this document were re-executed and confirmed at the exact PR head `152c3b6`.
 
 ## Expected Final State
 
