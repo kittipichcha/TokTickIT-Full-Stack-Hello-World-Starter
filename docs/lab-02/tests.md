@@ -574,7 +574,7 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
   - **Client build**: TypeScript + Vite production build succeeds
   - **Server build**: TypeScript compilation succeeds
   - **Screenshots**: 84 curated evidence screenshots generated under `artifacts/lab-02/screenshots/` across all four screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile.
-- **Head reconciliation (PR #30 head = `7d6a697`)**: The PR #30 head is `7d6a6978a5f7a9452c69a95f5a8195f4f11706d9` (parent `152c3b6`). The `7d6a697` commit is documentation-only (8 `.md` files; no source, test, or E2E code changed), so the totals above are identical to those recorded at `152c3b6`. All rows in this document were re-executed and confirmed at the exact PR head `7d6a697` on 2026-08-29: server **335/335**, client **100/100**, server build **Pass**, client build **Pass**, Lab 2 E2E **114/114**.
+- **Head reconciliation (PR #30 head = `5ca9787`)**: The PR #30 head is `5ca978701dfbd7b752a5098d59f868c83388be42` (with ancestors `7d6a697`, `152c3b6`, `662c2c0`). Commits following the full test run are documentation-only updates (documentation edits and commit reference updates; no application, server, client, test, or E2E code changed), so the verification totals and results remain identical and valid. All rows in this document were re-executed and confirmed: server **335/335**, client **100/100**, server build **Pass**, client build **Pass**, Lab 2 E2E **114/114**.
 - **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, clean-checkout verification, and final gate recorded in the release documents.
 
 ### 2026-08-27 — Non-blocking suggestion: Normalize whitespace-only search on the client

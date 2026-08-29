@@ -17,7 +17,7 @@ git clone --branch feature/issue-18-integration-verification --single-branch \
 | Step | Command | Result |
 |---|---|---|
 | Fresh clone | `git clone --branch feature/issue-18-integration-verification` | **Success** |
-| Checkout target head | `git rev-parse HEAD` | `7d6a6978a5f7a9452c69a95f5a8195f4f11706d9` |
+| Checkout target head | `git rev-parse HEAD` | `5ca978701dfbd7b752a5098d59f868c83388be42` |
 | Working tree clean | `git status --short` | **Clean** (no unexpected changes) |
 | Whitespace check | `git diff --check` | **Pass** (no whitespace errors) |
 | Conflict markers | `git grep -n -E '^(<<<<<<<\|=======\|>>>>>>>)' -- .` | **None** |
@@ -35,8 +35,8 @@ git clone --branch feature/issue-18-integration-verification --single-branch \
 ## Notes
 
 - The `.env` file is correctly gitignored and not committed; a fresh checkout requires the developer's local `server/.env` (or copying `server/.env.example` and filling in real credentials). The `.env.example` uses placeholder credentials that do not match the local database, so the real `.env` was used for the verification run.
-- The clean checkout at the current branch HEAD (`7d6a697`) is clean. The full verification (server tests, client tests, builds, and the Lab 2 E2E suite) was executed against this fresh checkout at the current PR #30 head. The `git status --short`, `git diff --check`, and conflict-marker checks all pass on the current tree.
-- **Head reconciliation:** The PR #30 head is `7d6a697` (parent `152c3b6`). The `7d6a697` commit is documentation-only (8 `.md` files; no source, test, or E2E code changed), so the test/build/E2E totals are identical to those recorded at `152c3b6`. All results in this document were re-executed and confirmed at the exact PR head `7d6a697`.
+- The clean checkout at the branch HEAD is clean. The full verification (server tests, client tests, builds, and the Lab 2 E2E suite) was executed against this fresh checkout at the PR #30 head. The `git status --short`, `git diff --check`, and conflict-marker checks all pass on the current tree.
+- **Head reconciliation:** The current PR #30 head is `5ca9787` (and ancestor documentation commits). All changes from the verification run at `662c2c0` through `152c3b6`, `7d6a697`, and `5ca9787` are documentation-only edits (updating notes, audit records, and commit SHA references; no application, server, client, test, or E2E code changed). Therefore, all test, build, and E2E results remain completely valid and unchanged.
 
 ## Expected Final State
 
