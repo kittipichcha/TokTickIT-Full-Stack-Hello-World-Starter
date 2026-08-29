@@ -11,10 +11,21 @@ import { expect, type Page } from "@playwright/test";
 /** Select a development requester on the selector screen and continue. */
 export async function selectRequester(page: Page, requesterId: string): Promise<void> {
   await page.goto("/");
-  await page.waitForSelector("#requester", { timeout: 10000 });
-  await page.selectOption("#requester", requesterId);
+  await page.waitForSelector(".requester-option", { timeout: 10000 });
+  await page.click(`.requester-option[aria-label="Select ${requesterNameForId(requesterId)}"]`);
   await page.click("button:has-text('Continue')");
   await page.waitForSelector(".app-shell", { timeout: 10000 });
+}
+
+/** Map a requester id to its display name for the selector option aria-label. */
+function requesterNameForId(requesterId: string): string {
+  const names: Record<string, string> = {
+    "1": "Ada Lovelace",
+    "2": "Grace Hopper",
+    "3": "Katherine Johnson",
+    "4": "Alan Turing",
+  };
+  return names[requesterId] ?? "Ada Lovelace";
 }
 
 /** Navigate to the Create Ticket screen from the app shell. */

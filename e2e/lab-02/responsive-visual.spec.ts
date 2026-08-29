@@ -94,6 +94,7 @@ async function setupApiMocks(
     devRequesters?: typeof REQUESTERS; categories?: typeof CATEGORIES;
     relatedSystems?: typeof RELATED_SYSTEMS; failRequesterContext?: boolean;
     slowRequesters?: boolean; failMyTickets?: boolean; failDetail?: boolean;
+    failPreview?: boolean;
   } = {},
 ) {
   const {
@@ -101,6 +102,7 @@ async function setupApiMocks(
     devRequesters = REQUESTERS, categories = CATEGORIES,
     relatedSystems = RELATED_SYSTEMS, failRequesterContext = false,
     slowRequesters = false, failMyTickets = false, failDetail = false,
+    failPreview = false,
   } = options;
 
   await context.addInitScript(() => {
@@ -181,6 +183,11 @@ async function setupApiMocks(
 
     // Attachment preview/download
     if (/\/api\/attachments\/1\/preview$/.test(url)) {
+      if (failPreview) {
+        await route.fulfill({ status: 500, contentType: "application/json",
+          body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } }) });
+        return;
+      }
       await route.fulfill({ status: 200, contentType: "image/png",
         body: Buffer.from("89504E470D0A1A0A0000000D4948445200000064000000640802000000FF8002030000000C4944415462816338CA0000000601004900000000", "hex") });
       return;
@@ -272,8 +279,8 @@ test.describe("Requester Selection screenshots", () => {
     // script runs first and this removeItem runs last → selector screen shows.
     await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await screenshotAllViewports(page, "requester-selection/populated", async () => {
-      await page.waitForSelector("#requester", { timeout: 10000 });
-      await page.selectOption("#requester", "2");
+      await page.waitForSelector(".requester-option", { timeout: 10000 });
+      await page.click('.requester-option[aria-label="Select Michael Chen"]');
     });
   });
 });
@@ -538,10 +545,21 @@ test.describe("Ticket Detail screenshots", () => {
   });
   test("attachment unavailable @visual", async ({ page, context }) => {
     const dt = makeDetailTicket(1, activeAttachments);
-    await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
+    await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments, failPreview: true });
     await screenshotAllViewports(page, "ticket-detail/attachment-unavailable", async () => {
       await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
       await openTicketBySummary(page, "Detail view test ticket");
+      // Trigger the unavailable state: Preview request returns 500 → attachment becomes Unavailable.
+      const preview = page.locator("button:has-text('Preview')").first();
+      await preview.click();
+      // Assert the causal chain: 500 response → Unavailable badge visible.
+      await expect(page.locator(".unavailable-badge").first()).toBeVisible({ timeout: 5000 });
+      // Preview and Download are disabled for the unavailable state.
+      await expect(page.locator("button:has-text('Preview')").first()).toBeDisabled();
+      await expect(page.locator("button:has-text('Download')").first()).toBeDisabled();
+      // No Retry is exposed for a Preview/Download serving failure (ui-spec §5.3).
+      await expect(page.locator(".attachment-unavailable button:has-text('Retry')")).toHaveCount(0);
+      await page.waitForTimeout(500);
     });
   });
   test("preview modal @visual", async ({ page, context }) => {
@@ -558,11 +576,32 @@ test.describe("Ticket Detail screenshots", () => {
 
 // ─── E2E-06 / VISUAL-01: Responsive layout ─────────────────────────────────
 
+/**
+ * Assert that every required interactive control has a bounding-box height of
+ * at least 44px at the current viewport. `selectors` is a list of Playwright
+ * locators for the required controls (Issue #18 §19: mobile touch targets).
+ */
+async function assertTouchTargets(page: Page, selectors: string[]) {
+  for (const sel of selectors) {
+    const loc = page.locator(sel);
+    const count = await loc.count();
+    for (let i = 0; i < count; i++) {
+      const box = await loc.nth(i).boundingBox();
+      expect(box, `${sel}[${i}] has a bounding box`).not.toBeNull();
+      expect(box!.height, `${sel}[${i}] height >= 44px`).toBeGreaterThanOrEqual(44);
+    }
+  }
+}
+
 test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
   const sampleTickets = [
     makeTicket(1, { summary: "Laptop battery drains quickly", requestedPriority: "HIGH" }),
     makeTicket(2, { summary: "VPN connection timeout", categoryId: 3, categoryName: "Network", requestedPriority: "MEDIUM" }),
     makeTicket(3, { summary: "Email not syncing", categoryId: 2, categoryName: "Software", requestedPriority: "LOW" }),
+  ];
+  const activeAttachments = [
+    makeAttachment(1, { originalFilename: "screenshot.png", mimeType: "image/png", fileSizeBytes: 345678 }),
+    makeAttachment(2, { originalFilename: "report.pdf", mimeType: "application/pdf", fileSizeBytes: 512000 }),
   ];
 
   test("My Tickets no horizontal scroll", async ({ page, context }) => {
@@ -574,6 +613,38 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
       expect(overflow, `${vp.name}: no horizontal scroll`).toBe(false);
     }
   });
+
+  test("My Tickets table→card representation per breakpoint", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    for (const vp of VIEWPORTS) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(2000);
+      const isMobile = vp.width < 768;
+      if (isMobile) {
+        // Mobile: table hidden, ticket cards visible.
+        await expect(page.locator(".tickets-table")).toBeHidden();
+        await expect(page.locator(".ticket-card").first()).toBeVisible();
+      } else {
+        // Desktop/tablet: table visible, cards hidden/not used.
+        await expect(page.locator(".tickets-table")).toBeVisible();
+        await expect(page.locator(".ticket-card").first()).toBeHidden();
+      }
+    }
+  });
+
+  test("My Tickets mobile touch targets >= 44px", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(2000);
+    await assertTouchTargets(page, [
+      "button:has-text('Change Requester')",
+      ".ticket-card-toggle",
+      ".pagination-page",
+      "button:has-text('Previous')",
+      "button:has-text('Next')",
+    ]);
+  });
+
   test("Create Ticket responsive", async ({ page, context }) => {
     await setupApiMocks(page, context, { ticketData: sampleTickets });
     for (const vp of VIEWPORTS) {
@@ -585,14 +656,72 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
       expect(overflow, `${vp.name}: Create Ticket no horizontal scroll`).toBe(false);
     }
   });
+
+  test("Create Ticket mobile touch targets >= 44px", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/"); await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
+    await page.click("a:has-text('Create Ticket')");
+    await page.waitForSelector("#summary", { timeout: 10000 }); await page.waitForTimeout(500);
+    await assertTouchTargets(page, [
+      "button:has-text('Submit')",
+      "button:has-text('Cancel')",
+      "#categoryId",
+      "#relatedSystemId",
+      "#requestedPriority",
+    ]);
+  });
+
   test("Requester Selection responsive", async ({ page, context }) => {
     await setupApiMocks(page, context, {});
     await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector("#requester", { timeout: 10000 }); await page.waitForTimeout(500);
+      await page.goto("/"); await page.waitForSelector(".requester-option", { timeout: 10000 }); await page.waitForTimeout(500);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(overflow, `${vp.name}: selector no horizontal scroll`).toBe(false);
     }
+  });
+
+  test("Requester Selection mobile touch targets >= 44px", async ({ page, context }) => {
+    await setupApiMocks(page, context, {});
+    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/"); await page.waitForSelector(".requester-option", { timeout: 10000 }); await page.waitForTimeout(500);
+    await assertTouchTargets(page, [
+      ".requester-option",
+      "button:has-text('Continue')",
+    ]);
+  });
+
+  test("Ticket Detail responsive", async ({ page, context }) => {
+    const dt = makeDetailTicket(1, activeAttachments);
+    await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
+    for (const vp of VIEWPORTS) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+      await openTicketBySummary(page, "Detail view test ticket");
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+      expect(overflow, `${vp.name}: Ticket Detail no horizontal scroll`).toBe(false);
+      // Required controls remain visible and usable.
+      await expect(page.locator("button:has-text('Preview')").first()).toBeVisible();
+      await expect(page.locator("button:has-text('Download')").first()).toBeVisible();
+      await expect(page.locator("button:has-text('Remove')").first()).toBeVisible();
+      await expect(page.locator("button:has-text('+ Add Attachment')").first()).toBeVisible();
+    }
+  });
+
+  test("Ticket Detail mobile touch targets >= 44px", async ({ page, context }) => {
+    const dt = makeDetailTicket(1, activeAttachments);
+    await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+    await openTicketBySummary(page, "Detail view test ticket");
+    await assertTouchTargets(page, [
+      "button:has-text('Preview')",
+      "button:has-text('Download')",
+      "button:has-text('Remove')",
+      "button:has-text('+ Add Attachment')",
+    ]);
   });
 });
