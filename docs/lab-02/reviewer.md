@@ -184,8 +184,8 @@ The re-review (2026-08-28) confirmed the prior round is largely resolved and ide
 Release verification was executed against the integrated branch. The PR #30 review (CHANGES_REQUESTED) identified four blocking findings, all of which have been addressed and re-verified:
 
 1. **`attachment-unavailable` visual evidence** — the test now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state.
-2. **Responsive E2E-06** — expanded to the full Issue #18 §19 requirements: Ticket Detail responsive, My Tickets table→card conversion per breakpoint, ≥44px mobile touch targets for required controls, and required-control visibility.
-3. **E2E-05 keyboard-only flow** — the mandatory flow now uses only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). The native requester `<select>` was replaced with a keyboard-operable radio-button group so no arrow keys, mouse, or `selectOption()` are needed.
+2. **Responsive E2E-06** — expanded to the full Issue #18 §19 requirements: Ticket Detail responsive, My Tickets table→card conversion per breakpoint, ≥44px mobile touch targets for required controls, required-control visibility, and no-clipped-label / no-overlapping-control checks for all four screens at every viewport.
+3. **E2E-05 keyboard-only flow** — the mandatory flow now uses only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). The native requester `<select>` was replaced with a keyboard-operable radio-button group so no arrow keys, mouse, or `selectOption()` are needed. **This is the one production change in the PR** (commit `1d8b44d`, `client/src/App.tsx`), driven by the Issue #18 §24 keyboard-only requirement and scoped to the requester-selection control only.
 4. **Release evidence SHA wording** — corrected to treat verification commits as immutable historical evidence rather than claiming verification at a non-current head.
 
 | Check | Result |
@@ -196,7 +196,7 @@ Release verification was executed against the integrated branch. The PR #30 revi
 | **Client tests** (`cd client && npm test`) | **8 files, 100 passed, 0 failed** |
 | Server build (`npm run build`) | Pass (TypeScript) |
 | Client build (`npm run build`) | Pass (TypeScript + Vite) |
-| **Playwright `e2e/lab-02`** | **132 passed, 0 failed** (desktop/tablet/mobile) |
+| **Playwright `e2e/lab-02`** | **144 passed, 0 failed** (desktop/tablet/mobile) |
 
 Issue regression re-runs against the current integrated branch: **#13** Create Ticket (80 server + client passes), **#14** My Tickets (91 server passes), **#15** Ticket Detail/Attachments (75 server passes); combined #13/#14/#15 client tests (65 passed). All six E2E scenarios (E2E-01 … E2E-06) ran green across all three viewports. Kanban board columns for #13/#14/#15/#18 were manually verified by the author on 2026-08-29.
 

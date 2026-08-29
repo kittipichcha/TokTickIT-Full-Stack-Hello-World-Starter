@@ -3,7 +3,7 @@
 **Issue:** #18 — Lab 2 Final Integration and Release Verification
 **Date:** 2026-08-29
 **Command:** `npx playwright test e2e/lab-02` (desktop/tablet/mobile)
-**Result:** 132 passed, 0 failed
+**Result:** 144 passed, 0 failed
 
 ## E2E-01 — Requester creates ticket and finds it in My Tickets
 
@@ -36,12 +36,12 @@
 ## E2E-05 — Keyboard accessibility
 
 - **File**: `e2e/lab-02/keyboard-access.spec.ts`
-- **Flow**: The mandatory flow completes Requester Selection → Continue → Create Ticket using only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). The native requester `<select>` was replaced with a keyboard-operable radio-button group so no arrow keys, mouse, or `selectOption()` are needed. Supporting tests also verify focus indicators, Change Requester reachability/operability, and the removal-dialog focus trap (focus enters, Tab stays inside, Escape closes, focus restores).
+- **Flow**: The mandatory flow completes Requester Selection → Continue → Create Ticket using only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). The native requester `<select>` was replaced with a keyboard-operable radio-button group so no arrow keys, mouse, or `selectOption()` are needed. **This is the one production change in the PR** (commit `1d8b44d`, `client/src/App.tsx`): a verification-driven fix required by Issue #18 §24, scoped to the requester-selection control only. Supporting tests also verify focus indicators, Change Requester reachability/operability, and the removal-dialog focus trap (focus enters, Tab stays inside, Escape closes, focus restores).
 - **Assertions**: focus order sensible; visible focus indicators; controls operable without a mouse; validation states remain keyboard-usable; Change Requester reachable and keyboard-operable.
 - **Result**: **PASS**
 
 ## E2E-06 / VISUAL-01 — Responsive layout and visual evidence
 
 - **File**: `e2e/lab-02/responsive-visual.spec.ts`
-- **Flow**: no horizontal scroll at desktop/tablet/mobile for My Tickets, Create Ticket, Requester Selection, and Ticket Detail; My Tickets table→card conversion per breakpoint; ≥44px mobile touch targets for required controls (Change Requester, ticket-card toggle, pagination, Submit, Cancel, category/related-system/priority selects, requester options, Continue, Preview, Download, Remove, Add Attachment); required controls visible and usable; 84 curated screenshots across Requester Selection, Create Ticket, My Tickets, Ticket Detail at all three viewports. The `attachment-unavailable` screenshot now genuinely depicts the unavailable state (Preview request forced to `500`, Unavailable badge asserted, Preview/Download disabled, no Retry for serving failure).
+- **Flow**: no horizontal scroll at desktop/tablet/mobile for My Tickets, Create Ticket, Requester Selection, and Ticket Detail; My Tickets table→card conversion per breakpoint; ≥44px mobile touch targets for required controls (Change Requester, ticket-card toggle, pagination, Submit, Cancel, category/related-system/priority selects, requester options, Continue, Preview, Download, Remove, Add Attachment); required controls visible and usable; no clipped labels and no overlapping controls for all four screens at every viewport; 82 curated screenshots (26 state directories × 3 viewports + 4 E2E workflow shots) across Requester Selection, Create Ticket, My Tickets, Ticket Detail. The `attachment-unavailable` screenshot now genuinely depicts the unavailable state (Preview request forced to `500`, Unavailable badge asserted, Preview/Download disabled, no Retry for serving failure).
 - **Result**: **PASS**
