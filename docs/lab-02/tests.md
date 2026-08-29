@@ -312,13 +312,13 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | E2E-02 | E2E | Ownership isolation across two requester contexts | Requester A and B cannot see each other's tickets and ownership enforcement works end-to-end. | `e2e/lab-02/ownership.spec.ts` | FR-09 | BR-24 | AC-03 | **Passed** |
 | E2E-03 | E2E | Full attachment lifecycle (upload/preview/download/remove) | Users can add, preview, download, and remove attachments on their own tickets without breaking the ticket flow. | `e2e/lab-02/attachment-lifecycle.spec.ts` | FR-10, FR-11, FR-12, FR-13 | BR-12, BR-18, BR-28 | AC-07, AC-12, AC-13, AC-24 | **Passed** |
 | E2E-04 | E2E | BR-17 partial success: ticket created, attachment upload fails, ticket persists, no duplicate, retry from Ticket Detail | Ticket creation succeeds, attachment failure is reported separately, and the user can retry the attachment without creating a duplicate. | `e2e/lab-02/partial-success-attachment.spec.ts` | FR-02, FR-10, FR-17 | BR-17 | AC-26 | **Passed** |
-| E2E-05 | E2E | Keyboard-only requester selection and create-ticket flow with visible focus indicators | Keyboard users can operate the testing-only Requester Selection, Continue, Change Requester, and complete Create Ticket with visible focus and no inaccessible inputs. | `e2e/lab-02/keyboard-access.spec.ts` | FR-01, FR-14 | BR-03, BR-14 | AC-25 | **Passed** |
+| E2E-05 | E2E | Keyboard-only requester selection and create-ticket flow with visible focus indicators | Keyboard users can operate the testing-only Requester Selection, Continue, Change Requester, and complete Create Ticket with visible focus and no inaccessible inputs. The mandatory flow uses only `Tab`, `Shift+Tab`, `Enter`, and `Space` (Issue #18 §24) — no arrow keys, mouse, or `selectOption()`. | `e2e/lab-02/keyboard-access.spec.ts` | FR-01, FR-14 | BR-03, BR-14 | AC-25 | **Passed** |
 | UI-ERR-01 | UI | Case A — ticket create API failure preserves form state and requires manual retry | A create failure leaves all form values populated and requires manual retry rather than auto-retrying. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 | Passed |
 | UI-STYLE-01 | UI Style | Editable/read-only/invalid/disabled/busy field and button styles match Zen Green tokens | The visual system consistently distinguishes valid, invalid, disabled, busy, and read-only states. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | — | — | **Passed** |
 | UI-STYLE-02 | UI Style | Required-field labels show red asterisk; validation messages render directly under fields | Required labels and inline validation match the accessibility and UI contract. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-08, BR-09 | AC-04, AC-06 | **Passed** |
 | UI-STYLE-03 | UI Style | Priority/Status/Removed badge styling and non-color-reliant labels | Badges are styled with accessible labels and are understandable without relying on color alone. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-20 | AC-12 | **Passed** |
 | VISUAL-01 | Visual | Zen Green screenshots across all Lab 2 screens at desktop/tablet/mobile viewports | Screenshots across all required screens demonstrate the required responsive visual style. | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | **Passed** |
-| E2E-06 | E2E | Responsive layout across all Lab 2 screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile — no horizontal scroll, stacked controls on mobile | The app renders without horizontal overflow and stacks content correctly across breakpoints. | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | **Passed** |
+| E2E-06 | E2E | Responsive layout across all Lab 2 screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile — no horizontal scroll, stacked controls on mobile, table→card conversion, and ≥44px mobile touch targets | The app renders without horizontal overflow, stacks content correctly across breakpoints, converts My Tickets from table to card on mobile, and keeps required interactive controls at ≥44px touch height on mobile (Issue #18 §19). | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | **Passed** |
 
 ### 5.1 Issue #12 scope and row redistribution (2026-08-24 amendment)
 
@@ -548,6 +548,33 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
+### 2026-08-29 — Issue #18: Address PR #30 review — keyboard-only requester control, unavailable-state evidence, and full responsive assertions
+- **Scope**: Addressed all four blocking findings from the PR #30 review (Issue #18): (1) `attachment-unavailable` visual evidence now genuinely triggers the unavailable state; (2) responsive E2E-06 now covers the full Issue #18 §19 requirements (Ticket Detail, table→card conversion, 44px touch targets, required controls); (3) the mandatory E2E-05 flow now uses only `Tab`/`Shift+Tab`/`Enter`/`Space`; (4) release evidence SHA wording corrected.
+- **Changes**:
+  - `client/src/App.tsx`: Replaced the native requester `<select>` with a keyboard-operable radio-button group (each requester is a `role="radio"` button reachable via `Tab` and selectable with `Space`/`Enter`). This resolves the Issue #18 §24 conflict (native `<select>` requires arrow keys) by making the control fully operable with only `Tab`/`Shift+Tab`/`Enter`/`Space`.
+  - `client/src/App.css`: Added `.requester-option` styles (44px min-height, selected state, focus ring).
+  - `client/src/lab-02-tests/*.test.tsx`: Updated requester selection in all client tests to use the radio-button options (`Select <name>`) instead of `selectOptions`/`fireEvent.change` on the native select.
+  - `e2e/lab-02/responsive-visual.spec.ts`: `attachment-unavailable` now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state. Added a reusable `assertTouchTargets` helper (≥44px) and expanded E2E-06 with: My Tickets table→card representation per breakpoint, My Tickets/Create Ticket/Requester Selection/Ticket Detail mobile touch-target checks, and Ticket Detail responsive (no horizontal scroll + required controls visible).
+  - `e2e/lab-02/keyboard-access.spec.ts`: Added the canonical mandatory keyboard-only flow (Requester Selection → Continue → Create Ticket) using only `Tab`/`Shift+Tab`/`Enter`/`Space`, with focus-order, focus-visibility, and keyboard-usable validation assertions. Updated the supporting tests to use the new radio-button selector.
+  - `e2e/lab-02/helpers.ts` and `e2e/lab-02/ownership.spec.ts`: Updated requester selection to the new radio-button control.
+  - `docs/lab-02/tests.md`: Updated the `E2E-05` and `E2E-06` matrix rows to reflect the keyboard-only and full responsive coverage; added this Results Log entry.
+- **Command(s) run**:
+  ```sh
+  npx playwright test e2e/lab-02            # full Lab 2 E2E suite (desktop/tablet/mobile)
+  cd client && npm test                     # 100 client tests passed
+  cd server && npm test                     # 335 server tests passed
+  cd client && npm run build                # TypeScript + Vite build passes
+  cd server && npm run build                # TypeScript build passes
+  ```
+- **Result**:
+  - **Lab 2 E2E**: 132 tests passed, 0 failed (across desktop/tablet/mobile viewports) — up from 114 with the new responsive assertions.
+  - **Client**: 100 tests passed, 0 failed
+  - **Server**: 335 tests passed, 0 failed
+  - **Client build**: TypeScript + Vite production build succeeds
+  - **Server build**: TypeScript compilation succeeds
+  - **Screenshots**: Regenerated `ticket-detail/attachment-unavailable` (now depicts the real unavailable state) plus the full responsive matrix.
+- **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, and final gate updated to reflect the corrected verification.
+
 ### 2026-08-29 — Issue #18: Final Integration and Release Verification (PR #30)
 - **Scope**: Repaired the Lab 2 integration E2E suite, generated complete responsive visual evidence, and recorded the final integrated verification for the release.
 - **Changes**:
@@ -574,7 +601,7 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
   - **Client build**: TypeScript + Vite production build succeeds
   - **Server build**: TypeScript compilation succeeds
   - **Screenshots**: 84 curated evidence screenshots generated under `artifacts/lab-02/screenshots/` across all four screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile.
-- **Head reconciliation (PR #30 head = `5ca9787`)**: The PR #30 head is `5ca978701dfbd7b752a5098d59f868c83388be42` (with ancestors `7d6a697`, `152c3b6`, `662c2c0`). Commits following the full test run are documentation-only updates (documentation edits and commit reference updates; no application, server, client, test, or E2E code changed), so the verification totals and results remain identical and valid. All rows in this document were re-executed and confirmed: server **335/335**, client **100/100**, server build **Pass**, client build **Pass**, Lab 2 E2E **114/114**.
+- **Head reconciliation**: Verification commits are treated as immutable historical evidence. The verification totals above (server **335/335**, client **100/100**, server build **Pass**, client build **Pass**, Lab 2 E2E **114/114**) were recorded at the commit where the tests were executed. Subsequent documentation-only commits (documentation edits and commit reference updates; no application, server, client, test, or E2E code changed) do not alter these results. The corrected E2E suite (with the full responsive and keyboard-only coverage) is recorded in the newer Results Log entry above at **132/132**.
 - **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, clean-checkout verification, and final gate recorded in the release documents.
 
 ### 2026-08-27 — Non-blocking suggestion: Normalize whitespace-only search on the client

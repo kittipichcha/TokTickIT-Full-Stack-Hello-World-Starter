@@ -22,14 +22,15 @@ This is the **last** release artifact generated. It depends on all preceding ver
 | E2E-03 proves complete attachment lifecycle | ✅ | `e2e/lab-02/attachment-lifecycle.spec.ts` |
 | E2E-04 actually forces attachment failure | ✅ | route interception (no production change) |
 | E2E-04 proves retry without duplicate ticket | ✅ | same Ticket Number, exactly one ticket |
-| E2E-05 passes | ✅ | keyboard-access.spec.ts |
-| E2E-06 passes | ✅ | responsive-visual.spec.ts |
+| E2E-05 passes | ✅ | keyboard-access.spec.ts (mandatory flow uses only Tab/Shift+Tab/Enter/Space) |
+| E2E-06 passes | ✅ | responsive-visual.spec.ts (Ticket Detail, table→card, 44px touch targets, required controls) |
 | Server suite passes | ✅ | 335 passed |
 | Client suite passes | ✅ | 100 passed |
 | Build/type checks pass | ✅ | client + server `npm run build` |
 | #13/#14/#15 regression passes | ✅ | all prior tests green |
 | No required test skipped / no `.only()` / no `.skip()` | ✅ | full suite ran green |
 | Screenshot evidence complete (4 screens × 3 viewports) | ✅ | 84 screenshots |
+| `attachment-unavailable` screenshot depicts real unavailable state | ✅ | Preview forced to 500, Unavailable badge asserted, Preview/Download disabled, no Retry for serving failure |
 | Release evidence package exists | ✅ | `artifacts/lab-02/release/` |
 | `tests.md` matches actual execution | ✅ | E2E-01..06 + VISUAL-01 → Passed |
 | `reviewer.md` exists and is truthful | ✅ | exists; PR #30 human review **pending** (no approval invented) |
