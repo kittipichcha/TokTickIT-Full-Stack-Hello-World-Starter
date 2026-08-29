@@ -1,0 +1,22 @@
+{
+  "name": "issue-18-integration-verification",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:e2e": "npx playwright test",
+    "test:e2e:desktop": "npx playwright test --project=desktop",
+    "test:e2e:tablet": "npx playwright test --project=tablet",
+    "test:e2e:mobile": "npx playwright test --project=mobile",
+    "test:client": "cd client && npm test",
+    "test:server": "cd server && npm test",
+    "test:client:ui": "cd client && npx vitest run src/lab-02-tests/UiStyles.test.tsx",
+    "test:all": "cd client && npm test && cd ../server && npm test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}
