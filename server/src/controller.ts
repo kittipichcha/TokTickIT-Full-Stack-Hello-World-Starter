@@ -10,6 +10,18 @@ import {
   isActiveCategory,
   ValidationError,
   InactiveReferenceError,
+  AttachmentLimitError,
+  FileTooLargeError,
+  UnsupportedMediaTypeError,
+  AttachmentRemovedError,
+  ConflictError,
+  uploadAttachment,
+  listAttachments,
+  downloadAttachment,
+  previewAttachment,
+  removeAttachment,
+  normalizeRemovalReason,
+  ticketOwnedByRequester,
 } from "./service.js";
 import { TicketSequenceExhaustedError } from "./ticket-number.js";
 import { inspectIntegerFields } from "./integer-validation.js";
@@ -24,6 +36,90 @@ function firstQueryParam(val: unknown): string | undefined {
   if (typeof val === "string") return val;
   if (Array.isArray(val) && val.length > 0 && typeof val[0] === "string") return val[0];
   return undefined;
+}
+
+/**
+ * Parses and validates an `attachmentId` path parameter.
+ *
+ * Per api-spec §0, a malformed `attachmentId` path parameter returns `404
+ * NOT_FOUND`. Beyond the decimal grammar, the value must also be a safe integer
+ * within the PostgreSQL `INTEGER` range (Prisma `Int` maps to `INTEGER`), so an
+ * oversized digit string can never reach Prisma and produce a `500`. Returns
+ * `null` when the ID is malformed or out of range.
+ */
+function parseAttachmentId(rawId: string): number | null {
+  if (!/^(?:[1-9][0-9]*)$/.test(rawId)) return null;
+  const id = Number(rawId);
+  if (!Number.isSafeInteger(id) || id > MAX_DATABASE_ID) return null;
+  return id;
+}
+
+/**
+ * Authorization pre-check for attachment uploads.
+ *
+ * Runs BEFORE the multipart/multer middleware so that malformed, missing, or
+ * oversized files cannot reveal whether a ticket exists or belongs to another
+ * requester. A non-owned or missing ticket always returns the same 404 shape
+ * regardless of the file payload.
+ *
+ * This is only a pre-check: the transactional ownership validation inside
+ * uploadAttachment() remains the authoritative correctness boundary.
+ */
+export async function requireTicketOwnership(
+  req: Request,
+  res: Response,
+  next: import("express").NextFunction,
+): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+    const ticketNumber = req.params.ticketNumber;
+
+    if (!/^TKT-\d{4}-\d{6}$/.test(ticketNumber)) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found." },
+      });
+      return;
+    }
+
+    const owned = await ticketOwnedByRequester(ticketNumber, requesterId);
+    if (!owned) {
+      // Drain the request body before responding so the client can finish
+      // uploading without a connection reset. This keeps the 404 response
+      // readable even for large/malformed multipart payloads.
+      await drainRequestBody(req);
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found." },
+      });
+      return;
+    }
+
+    next();
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
+/**
+ * Consumes the remainder of the request body so the connection can be closed
+ * cleanly after an early authorization rejection. Without this, a client still
+ * streaming a large multipart body would receive a connection reset instead of
+ * the intended HTTP response.
+ */
+function drainRequestBody(req: Request): Promise<void> {
+  return new Promise((resolve) => {
+    if (req.readableEnded || req.complete) {
+      resolve();
+      return;
+    }
+    req.on("data", () => {
+      // discard
+    });
+    req.on("end", () => resolve());
+    req.on("error", () => resolve());
+    req.resume();
+  });
 }
 
 export async function getCategoriesHandler(req: Request, res: Response): Promise<void> {
@@ -305,6 +401,259 @@ export async function getTicketDetailHandler(req: Request, res: Response): Promi
 
     res.status(200).json({ data: ticket });
   } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
+export async function uploadAttachmentHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+    const ticketNumber = req.params.ticketNumber;
+
+    // Validate ticketNumber format
+    if (!/^TKT-\d{4}-\d{6}$/.test(ticketNumber)) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found." },
+      });
+      return;
+    }
+
+    // Check for multipart form data
+    const contentType = (req.headers["content-type"] ?? "").toLowerCase();
+    if (!contentType.includes("multipart/form-data")) {
+      res.status(400).json({
+        error: { code: "VALIDATION_ERROR", message: "Request must be multipart/form-data.", fields: {} },
+      });
+      return;
+    }
+    // Access the file from multer
+    const uploadedFile = (req as unknown as Record<string, unknown>).uploadedFile as
+      { buffer: Buffer; originalname: string } | undefined;
+
+    if (!uploadedFile) {
+      res.status(400).json({
+        error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: { file: "A file must be provided." } },
+      });
+      return;
+    }
+
+    const result = await uploadAttachment(
+      requesterId,
+      ticketNumber,
+      uploadedFile.buffer,
+      uploadedFile.originalname,
+    );
+
+    // Don't expose storedFilename in the response
+    res.status(201).json({ data: { ...result, storedFilename: undefined } });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: err.message },
+      });
+      return;
+    }
+    if (err instanceof AttachmentLimitError) {
+      res.status(400).json({
+        error: { code: "ATTACHMENT_LIMIT_REACHED", message: err.message, fields: { file: "The ticket already has the maximum number of active attachments." } },
+      });
+      return;
+    }
+    if (err instanceof FileTooLargeError) {
+      res.status(413).json({
+        error: { code: "FILE_TOO_LARGE", message: err.message },
+      });
+      return;
+    }
+    if (err instanceof UnsupportedMediaTypeError) {
+      res.status(415).json({
+        error: { code: "UNSUPPORTED_MEDIA_TYPE", message: err.message },
+      });
+      return;
+    }
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
+export async function listAttachmentsHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+    const ticketNumber = req.params.ticketNumber;
+
+    if (!/^TKT-\d{4}-\d{6}$/.test(ticketNumber)) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found." },
+      });
+      return;
+    }
+
+    const attachments = await listAttachments(requesterId, ticketNumber);
+    res.status(200).json(attachments);
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: err.message },
+      });
+      return;
+    }
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
+export async function downloadAttachmentHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+    const rawId = req.params.attachmentId;
+
+    // Validate attachment ID format + PostgreSQL INTEGER range (never a 500).
+    const attachmentId = parseAttachmentId(rawId);
+    if (attachmentId === null) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Attachment not found." },
+      });
+      return;
+    }
+
+    const result = await downloadAttachment(attachmentId, requesterId);
+
+    if (!result) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Attachment not found." },
+      });
+      return;
+    }
+
+    // Sanitize filename for Content-Disposition
+    const asciiFilename = result.originalFilename.replace(/[^\x20-\x7e]/g, "_");
+    const utf8Filename = encodeURIComponent(result.originalFilename);
+
+    res.setHeader("Content-Type", result.mimeType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${asciiFilename}"; filename*=UTF-8''${utf8Filename}`,
+    );
+    res.status(200).send(result.buffer);
+  } catch (err) {
+    if (err instanceof AttachmentRemovedError) {
+      res.status(410).json({
+        error: { code: "ATTACHMENT_REMOVED", message: err.message },
+      });
+      return;
+    }
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
+export async function previewAttachmentHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+    const rawId = req.params.attachmentId;
+
+    // Validate attachment ID format + PostgreSQL INTEGER range (never a 500).
+    const attachmentId = parseAttachmentId(rawId);
+    if (attachmentId === null) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Attachment not found." },
+      });
+      return;
+    }
+
+    const result = await previewAttachment(attachmentId, requesterId);
+
+    if (!result) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Attachment not found." },
+      });
+      return;
+    }
+
+    res.setHeader("Content-Type", result.mimeType);
+    res.status(200).send(result.buffer);
+  } catch (err) {
+    if (err instanceof AttachmentRemovedError) {
+      res.status(410).json({
+        error: { code: "ATTACHMENT_REMOVED", message: err.message },
+      });
+      return;
+    }
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  }
+}
+
+export async function removeAttachmentHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const requesterId = res.locals.devRequesterId as number;
+    const rawId = req.params.attachmentId;
+
+    // Validate attachment ID format + PostgreSQL INTEGER range (never a 500).
+    const attachmentId = parseAttachmentId(rawId);
+    if (attachmentId === null) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Attachment not found." },
+      });
+      return;
+    }
+
+    // Decide whether a request body is present from the request framing (not from
+    // `req.body`): a non-JSON body is never parsed by express.json(), so it would
+    // otherwise be indistinguishable from an omitted body. A body is present when
+    // chunked transfer-encoding is used or when Content-Length is a positive number.
+    const contentType = (req.headers["content-type"] ?? "").toLowerCase();
+    const hasTransferEncoding = (req.headers["transfer-encoding"] ?? "").length > 0;
+    const contentLength = Number(req.headers["content-length"]);
+    const hasBody = hasTransferEncoding || (Number.isFinite(contentLength) && contentLength > 0);
+
+    let removalReason: unknown = undefined;
+
+    if (hasBody) {
+      // A body present with any non-JSON media type is rejected per api-spec §0.
+      // Use exact media-type parsing: "application/json" is valid, so is
+      // "application/json; charset=utf-8", but "application/json-invalid" is not.
+      const mediaType = contentType.split(";")[0]?.trim() ?? "";
+      if (mediaType !== "application/json") {
+        res.status(400).json({
+          error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: {} },
+        });
+        return;
+      }
+      removalReason = (req.body as Record<string, unknown> | undefined)?.removalReason;
+    }
+
+    const normalizedReason = normalizeRemovalReason(removalReason);
+
+    const result = await removeAttachment(attachmentId, requesterId, normalizedReason);
+
+    if (!result) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Attachment not found." },
+      });
+      return;
+    }
+
+    res.status(200).json({ data: result });
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      res.status(400).json({
+        error: { code: "VALIDATION_ERROR", message: err.message, fields: err.fields },
+      });
+      return;
+    }
+    if (err instanceof ConflictError) {
+      res.status(409).json({
+        error: { code: "CONFLICT", message: err.message },
+      });
+      return;
+    }
     res.status(500).json({
       error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
     });

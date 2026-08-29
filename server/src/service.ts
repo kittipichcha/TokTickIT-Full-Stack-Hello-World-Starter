@@ -1,6 +1,18 @@
 import { getPrisma } from "./prisma.js";
 import { allocateTicketNumberWithClient, TicketSequenceExhaustedError } from "./ticket-number.js";
 import { MAX_DATABASE_ID } from "./id-domain.js";
+import {
+  validateExtension,
+  validateContentSignature,
+  sanitizeOriginalFilename,
+  writeAttachmentFile,
+  deleteAttachmentFile,
+  readAttachmentFile,
+  getMimeType,
+  sanitizeDownloadFilename,
+} from "./attachment-storage.js";
+import { openPdf } from "clawpdf";
+import { testSeams } from "./test-seams.js";
 
 export interface Category {
   id: number;
@@ -563,4 +575,488 @@ export async function getTicketByNumber(
     updatedAt: ticket.updatedAt,
     attachments: ticket.attachments,
   };
+}
+
+/**
+ * Checks whether a ticket exists and is owned by the given requester.
+ * Used by the controller as an authorization pre-check BEFORE multipart
+ * validation so that malformed/missing/oversized files cannot reveal
+ * information about a non-owned ticket (defense in depth — the transactional
+ * ownership check inside uploadAttachment remains authoritative).
+ */
+export async function ticketOwnedByRequester(
+  ticketNumber: string,
+  requesterId: number,
+): Promise<boolean> {
+  const prisma = getPrisma();
+  const ticket = await prisma.ticket.findUnique({
+    where: { ticketNumber },
+    select: { id: true, requesterId: true },
+  });
+  return ticket !== null && ticket.requesterId === requesterId;
+}
+
+export class AttachmentLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AttachmentLimitError";
+  }
+}
+
+export class FileTooLargeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "FileTooLargeError";
+  }
+}
+
+export class UnsupportedMediaTypeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "UnsupportedMediaTypeError";
+  }
+}
+
+export class AttachmentRemovedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AttachmentRemovedError";
+  }
+}
+
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
+export interface AttachmentUploadResult {
+  id: number;
+  ticketId: number;
+  originalFilename: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  uploadedAt: Date;
+  isRemoved: boolean;
+  storedFilename: string;
+}
+
+const MAX_ACTIVE_ATTACHMENTS = 5;
+const MAX_FILE_SIZE_BYTES = 5_000_000;
+
+/**
+ * Validates file size.
+ */
+export function validateFileSize(size: number): boolean {
+  return size >= 0 && size <= MAX_FILE_SIZE_BYTES;
+}
+
+/**
+ * Creates an Attachment record in the database.
+ * Exported separately for testability — allows integration tests to inject
+ * persistence failures at the metadata boundary without mocking Prisma globally.
+ */
+export async function createAttachmentMetadata(
+  tx: {
+    attachment: {
+      create: (args: {
+        data: {
+          ticketId: number;
+          originalFilename: string;
+          storedFilename: string;
+          mimeType: string;
+          fileSizeBytes: number;
+          uploaderRequesterId: number;
+        };
+      }) => Promise<{
+        id: number;
+        originalFilename: string;
+        mimeType: string;
+        fileSizeBytes: number;
+        uploadedAt: Date;
+        isRemoved: boolean;
+        storedFilename: string;
+      }>;
+    };
+  },
+  data: {
+    ticketId: number;
+    originalFilename: string;
+    storedFilename: string;
+    mimeType: string;
+    fileSizeBytes: number;
+    uploaderRequesterId: number;
+  },
+) {
+  // Test seam: force metadata persistence failure
+  if (testSeams.forceCreateAttachmentMetadataError) {
+    throw testSeams.forceCreateAttachmentMetadataError;
+  }
+  return tx.attachment.create({ data });
+}
+
+/**
+ * Uploads an attachment to a ticket.
+ * Validates: requester context, ticket ownership, active count, file size, extension, content signature.
+ * Uses compensating write: physical file first, then metadata; deletes file on metadata failure.
+ */
+export async function uploadAttachment(
+  requesterId: number,
+  ticketNumber: string,
+  fileBuffer: Buffer,
+  originalFilename: string,
+): Promise<AttachmentUploadResult> {
+  const prisma = getPrisma();
+
+  // Validate extension
+  const ext = validateExtension(originalFilename);
+  if (!ext) {
+    throw new UnsupportedMediaTypeError("File type is not supported.");
+  }
+
+  // Validate content signature
+  if (!validateContentSignature(fileBuffer, ext)) {
+    throw new UnsupportedMediaTypeError("File content does not match the expected type.");
+  }
+
+  // Validate file size
+  if (!validateFileSize(fileBuffer.length)) {
+    throw new FileTooLargeError("File exceeds the maximum allowed size.");
+  }
+
+  // Sanitize original filename for display
+  const sanitizedFilename = sanitizeOriginalFilename(originalFilename);
+
+  // Find ticket and verify ownership — lock the parent Ticket row to serialize
+  // concurrent attachment-limit checks for the same ticket.
+  const ticket = await prisma.ticket.findUnique({
+    where: { ticketNumber },
+    select: { id: true, requesterId: true },
+  });
+
+  if (!ticket || ticket.requesterId !== requesterId) {
+    throw new ValidationError("Ticket not found.", {});
+  }
+
+  // Use a transaction with row lock for count check + metadata insert to prevent
+  // concurrent uploads from exceeding the active attachment limit.
+  //
+  // Compensation boundary: every physical file written during this operation is
+  // tracked and deleted if ANY part of the transaction fails — including a
+  // failure AFTER the metadata insert succeeds but before the transaction
+  // commits. This prevents orphaned files on commit failure.
+  const writtenFiles: string[] = [];
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // Lock the parent Ticket row to serialize concurrent attachment-limit checks.
+      // SELECT … FOR UPDATE prevents two transactions from both seeing count=4
+      // and both inserting, which would violate the 5-active-attachment invariant.
+      const lockedTicket = await tx.$queryRaw<
+        Array<{ id: number }>
+      >`SELECT id FROM "Ticket" WHERE id = ${ticket.id} FOR UPDATE`;
+
+      if (lockedTicket.length === 0) {
+        throw new ValidationError("Ticket not found.", {});
+      }
+
+      // Count active (non-removed) attachments
+      const activeCount = await tx.attachment.count({
+        where: { ticketId: ticket.id, isRemoved: false },
+      });
+
+      if (activeCount >= MAX_ACTIVE_ATTACHMENTS) {
+        throw new AttachmentLimitError("The ticket already has the maximum number of active attachments.");
+      }
+
+      // Write physical file first (compensating strategy)
+      const storedFilename = await writeAttachmentFile(fileBuffer, ext);
+      writtenFiles.push(storedFilename);
+      const mimeType = getMimeType(ext);
+
+      // Insert metadata
+      const attachment = await createAttachmentMetadata(tx, {
+        ticketId: ticket.id,
+        originalFilename: sanitizedFilename,
+        storedFilename,
+        mimeType,
+        fileSizeBytes: fileBuffer.length,
+        uploaderRequesterId: requesterId,
+      });
+
+      // Test seam: force a failure AFTER the metadata row is created but before
+      // the transaction commits, to verify transaction-wide compensation.
+      if (testSeams.forcePostInsertTransactionError) {
+        throw testSeams.forcePostInsertTransactionError;
+      }
+
+      return {
+        id: attachment.id,
+        ticketId: ticket.id,
+        originalFilename: attachment.originalFilename,
+        mimeType: attachment.mimeType,
+        fileSizeBytes: attachment.fileSizeBytes,
+        uploadedAt: attachment.uploadedAt,
+        isRemoved: attachment.isRemoved,
+        storedFilename: attachment.storedFilename,
+      };
+    });
+  } catch (err) {
+    // Compensate for EVERY physical file written during this operation. This
+    // covers both metadata-insert failure and transaction-commit failure.
+    for (const storedFilename of writtenFiles) {
+      await deleteAttachmentFile(storedFilename);
+    }
+    throw err;
+  }
+}
+
+/**
+ * Lists attachments for a ticket (both active and removed).
+ * Ownership is enforced by the caller.
+ */
+export async function listAttachments(
+  requesterId: number,
+  ticketNumber: string,
+): Promise<AttachmentData[]> {
+  const prisma = getPrisma();
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { ticketNumber },
+    select: { id: true, requesterId: true },
+  });
+
+  if (!ticket || ticket.requesterId !== requesterId) {
+    throw new ValidationError("Ticket not found.", {});
+  }
+
+  const attachments = await prisma.attachment.findMany({
+    where: { ticketId: ticket.id },
+    orderBy: [{ uploadedAt: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      originalFilename: true,
+      mimeType: true,
+      fileSizeBytes: true,
+      uploadedAt: true,
+      isRemoved: true,
+      removedAt: true,
+      removalReason: true,
+      removedByRequesterId: true,
+    },
+  });
+
+  return attachments;
+}
+
+/**
+ * Gets attachment metadata by ID.
+ * Returns null if not found or not owned.
+ */
+export async function getAttachmentById(
+  attachmentId: number,
+  requesterId: number,
+): Promise<{
+  id: number;
+  ticketId: number;
+  originalFilename: string;
+  storedFilename: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  isRemoved: boolean;
+  removedAt: Date | null;
+  removalReason: string | null;
+  removedByRequesterId: number | null;
+  uploadedAt: Date;
+} | null> {
+  const prisma = getPrisma();
+
+  const attachment = await prisma.attachment.findUnique({
+    where: { id: attachmentId },
+    include: {
+      ticket: { select: { requesterId: true } },
+    },
+  });
+
+  if (!attachment || attachment.ticket.requesterId !== requesterId) {
+    return null;
+  }
+
+  return {
+    id: attachment.id,
+    ticketId: attachment.ticketId,
+    originalFilename: attachment.originalFilename,
+    storedFilename: attachment.storedFilename,
+    mimeType: attachment.mimeType,
+    fileSizeBytes: attachment.fileSizeBytes,
+    isRemoved: attachment.isRemoved,
+    removedAt: attachment.removedAt,
+    removalReason: attachment.removalReason,
+    removedByRequesterId: attachment.removedByRequesterId,
+    uploadedAt: attachment.uploadedAt,
+  };
+}
+
+/**
+ * Downloads an attachment file.
+ * Returns the file buffer and MIME type, or throws AttachmentRemovedError if removed.
+ */
+export async function downloadAttachment(
+  attachmentId: number,
+  requesterId: number,
+): Promise<{ buffer: Buffer; mimeType: string; originalFilename: string } | null> {
+  const attachment = await getAttachmentById(attachmentId, requesterId);
+  if (!attachment) return null;
+
+  if (attachment.isRemoved) {
+    throw new AttachmentRemovedError("This attachment has been removed.");
+  }
+
+  const buffer = await readAttachmentFile(attachment.storedFilename);
+  if (!buffer) {
+    // Metadata exists but physical file is missing — should not happen in normal operation
+    return null;
+  }
+
+  return {
+    buffer,
+    mimeType: attachment.mimeType,
+    originalFilename: attachment.originalFilename,
+  };
+}
+
+/**
+ * Previews an attachment (image inline or PDF first page as image).
+ * Returns the file buffer and MIME type, or throws AttachmentRemovedError if removed.
+ */
+export async function previewAttachment(
+  attachmentId: number,
+  requesterId: number,
+): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  const attachment = await getAttachmentById(attachmentId, requesterId);
+  if (!attachment) return null;
+
+  if (attachment.isRemoved) {
+    throw new AttachmentRemovedError("This attachment has been removed.");
+  }
+
+  const buffer = await readAttachmentFile(attachment.storedFilename);
+  if (!buffer) {
+    return null;
+  }
+
+  // For images, return the bytes directly
+  if (attachment.mimeType.startsWith("image/")) {
+    return { buffer, mimeType: attachment.mimeType };
+  }
+
+  // For PDFs, render the first page as a PNG image using a PDFium renderer.
+  // clawpdf bundles a PDFium WebAssembly runtime (no native/system deps), so
+  // this is reproducible across environments.
+  if (attachment.mimeType === "application/pdf") {
+    try {
+      await using pdf = await openPdf(new Uint8Array(buffer));
+      const png = await pdf.page(1).png({ dpi: 144 });
+      return { buffer: Buffer.from(png), mimeType: "image/png" };
+    } catch {
+      throw new Error("PDF preview rendering failed");
+    }
+  }
+
+  return { buffer, mimeType: attachment.mimeType };
+}
+
+/**
+ * Normalizes the removal reason per BR-19 rules.
+ * Returns the normalized value or throws ValidationError.
+ */
+export function normalizeRemovalReason(reason: unknown): string | null {
+  if (reason === undefined || reason === null) {
+    return null;
+  }
+
+  if (typeof reason !== "string") {
+    throw new ValidationError("Validation failed.", { removalReason: "Removal reason must be a string." });
+  }
+
+  const trimmed = reason.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  if (trimmed.length > 200) {
+    throw new ValidationError("Validation failed.", { removalReason: "Removal reason must be at most 200 characters." });
+  }
+
+  return trimmed;
+}
+
+/**
+ * Soft-removes an attachment.
+ * Sets isRemoved=true, removedAt, removalReason, removedByRequesterId.
+ * Returns the updated attachment data, or null if not found/not owned.
+ * Throws ConflictError if already removed.
+ *
+ * Uses a single conditional UPDATE (WHERE isRemoved = false) so that exactly
+ * one concurrent removal can win — this is an atomic ACTIVE → REMOVED state
+ * transition rather than a read-then-unconditional-update (TOCTOU race).
+ */
+export async function removeAttachment(
+  attachmentId: number,
+  requesterId: number,
+  removalReason: string | null,
+): Promise<AttachmentData | null> {
+  const prisma = getPrisma();
+
+  // First resolve ownership. This is a read, but the authoritative state
+  // transition below is conditional, so a concurrent removal cannot be
+  // double-applied even if this read is stale.
+  const attachment = await prisma.attachment.findUnique({
+    where: { id: attachmentId },
+    include: {
+      ticket: { select: { requesterId: true } },
+    },
+  });
+
+  if (!attachment || attachment.ticket.requesterId !== requesterId) {
+    return null;
+  }
+
+  // Atomic conditional state transition: only an ACTIVE attachment can be
+  // removed. If two concurrent removals race, exactly one UPDATE matches
+  // (isRemoved = false) and wins; the other matches zero rows.
+  const result = await prisma.attachment.updateMany({
+    where: { id: attachmentId, isRemoved: false },
+    data: {
+      isRemoved: true,
+      removedAt: new Date(),
+      removalReason,
+      removedByRequesterId: requesterId,
+    },
+  });
+
+  if (result.count === 0) {
+    // No active row matched — the attachment was already removed by a
+    // concurrent request (or removed between the ownership read and update).
+    throw new ConflictError("This attachment has already been removed.");
+  }
+
+  // Re-read the authoritative row to return the persisted metadata.
+  const updated = await prisma.attachment.findUnique({
+    where: { id: attachmentId },
+    select: {
+      id: true,
+      originalFilename: true,
+      mimeType: true,
+      fileSizeBytes: true,
+      uploadedAt: true,
+      isRemoved: true,
+      removedAt: true,
+      removalReason: true,
+      removedByRequesterId: true,
+    },
+  });
+
+  return updated;
 }
