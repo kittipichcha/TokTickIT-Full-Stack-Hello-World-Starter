@@ -64,15 +64,15 @@ describe("Requester Selection Integration Test - UI & Storage Persistence", () =
   it("integrates UI requester selection with actual sessionStorage using REQUESTER_STORAGE_KEY", async () => {
     render(<App />);
 
-    // 1. Selector dropdown loads active requesters
-    const select = (await screen.findByLabelText("Development Requester")) as HTMLSelectElement;
-    expect(select).toBeTruthy();
+    // 1. Selector loads active requesters as keyboard-operable radio options
+    const option = (await screen.findByRole("radio", { name: "Select Ada Lovelace" })) as HTMLButtonElement;
+    expect(option).toBeTruthy();
 
     const continueBtn = screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement;
     expect(continueBtn.disabled).toBe(true);
 
     // 2. Select Ada Lovelace (id=1)
-    fireEvent.change(select, { target: { value: "1" } });
+    fireEvent.click(option);
     expect(continueBtn.disabled).toBe(false);
 
     // 3. Click Continue -> validates context and saves to sessionStorage
@@ -91,7 +91,7 @@ describe("Requester Selection Integration Test - UI & Storage Persistence", () =
     const changeBtn = screen.getByRole("button", { name: "Change Requester" });
     fireEvent.click(changeBtn);
 
-    expect(await screen.findByLabelText("Development Requester")).toBeTruthy();
+    expect(await screen.findByRole("radio", { name: "Select Ada Lovelace" })).toBeTruthy();
     expect(sessionStorage.getItem(REQUESTER_STORAGE_KEY)).toBeNull();
   });
 });
