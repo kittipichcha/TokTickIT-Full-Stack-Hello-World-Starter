@@ -16,8 +16,10 @@ server/attachment-storage/
 .DS_Store
 .history
 # compiled JS output
-# screenshot artifacts
-artifacts/
+# E2E test artifacts (don't commit)
+test-results/
+playwright-report/
+trace.zip
 /test-results/
 /playwright-report/
 client/src/**/*.js
