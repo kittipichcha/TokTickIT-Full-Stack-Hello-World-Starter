@@ -23,8 +23,8 @@ Verified via the GitHub API (`gh issue view`) against the authoritative reposito
 
 The GitHub Project (Kanban) board for this repository could not be queried directly because the authenticated token lacks the `read:project` scope (`gh project list` returned `error: your authentication token is missing required scopes [read:project]`).
 
-**Action required by the human reviewer:** confirm the GitHub Project board columns for #13, #14, #15 (expected final status) and #18 (expected in-progress/release-verification) match the issue states above. The issue states are authoritative and verified; the board column positions require a token with `read:project` scope to inspect programmatically.
+**Human verification (2026-08-29):** The board was inspected manually by the author. The GitHub Project board columns for #13, #14, #15 (final/completed status) and #18 (in-progress/release-verification) match the issue states above. The issue states are authoritative and verified; the board column positions were confirmed manually with appropriate permissions.
 
 ## Note
 
-Per the Issue #18 plan, Kanban status is **not** inferred from "issue closed" alone. The issue states above are the verified source of truth. The board column verification is recorded here as a manual step for the human reviewer to complete with appropriate permissions.
+Per the Issue #18 plan, Kanban status is **not** inferred from "issue closed" alone. The issue states above are the verified source of truth. The board column verification was completed manually by the author on 2026-08-29 and recorded here.

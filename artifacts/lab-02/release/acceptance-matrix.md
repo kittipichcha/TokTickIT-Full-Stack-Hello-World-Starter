@@ -21,7 +21,7 @@ Requirement-by-requirement mapping: Requirement → Implementation → Test → 
 | R-12 API/security verification | api-spec contract | `API-CONTRACT-01`, `API-ATT-*`, `API-TKT-*` | server suite | 335 pass | **PASS** |
 | R-13 `tests.md` truthful results | — | — | — | E2E-01..06 + VISUAL-01 → Passed | **PASS** |
 | R-14 Release evidence package | — | — | — | `artifacts/lab-02/release/` | **PASS** |
-| R-15 `reviewer.md` | — | — | — | `docs/lab-02/reviewer.md` | **PASS** |
+| R-15 `reviewer.md` | — | — | — | `docs/lab-02/reviewer.md` (PR #30 human review **pending**) | **PENDING** |
 | R-16 Kanban verification | — | — | — | `kanban-verification.md` | **PASS** |
 | R-17 Clean checkout | — | — | — | `clean-checkout-results.md` | **PASS** |
 | R-18 Final gate | — | — | — | `final-gate.md` | **PASS** |
@@ -44,7 +44,7 @@ Requirement-by-requirement mapping: Requirement → Implementation → Test → 
 - Screenshot evidence complete (4 screens × 3 viewports): **Yes (84)**
 - Release evidence package exists: **Yes**
 - `tests.md` matches actual execution: **Yes**
-- `reviewer.md` exists and is truthful: **Yes**
+- `reviewer.md` exists and is truthful: **Yes** (PR #30 human review pending — no approval invented)
 - README accurate: **Yes**
 - Clean checkout succeeds: **Yes**
 - `git diff --check` passes: **Yes**

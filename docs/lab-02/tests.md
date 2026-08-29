@@ -88,13 +88,13 @@ All seven blocking issues from the code review have been resolved. Below is the 
 
 #### Full server suite with real database
 - **Command**: `npx vitest run` (from `server/`)
-- **Result**: 26 test files, 332 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
+- **Result**: 26 test files, 335 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
 - **Key additions**: real-DB ownership, concurrent-removal, transaction-wide compensation, UUID stored-filename, and cross-requester list/download/preview/delete ownership integration tests
 - **No regressions**: All prior #13/#14 tests continue to pass alongside new #15 attachment tests
 
 #### Full client suite
 - **Command**: `npx vitest run` (from `client/`)
-- **Result**: 7 test files, 84 tests passed, 0 failed
+- **Result**: 8 test files, 100 tests passed, 0 failed
 - **Key additions**: `AttachmentSection.test.tsx` and `CreateTicket.test.tsx` expanded to cover the full attachment state matrix, five-file capacity, retry ownership scoping (ticket + requester switch), mutation/refresh separation, retry terminal-state, the UI-DETAIL-01 matrix, UI-TKT-08, and RFC 5987 filename parsing.
 
 #### Client build verification
@@ -135,7 +135,7 @@ All seven blocking issues from the code review have been resolved. Below is the 
 | 4 | **Compensation does not cover transaction commit failure** — post-insert/pre-commit failure left orphaned physical file | ✅ **Fixed** | Transaction-wide filesystem compensation via `test-seams.ts`. Real-DB test `ATT-PERSIST-03` injects post-insert transaction failure and verifies file deletion + row rollback. |
 | 5 | **Client does not enforce five-active-attachment limit** — Create Ticket accepted unlimited files; Ticket Detail left Add Attachment enabled at five | ✅ **Fixed** | Both Create Ticket and Ticket Detail enforce the limit client-side; sixth file rejected before reaching the API; Add Attachment disabled at five and re-enabled after removal. Tests `UI-TKT-CAP-01` and `UI-ATT-CAP-01`. |
 | 6 | **Successful upload followed by refresh failure becomes retryable** — could offer duplicate retry | ✅ **Fixed** | Mutation success is terminal; refresh failure shown as detail error, never retryable. Test `UI-ATT-MUT-REF` covers upload-success + refresh-failure and remove-success + refresh-failure. |
-| 7 | **Feature-level verification boundary incomplete** — mocked API tests didn't verify ownership, storage persistence, removed access, second removal, UUID filename, full compensation; `tests.md` had conflicting totals | ✅ **Fixed** | Added real-DB integration tests: ownership (`API-ATT-OWN-INT`), concurrent removal (`API-ATT-REM-CONC`), persistence compensation (`ATT-PERSIST-01/02/03`), UUID stored filename (`ATT-PERSIST-04`), removed access (`ATT-PERSIST-05`). `tests.md` was corrected and now records the current full-suite evidence: **332 server tests across 26 files** and **84 client tests across 7 files** (see §2 full-suite results). |
+| 7 | **Feature-level verification boundary incomplete** — mocked API tests didn't verify ownership, storage persistence, removed access, second removal, UUID filename, full compensation; `tests.md` had conflicting totals | ✅ **Fixed** | Added real-DB integration tests: ownership (`API-ATT-OWN-INT`), concurrent removal (`API-ATT-REM-CONC`), persistence compensation (`ATT-PERSIST-01/02/03`), UUID stored filename (`ATT-PERSIST-04`), removed access (`ATT-PERSIST-05`). `tests.md` was corrected and now records the current full-suite evidence: **335 server tests across 26 files** and **100 client tests across 8 files** (see §2 full-suite results). |
 
 ### PR #29 Re-review Remediation (2026-08-28)
 

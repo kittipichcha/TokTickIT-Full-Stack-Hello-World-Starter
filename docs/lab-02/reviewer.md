@@ -170,3 +170,34 @@ The re-review (2026-08-28) confirmed the prior round is largely resolved and ide
 - Current head at time of review: `eec6d8b9c30a7a620ca8928aed9e286f04bc9363`
 - Review status: **Open; re-review received at head `eec6d8b9` with three blocking findings remaining — (1) retry upload can still duplicate a persisted attachment, (2) UI-TKT-08 submission flow is not actually tested, (3) attachment validation/ownership/UI-DETAIL-01 feature-level evidence is incomplete. All three have been addressed at the current head (retry terminal-state fix + `UI-ATT-RETRY-TERMINAL`, full `UI-TKT-08` orchestration, `UNIT-ATT-02/03` + `API-ATT-OWN-MATRIX` + complete `UI-DETAIL-01` matrix), along with all five non-blocking follow-ups. Awaiting re-review from @oangsa before approval/merge evidence is recorded.** This record must be updated with the final approval/merge evidence before the Lab 2 course submission.
 
+---
+
+## Pull Request — Final Integration & Release Verification (PR #30)
+
+- **PR:** [#30 — feat: Lab 2 Final Integration and Release Verification](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/30)
+- **Source branch:** `feature/issue-18-integration-verification`
+- **Target branch:** `lab2-staging`
+- **Scope:** Issue #18 — final integration and release verification: repair the verification layer, complete the release evidence, and reconcile documentation.
+
+### Verification Performed (2026-08-29)
+
+Release verification was executed from a **fresh clone** at the current PR #30 head `662c2c0ac8da573dd4ea5c3354ec20006ea1a63d`:
+
+| Check | Result |
+|---|---|
+| Fresh clone + checkout | HEAD = `662c2c0` (matches PR #30 head) |
+| Working tree / whitespace / conflict markers | Clean / `git diff --check` pass / none |
+| Prisma migration status | Up to date (5 migrations) |
+| **Server tests** (`cd server && npm test`) | **26 files, 335 passed, 0 failed** |
+| **Client tests** (`cd client && npm test`) | **8 files, 100 passed, 0 failed** |
+| Server build (`npm run build`) | Pass (TypeScript) |
+| Client build (`npm run build`) | Pass (TypeScript + Vite) |
+| **Playwright `e2e/lab-02`** | **114 passed, 0 failed** (desktop/tablet/mobile) |
+
+Issue regression re-runs against the current integrated branch: **#13** Create Ticket (80 server + client passes), **#14** My Tickets (91 server passes), **#15** Ticket Detail/Attachments (75 server passes); combined #13/#14/#15 client tests (65 passed). All six E2E scenarios (E2E-01 … E2E-06) ran green across all three viewports. Kanban board columns for #13/#14/#15/#18 were manually verified by the author on 2026-08-29.
+
+### Review Status
+
+- **Human review:** **PENDING** — PR #30 has not yet been human-reviewed by @oangsa. This record intentionally does **not** invent or imply an approval. It will be updated with the actual human review decision and merge evidence before the Lab 2 course submission.
+- No approval has been recorded yet.
+

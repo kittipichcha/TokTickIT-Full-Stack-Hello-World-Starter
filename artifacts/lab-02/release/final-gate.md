@@ -32,7 +32,7 @@ This is the **last** release artifact generated. It depends on all preceding ver
 | Screenshot evidence complete (4 screens × 3 viewports) | ✅ | 84 screenshots |
 | Release evidence package exists | ✅ | `artifacts/lab-02/release/` |
 | `tests.md` matches actual execution | ✅ | E2E-01..06 + VISUAL-01 → Passed |
-| `reviewer.md` exists and is truthful | ✅ | PR #30 record added |
+| `reviewer.md` exists and is truthful | ✅ | exists; PR #30 human review **pending** (no approval invented) |
 | README accurate | ✅ | documentation-audit.md |
 | Clean checkout succeeds | ✅ | clean-checkout-results.md |
 | `git diff --check` passes | ✅ | no whitespace errors |

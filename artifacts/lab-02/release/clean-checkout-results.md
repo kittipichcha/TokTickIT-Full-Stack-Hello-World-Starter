@@ -17,7 +17,7 @@ git clone --branch feature/issue-18-integration-verification --single-branch \
 | Step | Command | Result |
 |---|---|---|
 | Fresh clone | `git clone --branch feature/issue-18-integration-verification` | **Success** |
-| Checkout target head | `git rev-parse HEAD` | `038c27cfbd19b3ea6a4264a93529651c215fc8a6` |
+| Checkout target head | `git rev-parse HEAD` | `662c2c0ac8da573dd4ea5c3354ec20006ea1a63d` |
 | Working tree clean | `git status --short` | **Clean** (no unexpected changes) |
 | Whitespace check | `git diff --check` | **Pass** (no whitespace errors) |
 | Conflict markers | `git grep -n -E '^(<<<<<<<\|=======\|>>>>>>>)' -- .` | **None** |
@@ -28,11 +28,14 @@ git clone --branch feature/issue-18-integration-verification --single-branch \
 | Database | `npx prisma migrate status` | **Up to date** (5 migrations) |
 | Server tests | `cd server && npm test` | **335 passed, 0 failed** |
 | Client tests | `cd client && npm test` | **100 passed, 0 failed** |
+| Server build | `cd server && npm run build` | **Pass** (TypeScript) |
+| Client build | `cd client && npm run build` | **Pass** (TypeScript + Vite) |
+| Lab 2 E2E suite | `npx playwright test e2e/lab-02` | **114 passed, 0 failed** (desktop/tablet/mobile) |
 
 ## Notes
 
 - The `.env` file is correctly gitignored and not committed; a fresh checkout requires the developer's local `server/.env` (or copying `server/.env.example` and filling in real credentials). The `.env.example` uses placeholder credentials that do not match the local database, so the real `.env` was used for the verification run.
-- The clean checkout at the current branch HEAD (`038c27c`) is clean. The Issue #18 changes in this PR are uncommitted in the working tree at the time of this verification; the final clean-checkout confirmation should be re-run after the changes are committed and pushed (the working-tree `git status --short`, `git diff --check`, and conflict-marker checks all pass on the current tree).
+- The clean checkout at the current branch HEAD (`662c2c0`) is clean. The full verification (server tests, client tests, builds, and the Lab 2 E2E suite) was executed against this fresh checkout at the current PR #30 head. The `git status --short`, `git diff --check`, and conflict-marker checks all pass on the current tree.
 
 ## Expected Final State
 
