@@ -36,8 +36,8 @@ test.describe("E2E-02: Ownership isolation across two requester contexts", () =>
 
     // === Switch to Requester B and create a uniquely identifiable ticket B ===
     await page.click("button:has-text('Change Requester')");
-    await page.waitForSelector("#requester", { timeout: 10000 });
-    await page.selectOption("#requester", "2");
+    await page.waitForSelector(".requester-option", { timeout: 10000 });
+    await page.click('.requester-option[aria-label="Select Grace Hopper"]');
     await page.click("button:has-text('Continue')");
     await page.waitForSelector(".app-shell", { timeout: 10000 });
     await openCreateTicket(page);
@@ -53,8 +53,8 @@ test.describe("E2E-02: Ownership isolation across two requester contexts", () =>
 
     // === Switch back to Requester A: A ticket visible, B ticket NOT visible ===
     await page.click("button:has-text('Change Requester')");
-    await page.waitForSelector("#requester", { timeout: 10000 });
-    await page.selectOption("#requester", "1");
+    await page.waitForSelector(".requester-option", { timeout: 10000 });
+    await page.click('.requester-option[aria-label="Select Ada Lovelace"]');
     await page.click("button:has-text('Continue')");
     await page.waitForSelector(".app-shell", { timeout: 10000 });
     await openMyTickets(page);

@@ -12,19 +12,36 @@ import { selectRequester, openCreateTicket } from "./helpers";
  *   Ticket Detail → attachment controls → modal → Escape → focus restoration
  */
 test.describe("E2E-05: Keyboard accessibility", () => {
+  /**
+   * Press Tab repeatedly until the given locator receives focus (or a cap is
+   * reached). Returns true if the target became focused.
+   */
+  async function tabUntilFocused(page: import("@playwright/test").Page, target: import("@playwright/test").Locator, maxTabs = 20): Promise<boolean> {
+    for (let i = 0; i < maxTabs; i++) {
+      await page.keyboard.press("Tab");
+      if (await target.evaluate((el) => el === document.activeElement).catch(() => false)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   test("visible focus indicators on requester selector and Continue button", async ({ page }) => {
     await page.goto("/");
-    await page.waitForSelector("#requester", { timeout: 10000 });
+    await page.waitForSelector(".requester-option", { timeout: 10000 });
 
-    // Tab to the selector — focus should be visible
+    // Tab to the first requester option — focus should be visible
     await page.keyboard.press("Tab");
-    const focusedSelect = page.locator("#requester");
-    await expect(focusedSelect).toBeFocused();
+    const firstOption = page.locator(".requester-option").first();
+    await expect(firstOption).toBeFocused();
 
-    // Select a requester so Continue becomes enabled, then Tab to it.
-    await page.selectOption("#requester", "1");
-    await page.keyboard.press("Tab");
+    // Select a requester with Space so Continue becomes enabled.
+    await page.keyboard.press("Space");
+    await expect(firstOption).toHaveAttribute("aria-checked", "true");
+
+    // Tab to the Continue button.
     const continueButton = page.locator("button:has-text('Continue')");
+    await tabUntilFocused(page, continueButton);
     await expect(continueButton).toBeFocused();
 
     // Verify the focused element has a visible focus indicator
@@ -37,48 +54,57 @@ test.describe("E2E-05: Keyboard accessibility", () => {
     expect(hasFocusRing).toBe(true);
   });
 
-  test("keyboard-only requester selection, Continue, and Create Ticket navigation", async ({ page }) => {
+  test("mandatory keyboard-only flow: Requester Selection → Continue → Create Ticket", async ({ page }) => {
+    // This is the canonical Issue #18 §24 flow. It uses ONLY Tab, Shift+Tab,
+    // Enter, and Space — no ArrowDown, no mouse click, no selectOption().
     await page.goto("/");
-    await page.waitForSelector("#requester", { timeout: 10000 });
+    await page.waitForSelector(".requester-option", { timeout: 10000 });
 
-    // Tab to requester select
+    // Tab to the first requester option and select it with Space.
     await page.keyboard.press("Tab");
-    await expect(page.locator("#requester")).toBeFocused();
+    const firstOption = page.locator(".requester-option").first();
+    await expect(firstOption).toBeFocused();
+    await page.keyboard.press("Space");
+    await expect(firstOption).toHaveAttribute("aria-checked", "true");
 
-    // Select a requester using keyboard (Enter to open, arrow down)
+    // Tab to Continue and activate it with Enter.
+    const continueButton = page.locator("button:has-text('Continue')");
+    await tabUntilFocused(page, continueButton);
+    await expect(continueButton).toBeFocused();
     await page.keyboard.press("Enter");
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(300);
-
-    // Tab to Continue button and press Enter
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Enter");
-
-    // Wait for app shell
     await page.waitForSelector(".app-shell", { timeout: 10000 });
 
-    // Tab to navigate to Create Ticket link
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
-    // Should reach Create Ticket link
+    // Tab to the Create Ticket link and activate it with Enter.
     const createTicketLink = page.locator("a:has-text('Create Ticket')");
+    await tabUntilFocused(page, createTicketLink);
     await expect(createTicketLink).toBeFocused();
-
-    // Press Enter to navigate
     await page.keyboard.press("Enter");
     await page.waitForSelector("#summary", { timeout: 10000 });
+
+    // Validation remains keyboard-usable: Tab to Submit and activate with Enter
+    // while the required fields are empty → inline validation appears.
+    const submitButton = page.locator("button:has-text('Submit')");
+    await tabUntilFocused(page, submitButton);
+    await expect(submitButton).toBeFocused();
+    await page.keyboard.press("Enter");
+    // Inline validation message appears under the empty summary field.
+    await expect(page.locator(".field-error").first()).toBeVisible({ timeout: 5000 });
   });
 
   test("focus indicator visible on form controls", async ({ page }) => {
     await page.goto("/");
-    await page.waitForSelector("#requester", { timeout: 10000 });
+    await page.waitForSelector(".requester-option", { timeout: 10000 });
 
-    await page.selectOption("#requester", "1");
-    await page.click("button:has-text('Continue')");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Space");
+    const continueButton = page.locator("button:has-text('Continue')");
+    await tabUntilFocused(page, continueButton);
+    await page.keyboard.press("Enter");
     await page.waitForSelector(".app-shell", { timeout: 10000 });
 
-    await page.click("a:has-text('Create Ticket')");
+    const createTicketLink = page.locator("a:has-text('Create Ticket')");
+    await tabUntilFocused(page, createTicketLink);
+    await page.keyboard.press("Enter");
     await page.waitForSelector("#summary", { timeout: 10000 });
 
     // Tab through form controls and verify focus
@@ -102,26 +128,23 @@ test.describe("E2E-05: Keyboard accessibility", () => {
 
   test("Change Requester is keyboard-accessible", async ({ page }) => {
     await page.goto("/");
-    await page.waitForSelector("#requester", { timeout: 10000 });
+    await page.waitForSelector(".requester-option", { timeout: 10000 });
 
-    await page.selectOption("#requester", "1");
-    await page.click("button:has-text('Continue')");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Space");
+    const continueButton = page.locator("button:has-text('Continue')");
+    await tabUntilFocused(page, continueButton);
+    await page.keyboard.press("Enter");
     await page.waitForSelector(".app-shell", { timeout: 10000 });
 
     // Tab through to reach Change Requester button
-    for (let i = 0; i < 15; i++) {
-      await page.keyboard.press("Tab");
-      const focused = page.locator(":focus");
-      const text = await focused.textContent();
-      if (text?.includes("Change Requester")) break;
-    }
-
     const changeBtn = page.locator("button:has-text('Change Requester')");
+    await tabUntilFocused(page, changeBtn);
     await expect(changeBtn).toBeFocused();
 
     // Press Enter to change requester
     await page.keyboard.press("Enter");
-    await page.waitForSelector("#requester", { timeout: 10000 });
+    await page.waitForSelector(".requester-option", { timeout: 10000 });
   });
 
   test("removal dialog: focus enters modal, Tab stays inside, Escape closes, focus restores", async ({ page }) => {
