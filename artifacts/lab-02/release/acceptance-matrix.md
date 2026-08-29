@@ -14,7 +14,7 @@ Requirement-by-requirement mapping: Requirement → Implementation → Test → 
 | R-05 Attachment lifecycle | `AttachmentSection` + attachment endpoints | E2E-03, `API-ATT-*`, `UI-ATT-*` | E2E + server + client | `e2e-03-attachment-lifecycle.png` | **PASS** |
 | R-06 Partial success / BR-17 | Case B orchestration | E2E-04, `UI-TKT-06`, `UI-ATT-05/06` | E2E + client | `e2e-04-partial-success.png` | **PASS** |
 | R-07 Keyboard accessibility | Focus management + focus rings + keyboard-operable requester control | E2E-05, `UI-ATT-07` | E2E + client | keyboard-access.spec.ts (mandatory flow uses only Tab/Shift+Tab/Enter/Space) | **PASS** |
-| R-08 Responsive UI | Zen Green responsive CSS | E2E-06, VISUAL-01 | E2E | 84 screenshots + table→card + 44px touch targets + Ticket Detail | **PASS** |
+| R-08 Responsive UI | Zen Green responsive CSS | E2E-06, VISUAL-01 | E2E | 82 screenshots + table→card + 44px touch targets + Ticket Detail + no horizontal scroll + no clipped labels/overlap | **PASS** |
 | R-09 #13 regression | Create Ticket | server + client suites | `npm test` both | 335 + 100 pass | **PASS** |
 | R-10 #14 regression | My Tickets | server + client suites | `npm test` both | 335 + 100 pass | **PASS** |
 | R-11 #15 regression | Attachments / Detail | server + client suites | `npm test` both | 335 + 100 pass | **PASS** |
@@ -35,13 +35,13 @@ Requirement-by-requirement mapping: Requirement → Implementation → Test → 
 - E2E-04 actually forces attachment failure: **Yes**
 - E2E-04 proves retry without duplicate ticket: **Yes**
 - E2E-05 passes: **Yes** (mandatory flow uses only Tab/Shift+Tab/Enter/Space)
-- E2E-06 passes: **Yes** (full Issue #18 §19: Ticket Detail, table→card, 44px touch targets, required controls)
+- E2E-06 passes: **Yes** (full Issue #18 §19: Ticket Detail, table→card, 44px touch targets, required controls, no horizontal scroll, no clipped labels/overlap)
 - Server suite passes: **Yes (335)**
 - Client suite passes: **Yes (100)**
 - Build/type checks pass: **Yes**
 - #13/#14/#15 regression passes: **Yes**
 - No required test skipped / no `.only()` / no `.skip()` to manufacture green: **Yes**
-- Screenshot evidence complete (4 screens × 3 viewports): **Yes (84)**
+- Screenshot evidence complete (26 states × 3 viewports + 4 E2E workflow shots): **Yes (82)**
 - `attachment-unavailable` screenshot depicts the real unavailable state: **Yes** (Preview forced to 500, Unavailable badge asserted, Preview/Download disabled, no Retry for serving failure)
 - Release evidence package exists: **Yes**
 - `tests.md` matches actual execution: **Yes**
@@ -51,3 +51,11 @@ Requirement-by-requirement mapping: Requirement → Implementation → Test → 
 - `git diff --check` passes: **Yes**
 - No merge-conflict markers: **Yes**
 - No temporary Playwright artifacts committed: **Yes**
+
+## Production Change in This PR
+
+PR #30 makes one deliberate production change, driven by an Issue #18 verification requirement:
+
+- **Requester selector → keyboard-operable radio group** (commit `1d8b44d`, `client/src/App.tsx`). The native requester `<select>` was replaced with a `role="radiogroup"` of `role="radio"` buttons so the mandatory E2E-05 flow can be completed using only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). This is a **verification-driven fix**: the previous `<select>` required arrow keys / `selectOption()`, which the Issue #18 keyboard-only requirement (§24) forbids. Scoped to the requester-selection control only; no API, data, or other UI behavior changed. Covered by the updated `RequesterSelection` component tests and E2E-05.
+
+This is the only production change in the PR; everything else is verification-layer repair and release evidence.

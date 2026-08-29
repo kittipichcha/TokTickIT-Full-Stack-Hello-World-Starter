@@ -593,6 +593,61 @@ async function assertTouchTargets(page: Page, selectors: string[]) {
   }
 }
 
+/**
+ * Assert that no visible element has horizontally clipped text at the current
+ * viewport. A label is considered clipped when its scrollWidth exceeds its
+ * clientWidth (content overflows its box) or when its text overflows the
+ * viewport. This guards against truncated labels / buttons at narrow widths.
+ */
+async function assertNoClippedText(page: Page, selectors: string[]) {
+  for (const sel of selectors) {
+    const loc = page.locator(sel);
+    const count = await loc.count();
+    for (let i = 0; i < count; i++) {
+      const el = loc.nth(i);
+      if (!(await el.isVisible().catch(() => false))) continue;
+      const clipped = await el.evaluate((node) => {
+        const el = node as HTMLElement;
+        const cs = getComputedStyle(el);
+        // Only meaningful for non-wrapping, non-hidden-overflow content.
+        if (cs.overflowX === "hidden" || cs.whiteSpace === "nowrap") {
+          return el.scrollWidth > el.clientWidth + 1;
+        }
+        return false;
+      });
+      expect(clipped, `${sel}[${i}] text is not clipped`).toBe(false);
+    }
+  }
+}
+
+/**
+ * Assert that no two required controls overlap each other at the current
+ * viewport. Overlapping controls would make them unusable / ambiguous.
+ */
+async function assertNoOverlap(page: Page, selectors: string[]) {
+  const boxes: { label: string; box: { x: number; y: number; width: number; height: number } }[] = [];
+  for (const sel of selectors) {
+    const loc = page.locator(sel);
+    const count = await loc.count();
+    for (let i = 0; i < count; i++) {
+      const el = loc.nth(i);
+      if (!(await el.isVisible().catch(() => false))) continue;
+      const box = await el.boundingBox();
+      if (box) boxes.push({ label: `${sel}[${i}]`, box });
+    }
+  }
+  for (let a = 0; a < boxes.length; a++) {
+    for (let b = a + 1; b < boxes.length; b++) {
+      const A = boxes[a].box;
+      const B = boxes[b].box;
+      const overlap =
+        A.x < B.x + B.width && A.x + A.width > B.x &&
+        A.y < B.y + B.height && A.y + A.height > B.y;
+      expect(overlap, `${boxes[a].label} does not overlap ${boxes[b].label}`).toBe(false);
+    }
+  }
+}
+
 test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
   const sampleTickets = [
     makeTicket(1, { summary: "Laptop battery drains quickly", requestedPriority: "HIGH" }),
@@ -723,5 +778,73 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
       "button:has-text('Remove')",
       "button:has-text('+ Add Attachment')",
     ]);
+  });
+
+  test("My Tickets no clipped labels or overlapping controls", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    for (const vp of VIEWPORTS) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(2000);
+      await assertNoClippedText(page, [
+        "button:has-text('Change Requester')",
+        ".ticket-card-toggle",
+        ".pagination-page",
+        "button:has-text('Previous')",
+        "button:has-text('Next')",
+        "th", "td",
+      ]);
+      await assertNoOverlap(page, [
+        "button:has-text('Change Requester')",
+        ".ticket-card-toggle",
+        ".pagination-page",
+        "button:has-text('Previous')",
+        "button:has-text('Next')",
+      ]);
+    }
+  });
+
+  test("Create Ticket no clipped labels or overlapping controls", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    for (const vp of VIEWPORTS) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/"); await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
+      await page.click("a:has-text('Create Ticket')");
+      await page.waitForSelector("#summary", { timeout: 10000 }); await page.waitForTimeout(500);
+      await assertNoClippedText(page, [
+        "label", "button:has-text('Submit')", "button:has-text('Cancel')",
+      ]);
+      await assertNoOverlap(page, [
+        "button:has-text('Submit')", "button:has-text('Cancel')",
+      ]);
+    }
+  });
+
+  test("Requester Selection no clipped labels or overlapping controls", async ({ page, context }) => {
+    await setupApiMocks(page, context, {});
+    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
+    for (const vp of VIEWPORTS) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/"); await page.waitForSelector(".requester-option", { timeout: 10000 }); await page.waitForTimeout(500);
+      await assertNoClippedText(page, [".requester-option", "button:has-text('Continue')"]);
+      await assertNoOverlap(page, [".requester-option", "button:has-text('Continue')"]);
+    }
+  });
+
+  test("Ticket Detail no clipped labels or overlapping controls", async ({ page, context }) => {
+    const dt = makeDetailTicket(1, activeAttachments);
+    await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
+    for (const vp of VIEWPORTS) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+      await openTicketBySummary(page, "Detail view test ticket");
+      await assertNoClippedText(page, [
+        "button:has-text('Preview')", "button:has-text('Download')",
+        "button:has-text('Remove')", "button:has-text('+ Add Attachment')",
+      ]);
+      await assertNoOverlap(page, [
+        "button:has-text('Preview')", "button:has-text('Download')",
+        "button:has-text('Remove')", "button:has-text('+ Add Attachment')",
+      ]);
+    }
   });
 });

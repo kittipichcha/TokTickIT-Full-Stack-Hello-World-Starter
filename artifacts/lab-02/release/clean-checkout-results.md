@@ -30,13 +30,13 @@ git clone --branch feature/issue-18-integration-verification --single-branch \
 | Client tests | `cd client && npm test` | **100 passed, 0 failed** |
 | Server build | `cd server && npm run build` | **Pass** (TypeScript) |
 | Client build | `cd client && npm run build` | **Pass** (TypeScript + Vite) |
-| Lab 2 E2E suite | `npx playwright test e2e/lab-02` | **132 passed, 0 failed** (desktop/tablet/mobile) |
+| Lab 2 E2E suite | `npx playwright test e2e/lab-02` | **144 passed, 0 failed** (desktop/tablet/mobile) |
 
 ## Notes
 
 - The `.env` file is correctly gitignored and not committed; a fresh checkout requires the developer's local `server/.env` (or copying `server/.env.example` and filling in real credentials). The `.env.example` uses placeholder credentials that do not match the local database, so the real `.env` was used for the verification run.
 - The clean checkout at the branch HEAD is clean. The full verification (server tests, client tests, builds, and the Lab 2 E2E suite) was executed against this fresh checkout at the PR #30 head. The `git status --short`, `git diff --check`, and conflict-marker checks all pass on the current tree.
-- **Head reconciliation:** Verification commits are treated as immutable historical evidence. The verification totals above (server 335, client 100, E2E 132) were recorded at the commit where the corrected tests were executed. Any subsequent documentation-only commits (updating notes, audit records, and commit SHA references; no application, server, client, test, or E2E code changed) do not alter these results.
+- **Head reconciliation:** Verification commits are treated as immutable historical evidence. The verification totals above (server 335, client 100, E2E 144) were recorded at the commit where the corrected tests were executed. Any subsequent documentation-only commits (updating notes, audit records, and commit SHA references; no application, server, client, test, or E2E code changed) do not alter these results.
 
 ## Expected Final State
 
