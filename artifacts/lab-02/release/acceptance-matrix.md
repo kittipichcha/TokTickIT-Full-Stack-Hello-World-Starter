@@ -1,7 +1,8 @@
 # Lab 2 Release Verification — Acceptance Matrix
 
 **Issue:** #18 — Lab 2 Final Integration and Release Verification
-**Date:** 2026-08-29
+**Date:** 2026-08-30
+**Verification baseline (PR #30 head):** `8cdebe824272cf101570bb78772379a9090b497f`
 
 Requirement-by-requirement mapping: Requirement → Implementation → Test → Execution → Evidence → Result.
 
@@ -62,4 +63,4 @@ PR #30 makes deliberate production changes, driven by Issue #18 verification req
 
 These are verification-driven fixes scoped to the requester-selection control, the mobile shell, and the CSS token layer; no API, data, or other UI behavior changed. Covered by the updated `RequesterSelection` component tests, E2E-05, E2E-06, and UI-STYLE-01.
 
-This is the only production change in the PR; everything else is verification-layer repair and release evidence.
+These are the only production changes in the PR; everything else is verification-layer repair and release evidence.

@@ -1,7 +1,8 @@
 # Lab 2 Release Verification — Documentation Audit
 
 **Issue:** #18 — Lab 2 Final Integration and Release Verification
-**Date:** 2026-08-29
+**Date:** 2026-08-30
+**Verification baseline (PR #30 head):** `8cdebe824272cf101570bb78772379a9090b497f`
 
 Cross-document consistency check against the actual implementation and evidence.
 
@@ -47,8 +48,10 @@ Every `Passed` row corresponds to an actually executed, passing test. No `Planne
 
 ## Production Change Acknowledged
 
-PR #30 contains one deliberate production change, driven by an Issue #18 verification requirement and reflected consistently across the evidence:
+PR #30 contains deliberate production changes, driven by Issue #18 verification requirements and reflected consistently across the evidence:
 
-- **Requester selector → keyboard-operable radio group** (commit `1d8b44d`, `client/src/App.tsx`). The native requester `<select>` was replaced with a `role="radiogroup"` of `role="radio"` buttons so the mandatory E2E-05 flow can be completed using only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). This is a **verification-driven fix**: the previous `<select>` required arrow keys / `selectOption()`, which the Issue #18 keyboard-only requirement (§24) forbids. Scoped to the requester-selection control only; no API, data, or other UI behavior changed. Covered by the updated `RequesterSelection` component tests and E2E-05.
+- **Requester selector → native dropdown with Arrow-key keyboard flow** (commit `8cdebe8`, `client/src/App.tsx`). The requester control is the specification-required native `<select>` (id `requester-select`), loaded from `GET /api/dev-requesters`, showing only active requesters, with a disabled placeholder so Continue is disabled until a selection is made (ui-spec §5.2). Issue #18 §24 was amended to permit `ArrowDown`/`ArrowUp` — the only keyboard mechanism that can operate a native dropdown to a non-default option. The mandatory E2E-05 flow uses `Tab`/`Shift+Tab`/`Enter`/`Space`/`ArrowDown`/`ArrowUp` (no mouse, no `selectOption()`). This is a **verification-driven fix** scoped to the requester-selection control only; no API, data, or other UI behavior changed. Covered by the updated `RequesterSelection` component tests and E2E-05.
+- **Mobile hamburger navigation** (`client/src/App.tsx` + `App.css`). Desktop/tablet show the normal primary navigation with the hamburger hidden; mobile (<768px) shows a ≥44px hamburger with the primary nav hidden by default, the requester identity remains visible, and the menu closes after navigation.
+- **Authoritative Zen Green CSS tokens** (`client/src/App.css`). The alias-only tokens were replaced with the authoritative `--color-*` tokens from ui-spec §1, and every usage was migrated. UI-STYLE-01 now asserts the actual token values.
 
-This is the only production change in the PR; everything else is verification-layer repair and release evidence.
+These are the only production changes in the PR; everything else is verification-layer repair and release evidence.

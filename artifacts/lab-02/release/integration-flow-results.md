@@ -1,7 +1,8 @@
 # Lab 2 Release Verification — Integration Flow Results
 
 **Issue:** #18 — Lab 2 Final Integration and Release Verification
-**Date:** 2026-08-29
+**Date:** 2026-08-30
+**Verification baseline (PR #30 head):** `8cdebe824272cf101570bb78772379a9090b497f`
 **Command:** `npx playwright test e2e/lab-02` (desktop/tablet/mobile)
 **Result:** 159 passed, 0 failed
 
