@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 import * as api from "../api";
@@ -46,7 +46,7 @@ describe("Requester Selection", () => {
     vi.mocked(api.fetchDevRequesters).mockImplementation(async () => []);
     render(<App />);
     expect(await screen.findByText("No active development requesters are available.")).toBeTruthy();
-    expect(screen.queryByLabelText("Development Requester")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: /development requester/i })).toBeNull();
   });
 
   it("shows a manual retry after loading fails", async () => {
@@ -60,7 +60,7 @@ describe("Requester Selection", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("Network unavailable");
     expect((screen.getByRole("button", { name: "Retry" }) as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByLabelText("Development Requester")).toBeTruthy();
+    expect(await screen.findByRole("combobox", { name: /development requester/i })).toBeTruthy();
   });
 
   it("clears stale context and explains why selection is required", async () => {
@@ -74,20 +74,21 @@ describe("Requester Selection", () => {
   it("persists the selected requester and supports keyboard selection and switching", async () => {
     vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
     render(<App />);
-    const selects = await screen.findAllByLabelText("Development Requester");
-    const select = selects[0];
+    // Wait for the dropdown to load. No requester is pre-selected, so Continue
+    // is disabled until a selection is made (ui-spec §5.2).
+    await screen.findByRole("combobox", { name: /development requester/i });
     const continueButton = screen.getByRole("button", { name: "Continue" });
     expect((continueButton as HTMLButtonElement).disabled).toBe(true);
-    select.focus();
-    fireEvent.change(select, { target: { value: "2" } });
-    expect((continueButton as HTMLButtonElement).disabled).toBe(false);
-    fireEvent.keyDown(continueButton, { key: "Enter" });
-    fireEvent.click(continueButton);
+    // Select requester 2 via the native dropdown.
+    fireEvent.change(screen.getByRole("combobox", { name: /development requester/i }), { target: { value: "2" } });
+    await waitFor(() => expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.keyDown(screen.getByRole("button", { name: "Continue" }), { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(await screen.findByText("Grace Hopper")).toBeTruthy();
     expect(api.fetchRequesterContext).toHaveBeenCalledWith(2);
     expect(sessionStorage.getItem("toktickit.requesterId")).toBe("2");
     fireEvent.click(screen.getByRole("button", { name: "Change Requester" }));
-    expect(await screen.findByLabelText("Development Requester")).toBeTruthy();
+    expect(await screen.findByRole("combobox", { name: /development requester/i })).toBeTruthy();
     expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
   });
 
@@ -95,28 +96,24 @@ describe("Requester Selection", () => {
     vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
     render(<App />);
 
-    const selects = (await screen.findAllByLabelText("Development Requester")) as HTMLSelectElement[];
-    const select = selects[0];
+    // Focus the requester dropdown and select the first requester (keyboard-only).
+    const dropdown = await screen.findByRole("combobox", { name: /development requester/i });
+    dropdown.focus();
+    expect(document.activeElement).toBe(dropdown);
+    fireEvent.change(dropdown, { target: { value: "1" } });
+    expect((dropdown as HTMLSelectElement).value).toBe("1");
 
-    // Focus the dropdown and make a selection
-    select.focus();
-    expect(document.activeElement).toBe(select);
-
-    fireEvent.change(select, { target: { value: "1" } });
-    expect(select.value).toBe("1");
-
-    // Tab to Continue button and activate with Enter (keyboard-only activation)
-    await userEvent.tab();
+    // Tab to the Continue button.
     const continueBtn = screen.getByRole("button", { name: "Continue" });
+    await userEvent.tab();
     expect(document.activeElement).toBe(continueBtn);
 
     await userEvent.keyboard("{Enter}");
 
     // Assert on content that exists only after successful Continue — the application
-    // shell "Change Requester" action — not on the requester name that is already
-    // present as an <option> in the selector.
+    // shell "Change Requester" action.
     expect(await screen.findByRole("button", { name: /change requester/i })).toBeTruthy();
-    expect(screen.queryByLabelText("Development Requester")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: /development requester/i })).toBeNull();
     expect(api.fetchRequesterContext).toHaveBeenCalledWith(1);
     expect(sessionStorage.getItem("toktickit.requesterId")).toBe("1");
   });
@@ -126,14 +123,14 @@ describe("Requester Selection", () => {
     render(<App />);
 
     // Select a requester and reach the shell
-    const selects = await screen.findAllByLabelText("Development Requester");
-    fireEvent.change(selects[0], { target: { value: "1" } });
+    fireEvent.change(await screen.findByRole("combobox", { name: /development requester/i }), { target: { value: "1" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     const changeButton = await screen.findByRole("button", { name: "Change Requester" });
 
     // Keyboard-navigate from the shell's start through the header focusable controls to
-    // reach Change Requester, then activate it with Enter.
+    // reach Change Requester, then activate it with Enter. (The hamburger is
+    // hidden at the jsdom default desktop viewport, so it is not focusable.)
     await userEvent.tab(); // My Tickets link
     await userEvent.tab(); // Create Ticket link
     await userEvent.tab(); // Change Requester button
@@ -141,7 +138,7 @@ describe("Requester Selection", () => {
 
     await userEvent.keyboard("{Enter}");
 
-    expect(await screen.findByLabelText("Development Requester")).toBeTruthy();
+    expect(await screen.findByRole("combobox", { name: /development requester/i })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Change Requester" })).toBeNull();
     expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
   });
@@ -151,12 +148,11 @@ describe("Requester Selection", () => {
     vi.mocked(api.fetchRequesterContext).mockRejectedValue(new Error("Requester inactive"));
 
     render(<App />);
-    const selects = await screen.findAllByLabelText("Development Requester");
-    fireEvent.change(selects[0], { target: { value: "1" } });
+    fireEvent.change(await screen.findByRole("combobox", { name: /development requester/i }), { target: { value: "1" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByText(/no longer active/i)).toBeTruthy();
-    expect(screen.getByLabelText("Development Requester")).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: /development requester/i })).toBeTruthy();
     expect(sessionStorage.getItem("toktickit.requesterId")).toBeNull();
   });
 });

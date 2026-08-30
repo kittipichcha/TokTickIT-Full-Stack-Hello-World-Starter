@@ -33,8 +33,7 @@ async function setupAuthenticatedApp() {
   render(<App />);
 
   // Wait for requester selector to load and select a requester
-  const selects = await screen.findAllByLabelText("Development Requester");
-  await userEvent.selectOptions(selects[0], "1");
+  await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
   await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
   // Wait for app shell to appear — look for the Ada Lovelace text

@@ -75,8 +75,7 @@ async function setupAuthenticatedApp() {
 
   render(<App />);
 
-  const selects = await screen.findAllByLabelText("Development Requester");
-  await userEvent.selectOptions(selects[0], "1");
+  await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
   await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
   // Wait for app shell to appear (StrictMode may double-render)
@@ -181,8 +180,7 @@ describe("UI-MY-03: Requester switch clears prior data and reloads new scope", (
 
     render(<App />);
 
-    const selects = await screen.findAllByLabelText("Development Requester");
-    fireEvent.change(selects[0], { target: { value: "1" } });
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     // Wait for shell to appear and Ticket A to show
@@ -195,14 +193,13 @@ describe("UI-MY-03: Requester switch clears prior data and reloads new scope", (
     fireEvent.click(changeButtons[0]);
 
     // Should be back on selector screen
-    await screen.findByLabelText("Development Requester");
+    await screen.findByRole("combobox", { name: /development requester/i });
 
     // Verify Ticket A is no longer displayed (requester context cleared)
     expect(screen.queryByText("Ticket A")).toBeNull();
 
     // Select requester B (Alan Turing, id=3)
-    const selectAfterChange = screen.getByLabelText("Development Requester");
-    fireEvent.change(selectAfterChange, { target: { value: "3" } });
+    fireEvent.change(screen.getByRole("combobox", { name: /development requester/i }), { target: { value: "3" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     // Wait for Ticket B to appear
@@ -234,8 +231,7 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
 
     render(<App />);
 
-    const selects = await screen.findAllByLabelText("Development Requester");
-    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByRole("status", { name: "Loading tickets" })).toBeTruthy();
@@ -246,8 +242,7 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
 
     render(<App />);
 
-    const selects = await screen.findAllByLabelText("Development Requester");
-    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByRole("alert")).toBeTruthy();
@@ -265,8 +260,7 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
 
     render(<App />);
 
-    const selects = await screen.findAllByLabelText("Development Requester");
-    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     // Wait for error state to appear
@@ -298,8 +292,7 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
 
     render(<App />);
 
-    const selects = await screen.findAllByLabelText("Development Requester");
-    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     // Wait for error state
@@ -361,8 +354,7 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
 
     render(<App />);
 
-    const selects = await screen.findAllByLabelText("Development Requester");
-    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     // Should show tickets from page 1
@@ -567,8 +559,7 @@ describe("UI-MY-07: Stale-response protection — older request must not overwri
 
     render(<App />);
 
-    const selects = await screen.findAllByLabelText("Development Requester");
-    await userEvent.selectOptions(selects[0], "1");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     // Wait for initial empty state

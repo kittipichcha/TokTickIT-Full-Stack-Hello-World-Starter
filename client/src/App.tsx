@@ -47,6 +47,7 @@ export default function App() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailRetryCounter, setDetailRetryCounter] = useState(0);
   const [myTicketsResetKey, setMyTicketsResetKey] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Attachment dialog state
   const [removeDialogAttachment, setRemoveDialogAttachment] = useState<AttachmentItem | null>(null);
@@ -266,7 +267,7 @@ export default function App() {
         {message && <p className="notice" role="status">{message}</p>}
         {selectorState === "loading" && (
           <div className="selector-form" role="status" aria-label="Loading active requesters">
-            <label htmlFor="requester">Development Requester</label>
+            <span className="requester-label">Development Requester</span>
             <div className="skeleton-select" aria-hidden="true" />
             <button className="primary-button" disabled>Continue</button>
           </div>
@@ -280,19 +281,18 @@ export default function App() {
         {selectorState === "empty" && <p className="empty-state">No active development requesters are available.</p>}
         {selectorState === "ready" && (
           <div className="selector-form">
-            <label htmlFor="requester">Development Requester</label>
+            <label className="requester-label" id="requester-label" htmlFor="requester-select">Development Requester</label>
             <select
-              id="requester"
+              id="requester-select"
+              className="requester-select"
+              aria-labelledby="requester-label"
               value={selectedId ?? ""}
-              onChange={(event) => {
-                const value = event.target.value;
-                setSelectedId(value ? Number(value) : null);
-              }}
+              onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
             >
-              <option value="">Select a requester</option>
+              <option value="" disabled>Select a requester…</option>
               {requesters.map((requester) => (
                 <option key={requester.id} value={requester.id}>
-                  {requester.name}
+                  {requester.name} — {requester.email}
                 </option>
               ))}
             </select>
@@ -313,18 +313,30 @@ export default function App() {
     <div className="app-shell">
       <header className="app-header">
         <strong>TokTickIT</strong>
-        <nav aria-label="Primary">
+        <button
+          type="button"
+          className="hamburger"
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="primary-navigation"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          <span className="hamburger-bar" />
+          <span className="hamburger-bar" />
+          <span className="hamburger-bar" />
+        </button>
+        <nav id="primary-navigation" aria-label="Primary" className={mobileMenuOpen ? "mobile-menu-open" : ""}>
           <a
             href="#my-tickets"
             className={view === "home" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("home"); }}
+            onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
           >
             My Tickets
           </a>
           <a
             href="#create-ticket"
             className={view === "create-ticket" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("create-ticket"); }}
+            onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
           >
             Create Ticket
           </a>

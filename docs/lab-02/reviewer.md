@@ -170,3 +170,64 @@ The re-review (2026-08-28) confirmed the prior round is largely resolved and ide
 - Current head at time of review: `eec6d8b9c30a7a620ca8928aed9e286f04bc9363`
 - Review status: **Open; re-review received at head `eec6d8b9` with three blocking findings remaining — (1) retry upload can still duplicate a persisted attachment, (2) UI-TKT-08 submission flow is not actually tested, (3) attachment validation/ownership/UI-DETAIL-01 feature-level evidence is incomplete. All three have been addressed at the current head (retry terminal-state fix + `UI-ATT-RETRY-TERMINAL`, full `UI-TKT-08` orchestration, `UNIT-ATT-02/03` + `API-ATT-OWN-MATRIX` + complete `UI-DETAIL-01` matrix), along with all five non-blocking follow-ups. Awaiting re-review from @oangsa before approval/merge evidence is recorded.** This record must be updated with the final approval/merge evidence before the Lab 2 course submission.
 
+---
+
+## Pull Request — Final Integration & Release Verification (PR #30)
+
+- **PR:** [#30 — feat: Lab 2 Final Integration and Release Verification](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/30)
+- **Source branch:** `feature/issue-18-integration-verification`
+- **Target branch:** `lab2-staging`
+- **Scope:** Issue #18 — final integration and release verification: repair the verification layer, complete the release evidence, and reconcile documentation.
+
+### Review Comments Received and Responses
+
+| Review source | Summary of feedback | Response / current evidence |
+|---|---|---|
+| @oangsa — PR #30 review (`CHANGES_REQUESTED`) | **P1 — `attachment-unavailable` visual evidence does not depict the real unavailable state.** The screenshot must genuinely show the Unavailable badge with Preview/Download disabled and no Retry for a serving failure. | **Fixed.** `e2e/lab-02/responsive-visual.spec.ts` now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state. |
+| @oangsa — PR #30 review (`CHANGES_REQUESTED`) | **P1 — Responsive E2E-06 does not cover the full Issue #18 §19 requirements.** Must include Ticket Detail responsive, My Tickets table→card conversion, ≥44px mobile touch targets for required controls, required-control visibility, no horizontal scroll, and no clipped labels / no overlapping controls. | **Fixed.** `e2e/lab-02/responsive-visual.spec.ts` expanded E2E-06 to the full §19 set: Ticket Detail responsive, table→card conversion per breakpoint, ≥44px touch targets for required controls, required-control visibility, no horizontal scroll at any viewport, and no-clipped-label / no-overlapping-control checks for all four screens. Also added the mobile hamburger navigation tests. |
+| @oangsa — PR #30 review (`CHANGES_REQUESTED`) | **P1 — E2E-05 keyboard-only flow conflicts with the specification-required native requester dropdown.** The four-key-only restriction (`Tab`/`Shift+Tab`/`Enter`/`Space`) cannot operate a native `<select>` to a non-default option, and auto-selecting the first requester violates "Continue disabled until selection" (ui-spec §5.2). | **Fixed.** Issue #18 §24 was amended to permit `ArrowDown`/`ArrowUp` — the only keyboard mechanism that can operate a native dropdown to a non-default option. The requester control is the specification-required native `<select>` (id `requester-select`), loaded from `GET /api/dev-requesters`, showing only active requesters, with a disabled placeholder so Continue is disabled until a selection is made. The mandatory E2E-05 flow uses `Tab`/`Shift+Tab`/`Enter`/`Space`/`ArrowDown`/`ArrowUp` (no mouse, no `selectOption()`). |
+| @oangsa — PR #30 review (`CHANGES_REQUESTED`) | **P1 — Release evidence SHA wording.** Verification commits must be treated as immutable historical evidence rather than claiming verification at a non-current head. | **Fixed.** Release evidence now records the exact commit where each verification was executed and treats verification commits as immutable historical evidence. |
+
+### Verification Performed (2026-08-30)
+
+Release verification was executed against the integrated branch at the authoritative final verification baseline **`8cdebe824272cf101570bb78772379a9090b497f`**. Subsequent commits are documentation/evidence reconciliation only — no application, server, client, test, Playwright, config, dependency, or runtime behavior changes. The PR #30 review (CHANGES_REQUESTED) identified four blocking findings, all of which have been addressed and re-verified (see the review-comments table above):
+
+1. **`attachment-unavailable` visual evidence** — the test now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state.
+2. **Responsive E2E-06** — expanded to the full Issue #18 §19 requirements: Ticket Detail responsive, My Tickets table→card conversion per breakpoint, ≥44px mobile touch targets for required controls, required-control visibility, and no-clipped-label / no-overlapping-control checks for all four screens at every viewport.
+3. **E2E-05 keyboard-only flow** — the mandatory flow now uses `Tab`/`Shift+Tab`/`Enter`/`Space`/`ArrowDown`/`ArrowUp` (Issue #18 §24, amended to permit Arrow keys) to operate the specification-required native requester `<select>` (id `requester-select`), loaded from `GET /api/dev-requesters`, showing only active requesters, with a disabled placeholder so Continue is disabled until a selection is made (ui-spec §5.2). **This is one of the production changes in the PR** (`client/src/App.tsx`), driven by the Issue #18 §24 keyboard requirement and scoped to the requester-selection control only. The PR also implements the mobile hamburger navigation (ui-spec §5.1) and migrates the CSS to the authoritative Zen Green tokens (ui-spec §1).
+4. **Release evidence SHA wording** — corrected to treat verification commits as immutable historical evidence rather than claiming verification at a non-current head.
+
+| Check | Result |
+|---|---|
+| Verification execution baseline | `8cdebe824272cf101570bb78772379a9090b497f` |
+| Working tree / whitespace / conflict markers | Clean / `git diff --check` pass / none |
+| Prisma migration status | Up to date (5 migrations) |
+| **Server tests** (`cd server && npm test`) | **26 files, 335 passed, 0 failed** |
+| **Client tests** (`cd client && npm test`) | **8 files, 100 passed, 0 failed** |
+| Server build (`npm run build`) | Pass (TypeScript) |
+| Client build (`npm run build`) | Pass (TypeScript + Vite) |
+| **Playwright `e2e/lab-02`** | **159 passed, 0 failed** (desktop/tablet/mobile) |
+
+Issue regression re-runs against the current integrated branch: **#13** Create Ticket (80 server + client passes), **#14** My Tickets (91 server passes), **#15** Ticket Detail/Attachments (75 server passes); combined #13/#14/#15 client tests (65 passed). All six E2E scenarios (E2E-01 … E2E-06) ran green across all three viewports. Kanban board columns for #13/#14/#15/#18 were manually verified by the author on 2026-08-30.
+
+### Approved with Follow-up (2026-08-30)
+
+The previously blocking implementation issues have been resolved and the technical implementation is **approved**. The following documentation/governance consistency follow-ups do **not** block this approval but must be completed before the final `lab2-staging → main` release.
+
+#### 1. E2E-05 requirement amendment (approved clarification)
+
+The original review baseline allowed only `Tab`, `Shift+Tab`, `Enter`, `Space` for the keyboard-only flow. The live Issue #18 §24 now also permits `ArrowDown` and `ArrowUp` for operating the specification-required native requester dropdown. This is recorded here as an explicit approved requirement clarification so the history remains traceable.
+
+#### 2. Verification-baseline wording
+
+`8cdebe824272cf101570bb78772379a9090b497f` is retained as the **verification execution baseline**. It is not described as the current PR #30 head after later documentation/evidence commits exist. Subsequent commits are documentation/evidence reconciliation only — no application, server, client, test, Playwright, config, dependency, or runtime behavior changes.
+
+#### 3. Final-state vocabulary
+
+`final-gate.md` must use Issue #18's exact permitted final state. Given that human/external actions remain, the appropriate state is **`TECHNICALLY VERIFIED — EXTERNAL ACTIONS REMAINING`**, with the remaining actions listed explicitly (peer review, kanban confirmation, merge, and Issue #18 close).
+
+### Review Status
+
+- **Human review:** **PENDING** — PR #30 has not yet been human-reviewed by @oangsa. This record intentionally does **not** invent or imply an approval. It will be updated with the actual human review decision and merge evidence before the Lab 2 course submission.
+- **Technical review:** **APPROVED WITH FOLLOW-UP** (2026-08-30) — the blocking implementation issues are resolved; the three documentation/governance follow-ups above are logged and must be completed before the final `lab2-staging → main` release.
+
