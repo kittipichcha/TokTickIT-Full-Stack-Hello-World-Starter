@@ -69,11 +69,11 @@ Implemented in code right now:
 - **Client tests**: 100 tests across 8 files — AttachmentSection and CreateTicket cover the full attachment state matrix, five-file capacity, retry ownership scoping (ticket + requester switch), mutation/refresh separation, retry terminal-state, the complete UI-DETAIL-01 matrix, UI-TKT-08 submission orchestration, and RFC 5987 filename parsing
 - **Case B ticket-persistence traceability**: the created ticket is kept on attachment failure (no duplicate create) is proven by the executable client Case-B tests (`UI-TKT-06`, `UI-ATT-05`, `UI-ATT-06`, `UI-ATT-RETRY-OWN`, which run the real post-create attachment flow). The server `API-ATT-06` test is an endpoint-isolation check only and does not by itself assert ticket persistence.
 
-Deferred to Issue #18 (final integration/release verification):
-- Full E2E test suite (Playwright)
-- Cross-endpoint API contract matrix
-- Visual/responsive screenshot evidence
-- Final release verification checklist
+Completed in Issue #18 (final integration/release verification) at the authoritative verification baseline `8cdebe824272cf101570bb78772379a9090b497f`:
+- Full E2E test suite (Playwright) — **159 passed, 0 failed** (desktop/tablet/mobile)
+- Cross-endpoint API contract matrix — server **335 passed** / client **100 passed**
+- Visual/responsive screenshot evidence — **82 screenshots** (26 states × 3 viewports + 4 E2E workflow shots)
+- Final release verification checklist — `artifacts/lab-02/release/` (acceptance-matrix, integration-flow-results, verification-summary, final-gate, clean-checkout-results, documentation-audit, environment, kanban-verification)
 
 ## 3. Repository Structure
 

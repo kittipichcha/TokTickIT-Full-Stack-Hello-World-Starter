@@ -190,7 +190,7 @@ The re-review (2026-08-28) confirmed the prior round is largely resolved and ide
 
 ### Verification Performed (2026-08-30)
 
-Release verification was executed against the integrated branch. The PR #30 review (CHANGES_REQUESTED) identified four blocking findings, all of which have been addressed and re-verified (see the review-comments table above):
+Release verification was executed against the integrated branch at the authoritative final verification baseline **`8cdebe824272cf101570bb78772379a9090b497f`** (the current PR #30 head). The PR #30 review (CHANGES_REQUESTED) identified four blocking findings, all of which have been addressed and re-verified (see the review-comments table above):
 
 1. **`attachment-unavailable` visual evidence** — the test now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state.
 2. **Responsive E2E-06** — expanded to the full Issue #18 §19 requirements: Ticket Detail responsive, My Tickets table→card conversion per breakpoint, ≥44px mobile touch targets for required controls, required-control visibility, and no-clipped-label / no-overlapping-control checks for all four screens at every viewport.
@@ -199,6 +199,7 @@ Release verification was executed against the integrated branch. The PR #30 revi
 
 | Check | Result |
 |---|---|
+| Verification baseline (PR #30 head) | `8cdebe824272cf101570bb78772379a9090b497f` |
 | Working tree / whitespace / conflict markers | Clean / `git diff --check` pass / none |
 | Prisma migration status | Up to date (5 migrations) |
 | **Server tests** (`cd server && npm test`) | **26 files, 335 passed, 0 failed** |

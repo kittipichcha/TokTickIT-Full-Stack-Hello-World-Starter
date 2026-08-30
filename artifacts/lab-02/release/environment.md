@@ -4,7 +4,8 @@
 **PR:** #30
 **Branch:** `feature/issue-18-integration-verification`
 **Base:** `lab2-staging`
-**Date:** 2026-08-29
+**Date:** 2026-08-30
+**Verification baseline (PR #30 head):** `8cdebe824272cf101570bb78772379a9090b497f`
 
 ## Toolchain
 

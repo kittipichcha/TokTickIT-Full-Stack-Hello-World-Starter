@@ -548,6 +548,26 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 
 ## 6. Results Log (Newest First)
 
+### 2026-08-30 — Issue #18: Authoritative final verification at PR #30 head `8cdebe8`
+- **Scope**: Ran one authoritative final verification from the actual current PR #30 head `8cdebe824272cf101570bb78772379a9090b497f` and regenerated the release evidence from that run. This is the single authoritative verification baseline for the Lab 2 release.
+- **Command(s) run**:
+  ```sh
+  npx playwright test e2e/lab-02            # full Lab 2 E2E suite (desktop/tablet/mobile)
+  cd client && npm test                     # 100 client tests passed
+  cd server && npm test                     # 335 server tests passed
+  cd client && npm run build                # TypeScript + Vite build passes
+  cd server && npm run build                # TypeScript build passes
+  ```
+- **Result**:
+  - **Lab 2 E2E**: 159 tests passed, 0 failed (across desktop/tablet/mobile viewports)
+  - **Client**: 100 tests passed, 0 failed
+  - **Server**: 335 tests passed, 0 failed
+  - **Client build**: TypeScript + Vite production build succeeds
+  - **Server build**: TypeScript compilation succeeds
+  - **Screenshots**: Regenerated the full responsive matrix (82 screenshots: 26 state directories × 3 viewports + 4 E2E workflow shots) from this run.
+- **Baseline**: All release evidence documents (`artifacts/lab-02/release/*`, `docs/lab-02/reviewer.md`) now consistently identify the final verification baseline as `8cdebe824272cf101570bb78772379a9090b497f`.
+- **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, and final gate updated to reflect the authoritative final verification baseline.
+
 ### 2026-08-30 — Issue #18: Restore native requester dropdown with Arrow-key keyboard flow, mobile hamburger, and authoritative Zen Green tokens
 - **Scope**: Resolved the requester-selection contract conflict by restoring the specification-required native requester `<select>` and amending Issue #18 §24 to permit `ArrowDown`/`ArrowUp` (the only keyboard mechanism that can operate a native dropdown to a non-default option). Implemented the mobile hamburger navigation and migrated the CSS to the authoritative Zen Green tokens.
 - **Changes**:
@@ -628,7 +648,7 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
   - **Client build**: TypeScript + Vite production build succeeds
   - **Server build**: TypeScript compilation succeeds
   - **Screenshots**: 84 curated evidence screenshots generated under `artifacts/lab-02/screenshots/` across all four screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile. *(Correction: the authoritative inventory is **82** — 26 state directories × 3 viewports = 78, plus 4 top-level E2E workflow shots. See `artifacts/lab-02/release/final-gate.md`.)*
-- **Head reconciliation**: Verification commits are treated as immutable historical evidence. The verification totals above (server **335/335**, client **100/100**, server build **Pass**, client build **Pass**, Lab 2 E2E **114/114**) were recorded at the commit where the tests were executed. Subsequent documentation-only commits (documentation edits and commit reference updates; no application, server, client, test, or E2E code changed) do not alter these results. The corrected E2E suite (with the full responsive and keyboard-only coverage) is recorded in the newer Results Log entry above at **144/144**.
+- **Head reconciliation**: Verification commits are treated as immutable historical evidence. The verification totals above (server **335/335**, client **100/100**, server build **Pass**, client build **Pass**, Lab 2 E2E **114/114**) were recorded at the commit where the tests were executed. Subsequent documentation-only commits (documentation edits and commit reference updates; no application, server, client, test, or E2E code changed) do not alter these results. The corrected E2E suite (with the full responsive and keyboard-only coverage) is recorded in the newer Results Log entries above at **144/144** and then the authoritative final verification at **159/159** (baseline `8cdebe824272cf101570bb78772379a9090b497f`).
 - **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, clean-checkout verification, and final gate recorded in the release documents.
 
 ### 2026-08-27 — Non-blocking suggestion: Normalize whitespace-only search on the client
