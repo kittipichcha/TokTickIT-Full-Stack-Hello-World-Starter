@@ -13,8 +13,8 @@ Requirement-by-requirement mapping: Requirement → Implementation → Test → 
 | R-04 Ownership isolation | `requireDevRequesterContext` + ownership checks | E2E-02, `API-TKT-03`, `API-MY-01`, `API-ATT-OWN-*` | E2E + server | `e2e-02-ownership-isolation.png` | **PASS** |
 | R-05 Attachment lifecycle | `AttachmentSection` + attachment endpoints | E2E-03, `API-ATT-*`, `UI-ATT-*` | E2E + server + client | `e2e-03-attachment-lifecycle.png` | **PASS** |
 | R-06 Partial success / BR-17 | Case B orchestration | E2E-04, `UI-TKT-06`, `UI-ATT-05/06` | E2E + client | `e2e-04-partial-success.png` | **PASS** |
-| R-07 Keyboard accessibility | Focus management + focus rings + keyboard-operable requester control | E2E-05, `UI-ATT-07` | E2E + client | keyboard-access.spec.ts (mandatory flow uses only Tab/Shift+Tab/Enter/Space) | **PASS** |
-| R-08 Responsive UI | Zen Green responsive CSS | E2E-06, VISUAL-01 | E2E | 82 screenshots + table→card + 44px touch targets + Ticket Detail + no horizontal scroll + no clipped labels/overlap | **PASS** |
+| R-07 Keyboard accessibility | Focus management + focus rings + keyboard-operable requester dropdown | E2E-05, `UI-ATT-07` | E2E + client | keyboard-access.spec.ts (mandatory flow uses Tab/Shift+Tab/Enter/Space/ArrowDown/ArrowUp; Continue disabled until selection) | **PASS** |
+| R-08 Responsive UI | Zen Green responsive CSS + mobile hamburger navigation | E2E-06, VISUAL-01 | E2E | 82 screenshots + table→card + 44px touch targets + Ticket Detail + no horizontal scroll + no clipped labels/overlap + mobile hamburger | **PASS** |
 | R-09 #13 regression | Create Ticket | server + client suites | `npm test` both | 335 + 100 pass | **PASS** |
 | R-10 #14 regression | My Tickets | server + client suites | `npm test` both | 335 + 100 pass | **PASS** |
 | R-11 #15 regression | Attachments / Detail | server + client suites | `npm test` both | 335 + 100 pass | **PASS** |
@@ -34,8 +34,8 @@ Requirement-by-requirement mapping: Requirement → Implementation → Test → 
 - E2E-03 proves complete attachment lifecycle: **Yes**
 - E2E-04 actually forces attachment failure: **Yes**
 - E2E-04 proves retry without duplicate ticket: **Yes**
-- E2E-05 passes: **Yes** (mandatory flow uses only Tab/Shift+Tab/Enter/Space)
-- E2E-06 passes: **Yes** (full Issue #18 §19: Ticket Detail, table→card, 44px touch targets, required controls, no horizontal scroll, no clipped labels/overlap)
+- E2E-05 passes: **Yes** (mandatory flow uses Tab/Shift+Tab/Enter/Space/ArrowDown/ArrowUp on the native dropdown; Continue disabled until selection)
+- E2E-06 passes: **Yes** (full Issue #18 §19: Ticket Detail, table→card, 44px touch targets, required controls, no horizontal scroll, no clipped labels/overlap, mobile hamburger navigation)
 - Server suite passes: **Yes (335)**
 - Client suite passes: **Yes (100)**
 - Build/type checks pass: **Yes**
@@ -54,8 +54,12 @@ Requirement-by-requirement mapping: Requirement → Implementation → Test → 
 
 ## Production Change in This PR
 
-PR #30 makes one deliberate production change, driven by an Issue #18 verification requirement:
+PR #30 makes deliberate production changes, driven by Issue #18 verification requirements:
 
-- **Requester selector → keyboard-operable radio group** (commit `1d8b44d`, `client/src/App.tsx`). The native requester `<select>` was replaced with a `role="radiogroup"` of `role="radio"` buttons so the mandatory E2E-05 flow can be completed using only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). This is a **verification-driven fix**: the previous `<select>` required arrow keys / `selectOption()`, which the Issue #18 keyboard-only requirement (§24) forbids. Scoped to the requester-selection control only; no API, data, or other UI behavior changed. Covered by the updated `RequesterSelection` component tests and E2E-05.
+- **Requester selector → native dropdown with Arrow-key keyboard flow** (`client/src/App.tsx`). The requester control is the specification-required native `<select>` (id `requester-select`), loaded from `GET /api/dev-requesters`, showing only active requesters, with a disabled placeholder so Continue is disabled until a selection is made (ui-spec §5.2). Issue #18 §24 was amended to permit `ArrowDown`/`ArrowUp` — the only keyboard mechanism that can operate a native dropdown to a non-default option. The mandatory E2E-05 flow uses `Tab`/`Shift+Tab`/`Enter`/`Space`/`ArrowDown`/`ArrowUp` (no mouse, no `selectOption()`).
+- **Mobile hamburger navigation** (`client/src/App.tsx` + `App.css`). Desktop/tablet show the normal primary navigation with the hamburger hidden; mobile (<768px) shows a ≥44px hamburger with the primary nav hidden by default, the requester identity remains visible, and the menu closes after navigation.
+- **Authoritative Zen Green CSS tokens** (`client/src/App.css`). The alias-only tokens were replaced with the authoritative `--color-*` tokens from ui-spec §1, and every usage was migrated. UI-STYLE-01 now asserts the actual token values.
+
+These are verification-driven fixes scoped to the requester-selection control, the mobile shell, and the CSS token layer; no API, data, or other UI behavior changed. Covered by the updated `RequesterSelection` component tests, E2E-05, E2E-06, and UI-STYLE-01.
 
 This is the only production change in the PR; everything else is verification-layer repair and release evidence.

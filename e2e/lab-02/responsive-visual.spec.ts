@@ -251,6 +251,20 @@ async function openTicketBySummary(page: Page, summary: string): Promise<void> {
   await page.waitForTimeout(2000);
 }
 
+/**
+ * Click a primary-navigation link, opening the mobile hamburger first if the
+ * nav is hidden (mobile <768px). On desktop/tablet the nav is always visible.
+ */
+async function clickNavLink(page: Page, label: string): Promise<void> {
+  const nav = page.locator("#primary-navigation");
+  if (await nav.isVisible().catch(() => false)) {
+    await page.click(`a:has-text('${label}')`);
+  } else {
+    await page.click(".hamburger");
+    await page.click(`a:has-text('${label}')`);
+  }
+}
+
 // ─── Requester Selection ───────────────────────────────────────────────────
 
 test.describe("Requester Selection screenshots", () => {
@@ -279,8 +293,8 @@ test.describe("Requester Selection screenshots", () => {
     // script runs first and this removeItem runs last → selector screen shows.
     await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await screenshotAllViewports(page, "requester-selection/populated", async () => {
-      await page.waitForSelector(".requester-option", { timeout: 10000 });
-      await page.click('.requester-option[aria-label="Select Michael Chen"]');
+      await page.waitForSelector("#requester-select", { timeout: 10000 });
+      await page.selectOption("#requester-select", "2");
     });
   });
 });
@@ -291,16 +305,18 @@ test.describe("Create Ticket screenshots", () => {
   test("initial state @visual", async ({ page, context }) => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1)] });
     await screenshotAllViewports(page, "create-ticket/initial", async () => {
-      await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-      await page.click("a:has-text('Create Ticket')");
+      // The nav link exists in the DOM even when hidden behind the mobile
+      // hamburger, so wait for it to be attached (not necessarily visible).
+      await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+      await clickNavLink(page, "Create Ticket");
       await page.waitForSelector("#summary", { timeout: 10000 });
     });
   });
   test("validation error @visual", async ({ page, context }) => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1)] });
     await screenshotAllViewports(page, "create-ticket/validation-error", async () => {
-      await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-      await page.click("a:has-text('Create Ticket')");
+      await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+      await clickNavLink(page, "Create Ticket");
       await page.waitForSelector("#summary", { timeout: 10000 });
       await page.selectOption("#categoryId", { index: 1 });
       await page.fill("#description", "Valid description text for testing.");
@@ -316,8 +332,8 @@ test.describe("Create Ticket screenshots", () => {
         body: JSON.stringify({ data: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 1, unfilteredTotalItems: 0 } }) });
     });
     await screenshotAllViewports(page, "create-ticket/submitting", async () => {
-      await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-      await page.click("a:has-text('Create Ticket')");
+      await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+      await clickNavLink(page, "Create Ticket");
       await page.waitForSelector("#summary", { timeout: 10000 });
       await page.selectOption("#categoryId", { index: 1 });
       await page.selectOption("#relatedSystemId", { index: 1 });
@@ -330,8 +346,8 @@ test.describe("Create Ticket screenshots", () => {
   test("success state @visual", async ({ page, context }) => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1)] });
     await screenshotAllViewports(page, "create-ticket/success", async () => {
-      await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-      await page.click("a:has-text('Create Ticket')");
+      await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+      await clickNavLink(page, "Create Ticket");
       await page.waitForSelector("#summary", { timeout: 10000 });
       await page.selectOption("#categoryId", { index: 1 });
       await page.selectOption("#relatedSystemId", { index: 1 });
@@ -353,8 +369,8 @@ test.describe("Create Ticket screenshots", () => {
         body: JSON.stringify({ data: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 } }) });
     });
     await screenshotAllViewports(page, "create-ticket/api-failure", async () => {
-      await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-      await page.click("a:has-text('Create Ticket')");
+      await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+      await clickNavLink(page, "Create Ticket");
       await page.waitForSelector("#summary", { timeout: 10000 });
       await page.selectOption("#categoryId", { index: 1 });
       await page.selectOption("#relatedSystemId", { index: 1 });
@@ -367,8 +383,8 @@ test.describe("Create Ticket screenshots", () => {
   test("invalid attachment @visual", async ({ page, context }) => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1)] });
     await screenshotAllViewports(page, "create-ticket/invalid-attachment", async () => {
-      await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-      await page.click("a:has-text('Create Ticket')");
+      await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+      await clickNavLink(page, "Create Ticket");
       await page.waitForSelector("#summary", { timeout: 10000 });
       const fcPromise = page.waitForEvent("filechooser");
       await page.click("text=Browse files");
@@ -393,8 +409,8 @@ test.describe("Create Ticket screenshots", () => {
         body: JSON.stringify({ data: [] }) });
     });
     await screenshotAllViewports(page, "create-ticket/partial-success-attachment-failure", async () => {
-      await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-      await page.click("a:has-text('Create Ticket')");
+      await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+      await clickNavLink(page, "Create Ticket");
       await page.waitForSelector("#summary", { timeout: 10000 });
       await page.selectOption("#categoryId", { index: 1 });
       await page.selectOption("#relatedSystemId", { index: 1 });
@@ -704,8 +720,8 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await setupApiMocks(page, context, { ticketData: sampleTickets });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-      await page.click("a:has-text('Create Ticket')");
+      await page.goto("/"); await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+      await clickNavLink(page, "Create Ticket");
       await page.waitForSelector("#summary", { timeout: 10000 }); await page.waitForTimeout(500);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(overflow, `${vp.name}: Create Ticket no horizontal scroll`).toBe(false);
@@ -715,8 +731,8 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
   test("Create Ticket mobile touch targets >= 44px", async ({ page, context }) => {
     await setupApiMocks(page, context, { ticketData: sampleTickets });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/"); await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-    await page.click("a:has-text('Create Ticket')");
+    await page.goto("/"); await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+    await clickNavLink(page, "Create Ticket");
     await page.waitForSelector("#summary", { timeout: 10000 }); await page.waitForTimeout(500);
     await assertTouchTargets(page, [
       "button:has-text('Submit')",
@@ -732,7 +748,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector(".requester-option", { timeout: 10000 }); await page.waitForTimeout(500);
+      await page.goto("/"); await page.waitForSelector("#requester-select", { timeout: 10000 }); await page.waitForTimeout(500);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(overflow, `${vp.name}: selector no horizontal scroll`).toBe(false);
     }
@@ -742,9 +758,9 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await setupApiMocks(page, context, {});
     await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/"); await page.waitForSelector(".requester-option", { timeout: 10000 }); await page.waitForTimeout(500);
+    await page.goto("/"); await page.waitForSelector("#requester-select", { timeout: 10000 }); await page.waitForTimeout(500);
     await assertTouchTargets(page, [
-      ".requester-option",
+      "#requester-select",
       "button:has-text('Continue')",
     ]);
   });
@@ -807,8 +823,8 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await setupApiMocks(page, context, { ticketData: sampleTickets });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector("a:has-text('Create Ticket')", { timeout: 10000 });
-      await page.click("a:has-text('Create Ticket')");
+      await page.goto("/"); await page.waitForSelector("a:has-text('Create Ticket')", { state: "attached", timeout: 10000 });
+      await clickNavLink(page, "Create Ticket");
       await page.waitForSelector("#summary", { timeout: 10000 }); await page.waitForTimeout(500);
       await assertNoClippedText(page, [
         "label", "button:has-text('Submit')", "button:has-text('Cancel')",
@@ -824,9 +840,9 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector(".requester-option", { timeout: 10000 }); await page.waitForTimeout(500);
-      await assertNoClippedText(page, [".requester-option", "button:has-text('Continue')"]);
-      await assertNoOverlap(page, [".requester-option", "button:has-text('Continue')"]);
+      await page.goto("/"); await page.waitForSelector("#requester-select", { timeout: 10000 }); await page.waitForTimeout(500);
+      await assertNoClippedText(page, ["#requester-select", "button:has-text('Continue')"]);
+      await assertNoOverlap(page, ["#requester-select", "button:has-text('Continue')"]);
     }
   });
 
@@ -846,5 +862,108 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
         "button:has-text('Remove')", "button:has-text('+ Add Attachment')",
       ]);
     }
+  });
+});
+
+// ─── E2E-06: Mobile hamburger navigation ───────────────────────────────────
+
+test.describe("E2E-06: Mobile hamburger navigation", () => {
+  const sampleTickets = [
+    makeTicket(1, { summary: "Laptop battery drains quickly", requestedPriority: "HIGH" }),
+  ];
+
+  test("desktop/tablet show normal navigation, hamburger hidden", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    for (const vp of VIEWPORTS) {
+      if (vp.width < 768) continue; // mobile handled separately
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+      // Hamburger hidden on desktop/tablet.
+      await expect(page.locator(".hamburger")).toBeHidden();
+      // Normal primary navigation visible.
+      await expect(page.locator("#primary-navigation")).toBeVisible();
+      await expect(page.locator("a:has-text('My Tickets')")).toBeVisible();
+      await expect(page.locator("a:has-text('Create Ticket')")).toBeVisible();
+      // Requester identity visible.
+      await expect(page.locator(".identity")).toBeVisible();
+    }
+  });
+
+  test("mobile closed: hamburger visible >=44px, nav hidden, requester identity visible", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+
+    const hamburger = page.locator(".hamburger");
+    await expect(hamburger).toBeVisible();
+    const box = await hamburger.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    // Accessible name + aria-expanded false + aria-controls.
+    await expect(hamburger).toHaveAttribute("aria-label", "Open navigation menu");
+    await expect(hamburger).toHaveAttribute("aria-expanded", "false");
+    await expect(hamburger).toHaveAttribute("aria-controls", "primary-navigation");
+    // Primary nav hidden by default on mobile.
+    await expect(page.locator("#primary-navigation")).toBeHidden();
+    // Requester identity remains visible.
+    await expect(page.locator(".identity")).toBeVisible();
+  });
+
+  test("mobile keyboard activation opens the menu with visible focus", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+
+    const hamburger = page.locator(".hamburger");
+    // Focus the hamburger with the keyboard.
+    await hamburger.focus();
+    await expect(hamburger).toBeFocused();
+    // Visible focus indicator.
+    const hasFocusRing = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el) return false;
+      const style = window.getComputedStyle(el);
+      return style.outlineStyle !== "none" && style.outlineWidth !== "0px";
+    });
+    expect(hasFocusRing).toBe(true);
+    // Activate with Enter (permitted keyboard mechanism).
+    await page.keyboard.press("Enter");
+    await expect(hamburger).toHaveAttribute("aria-expanded", "true");
+    await expect(hamburger).toHaveAttribute("aria-label", "Close navigation menu");
+    await expect(page.locator("#primary-navigation")).toBeVisible();
+  });
+
+  test("mobile open: menu exposes My Tickets and Create Ticket, requester identity visible", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+
+    await page.locator(".hamburger").click();
+    await expect(page.locator("#primary-navigation")).toBeVisible();
+    await expect(page.locator("a:has-text('My Tickets')")).toBeVisible();
+    await expect(page.locator("a:has-text('Create Ticket')")).toBeVisible();
+    await expect(page.locator(".identity")).toBeVisible();
+  });
+
+  test("mobile menu navigation closes the menu and shows the correct screen", async ({ page, context }) => {
+    await setupApiMocks(page, context, { ticketData: sampleTickets });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+
+    // Open the menu and navigate to Create Ticket.
+    await page.locator(".hamburger").click();
+    await page.locator("a:has-text('Create Ticket')").click();
+    await page.waitForSelector("#summary", { timeout: 10000 });
+    // Menu closes after navigation.
+    await expect(page.locator("#primary-navigation")).toBeHidden();
+    await expect(page.locator(".hamburger")).toHaveAttribute("aria-expanded", "false");
+
+    // Open the menu and navigate to My Tickets.
+    await page.locator(".hamburger").click();
+    await page.locator("a:has-text('My Tickets')").click();
+    await page.waitForSelector(".app-shell", { timeout: 10000 });
+    await expect(page.locator("#primary-navigation")).toBeHidden();
+    await expect(page.locator(".hamburger")).toHaveAttribute("aria-expanded", "false");
   });
 });

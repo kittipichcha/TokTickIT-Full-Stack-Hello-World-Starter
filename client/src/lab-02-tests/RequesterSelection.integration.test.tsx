@@ -64,15 +64,17 @@ describe("Requester Selection Integration Test - UI & Storage Persistence", () =
   it("integrates UI requester selection with actual sessionStorage using REQUESTER_STORAGE_KEY", async () => {
     render(<App />);
 
-    // 1. Selector loads active requesters as keyboard-operable radio options
-    const option = (await screen.findByRole("radio", { name: "Select Ada Lovelace" })) as HTMLButtonElement;
-    expect(option).toBeTruthy();
+    // 1. Selector loads active requesters as a native dropdown
+    const dropdown = (await screen.findByRole("combobox", { name: /development requester/i })) as HTMLSelectElement;
+    expect(dropdown).toBeTruthy();
 
     const continueBtn = screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement;
+    // No requester is pre-selected, so Continue is disabled until a selection
+    // is made (ui-spec §5.2).
     expect(continueBtn.disabled).toBe(true);
 
-    // 2. Select Ada Lovelace (id=1)
-    fireEvent.click(option);
+    // 2. Select Ada Lovelace (id=1) via the native dropdown.
+    fireEvent.change(dropdown, { target: { value: "1" } });
     expect(continueBtn.disabled).toBe(false);
 
     // 3. Click Continue -> validates context and saves to sessionStorage
@@ -91,7 +93,7 @@ describe("Requester Selection Integration Test - UI & Storage Persistence", () =
     const changeBtn = screen.getByRole("button", { name: "Change Requester" });
     fireEvent.click(changeBtn);
 
-    expect(await screen.findByRole("radio", { name: "Select Ada Lovelace" })).toBeTruthy();
+    expect(await screen.findByRole("combobox", { name: /development requester/i })).toBeTruthy();
     expect(sessionStorage.getItem(REQUESTER_STORAGE_KEY)).toBeNull();
   });
 });

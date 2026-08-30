@@ -22,8 +22,8 @@ This is the **last** release artifact generated. It depends on all preceding ver
 | E2E-03 proves complete attachment lifecycle | ✅ | `e2e/lab-02/attachment-lifecycle.spec.ts` |
 | E2E-04 actually forces attachment failure | ✅ | route interception (no production change) |
 | E2E-04 proves retry without duplicate ticket | ✅ | same Ticket Number, exactly one ticket |
-| E2E-05 passes | ✅ | keyboard-access.spec.ts (mandatory flow uses only Tab/Shift+Tab/Enter/Space) |
-| E2E-06 passes | ✅ | responsive-visual.spec.ts (Ticket Detail, table→card, 44px touch targets, required controls, no horizontal scroll, no clipped labels/overlap) |
+| E2E-05 passes | ✅ | keyboard-access.spec.ts (mandatory flow uses Tab/Shift+Tab/Enter/Space/ArrowDown/ArrowUp on the native dropdown; Continue disabled until selection) |
+| E2E-06 passes | ✅ | responsive-visual.spec.ts (Ticket Detail, table→card, 44px touch targets, required controls, no horizontal scroll, no clipped labels/overlap, mobile hamburger navigation) |
 | Server suite passes | ✅ | 335 passed |
 | Client suite passes | ✅ | 100 passed |
 | Build/type checks pass | ✅ | client + server `npm run build` |
@@ -42,11 +42,13 @@ This is the **last** release artifact generated. It depends on all preceding ver
 
 ## Production Change in This PR
 
-PR #30 is primarily a verification/release-evidence PR, but it **does** contain one deliberate production change, driven by an Issue #18 verification requirement:
+PR #30 is primarily a verification/release-evidence PR, but it **does** contain deliberate production changes, driven by Issue #18 verification requirements:
 
-- **Requester selector → keyboard-operable radio group** (commit `1d8b44d`, `client/src/App.tsx`). The native requester `<select>` was replaced with a `role="radiogroup"` of `role="radio"` buttons so the mandatory E2E-05 flow can be completed using only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). This is a **verification-driven fix**: the previous `<select>` required arrow keys / `selectOption()` to operate, which the Issue #18 keyboard-only requirement (§24) forbids. The change is scoped to the requester-selection control only; no API, data, or other UI behavior changed. It is covered by the updated `RequesterSelection` component tests and E2E-05.
+- **Requester selector → native dropdown with Arrow-key keyboard flow** (`client/src/App.tsx`). The requester control is the specification-required native `<select>` (id `requester-select`), loaded from `GET /api/dev-requesters`, showing only active requesters, with a disabled placeholder so Continue is disabled until a selection is made (ui-spec §5.2). Issue #18 §24 was amended to permit `ArrowDown`/`ArrowUp` — the only keyboard mechanism that can operate a native dropdown to a non-default option. The mandatory E2E-05 flow uses `Tab`/`Shift+Tab`/`Enter`/`Space`/`ArrowDown`/`ArrowUp` (no mouse, no `selectOption()`).
+- **Mobile hamburger navigation** (`client/src/App.tsx` + `App.css`). Desktop/tablet show the normal primary navigation with the hamburger hidden; mobile (<768px) shows a ≥44px hamburger with the primary nav hidden by default, the requester identity remains visible, and the menu closes after navigation.
+- **Authoritative Zen Green CSS tokens** (`client/src/App.css`). The alias-only tokens were replaced with the authoritative `--color-*` tokens from ui-spec §1, and every usage was migrated. UI-STYLE-01 now asserts the actual token values.
 
-This is the only production change in the PR; everything else is verification-layer repair and release evidence.
+These are verification-driven fixes scoped to the requester-selection control, the mobile shell, and the CSS token layer; no API, data, or other UI behavior changed. Covered by the updated `RequesterSelection` component tests, E2E-05, E2E-06, and UI-STYLE-01.
 
 ## Screenshot Inventory
 
@@ -70,4 +72,4 @@ Total = 78 + 4 = **82**. The earlier "84" figure was not backed by an inventory 
 
 ## Conclusion
 
-The integrated Lab 2 system (#13 Create Ticket → #14 My Tickets → #15 Ticket Detail/Attachments) is verified end-to-end against the real client, real API, and real database. The verification layer has been repaired, the evidence generated, and the documentation made truthful. The only production change is the Issue #18 §24-driven requester-selector radio group (see above); no other production behavior was changed. The release is ready for human review.
+The integrated Lab 2 system (#13 Create Ticket → #14 My Tickets → #15 Ticket Detail/Attachments) is verified end-to-end against the real client, real API, and real database. The verification layer has been repaired, the evidence generated, and the documentation made truthful. The production changes are the Issue #18 §24-driven native requester dropdown with Arrow-key keyboard flow, the mobile hamburger navigation, and the authoritative Zen Green CSS tokens (see above); no other production behavior was changed. The release is ready for human review.

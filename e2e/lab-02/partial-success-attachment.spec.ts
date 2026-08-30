@@ -99,7 +99,6 @@ test.describe("E2E-04: Partial success — ticket created, attachment fails", ()
     // 8. Exactly one ticket with this identifier exists in My Tickets.
     //    Count only VISIBLE ticket-number links (the mobile cards are hidden
     //    via CSS on desktop but still present in the DOM).
-    await page.click("a:has-text('My Tickets')");
     await openMyTickets(page);
     const ticketLinks = page.locator(`a:has-text('${ticketNumber}')`).filter({ visible: true });
     await expect(ticketLinks.first()).toBeVisible({ timeout: 10000 });
