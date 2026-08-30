@@ -190,7 +190,7 @@ The re-review (2026-08-28) confirmed the prior round is largely resolved and ide
 
 ### Verification Performed (2026-08-30)
 
-Release verification was executed against the integrated branch at the authoritative final verification baseline **`8cdebe824272cf101570bb78772379a9090b497f`** (the current PR #30 head). The PR #30 review (CHANGES_REQUESTED) identified four blocking findings, all of which have been addressed and re-verified (see the review-comments table above):
+Release verification was executed against the integrated branch at the authoritative final verification baseline **`8cdebe824272cf101570bb78772379a9090b497f`**. Subsequent commits are documentation/evidence reconciliation only — no application, server, client, test, Playwright, config, dependency, or runtime behavior changes. The PR #30 review (CHANGES_REQUESTED) identified four blocking findings, all of which have been addressed and re-verified (see the review-comments table above):
 
 1. **`attachment-unavailable` visual evidence** — the test now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state.
 2. **Responsive E2E-06** — expanded to the full Issue #18 §19 requirements: Ticket Detail responsive, My Tickets table→card conversion per breakpoint, ≥44px mobile touch targets for required controls, required-control visibility, and no-clipped-label / no-overlapping-control checks for all four screens at every viewport.
@@ -199,7 +199,7 @@ Release verification was executed against the integrated branch at the authorita
 
 | Check | Result |
 |---|---|
-| Verification baseline (PR #30 head) | `8cdebe824272cf101570bb78772379a9090b497f` |
+| Verification execution baseline | `8cdebe824272cf101570bb78772379a9090b497f` |
 | Working tree / whitespace / conflict markers | Clean / `git diff --check` pass / none |
 | Prisma migration status | Up to date (5 migrations) |
 | **Server tests** (`cd server && npm test`) | **26 files, 335 passed, 0 failed** |
@@ -210,8 +210,24 @@ Release verification was executed against the integrated branch at the authorita
 
 Issue regression re-runs against the current integrated branch: **#13** Create Ticket (80 server + client passes), **#14** My Tickets (91 server passes), **#15** Ticket Detail/Attachments (75 server passes); combined #13/#14/#15 client tests (65 passed). All six E2E scenarios (E2E-01 … E2E-06) ran green across all three viewports. Kanban board columns for #13/#14/#15/#18 were manually verified by the author on 2026-08-30.
 
+### Approved with Follow-up (2026-08-30)
+
+The previously blocking implementation issues have been resolved and the technical implementation is **approved**. The following documentation/governance consistency follow-ups do **not** block this approval but must be completed before the final `lab2-staging → main` release.
+
+#### 1. E2E-05 requirement amendment (approved clarification)
+
+The original review baseline allowed only `Tab`, `Shift+Tab`, `Enter`, `Space` for the keyboard-only flow. The live Issue #18 §24 now also permits `ArrowDown` and `ArrowUp` for operating the specification-required native requester dropdown. This is recorded here as an explicit approved requirement clarification so the history remains traceable.
+
+#### 2. Verification-baseline wording
+
+`8cdebe824272cf101570bb78772379a9090b497f` is retained as the **verification execution baseline**. It is not described as the current PR #30 head after later documentation/evidence commits exist. Subsequent commits are documentation/evidence reconciliation only — no application, server, client, test, Playwright, config, dependency, or runtime behavior changes.
+
+#### 3. Final-state vocabulary
+
+`final-gate.md` must use Issue #18's exact permitted final state. Given that human/external actions remain, the appropriate state is **`TECHNICALLY VERIFIED — EXTERNAL ACTIONS REMAINING`**, with the remaining actions listed explicitly (peer review, kanban confirmation, merge, and Issue #18 close).
+
 ### Review Status
 
 - **Human review:** **PENDING** — PR #30 has not yet been human-reviewed by @oangsa. This record intentionally does **not** invent or imply an approval. It will be updated with the actual human review decision and merge evidence before the Lab 2 course submission.
-- No approval has been recorded yet.
+- **Technical review:** **APPROVED WITH FOLLOW-UP** (2026-08-30) — the blocking implementation issues are resolved; the three documentation/governance follow-ups above are logged and must be completed before the final `lab2-staging → main` release.
 

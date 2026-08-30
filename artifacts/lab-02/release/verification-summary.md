@@ -5,11 +5,13 @@
 **Branch:** `feature/issue-18-integration-verification`
 **Base:** `lab2-staging`
 **Date:** 2026-08-30
-**Verification baseline (PR #30 head):** `8cdebe824272cf101570bb78772379a9090b497f`
+**Verification execution baseline:** `8cdebe824272cf101570bb78772379a9090b497f`
+
+**Subsequent commits:** Documentation/evidence reconciliation only; no application, server, client, test, Playwright, config, dependency, or runtime behavior changes.
 
 ## Overall Result
 
-**READY FOR HUMAN REVIEW** — the integrated Lab 2 system (#13 Create Ticket → #14 My Tickets → #15 Ticket Detail/Attachments) is verified end-to-end against the real client, real API, and real database. This PR repairs the verification layer, completes the release evidence, and makes Issue #18 §24-driven production changes (the native requester dropdown with Arrow-key keyboard flow, the mobile hamburger navigation, and the authoritative Zen Green CSS tokens, see below).
+**TECHNICALLY VERIFIED — EXTERNAL ACTIONS REMAINING** — the integrated Lab 2 system (#13 Create Ticket → #14 My Tickets → #15 Ticket Detail/Attachments) is verified end-to-end against the real client, real API, and real database. This PR repairs the verification layer, completes the release evidence, and makes Issue #18 §24-driven production changes (the native requester dropdown with Arrow-key keyboard flow, the mobile hamburger navigation, and the authoritative Zen Green CSS tokens, see below). Human/external actions remain before the final `lab2-staging → main` release.
 
 ## What Was Verified
 
