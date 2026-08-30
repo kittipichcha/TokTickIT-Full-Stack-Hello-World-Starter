@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 import * as api from "../api";
+import appCss from "../App.css?raw";
 
 vi.mock("../api");
 
@@ -32,7 +33,7 @@ async function setupAuthenticatedApp() {
 
   render(<App />);
 
-  await userEvent.click(await screen.findByRole("radio", { name: "Select Ada Lovelace" }));
+  await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
   await userEvent.click(screen.getByRole("button", { name: "Continue" }));
   await screen.findAllByText(/Ada Lovelace/);
 }
@@ -167,11 +168,30 @@ it("renders Submit button disabled only during submission (not pre-emptively)", 
     expect(myTicketsLink.classList.contains("nav-active")).toBe(true);
   });
 
-  it("applies Zen Green CSS custom properties in rendered App.css", async () => {
+  it("applies the authoritative Zen Green CSS custom properties in App.css", async () => {
     await setupAuthenticatedApp();
-    // Verify the CSS is loaded by checking a styled element
-    const header = document.querySelector(".app-header");
-    expect(header).not.toBeNull();
+    // UI-STYLE-01: verify the actual required design-system tokens and their
+    // authoritative values (ui-spec §1). jsdom does not load the external
+    // stylesheet, so we import the real App.css source (the token source of
+    // truth) via Vite's `?raw` and assert each required token is declared with
+    // the exact value. This fails if a token is missing or its value is wrong.
+    const expectedTokens: Record<string, string> = {
+      "--color-primary": "#006B3C",
+      "--color-secondary": "#0B7A46",
+      "--color-pale-green": "#EAF6EF",
+      "--color-bg": "#F5F7F6",
+      "--color-surface": "#FFFFFF",
+      "--color-text": "#1C2B24",
+      "--color-field-editable-bg": "#FFFFFF",
+      "--color-field-readonly-bg": "#F1F4F1",
+      "--color-error": "#B3261E",
+      "--color-warning": "#B7791F",
+      "--color-success": "#0B7A46",
+    };
+    for (const [token, expected] of Object.entries(expectedTokens)) {
+      const declaration = new RegExp(`${token}\\s*:\\s*${expected}\\s*;`);
+      expect(appCss, `${token} is declared with value ${expected}`).toMatch(declaration);
+    }
   });
 });
 
@@ -279,7 +299,7 @@ describe("UI-STYLE-03: Priority/Status/Removed badge styling and non-color-relia
 
     render(<App />);
 
-    await userEvent.click(await screen.findByRole("radio", { name: "Select Ada Lovelace" }));
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
     await screen.findAllByText(/Ada Lovelace/);
   }

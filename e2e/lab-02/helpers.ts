@@ -11,26 +11,22 @@ import { expect, type Page } from "@playwright/test";
 /** Select a development requester on the selector screen and continue. */
 export async function selectRequester(page: Page, requesterId: string): Promise<void> {
   await page.goto("/");
-  await page.waitForSelector(".requester-option", { timeout: 10000 });
-  await page.click(`.requester-option[aria-label="Select ${requesterNameForId(requesterId)}"]`);
+  await page.waitForSelector("#requester-select", { timeout: 10000 });
+  await page.selectOption("#requester-select", requesterId);
   await page.click("button:has-text('Continue')");
   await page.waitForSelector(".app-shell", { timeout: 10000 });
 }
 
-/** Map a requester id to its display name for the selector option aria-label. */
-function requesterNameForId(requesterId: string): string {
-  const names: Record<string, string> = {
-    "1": "Ada Lovelace",
-    "2": "Grace Hopper",
-    "3": "Katherine Johnson",
-    "4": "Alan Turing",
-  };
-  return names[requesterId] ?? "Ada Lovelace";
-}
-
 /** Navigate to the Create Ticket screen from the app shell. */
 export async function openCreateTicket(page: Page): Promise<void> {
-  await page.click("a:has-text('Create Ticket')");
+  // On mobile (<768px) the primary nav is behind the hamburger; open it if hidden.
+  const nav = page.locator("#primary-navigation");
+  if (await nav.isVisible().catch(() => false)) {
+    await page.click("a:has-text('Create Ticket')");
+  } else {
+    await page.click(".hamburger");
+    await page.click("a:has-text('Create Ticket')");
+  }
   await page.waitForSelector(".ticket-form", { timeout: 10000 });
 }
 
@@ -59,7 +55,14 @@ export async function createTicket(
 
 /** Navigate to My Tickets and wait for the list to load. */
 export async function openMyTickets(page: Page): Promise<void> {
-  await page.click("a:has-text('My Tickets')");
+  // On mobile (<768px) the primary nav is behind the hamburger; open it if hidden.
+  const nav = page.locator("#primary-navigation");
+  if (await nav.isVisible().catch(() => false)) {
+    await page.click("a:has-text('My Tickets')");
+  } else {
+    await page.click(".hamburger");
+    await page.click("a:has-text('My Tickets')");
+  }
   // Wait for either a loaded table/cards, empty state, or no-results state.
   // Use :visible so the hidden desktop table on mobile / hidden mobile cards
   // on desktop do not satisfy the wait prematurely.

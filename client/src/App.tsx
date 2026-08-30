@@ -47,6 +47,7 @@ export default function App() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailRetryCounter, setDetailRetryCounter] = useState(0);
   const [myTicketsResetKey, setMyTicketsResetKey] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Attachment dialog state
   const [removeDialogAttachment, setRemoveDialogAttachment] = useState<AttachmentItem | null>(null);
@@ -280,26 +281,21 @@ export default function App() {
         {selectorState === "empty" && <p className="empty-state">No active development requesters are available.</p>}
         {selectorState === "ready" && (
           <div className="selector-form">
-            <span className="requester-label" id="requester-label">Development Requester</span>
-            <div className="requester-options" role="radiogroup" aria-labelledby="requester-label">
-              {requesters.map((requester) => {
-                const isSelected = selectedId === requester.id;
-                return (
-                  <button
-                    key={requester.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    aria-label={`Select ${requester.name}`}
-                    className={`requester-option ${isSelected ? "requester-option-selected" : ""}`}
-                    onClick={() => setSelectedId(requester.id)}
-                  >
-                    <span className="requester-option-name">{requester.name}</span>
-                    <span className="requester-option-email">{requester.email}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <label className="requester-label" id="requester-label" htmlFor="requester-select">Development Requester</label>
+            <select
+              id="requester-select"
+              className="requester-select"
+              aria-labelledby="requester-label"
+              value={selectedId ?? ""}
+              onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="" disabled>Select a requester…</option>
+              {requesters.map((requester) => (
+                <option key={requester.id} value={requester.id}>
+                  {requester.name} — {requester.email}
+                </option>
+              ))}
+            </select>
             <button
               className="primary-button"
               disabled={selectedId === null || !requesters.some((r) => r.id === selectedId)}
@@ -317,18 +313,30 @@ export default function App() {
     <div className="app-shell">
       <header className="app-header">
         <strong>TokTickIT</strong>
-        <nav aria-label="Primary">
+        <button
+          type="button"
+          className="hamburger"
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="primary-navigation"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          <span className="hamburger-bar" />
+          <span className="hamburger-bar" />
+          <span className="hamburger-bar" />
+        </button>
+        <nav id="primary-navigation" aria-label="Primary" className={mobileMenuOpen ? "mobile-menu-open" : ""}>
           <a
             href="#my-tickets"
             className={view === "home" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("home"); }}
+            onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
           >
             My Tickets
           </a>
           <a
             href="#create-ticket"
             className={view === "create-ticket" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("create-ticket"); }}
+            onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
           >
             Create Ticket
           </a>

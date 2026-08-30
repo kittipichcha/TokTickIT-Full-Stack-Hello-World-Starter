@@ -3,7 +3,7 @@
 **Issue:** #18 — Lab 2 Final Integration and Release Verification
 **Date:** 2026-08-29
 **Command:** `npx playwright test e2e/lab-02` (desktop/tablet/mobile)
-**Result:** 144 passed, 0 failed
+**Result:** 159 passed, 0 failed
 
 ## E2E-01 — Requester creates ticket and finds it in My Tickets
 
@@ -36,12 +36,12 @@
 ## E2E-05 — Keyboard accessibility
 
 - **File**: `e2e/lab-02/keyboard-access.spec.ts`
-- **Flow**: The mandatory flow completes Requester Selection → Continue → Create Ticket using only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). The native requester `<select>` was replaced with a keyboard-operable radio-button group so no arrow keys, mouse, or `selectOption()` are needed. **This is the one production change in the PR** (commit `1d8b44d`, `client/src/App.tsx`): a verification-driven fix required by Issue #18 §24, scoped to the requester-selection control only. Supporting tests also verify focus indicators, Change Requester reachability/operability, and the removal-dialog focus trap (focus enters, Tab stays inside, Escape closes, focus restores).
-- **Assertions**: focus order sensible; visible focus indicators; controls operable without a mouse; validation states remain keyboard-usable; Change Requester reachable and keyboard-operable.
+- **Flow**: The mandatory flow completes Requester Selection → Continue → Create Ticket using `Tab`/`Shift+Tab`/`Enter`/`Space`/`ArrowDown`/`ArrowUp` (Issue #18 §24, amended to permit Arrow keys). The requester control is the specification-required native `<select>` (id `requester-select`), loaded from `GET /api/dev-requesters`, showing only active requesters, with a disabled placeholder so Continue is disabled until a selection is made (ui-spec §5.2). **This is one of the production changes in the PR** (`client/src/App.tsx`): a verification-driven fix scoped to the requester-selection control only. Supporting tests also verify focus indicators, Change Requester reachability/operability, and the removal-dialog focus trap (focus enters, Tab stays inside, Escape closes, focus restores).
+- **Assertions**: focus order sensible; visible focus indicators; controls operable without a mouse; validation states remain keyboard-usable; Change Requester reachable and keyboard-operable; Continue disabled before selection and enabled after.
 - **Result**: **PASS**
 
 ## E2E-06 / VISUAL-01 — Responsive layout and visual evidence
 
 - **File**: `e2e/lab-02/responsive-visual.spec.ts`
-- **Flow**: no horizontal scroll at desktop/tablet/mobile for My Tickets, Create Ticket, Requester Selection, and Ticket Detail; My Tickets table→card conversion per breakpoint; ≥44px mobile touch targets for required controls (Change Requester, ticket-card toggle, pagination, Submit, Cancel, category/related-system/priority selects, requester options, Continue, Preview, Download, Remove, Add Attachment); required controls visible and usable; no clipped labels and no overlapping controls for all four screens at every viewport; 82 curated screenshots (26 state directories × 3 viewports + 4 E2E workflow shots) across Requester Selection, Create Ticket, My Tickets, Ticket Detail. The `attachment-unavailable` screenshot now genuinely depicts the unavailable state (Preview request forced to `500`, Unavailable badge asserted, Preview/Download disabled, no Retry for serving failure).
+- **Flow**: no horizontal scroll at desktop/tablet/mobile for My Tickets, Create Ticket, Requester Selection, and Ticket Detail; My Tickets table→card conversion per breakpoint; ≥44px mobile touch targets for required controls (Change Requester, ticket-card toggle, pagination, Submit, Cancel, category/related-system/priority selects, requester dropdown, Continue, Preview, Download, Remove, Add Attachment); required controls visible and usable; no clipped labels and no overlapping controls for all four screens at every viewport; mobile hamburger navigation (desktop/tablet normal nav + hamburger hidden; mobile hamburger ≥44px + nav hidden by default + requester identity visible; keyboard activation; menu exposes My Tickets/Create Ticket; menu closes after navigation); 82 curated screenshots (26 state directories × 3 viewports + 4 E2E workflow shots) across Requester Selection, Create Ticket, My Tickets, Ticket Detail. The `attachment-unavailable` screenshot now genuinely depicts the unavailable state (Preview request forced to `500`, Unavailable badge asserted, Preview/Download disabled, no Retry for serving failure).
 - **Result**: **PASS**

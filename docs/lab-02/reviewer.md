@@ -179,13 +179,22 @@ The re-review (2026-08-28) confirmed the prior round is largely resolved and ide
 - **Target branch:** `lab2-staging`
 - **Scope:** Issue #18 — final integration and release verification: repair the verification layer, complete the release evidence, and reconcile documentation.
 
-### Verification Performed (2026-08-29)
+### Review Comments Received and Responses
 
-Release verification was executed against the integrated branch. The PR #30 review (CHANGES_REQUESTED) identified four blocking findings, all of which have been addressed and re-verified:
+| Review source | Summary of feedback | Response / current evidence |
+|---|---|---|
+| @oangsa — PR #30 review (`CHANGES_REQUESTED`) | **P1 — `attachment-unavailable` visual evidence does not depict the real unavailable state.** The screenshot must genuinely show the Unavailable badge with Preview/Download disabled and no Retry for a serving failure. | **Fixed.** `e2e/lab-02/responsive-visual.spec.ts` now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state. |
+| @oangsa — PR #30 review (`CHANGES_REQUESTED`) | **P1 — Responsive E2E-06 does not cover the full Issue #18 §19 requirements.** Must include Ticket Detail responsive, My Tickets table→card conversion, ≥44px mobile touch targets for required controls, required-control visibility, no horizontal scroll, and no clipped labels / no overlapping controls. | **Fixed.** `e2e/lab-02/responsive-visual.spec.ts` expanded E2E-06 to the full §19 set: Ticket Detail responsive, table→card conversion per breakpoint, ≥44px touch targets for required controls, required-control visibility, no horizontal scroll at any viewport, and no-clipped-label / no-overlapping-control checks for all four screens. Also added the mobile hamburger navigation tests. |
+| @oangsa — PR #30 review (`CHANGES_REQUESTED`) | **P1 — E2E-05 keyboard-only flow conflicts with the specification-required native requester dropdown.** The four-key-only restriction (`Tab`/`Shift+Tab`/`Enter`/`Space`) cannot operate a native `<select>` to a non-default option, and auto-selecting the first requester violates "Continue disabled until selection" (ui-spec §5.2). | **Fixed.** Issue #18 §24 was amended to permit `ArrowDown`/`ArrowUp` — the only keyboard mechanism that can operate a native dropdown to a non-default option. The requester control is the specification-required native `<select>` (id `requester-select`), loaded from `GET /api/dev-requesters`, showing only active requesters, with a disabled placeholder so Continue is disabled until a selection is made. The mandatory E2E-05 flow uses `Tab`/`Shift+Tab`/`Enter`/`Space`/`ArrowDown`/`ArrowUp` (no mouse, no `selectOption()`). |
+| @oangsa — PR #30 review (`CHANGES_REQUESTED`) | **P1 — Release evidence SHA wording.** Verification commits must be treated as immutable historical evidence rather than claiming verification at a non-current head. | **Fixed.** Release evidence now records the exact commit where each verification was executed and treats verification commits as immutable historical evidence. |
+
+### Verification Performed (2026-08-30)
+
+Release verification was executed against the integrated branch. The PR #30 review (CHANGES_REQUESTED) identified four blocking findings, all of which have been addressed and re-verified (see the review-comments table above):
 
 1. **`attachment-unavailable` visual evidence** — the test now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state.
 2. **Responsive E2E-06** — expanded to the full Issue #18 §19 requirements: Ticket Detail responsive, My Tickets table→card conversion per breakpoint, ≥44px mobile touch targets for required controls, required-control visibility, and no-clipped-label / no-overlapping-control checks for all four screens at every viewport.
-3. **E2E-05 keyboard-only flow** — the mandatory flow now uses only `Tab`/`Shift+Tab`/`Enter`/`Space` (Issue #18 §24). The native requester `<select>` was replaced with a keyboard-operable radio-button group so no arrow keys, mouse, or `selectOption()` are needed. **This is the one production change in the PR** (commit `1d8b44d`, `client/src/App.tsx`), driven by the Issue #18 §24 keyboard-only requirement and scoped to the requester-selection control only.
+3. **E2E-05 keyboard-only flow** — the mandatory flow now uses `Tab`/`Shift+Tab`/`Enter`/`Space`/`ArrowDown`/`ArrowUp` (Issue #18 §24, amended to permit Arrow keys) to operate the specification-required native requester `<select>` (id `requester-select`), loaded from `GET /api/dev-requesters`, showing only active requesters, with a disabled placeholder so Continue is disabled until a selection is made (ui-spec §5.2). **This is one of the production changes in the PR** (`client/src/App.tsx`), driven by the Issue #18 §24 keyboard requirement and scoped to the requester-selection control only. The PR also implements the mobile hamburger navigation (ui-spec §5.1) and migrates the CSS to the authoritative Zen Green tokens (ui-spec §1).
 4. **Release evidence SHA wording** — corrected to treat verification commits as immutable historical evidence rather than claiming verification at a non-current head.
 
 | Check | Result |
@@ -196,9 +205,9 @@ Release verification was executed against the integrated branch. The PR #30 revi
 | **Client tests** (`cd client && npm test`) | **8 files, 100 passed, 0 failed** |
 | Server build (`npm run build`) | Pass (TypeScript) |
 | Client build (`npm run build`) | Pass (TypeScript + Vite) |
-| **Playwright `e2e/lab-02`** | **144 passed, 0 failed** (desktop/tablet/mobile) |
+| **Playwright `e2e/lab-02`** | **159 passed, 0 failed** (desktop/tablet/mobile) |
 
-Issue regression re-runs against the current integrated branch: **#13** Create Ticket (80 server + client passes), **#14** My Tickets (91 server passes), **#15** Ticket Detail/Attachments (75 server passes); combined #13/#14/#15 client tests (65 passed). All six E2E scenarios (E2E-01 … E2E-06) ran green across all three viewports. Kanban board columns for #13/#14/#15/#18 were manually verified by the author on 2026-08-29.
+Issue regression re-runs against the current integrated branch: **#13** Create Ticket (80 server + client passes), **#14** My Tickets (91 server passes), **#15** Ticket Detail/Attachments (75 server passes); combined #13/#14/#15 client tests (65 passed). All six E2E scenarios (E2E-01 … E2E-06) ran green across all three viewports. Kanban board columns for #13/#14/#15/#18 were manually verified by the author on 2026-08-30.
 
 ### Review Status
 

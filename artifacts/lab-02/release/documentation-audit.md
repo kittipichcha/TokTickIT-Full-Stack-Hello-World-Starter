@@ -10,7 +10,7 @@ Cross-document consistency check against the actual implementation and evidence.
 | `docs/lab-02/specification.md` | FR/BR/AC mapped to implemented code and tests | **Consistent** |
 | `docs/lab-02/api-spec.md` | Endpoints match `server/src/module.ts` routes; status codes match implementation | **Consistent** |
 | `docs/lab-02/ui-spec.md` | Zen Green tokens and component states match `client/src/App.css` | **Consistent** |
-| `docs/lab-02/tests.md` | Every `Passed` row has passing evidence; E2E-01..06 + VISUAL-01 now `Passed`; the requester-selector radio-group production change is reflected in the updated `RequesterSelection` tests | **Consistent** |
+| `docs/lab-02/tests.md` | Every `Passed` row has passing evidence; E2E-01..06 + VISUAL-01 now `Passed`; the requester-selector native-dropdown production change (with Arrow-key keyboard flow) is reflected in the updated `RequesterSelection` tests | **Consistent** |
 | `docs/lab-02/reviewer.md` | Exists and truthful; PR #30 human review **pending** (no approval invented) | **Consistent** |
 | `README.md` | "API Implemented Today" lists only implemented endpoints; repository structure matches | **Consistent** |
 | `artifacts/lab-02/release/*` | Cross-reference actual evidence | **Consistent** |
