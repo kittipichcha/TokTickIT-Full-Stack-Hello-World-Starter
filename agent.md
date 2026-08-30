@@ -1,15 +1,19 @@
-# TokTickIT Lab 2 Agent Working Agreement
+**# TokTickIT Lab 3 Agent Working Agreement**
 
-This file defines how the coding agent must operate for Lab 2 work in this repository.
+This file defines how the coding agent must operate for Lab 3 work in this repository.
 
 ## 0. Requirement Primacy and User Prompt Rule
-Repository specifications (`docs/lab-02/specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, and issue criteria) are the **top priority** and take precedence over user prompts.
-- If a user prompt requests something that conflicts with or violates the defined requirements, requirements **surpass** the user prompt.
-- If such a conflict occurs, the agent must explicitly **inform the user of the conflict before planning** or executing any changes.
+
+Repository specifications (`docs/lab-03/specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, and issue criteria) are the **top priority** and take precedence over user prompts.
+
+* If a user prompt requests something that conflicts with or violates the defined requirements, requirements **surpass** the user prompt.
+* If such a conflict occurs, the agent must explicitly **inform the user of the conflict before planning** or executing any changes.
 
 ## 1. Mandatory Clarification and Approval Gate
+
 Before taking implementation actions, the agent must:
-0. Read the governing requirements and the current issue first — before any planning. The agent must read `docs/lab-02/specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, and the issue text/acceptance criteria, and map the task to FR/BR/AC IDs. Planning must be grounded in these documents, never in memory or assumptions alone.
+0. Read the governing requirements and the current issue first — before any planning. The agent must read `docs/lab-03/specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, and the issue text/acceptance criteria, and map the task to FR/BR/AC IDs. Planning must be grounded in these documents, never in memory or assumptions alone.
+
 1. Restate the task in scoped terms.
 2. Present a short plan.
 3. Ask for explicit approval.
@@ -20,181 +24,233 @@ If prompt details are unclear, the agent must ask questions and wait.
 No assumptions are allowed for ambiguous requirements.
 
 ### 1.1 Commit and push approval policy
+
 Approval of the task authorizes implementation and validation within the approved scope. A separate explicit user approval is required before the agent stages, commits, or pushes any change.
 
 If a task cannot pass validation or the implementation is not yet in a safe state, the agent must not stage, commit, or push. Instead, it must stop, explain the failure cause, and request approval for the next corrective step.
+
+### 1.2 Strict Plan Adherence
+
+If the user provides a detailed implementation plan, the agent must follow it **strictly**. If the agent discovers a conflict, technical limitation, or discrepancy that makes it impossible to follow the provided plan, the agent MUST stop and inform the user of the conflict before continuing. Do not deviate from or alter the user's plan without explicit permission.
+
+### 1.3 No Unrelated Refactoring (Scope Creep Ban)
+
+The agent is strictly forbidden from editing, formatting, or refactoring code outside the explicit scope of the approved plan. Do not apply the "boy scout rule" to unrelated files. Keep changes completely isolated to the approved task.
+
 ## 2. Requirement Traceability Discipline
+
 For every task, the agent must map work to requirement IDs:
-- FR (Functional Requirement)
-- BR (Business Rule)
-- AC (Acceptance Criterion)
+
+* FR (Functional Requirement)
+* BR (Business Rule)
+* AC (Acceptance Criterion)
 
 Every proposed change summary must include those mappings.
 
 ## 3. Test-First, Test-Evidence, and Test Specification Alignment Rules
+
 For any functionally changed behavior:
+
 1. Add/update related tests first (or in same change set if minimal).
 2. Run relevant tests.
 3. Report results clearly.
 4. Only after the relevant test slice passes may the agent stage and commit the change.
 
 ### 3.1 Test and `tests.md` Alignment Requirement
-The agent must continuously verify that executable test code and `docs/lab-02/tests.md` are strictly aligned:
-- Exact planned test paths and test IDs specified in `tests.md` and issue contracts must exist and match. The agent must never replace or redirect required test paths in `tests.md` to different files.
-- Test statuses in `tests.md` (`Planned`, `Implemented`, `Passed`) must accurately reflect executable test evidence.
-- A test status must NOT be marked `Passed` if only a partial matrix is covered or if dependent flows/data do not yet exist.
+
+The agent must continuously verify that executable test code and `docs/lab-03/tests.md` are strictly aligned:
+
+* Exact planned test paths and test IDs specified in `tests.md` and issue contracts must exist and match. The agent must never replace or redirect required test paths in `tests.md` to different files.
+* Whenever a test or row is newly created or added to `tests.md`, its initial status MUST be set to `Planned` first. It may only be updated to `Passed` after executable test evidence confirms that it actually passes.
+* Test statuses in `tests.md` (`Planned`, `Implemented`, `Passed`) must accurately reflect executable test evidence.
+* A test status must NOT be marked `Passed` if only a partial matrix is covered or if dependent flows/data do not yet exist.
 
 ### 3.2 Plan-vs-Act requirement for assigned tasks
+
 When a task is assigned to a model or agent, it must be split into two explicit phases within the task function:
-- Plan: identify scope, mapped requirements (FR/BR/AC), relevant tests, risks, and implementation order. The plan must also consider removing unused imports, dead code, and unnecessary dependencies that are identified during scope analysis.
-- Act: implement only the approved plan, run the relevant validation, and keep the change small and traceable.
+
+* Plan: identify scope, mapped requirements (FR/BR/AC), relevant tests, risks, and implementation order. The plan must also consider removing unused imports, dead code, and unnecessary dependencies that are identified during scope analysis.
+* Act: implement only the approved plan, run the relevant validation, and keep the change small and traceable.
 
 The Plan phase does not edit production code. The Act phase does not broaden scope beyond the approved plan without another approval gate.
 
 ### 3.3 Integration & Real Database Test Rules
+
 1. **Backend Integration Testing with Real Database**:
-   - Integration tests MUST support testing against the actual database connection (PostgreSQL via Prisma / `DATABASE_URL`).
-   - Use conditional execution (e.g. `process.env.DATABASE_URL ? it : it.skip`) or test lifecycle setup (`beforeAll`, `afterAll` with `disconnectPrisma()`) so tests validate against live database records safely without mutating critical test seed data.
+* Integration tests MUST support testing against the actual database connection (PostgreSQL via Prisma / `DATABASE_URL`).
+* Use conditional execution (e.g. `process.env.DATABASE_URL ? it : it.skip`) or test lifecycle setup (`beforeAll`, `afterAll` with `disconnectPrisma()`) so tests validate against live database records safely without mutating critical test seed data.
+
+
 2. **Frontend UI Integration Testing**:
-   - UI tests must cover end-to-end component rendering and client storage persistence (`sessionStorage` with `REQUESTER_STORAGE_KEY`).
-   - Validate full identity lifecycle: initial requester list fetching, selection persistence, context validation, and switching requesters.
+* UI tests must cover end-to-end component rendering and client storage persistence (`sessionStorage` with `REQUESTER_STORAGE_KEY`).
+* Validate full identity lifecycle: initial requester list fetching, selection persistence, context validation, and switching requesters.
+
+
 
 ### 3.4 Test Status vs. Issue Scope Rule
-A `tests.md` matrix row may only be marked `Passed` when its **entire** required contract is
-executable within the current issue's scope and is actually asserted by automated tests.
-- If any part of the row depends on data models, endpoints, screens, or flows that belong to a
-  different/downstream issue (and therefore do not exist in this branch), the row MUST stay
-  `Planned` (or `Blocked` if a documented prerequisite is unavailable). Partial coverage is
-  never sufficient for `Passed`.
-- Do NOT add runtime code (e.g. a premature `fetchMyTickets()` hitting a not-yet-existing route)
-  solely to produce test evidence before the owning feature exists. Leave the row `Planned` and
-  defer it to the issue that owns the behavior.
-- When code in the repository does not correspond to any requirement/test in the current issue,
-  mark it as out-of-scope/pending rather than silently changing `tests.md` or forcing a `Passed`
-  status.
+
+A `tests.md` matrix row may only be marked `Passed` when its **entire** required contract is executable within the current issue's scope and is actually asserted by automated tests.
+
+* Whenever creating or listing tests in `tests.md`, always initialize their status as `Planned`. Only transition a status from `Planned` to `Passed` once implementation is complete and verified with passing automated test evidence.
+* If any part of the row depends on data models, endpoints, screens, or flows that belong to a different/downstream issue (and therefore do not exist in this branch), the row MUST stay `Planned` (or `Blocked` if a documented prerequisite is unavailable). Partial coverage is never sufficient for `Passed`.
+* Do NOT add runtime code (e.g. a premature `fetchMyTickets()` hitting a not-yet-existing route) solely to produce test evidence before the owning feature exists. Leave the row `Planned` and defer it to the issue that owns the behavior.
+* When code in the repository does not correspond to any requirement/test in the current issue, mark it as out-of-scope/pending rather than silently changing `tests.md` or forcing a `Passed` status.
 
 If tests fail:
-- Explain fail cause.
-- Propose fix plan.
-- Ask for approval before larger corrective changes.
-- Do not push or merge until the failing slice is fixed and validated.
+
+* Explain fail cause.
+* Propose fix plan.
+* Ask for approval before larger corrective changes.
+* Do not push or merge until the failing slice is fixed and validated.
 
 ## 4. Post-Implementation Double-Check Alignment Method
-After every implementation is complete and all tests pass, the agent must perform a systematic double-check to ensure all documents, code, and the issue are aligned. This is a mandatory verification gate — no commit or PR may proceed until this check passes.
+
+After every implementation is complete and all tests pass, the agent must perform a mandatory systematic double-check to verify its own work across all documents, code, and issue criteria. This is a mandatory verification gate — no commit, push, or PR may proceed until this double-check passes.
 
 ### 4.1 Step 1: Re-read the Issue
+
 Re-read the issue text and acceptance criteria to confirm every task and AC has been addressed. Verify nothing was missed or misinterpreted.
 
 ### 4.2 Step 2: Parallel Cross-Reference Check
+
 Perform the following checks in parallel (or rapid sequence) across all governing documents and the actual codebase:
 
 | Check | Source | Target | What to Verify |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Requirements → Code | `specification.md` FR/BR list | Actual source files | Every implemented FR/BR has corresponding code; no extra behaviors beyond spec |
 | API Spec → Routes | `api-spec.md` endpoints | `server/src/module.ts` routes | Endpoints claimed as implemented for the current issue scope exist and match the contract; implemented routes are documented. Planned/downstream endpoints that belong to future issues are explicitly not required to exist yet and must not cause a gate failure. |
 | API Spec → README | `api-spec.md` endpoints | `README.md` "API Implemented Today" | README lists only implemented endpoints; no stale/removed endpoints documented |
-| Tests.md → Test Files | `tests.md` test IDs and file paths | Actual test files on disk | Every test file path listed in `tests.md` exists on disk. Test files that are not part of the Lab 2 contract matrix (e.g. legacy Lab 1 tests, supporting utilities) are intentionally excluded from this check and do not need to appear in `tests.md`. |
-| Tests.md → Status | `tests.md` Final column | Actual test run output | Every `Passed` row has passing evidence; no `Planned` row is incorrectly marked `Passed` |
+| Tests.md → Test Files | `tests.md` test IDs and file paths | Actual test files on disk | Every test file path listed in `tests.md` exists on disk. Test files that are not part of the Lab 3 contract matrix (e.g. legacy Lab 1 tests, supporting utilities) are intentionally excluded from this check and do not need to appear in `tests.md`. |
+| Tests.md → Status | `tests.md` Final column | Actual test run output | Every `Passed` row has passing evidence; newly added tests are set to `Planned` before execution and only updated to `Passed` after verified test evidence; no `Planned` row is prematurely marked `Passed`. |
 | UI Spec → CSS | `ui-spec.md` color tokens, styles | `client/src/App.css` | CSS uses only Zen Green tokens; no ad-hoc colors or removed component styles |
 | Issue AC → Evidence | Issue acceptance criteria | grep results, test output, file listings | Every AC is satisfied with concrete evidence |
 
 ### 4.3 Step 3: Test Status Audit
+
 Run the full test suite and compare every test result against `tests.md`:
-- For each row in `tests.md` marked `Passed`: confirm the test file exists and the test actually passes in the latest run.
-- For each row marked `Implemented`: confirm the test file exists and the test runs (pass or fail).
-- For each row marked `Planned`: confirm the test file does NOT yet exist (or exists but is skipped), and the status is accurate.
-- If any discrepancy is found, update `tests.md` to reflect reality — never falsify status.
+
+* For each row in `tests.md` marked `Passed`: confirm the test file exists and the test actually passes in the latest run.
+* For each row marked `Implemented`: confirm the test file exists and the test runs (pass or fail).
+* For each row marked `Planned`: confirm the test file does NOT yet exist (or exists but is skipped), and the status is accurate.
+* If any discrepancy is found, update `tests.md` to reflect reality — never falsify status.
 
 ### 4.4 Step 4: Cleanup Verification
-- Run `grep` for removed/legacy terms across `client/src/`, `server/src/`, and `README.md` to confirm no stale references remain.
-- Verify no orphaned test files, unused imports, or dead code paths reference removed features.
-- Confirm the repository structure in `README.md` matches the actual file tree.
+
+* Run `grep` for removed/legacy terms across `client/src/`, `server/src/`, and `README.md` to confirm no stale references remain.
+* Verify no orphaned test files, unused imports, or dead code paths reference removed features.
+* Confirm the repository structure in `README.md` matches the actual file tree.
 
 ### 4.5 Step 5: Report
+
 Produce a concise alignment report summarizing:
-- Which checks passed
-- Any discrepancies found and how they were resolved
-- Final test counts (passed/skipped/failed)
-- Confirmation that all issue ACs are met
+
+* Which checks passed
+* Any discrepancies found and how they were resolved
+* Final test counts (passed/skipped/failed)
+* Confirmation that all issue ACs are met
 
 ### 4.6 Step 6: Governance Isolation Rule
+
 Changes to `agent.md` that introduce new mandatory workflows, verification gates, or working-agreement rules must be isolated in their own governance PR — they must not be bundled with feature implementation PRs. Minor corrections (typos, section numbering, clarifying existing rules without adding new obligations) may accompany any PR when documented in the PR description.
 
 ## 5. Debug Mantra Skill
+
 Four-step discipline for any debug session:
+
 1. **First is reproducibility.** Can the issue be reproduced reliably? Build a fast, deterministic pass/fail repro before hypothesizing.
 2. **Know the fail path.** Debugger first; then source trace + knob enumeration; then in-code instrumentation with unique prefixes.
 3. **Question your hypothesis.** What disproves it? Run the disproof first before committing to a fix. Generate 3–5 ranked hypotheses.
 4. **Every run is a breadcrumb.** Maintain a running ledger of every experiment. Cross-reference all observations before declaring a fix correct.
 
 ## 6. Scrutinize Skill
+
 Outsider-perspective end-to-end review discipline for plans, code changes, and PRs:
+
 1. **Intent**: State goal in one sentence. Ask: is there a simpler, smaller, or more elegant way (or existing mechanism) to achieve this goal?
 2. **Trace**: Walk actual code path end-to-end (entry point → call sites → branches → state mutation → return/side effect), including surrounding code.
 3. **Verify**: Does traced path produce claimed behavior? What edge cases/inputs break it? What does it silently change? How is it tested?
 4. **Report**: Output findings ordered by severity (Finding, Why it matters, Evidence, Suggested change), closing with a clear verdict.
 
 ## 7. Test Logging Requirement
+
 After each completed task, insert the newest result entry at the **top** of the Results Log
 (prepend each completed task result under the Results Log heading — newest first):
-- `docs/lab-02/tests.md` (Section: Results Log, newest first)
+
+* `docs/lab-03/tests.md` (Section: Results Log, newest first)
 
 Each entry must include:
-- date
-- scope/issue
-- tests changed
-- commands run
-- pass/fail/skipped counts
-- follow-up notes
+
+* date
+* scope/issue
+* tests changed
+* commands run
+* pass/fail/skipped counts
+* follow-up notes
 
 ## 8. AI Usage Log Requirement
+
 After each completed task, update:
-- `docs/lab-02/ai-use.md`
+
+* `docs/lab-03/ai-use.md`
 
 Format must match Lab 1 style in:
-- `docs/lab-01/ai_use.md` (legacy Lab 1 filename)
+
+* `docs/lab-01/ai_use.md` (legacy Lab 1 filename)
 
 Minimum content to update each time:
-- prompt summary
-- what was done with output
-- reflection note if relevant
+
+* prompt summary
+* what was done with output
+* reflection note if relevant
 
 ## 9. Commit Policy (Traceability)
+
 Commits must be grouped by function/behavior, not by file.
 
 Examples:
-- Good: "feat(ticket-create): add summary/description validation and tests"
-- Not allowed: "chore: update 5 files"
+
+* Good: "feat(ticket-create): add summary/description validation and tests"
+* Not allowed: "chore: update 5 files"
+
+**Security & Secrets:** Never commit `.env` files, actual database credentials, API keys, or sensitive tokens. Always use dummy values (e.g., `test-secret-key`) in test environments and refer to `.env.example` for configurations.
 
 Agent may commit only after explicit user approval.
 
 ## 10. Branch and Worktree Policy
+
 Branching strategy must follow main requirement functions:
-- Staging branch: `lab2-staging` is created from the current head of `main` as the integration target.
-- Feature branches branch off and target `lab2-staging`:
-  - `feature/lab2-requirement-ai` (actual branch in use: `doc/lab-02/requirement_and_agent`)
-  - `feature/lab2-requester-selection`
-  - `feature/lab2-ticket-creation`
-  - `feature/lab2-my-tickets`
-  - `feature/lab2-attachments`
+
+* Staging branch: `lab3-staging` is created from the current head of `main` as the integration target.
+* Feature branches branch off and target `lab3-staging`:
+* `feature/lab3-requirement-ai`
+* `feature/lab3-requester-selection`
+* `feature/lab3-ticket-creation`
+* `feature/lab3-my-tickets`
+* `feature/lab3-attachments`
+
+
 
 Worktree rules:
-- One active feature branch per worktree.
-- Do not reuse a dirty worktree for another issue.
-- New worktrees must branch from the latest `lab2-staging` baseline.
-- Out-of-scope fixes require a separate branch/worktree after explicit approval.
-- Remove completed worktrees only after their branch is merged or intentionally preserved.
+
+* One active feature branch per worktree.
+* Do not reuse a dirty worktree for another issue.
+* New worktrees must branch from the latest `lab3-staging` baseline.
+* Out-of-scope fixes require a separate branch/worktree after explicit approval.
+* Remove completed worktrees only after their branch is merged or intentionally preserved.
 
 If a bugfix outside current branch scope is needed:
+
 1. Explain why it is out of scope.
 2. Ask user permission.
 3. Create a dedicated bugfix branch/worktree only after approval.
 
 ## 11. PR and Kanban Policy
+
 When branch scope meets issue acceptance criteria:
+
 1. Summarize completion evidence (including tests).
 2. Check whether all required issue criteria are satisfied and the target behavior is fully implemented.
-3. Ask user approval to open PR targeting `lab2-staging` (all feature PRs go to `lab2-staging`; the final release PR moves `lab2-staging` into `main`).
+3. Ask user approval to open PR targeting `lab3-staging` (all feature PRs go to `lab3-staging`; the final release PR moves `lab3-staging` into `main`).
 4. After PR approval/workflow confirmation, ask user approval to move issue card in Kanban.
 
 The agent is allowed to propose or request a PR once the issue criteria are satisfied and the relevant tests pass. PR creation itself still requires explicit user approval unless the user has already explicitly authorized autonomous PR creation for that repo/task.
@@ -202,23 +258,52 @@ The agent is allowed to propose or request a PR once the issue criteria are sati
 No autonomous PR creation or Kanban state changes without user approval.
 
 ## 12. Standard Task Flow
+
 1. Clarify + map FR/BR/AC.
 2. Propose plan and ask approval.
 3. Split the task into Plan and Act phases.
 4. Implement in small functional slices.
 5. Run tests for changed behavior.
-6. Report results.
-7. Update `docs/lab-02/tests.md` (newest log entry).
-8. Update `docs/lab-02/ai-use.md` in Lab 1 style.
-9. **Update `docs/lab-02/reviewer.md`** — whenever changes are made in response to peer review feedback (requested changes from a PR review), add a new row to the review comments table documenting the feedback source, summary, and how it was addressed. This ensures the reviewer record stays complete and traceable.
-10. Report the validated change and request explicit approval to stage, commit, and push.
-11. After approval, stage, commit, and push only the validated changes within scope.
-12. Ask separate approval for a PR targeting `lab2-staging` and for board updates once issue acceptance criteria are satisfied.
+6. Run project formatters and linters (e.g., `npm run lint`, `npm run format`) to ensure code style compliance.
+7. Perform double-check alignment method (Section 4) to verify own work.
+8. Report results and alignment status.
+9. Update `docs/lab-03/tests.md` (newest log entry; set initial status to `Planned` before verification).
+10. Update `docs/lab-03/ai-use.md` in Lab 1 style.
+11. **Update `docs/lab-03/reviewer.md**` — whenever changes are made in response to peer review feedback, you must append it to the review record using this exact format:
+* **Rule:** Only log feedback if it comes directly from a **human reviewer**. Do NOT log automated comments from CI bots, agents, or unknown sources.
+* **Format:**
+```md
+# Lab 3 — Peer Review Record  (fill this in)
+
+**Author:** <Kittipich Charoenthanachot> — <67070503405> — GitHub: @kittipichcha
+**Peer reviewer:** <SUTHANG SUKRUEANGKUN> — <67070503477> — GitHub: @oangsa
+
+## Pull Requests I authored (reviewed by my partner)
+| PR | Branch | Reviewer verdict |
+|----|--------|------------------|
+| [PR Number] | [branch-name] | [Approved/Changes Requested] |
+
+**Issue #[Issue Number]**
+Reviewer comment I received: [Comment from human reviewer]
+How I responded: [How you addressed the feedback]
+
+```
+
+
+
+
+12. Report the validated change and request explicit approval to stage, commit, and push.
+13. After approval, stage, commit, and push only the validated changes within scope.
+14. Ask separate approval for a PR targeting `lab3-staging` and for board updates once issue acceptance criteria are satisfied.
 
 ## 13. Stop Conditions
+
 The agent must stop and ask the user when:
-- requirement conflict is detected
-- behavior is underspecified
-- migration/data impact is risky
-- tests contradict API/spec contract
-- branch/worktree/PR action is requested implicitly but not approved explicitly
+
+* requirement conflict is detected
+* behavior is underspecified
+* migration/data impact is risky
+* tests contradict API/spec contract
+* double-check verification reveals unresolvable discrepancies
+* **Debug Loop Limit:** If a test, build, or script fails more than 3 consecutive times during the Act/Fix phase. (Stop, summarize failed attempts, and explicitly request human assistance. No endless trial-and-error).
+* branch/worktree/PR action is requested implicitly but not approved explicitly
