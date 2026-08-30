@@ -9,6 +9,17 @@ dist/
 build/
 # prisma
 server/prisma/*.db
+# attachment storage (test artifacts)
+server/attachment-storage/
 # logs & OS
 *.log
 .DS_Store
+.history
+# compiled JS output
+# E2E test artifacts (don't commit)
+test-results/
+playwright-report/
+trace.zip
+/test-results/
+/playwright-report/
+client/src/**/*.js

@@ -11,7 +11,89 @@ datasource db {
 }
 
 model Category {
-  id        Int     @id @default(autoincrement())
-  name      String  @unique
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  tickets   Ticket[]
+}
+
+model DevRequester {
+  id                  Int          @id @default(autoincrement())
+  name                String
+  email               String       @unique
+  isActive            Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  tickets             Ticket[]
+  uploadedAttachments Attachment[] @relation("AttachmentUploader")
+  removedAttachments  Attachment[] @relation("AttachmentRemover")
+}
+
+model RelatedSystem {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  tickets   Ticket[]
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TicketStatus {
+  NEW
+}
+
+model Ticket {
+  id               Int          @id @default(autoincrement())
+  ticketNumber     String       @unique
+  requesterId      Int
+  categoryId       Int
+  relatedSystemId  Int
+  summary          String
+  description      String
+  requestedPriority Priority
+  itPriority       Priority?
+  ticketOwnerId    Int?
+  currentStatus    TicketStatus @default(NEW)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  requester      DevRequester  @relation(fields: [requesterId], references: [id])
+  category       Category      @relation(fields: [categoryId], references: [id])
+  relatedSystem  RelatedSystem @relation(fields: [relatedSystemId], references: [id])
+  attachments    Attachment[]
+
+  @@index([requesterId])
+  @@index([currentStatus])
+  @@index([createdAt])
+}
+
+model Attachment {
+  id                    Int           @id @default(autoincrement())
+  ticketId              Int
+  originalFilename      String
+  storedFilename        String        @unique
+  mimeType              String
+  fileSizeBytes         Int
+  uploaderRequesterId   Int
+  isRemoved             Boolean       @default(false)
+  removedAt             DateTime?
+  removalReason         String?
+  removedByRequesterId  Int?
+  uploadedAt            DateTime      @default(now())
+
+  ticket            Ticket        @relation(fields: [ticketId], references: [id])
+  uploaderRequester DevRequester  @relation("AttachmentUploader", fields: [uploaderRequesterId], references: [id])
+  removedByRequester DevRequester? @relation("AttachmentRemover", fields: [removedByRequesterId], references: [id])
+
+  @@index([ticketId])
+}
+
+model TicketSequence {
+  year     Int @id
+  lastSeq  Int @default(0)
 }
