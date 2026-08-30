@@ -2,7 +2,9 @@
 
 **Issue:** #18 — Lab 2 Final Integration and Release Verification
 **Date:** 2026-08-30
-**Verification baseline (PR #30 head):** `8cdebe824272cf101570bb78772379a9090b497f`
+**Verification execution baseline:** `8cdebe824272cf101570bb78772379a9090b497f`
+
+**Subsequent commits:** Documentation/evidence reconciliation only; no application, server, client, test, Playwright, config, dependency, or runtime behavior changes.
 
 ## Method
 
@@ -36,8 +38,8 @@ git clone --branch feature/issue-18-integration-verification --single-branch \
 ## Notes
 
 - The `.env` file is correctly gitignored and not committed; a fresh checkout requires the developer's local `server/.env` (or copying `server/.env.example` and filling in real credentials). The `.env.example` uses placeholder credentials that do not match the local database, so the real `.env` was used for the verification run.
-- The clean checkout at the branch HEAD is clean. The full verification (server tests, client tests, builds, and the Lab 2 E2E suite) was executed against this fresh checkout at the PR #30 head `8cdebe824272cf101570bb78772379a9090b497f`. The `git status --short`, `git diff --check`, and conflict-marker checks all pass on the current tree.
-- **Head reconciliation:** Verification commits are treated as immutable historical evidence. The verification totals above (server 335, client 100, E2E 159) were recorded at the authoritative final verification baseline `8cdebe824272cf101570bb78772379a9090b497f` (the current PR #30 head). Any subsequent documentation-only commits (updating notes, audit records, and commit SHA references; no application, server, client, test, or E2E code changed) do not alter these results.
+- The clean checkout at the branch HEAD is clean. The full verification (server tests, client tests, builds, and the Lab 2 E2E suite) was executed against this fresh checkout at the verification execution baseline `8cdebe824272cf101570bb78772379a9090b497f`. The `git status --short`, `git diff --check`, and conflict-marker checks all pass on the current tree.
+- **Head reconciliation:** Verification commits are treated as immutable historical evidence. The verification totals above (server 335, client 100, E2E 159) were recorded at the authoritative final verification baseline `8cdebe824272cf101570bb78772379a9090b497f`. Any subsequent documentation-only commits (updating notes, audit records, and commit SHA references; no application, server, client, test, or E2E code changed) do not alter these results.
 
 ## Expected Final State
 

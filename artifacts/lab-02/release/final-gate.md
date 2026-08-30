@@ -5,11 +5,13 @@
 **Branch:** `feature/issue-18-integration-verification`
 **Base:** `lab2-staging`
 **Date:** 2026-08-30
-**Verification baseline (PR #30 head):** `8cdebe824272cf101570bb78772379a9090b497f`
+**Verification execution baseline:** `8cdebe824272cf101570bb78772379a9090b497f`
+
+**Subsequent commits:** Documentation/evidence reconciliation only; no application, server, client, test, Playwright, config, dependency, or runtime behavior changes.
 
 ## Final Release Decision
 
-**READY FOR HUMAN REVIEW** — pending peer review approval and merge.
+**TECHNICALLY VERIFIED — EXTERNAL ACTIONS REMAINING** — the technical implementation is verified and approved; human/external actions remain before the final `lab2-staging → main` release (see "Remaining Human Actions" below).
 
 This is the **last** release artifact generated. It depends on all preceding verification.
 
@@ -73,4 +75,4 @@ Total = 78 + 4 = **82**. The earlier "84" figure was not backed by an inventory 
 
 ## Conclusion
 
-The integrated Lab 2 system (#13 Create Ticket → #14 My Tickets → #15 Ticket Detail/Attachments) is verified end-to-end against the real client, real API, and real database. The verification layer has been repaired, the evidence generated, and the documentation made truthful. The production changes are the Issue #18 §24-driven native requester dropdown with Arrow-key keyboard flow, the mobile hamburger navigation, and the authoritative Zen Green CSS tokens (see above); no other production behavior was changed. The release is ready for human review.
+The integrated Lab 2 system (#13 Create Ticket → #14 My Tickets → #15 Ticket Detail/Attachments) is verified end-to-end against the real client, real API, and real database. The verification layer has been repaired, the evidence generated, and the documentation made truthful. The production changes are the Issue #18 §24-driven native requester dropdown with Arrow-key keyboard flow, the mobile hamburger navigation, and the authoritative Zen Green CSS tokens (see above); no other production behavior was changed. The release is **technically verified**; the remaining external actions (peer review, kanban confirmation, merge, and Issue #18 close) are listed above.
