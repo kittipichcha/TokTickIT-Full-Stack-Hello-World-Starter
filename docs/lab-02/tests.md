@@ -88,13 +88,13 @@ All seven blocking issues from the code review have been resolved. Below is the 
 
 #### Full server suite with real database
 - **Command**: `npx vitest run` (from `server/`)
-- **Result**: 26 test files, 332 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
+- **Result**: 26 test files, 335 tests passed, 0 failed — all 8 `itIfDb` integration test files executed
 - **Key additions**: real-DB ownership, concurrent-removal, transaction-wide compensation, UUID stored-filename, and cross-requester list/download/preview/delete ownership integration tests
 - **No regressions**: All prior #13/#14 tests continue to pass alongside new #15 attachment tests
 
 #### Full client suite
 - **Command**: `npx vitest run` (from `client/`)
-- **Result**: 7 test files, 84 tests passed, 0 failed
+- **Result**: 8 test files, 100 tests passed, 0 failed
 - **Key additions**: `AttachmentSection.test.tsx` and `CreateTicket.test.tsx` expanded to cover the full attachment state matrix, five-file capacity, retry ownership scoping (ticket + requester switch), mutation/refresh separation, retry terminal-state, the UI-DETAIL-01 matrix, UI-TKT-08, and RFC 5987 filename parsing.
 
 #### Client build verification
@@ -135,7 +135,7 @@ All seven blocking issues from the code review have been resolved. Below is the 
 | 4 | **Compensation does not cover transaction commit failure** — post-insert/pre-commit failure left orphaned physical file | ✅ **Fixed** | Transaction-wide filesystem compensation via `test-seams.ts`. Real-DB test `ATT-PERSIST-03` injects post-insert transaction failure and verifies file deletion + row rollback. |
 | 5 | **Client does not enforce five-active-attachment limit** — Create Ticket accepted unlimited files; Ticket Detail left Add Attachment enabled at five | ✅ **Fixed** | Both Create Ticket and Ticket Detail enforce the limit client-side; sixth file rejected before reaching the API; Add Attachment disabled at five and re-enabled after removal. Tests `UI-TKT-CAP-01` and `UI-ATT-CAP-01`. |
 | 6 | **Successful upload followed by refresh failure becomes retryable** — could offer duplicate retry | ✅ **Fixed** | Mutation success is terminal; refresh failure shown as detail error, never retryable. Test `UI-ATT-MUT-REF` covers upload-success + refresh-failure and remove-success + refresh-failure. |
-| 7 | **Feature-level verification boundary incomplete** — mocked API tests didn't verify ownership, storage persistence, removed access, second removal, UUID filename, full compensation; `tests.md` had conflicting totals | ✅ **Fixed** | Added real-DB integration tests: ownership (`API-ATT-OWN-INT`), concurrent removal (`API-ATT-REM-CONC`), persistence compensation (`ATT-PERSIST-01/02/03`), UUID stored filename (`ATT-PERSIST-04`), removed access (`ATT-PERSIST-05`). `tests.md` was corrected and now records the current full-suite evidence: **332 server tests across 26 files** and **84 client tests across 7 files** (see §2 full-suite results). |
+| 7 | **Feature-level verification boundary incomplete** — mocked API tests didn't verify ownership, storage persistence, removed access, second removal, UUID filename, full compensation; `tests.md` had conflicting totals | ✅ **Fixed** | Added real-DB integration tests: ownership (`API-ATT-OWN-INT`), concurrent removal (`API-ATT-REM-CONC`), persistence compensation (`ATT-PERSIST-01/02/03`), UUID stored filename (`ATT-PERSIST-04`), removed access (`ATT-PERSIST-05`). `tests.md` was corrected and now records the current full-suite evidence: **335 server tests across 26 files** and **100 client tests across 8 files** (see §2 full-suite results). |
 
 ### PR #29 Re-review Remediation (2026-08-28)
 
@@ -228,7 +228,7 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-TKT-01 | API | Create ticket success: returns generated ticket number matching TKT-{YYYY}-{6-digit} format, verifies uniqueness | A valid create request creates exactly one ticket, returns the official backend-generated ticket number matching the format pattern, verifies two tickets receive different numbers, and explicitly asserts `currentStatus === "NEW"` in the response. | `server/tests/lab-02/create-ticket.api.test.ts` | FR-02, FR-03 | BR-01, BR-02 | AC-01 | Passed |
 | API-TKT-07 | API | Requested Priority server-side validation | Missing `requestedPriority` → 400; invalid enum value (e.g. `URGENT`) → 400; `LOW`/`MEDIUM`/`HIGH` are each accepted and persisted as submitted. | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-validation.unit.test.ts` | FR-02 | BR-10 | — | Passed |
 | API-TKT-06 | Integration | Ticket-number UTC allocation, concurrent uniqueness, contiguity, year matching, and sequence exhaustion | Frozen UTC boundary timestamps produce the correct year; the first ticket created in a frozen year receives sequence `000001` and the next ticket in the same year receives `000002` (increment of exactly 1); a frozen rollover to a new UTC year resets the sequence to `000001`; concurrent creates all receive distinct, contiguous numbers; each number's year equals its persisted `createdAt` UTC year; an exhausted yearly sequence returns `409 TICKET_SEQUENCE_EXHAUSTED` and creates no ticket. | `server/tests/lab-02/ticket-number-concurrency.integration.test.ts` | FR-03 | BR-01 | AC-01 | Passed |
-| STATIC-01 | Static/Doc | BR-25 Lab 3 authentication-transition boundary is a documented, non-runtime contract | Confirms no Lab 2 code path treats a client-supplied `X-Dev-Requester-Id` as authentication, and that the Lab 3 transition boundary is documented; verified by code/documentation review rather than an executable assertion. | `docs/lab-02/specification.md` (BR-25) | — | BR-25 | — | Planned |
+| STATIC-01 | Static/Doc | BR-25 Lab 3 authentication-transition boundary is a documented, non-runtime contract | Confirms no Lab 2 code path treats a client-supplied `X-Dev-Requester-Id` as authentication, and that the Lab 3 transition boundary is documented; verified by code/documentation review rather than an executable assertion. | `docs/lab-02/specification.md` (BR-25) | — | BR-25 | — | **Passed** |
 | API-TKT-04 | API | Ownership is assigned from `X-Dev-Requester-Id` at creation | The server persists ownership from the validated caller header; the test does not introduce an undocumented `requesterId` request field. | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02, FR-04 | BR-06, BR-21, BR-24 | — | Passed |
 | API-TKT-05 | API | Requester-created tickets keep IT Priority and Ticket Owner null | `itPriority` and `ticketOwnerId` remain `null` on requester-created tickets. | `server/tests/lab-02/create-ticket.api.test.ts`, `server/tests/lab-02/create-ticket-real-db.integration.test.ts` | FR-02 | BR-11 | — | Passed |
 | UI-TKT-07 | UI | Requested Priority control is required and defaults to MEDIUM | The field defaults to `MEDIUM` and blocks submission if the value is missing from the form model. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-02 | BR-10 | — | Passed |
@@ -308,17 +308,17 @@ prerequisite is unavailable. A row must not be marked `Passed` based on this pla
 | API-ATT-06 | API (endpoint-isolation) | BR-17 partial success — attachment endpoint can fail independently of ticket creation state | **Endpoint-isolation proof.** This is NOT a ticket-persistence assertion. The attachment and ticket-creation endpoints are separate routes; the server test mocks `uploadAttachment()` to reject and asserts the attachment endpoint returns `415 UNSUPPORTED_MEDIA_TYPE` independently of any ticket state. It does NOT itself prove that a ticket persists after a failed upload. The ticket-persistence claim of AC-26/BR-17 is proven by the executable **client** Case-B orchestration tests `UI-TKT-06`, `UI-ATT-05`, `UI-ATT-06`, and `UI-ATT-RETRY-OWN`, which run the real `createTicket()` → `uploadAttachment()` flow and assert the created ticket is kept (no duplicate `createTicket` call) while the failed attachment is retried from Ticket Detail. | `server/tests/lab-02/attachments.api.test.ts`; ticket-persistence claim proven by `client/src/lab-02-tests/AttachmentSection.test.tsx` (`UI-TKT-06`, `UI-ATT-05`, `UI-ATT-06`, `UI-ATT-RETRY-OWN`) | FR-02, FR-10 | BR-17 | AC-26 | **Passed** (endpoint-isolation); AC-26 ticket persistence covered by `UI-TKT-06`/`UI-ATT-05`/`UI-ATT-06`/`UI-ATT-RETRY-OWN` |
 | API-ATT-07 | API | Attachment metadata is persisted and stored filename is generated safely with validated extension | Metadata is saved and the stored filename is generated using a sanitized UUID+extension pattern. | `server/tests/lab-02/attachments.api.test.ts` | FR-10 | BR-26, BR-27 | — | **Passed** |
 | UI-DETAIL-01 | UI | Ticket Detail renders read-only fields, loading/failure/not-found states, active and removed attachments, Preview/Download/Remove, and Add Attachment controls | The detail screen shows the frozen screen-level states (skeleton loading, safe 404 "not found" with no ownership leak, manual-retry failure banner) plus read-only ticket data, attachment state, and the correct controls for active vs removed attachments. | `client/src/lab-02-tests/AttachmentSection.test.tsx` | FR-09, FR-10, FR-11, FR-12, FR-13, FR-17 | BR-18, BR-20, BR-24, BR-28 | AC-03, AC-12, AC-13, AC-24 | **Passed** |
-| E2E-01 | E2E | Requester creates ticket and later finds it in My Tickets | The full requester flow ends with a visible ticket in the requester's My Tickets list. | `e2e/lab-02/requester-ticket-flow.spec.ts` | FR-02, FR-04 | BR-01, BR-22 | AC-01, AC-17 | Planned |
-| E2E-02 | E2E | Ownership isolation across two requester contexts | Requester A and B cannot see each other's tickets and ownership enforcement works end-to-end. | `e2e/lab-02/ownership.spec.ts` | FR-09 | BR-24 | AC-03 | Planned |
-| E2E-03 | E2E | Full attachment lifecycle (upload/preview/download/remove) | Users can add, preview, download, and remove attachments on their own tickets without breaking the ticket flow. | `e2e/lab-02/attachment-lifecycle.spec.ts` | FR-10, FR-11, FR-12, FR-13 | BR-12, BR-18, BR-28 | AC-07, AC-12, AC-13, AC-24 | Planned |
-| E2E-04 | E2E | BR-17 partial success: ticket created, attachment upload fails, ticket persists, no duplicate, retry from Ticket Detail | Ticket creation succeeds, attachment failure is reported separately, and the user can retry the attachment without creating a duplicate. | `e2e/lab-02/partial-success-attachment.spec.ts` | FR-02, FR-10, FR-17 | BR-17 | AC-26 | Planned |
-| E2E-05 | E2E | Keyboard-only requester selection and create-ticket flow with visible focus indicators | Keyboard users can operate the testing-only Requester Selection, Continue, Change Requester, and complete Create Ticket with visible focus and no inaccessible inputs. | `e2e/lab-02/keyboard-access.spec.ts` | FR-01, FR-14 | BR-03, BR-14 | AC-25 | Planned |
+| E2E-01 | E2E | Requester creates ticket and later finds it in My Tickets | The full requester flow ends with a visible ticket in the requester's My Tickets list. | `e2e/lab-02/requester-ticket-flow.spec.ts` | FR-02, FR-04 | BR-01, BR-22 | AC-01, AC-17 | **Passed** |
+| E2E-02 | E2E | Ownership isolation across two requester contexts | Requester A and B cannot see each other's tickets and ownership enforcement works end-to-end. | `e2e/lab-02/ownership.spec.ts` | FR-09 | BR-24 | AC-03 | **Passed** |
+| E2E-03 | E2E | Full attachment lifecycle (upload/preview/download/remove) | Users can add, preview, download, and remove attachments on their own tickets without breaking the ticket flow. | `e2e/lab-02/attachment-lifecycle.spec.ts` | FR-10, FR-11, FR-12, FR-13 | BR-12, BR-18, BR-28 | AC-07, AC-12, AC-13, AC-24 | **Passed** |
+| E2E-04 | E2E | BR-17 partial success: ticket created, attachment upload fails, ticket persists, no duplicate, retry from Ticket Detail | Ticket creation succeeds, attachment failure is reported separately, and the user can retry the attachment without creating a duplicate. | `e2e/lab-02/partial-success-attachment.spec.ts` | FR-02, FR-10, FR-17 | BR-17 | AC-26 | **Passed** |
+| E2E-05 | E2E | Keyboard-only requester selection and create-ticket flow with visible focus indicators | Keyboard users can operate the testing-only Requester Selection, Continue, Change Requester, and complete Create Ticket with visible focus and no inaccessible inputs. The mandatory flow uses `Tab`, `Shift+Tab`, `Enter`, `Space`, and `ArrowDown`/`ArrowUp` to operate the native requester dropdown (Issue #18 §24) — no mouse and no `selectOption()`. Continue is disabled until a requester is selected (ui-spec §5.2). | `e2e/lab-02/keyboard-access.spec.ts` | FR-01, FR-14 | BR-03, BR-14 | AC-25 | **Passed** |
 | UI-ERR-01 | UI | Case A — ticket create API failure preserves form state and requires manual retry | A create failure leaves all form values populated and requires manual retry rather than auto-retrying. | `client/src/lab-02-tests/CreateTicket.test.tsx` | FR-17 | BR-16 | AC-11 | Passed |
-| UI-STYLE-01 | UI Style | Editable/read-only/invalid/disabled/busy field and button styles match Zen Green tokens | The visual system consistently distinguishes valid, invalid, disabled, busy, and read-only states. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | — | — | Planned |
-| UI-STYLE-02 | UI Style | Required-field labels show red asterisk; validation messages render directly under fields | Required labels and inline validation match the accessibility and UI contract. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-08, BR-09 | AC-04, AC-06 | Planned |
-| UI-STYLE-03 | UI Style | Priority/Status/Removed badge styling and non-color-reliant labels | Badges are styled with accessible labels and are understandable without relying on color alone. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-20 | AC-12 | Planned |
-| VISUAL-01 | Visual | Zen Green screenshots across all Lab 2 screens at desktop/tablet/mobile viewports | Screenshots across all required screens demonstrate the required responsive visual style. | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | Planned |
-| E2E-06 | E2E | Responsive layout across all Lab 2 screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile — no horizontal scroll, stacked controls on mobile | The app renders without horizontal overflow and stacks content correctly across breakpoints. | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | Planned |
+| UI-STYLE-01 | UI Style | Editable/read-only/invalid/disabled/busy field and button styles match Zen Green tokens | The visual system consistently distinguishes valid, invalid, disabled, busy, and read-only states. The test verifies the actual required Zen Green CSS custom properties and their authoritative values (ui-spec §1): `--color-primary`, `--color-secondary`, `--color-pale-green`, `--color-bg`, `--color-surface`, `--color-text`, `--color-field-editable-bg`, `--color-field-readonly-bg`, `--color-error`, `--color-warning`, `--color-success`. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | — | — | **Passed** |
+| UI-STYLE-02 | UI Style | Required-field labels show red asterisk; validation messages render directly under fields | Required labels and inline validation match the accessibility and UI contract. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-08, BR-09 | AC-04, AC-06 | **Passed** |
+| UI-STYLE-03 | UI Style | Priority/Status/Removed badge styling and non-color-reliant labels | Badges are styled with accessible labels and are understandable without relying on color alone. | `client/src/lab-02-tests/UiStyles.test.tsx` | — | BR-20 | AC-12 | **Passed** |
+| VISUAL-01 | Visual | Zen Green screenshots across all Lab 2 screens at desktop/tablet/mobile viewports | Screenshots across all required screens demonstrate the required responsive visual style. | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | **Passed** |
+| E2E-06 | E2E | Responsive layout across all Lab 2 screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile — no horizontal scroll, stacked controls on mobile, table→card conversion, ≥44px mobile touch targets, no clipped labels, no overlapping controls, and mobile hamburger navigation | The app renders without horizontal overflow, stacks content correctly across breakpoints, converts My Tickets from table to card on mobile, keeps required interactive controls at ≥44px touch height on mobile, does not clip labels or overlap required controls (Issue #18 §19), and implements the mobile hamburger navigation (desktop/tablet show normal nav with hamburger hidden; mobile shows the hamburger ≥44px with the primary nav hidden by default, requester identity visible, keyboard activation, and the menu closes after navigation). | `e2e/lab-02/responsive-visual.spec.ts` | — | — | AC-23 | **Passed** |
 
 ### 5.1 Issue #12 scope and row redistribution (2026-08-24 amendment)
 
@@ -333,7 +333,11 @@ endpoints, and screens:
 | `API-REQ-03` | #13 (Ticket Creation) | Reference endpoint exemption requires `RelatedSystem` model | **Passed** (implemented in #13) |
 | `API-CONTRACT-01` | #18 (Integration) | Full parsing matrix spans tickets + attachments endpoint classes | **Passed** (implemented across #13/#14) |
 | `UI-MY-03` | #14 (My Tickets) | Requester switch → My Tickets reload requires My Tickets feature | **Passed** (implemented in #14) |
-| `E2E-05` | #18 (Integration) | Keyboard create-ticket flow requires Create Ticket feature | Planned |
+| `E2E-05` | #18 (Integration) | Keyboard create-ticket flow requires Create Ticket feature | **Planned** (E2E — requires Playwright + running backend) |
+
+Issue #12 is complete when `API-REQ-01` and `UI-REQ-01..07` are implemented and
+passing. These rows remain `Planned` in this branch until their owning feature exists;
+they are no longer blockers for Issue #12.
 
 Issue #12 is complete when `API-REQ-01` and `UI-REQ-01..07` are implemented and
 passing. These rows remain `Planned` in this branch until their owning feature exists;
@@ -543,6 +547,109 @@ npx playwright test e2e/lab-02
 Playwright note: run the E2E command only after Playwright scaffolding/dependencies are added for this branch.
 
 ## 6. Results Log (Newest First)
+
+### 2026-08-30 — Issue #18: Authoritative final verification at PR #30 head `8cdebe8`
+- **Scope**: Ran one authoritative final verification from the actual current PR #30 head `8cdebe824272cf101570bb78772379a9090b497f` and regenerated the release evidence from that run. This is the single authoritative verification baseline for the Lab 2 release.
+- **Command(s) run**:
+  ```sh
+  npx playwright test e2e/lab-02            # full Lab 2 E2E suite (desktop/tablet/mobile)
+  cd client && npm test                     # 100 client tests passed
+  cd server && npm test                     # 335 server tests passed
+  cd client && npm run build                # TypeScript + Vite build passes
+  cd server && npm run build                # TypeScript build passes
+  ```
+- **Result**:
+  - **Lab 2 E2E**: 159 tests passed, 0 failed (across desktop/tablet/mobile viewports)
+  - **Client**: 100 tests passed, 0 failed
+  - **Server**: 335 tests passed, 0 failed
+  - **Client build**: TypeScript + Vite production build succeeds
+  - **Server build**: TypeScript compilation succeeds
+  - **Screenshots**: Regenerated the full responsive matrix (82 screenshots: 26 state directories × 3 viewports + 4 E2E workflow shots) from this run.
+- **Baseline**: All release evidence documents (`artifacts/lab-02/release/*`, `docs/lab-02/reviewer.md`) now consistently identify the final verification baseline as `8cdebe824272cf101570bb78772379a9090b497f`.
+- **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, and final gate updated to reflect the authoritative final verification baseline.
+
+### 2026-08-30 — Issue #18: Restore native requester dropdown with Arrow-key keyboard flow, mobile hamburger, and authoritative Zen Green tokens
+- **Scope**: Resolved the requester-selection contract conflict by restoring the specification-required native requester `<select>` and amending Issue #18 §24 to permit `ArrowDown`/`ArrowUp` (the only keyboard mechanism that can operate a native dropdown to a non-default option). Implemented the mobile hamburger navigation and migrated the CSS to the authoritative Zen Green tokens.
+- **Changes**:
+  - `client/src/App.tsx`: Replaced the radio-button group with the specification-required native requester `<select>` (id `requester-select`, loaded from `GET /api/dev-requesters`, only active requesters, disabled placeholder so Continue is disabled until a selection is made per ui-spec §5.2). Added the mobile hamburger button (`aria-label`, `aria-expanded`, `aria-controls="primary-navigation"`) and the `primary-navigation` id; the menu closes after navigation and the requester identity remains visible on mobile.
+  - `client/src/App.css`: Replaced the alias-only tokens with the authoritative Zen Green tokens (`--color-primary`, `--color-secondary`, `--color-pale-green`, `--color-bg`, `--color-surface`, `--color-text`, `--color-field-editable-bg`, `--color-field-readonly-bg`, `--color-error`, `--color-warning`, `--color-success`) and migrated every usage; removed the obsolete `.requester-option` radio CSS; added hamburger + responsive nav CSS (hidden ≥768px, hamburger ≥44px, nav hidden by default on mobile).
+  - `client/src/lab-02-tests/*.test.tsx`: Updated requester selection to the native dropdown (`combobox` role, `selectOptions`/`fireEvent.change`); `UiStyles.test.tsx` UI-STYLE-01 now asserts the actual required CSS custom properties and their authoritative values (via `?raw` import with `css: true`).
+  - `e2e/lab-02/keyboard-access.spec.ts` (E2E-05): The mandatory flow now uses `Tab`/`Shift+Tab`/`Enter`/`Space`/`ArrowDown`/`ArrowUp` to operate the native dropdown (Issue #18 §24 amended); Continue is disabled until a selection is made; added `openNavIfHidden` for the mobile hamburger.
+  - `e2e/lab-02/responsive-visual.spec.ts` (E2E-06/VISUAL-01): Added the mobile hamburger navigation tests (desktop/tablet normal nav + hamburger hidden; mobile hamburger ≥44px + nav hidden + requester identity visible; keyboard activation; menu exposes My Tickets/Create Ticket; menu closes after navigation); updated requester-selection selectors to the dropdown.
+  - `e2e/lab-02/helpers.ts` and `e2e/lab-02/ownership.spec.ts`: Updated requester selection to the native dropdown.
+  - `docs/lab-02/tests.md`: Updated the `E2E-05`, `E2E-06`, and `UI-STYLE-01` matrix rows; added this Results Log entry.
+- **Command(s) run**:
+  ```sh
+  npx playwright test e2e/lab-02            # full Lab 2 E2E suite (desktop/tablet/mobile)
+  cd client && npm test                     # 100 client tests passed
+  cd server && npm test                     # 335 server tests passed
+  cd client && npm run build                # TypeScript + Vite build passes
+  cd server && npm run build                # TypeScript build passes
+  ```
+- **Result**:
+  - **Lab 2 E2E**: 159 tests passed, 0 failed (across desktop/tablet/mobile viewports) — up from 144 with the new mobile hamburger tests.
+  - **Client**: 100 tests passed, 0 failed
+  - **Server**: 335 tests passed, 0 failed
+  - **Client build**: TypeScript + Vite production build succeeds
+  - **Server build**: TypeScript compilation succeeds
+  - **Screenshots**: Regenerated the full responsive matrix (82 screenshots: 26 state directories × 3 viewports + 4 E2E workflow shots).
+- **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, and final gate updated to reflect the corrected verification.
+
+### 2026-08-29 — Issue #18: Address PR #30 review — keyboard-only requester control, unavailable-state evidence, and full responsive assertions
+- **Scope**: Addressed all four blocking findings from the PR #30 review (Issue #18): (1) `attachment-unavailable` visual evidence now genuinely triggers the unavailable state; (2) responsive E2E-06 now covers the full Issue #18 §19 requirements (Ticket Detail, table→card conversion, 44px touch targets, required controls); (3) the mandatory E2E-05 flow now uses only `Tab`/`Shift+Tab`/`Enter`/`Space`; (4) release evidence SHA wording corrected.
+- **Changes**:
+  - `client/src/App.tsx`: Replaced the native requester `<select>` with a keyboard-operable radio-button group (each requester is a `role="radio"` button reachable via `Tab` and selectable with `Space`/`Enter`). This resolves the Issue #18 §24 conflict (native `<select>` requires arrow keys) by making the control fully operable with only `Tab`/`Shift+Tab`/`Enter`/`Space`.
+  - `client/src/App.css`: Added `.requester-option` styles (44px min-height, selected state, focus ring).
+  - `client/src/lab-02-tests/*.test.tsx`: Updated requester selection in all client tests to use the radio-button options (`Select <name>`) instead of `selectOptions`/`fireEvent.change` on the native select.
+  - `e2e/lab-02/responsive-visual.spec.ts`: `attachment-unavailable` now forces the Preview request to return `500` (route interception), asserts the Unavailable badge is visible, Preview/Download are disabled, and no Retry is exposed for a serving failure, then screenshots the real unavailable state. Added a reusable `assertTouchTargets` helper (≥44px) and expanded E2E-06 with: My Tickets table→card representation per breakpoint, My Tickets/Create Ticket/Requester Selection/Ticket Detail mobile touch-target checks, Ticket Detail responsive (no horizontal scroll + required controls visible), and no-clipped-label / no-overlapping-control checks for all four screens at every viewport.
+  - `e2e/lab-02/keyboard-access.spec.ts`: Added the canonical mandatory keyboard-only flow (Requester Selection → Continue → Create Ticket) using only `Tab`/`Shift+Tab`/`Enter`/`Space`, with focus-order, focus-visibility, and keyboard-usable validation assertions. Updated the supporting tests to use the new radio-button selector.
+  - `e2e/lab-02/helpers.ts` and `e2e/lab-02/ownership.spec.ts`: Updated requester selection to the new radio-button control.
+  - `docs/lab-02/tests.md`: Updated the `E2E-05` and `E2E-06` matrix rows to reflect the keyboard-only and full responsive coverage; added this Results Log entry.
+- **Command(s) run**:
+  ```sh
+  npx playwright test e2e/lab-02            # full Lab 2 E2E suite (desktop/tablet/mobile)
+  cd client && npm test                     # 100 client tests passed
+  cd server && npm test                     # 335 server tests passed
+  cd client && npm run build                # TypeScript + Vite build passes
+  cd server && npm run build                # TypeScript build passes
+  ```
+- **Result**:
+  - **Lab 2 E2E**: 144 tests passed, 0 failed (across desktop/tablet/mobile viewports) — up from 114 with the new responsive assertions.
+  - **Client**: 100 tests passed, 0 failed
+  - **Server**: 335 tests passed, 0 failed
+  - **Client build**: TypeScript + Vite production build succeeds
+  - **Server build**: TypeScript compilation succeeds
+  - **Screenshots**: Regenerated `ticket-detail/attachment-unavailable` (now depicts the real unavailable state) plus the full responsive matrix.
+- **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, and final gate updated to reflect the corrected verification.
+
+### 2026-08-29 — Issue #18: Final Integration and Release Verification (PR #30)
+- **Scope**: Repaired the Lab 2 integration E2E suite, generated complete responsive visual evidence, and recorded the final integrated verification for the release.
+- **Changes**:
+  - `e2e/lab-02/helpers.ts` (new): shared helpers for the real-client + real-API + real-DB integration specs (requester selection, create ticket, My Tickets navigation, search, open-by-summary, valid PNG buffer).
+  - `e2e/lab-02/requester-ticket-flow.spec.ts` (E2E-01): fixed form selectors (`#categoryId`, `#relatedSystemId`, `#summary`, `#description`), added a deterministic unique summary, and proved the full Create → My Tickets → Search → Detail round trip using the actual generated Ticket Number.
+  - `e2e/lab-02/ownership.spec.ts` (E2E-02): expanded to prove both-direction ownership isolation (A↔B) with unique identifiers and added direct API ownership verification (B fetching A → 404 NOT_FOUND, A fetching B → 404 NOT_FOUND, owner fetch → 200).
+  - `e2e/lab-02/attachment-lifecycle.spec.ts` (E2E-03): completed the full lifecycle — upload → appears → preview → download → remove → Removed badge → Preview/Download disabled.
+  - `e2e/lab-02/partial-success-attachment.spec.ts` (E2E-04): **highest-priority repair** — now actually forces the attachment upload to fail via Playwright route interception (no production change), proves the ticket persists, the failure is reported separately, retry succeeds, the Ticket Number is unchanged, and exactly one ticket exists.
+  - `e2e/lab-02/keyboard-access.spec.ts` (E2E-05): fixed form selectors and added a removal-dialog focus-trap test (focus enters modal, Tab stays inside, Escape closes, focus restores to the invoking Remove button).
+  - `e2e/lab-02/responsive-visual.spec.ts` (E2E-06/VISUAL-01): fixed the Playwright route-registration order (catch-all `**/api/**` must be registered first so specific routes take precedence), fixed form selectors, fixed requester-selection init-script ordering, and fixed open-by-summary to use visible rows.
+  - `docs/lab-02/tests.md`: marked `E2E-01..06` and `VISUAL-01` from `Implemented` → `Passed` based on actual execution; added this Results Log entry.
+- **Command(s) run**:
+  ```sh
+  npx playwright test e2e/lab-02            # full Lab 2 E2E suite (desktop/tablet/mobile)
+  cd client && npm test                     # 100 client tests passed
+  cd server && npm test                     # 335 server tests passed
+  cd client && npm run build                # TypeScript + Vite build passes
+  cd server && npm run build                # TypeScript build passes
+  ```
+- **Result**:
+  - **Lab 2 E2E**: 114 tests passed, 0 failed (across desktop/tablet/mobile viewports)
+  - **Client**: 100 tests passed, 0 failed
+  - **Server**: 335 tests passed, 0 failed
+  - **Client build**: TypeScript + Vite production build succeeds
+  - **Server build**: TypeScript compilation succeeds
+  - **Screenshots**: 84 curated evidence screenshots generated under `artifacts/lab-02/screenshots/` across all four screens (Requester Selection, Create Ticket, My Tickets, Ticket Detail) at desktop/tablet/mobile. *(Correction: the authoritative inventory is **82** — 26 state directories × 3 viewports = 78, plus 4 top-level E2E workflow shots. See `artifacts/lab-02/release/final-gate.md`.)*
+- **Head reconciliation**: Verification commits are treated as immutable historical evidence. The verification totals above (server **335/335**, client **100/100**, server build **Pass**, client build **Pass**, Lab 2 E2E **114/114**) were recorded at the commit where the tests were executed. Subsequent documentation-only commits (documentation edits and commit reference updates; no application, server, client, test, or E2E code changed) do not alter these results. The corrected E2E suite (with the full responsive and keyboard-only coverage) is recorded in the newer Results Log entries above at **144/144** and then the authoritative final verification at **159/159** (baseline `8cdebe824272cf101570bb78772379a9090b497f`).
+- **Follow-up**: Release evidence package (`artifacts/lab-02/release/`), `reviewer.md`, clean-checkout verification, and final gate recorded in the release documents.
 
 ### 2026-08-27 — Non-blocking suggestion: Normalize whitespace-only search on the client
 - **Scope**: Fixed `hasActiveFilters` and API call to use `search.trim()` instead of raw `search`, preventing whitespace-only input from being treated as an active filter.
@@ -785,7 +892,31 @@ Playwright note: run the E2E command only after Playwright scaffolding/dependenc
 - Notes and follow-up:
   - Issue #12 remains incomplete: `API-REQ-02`, `API-REQ-03`, `API-CONTRACT-01`, `UI-MY-03`, and `E2E-05` stay `Planned` until their complete contracts are executable (see §5.1).
 
-### 2026-08-24 - PR #21 re-review: traceability truthfulness and scope correction
+### 2026-08-29 — Issue #18: Integration verification and visual/E2E/UI-style coverage
+
+- Scope: Implemented all remaining Issue #18 tests. Performed full verification across all 13 phases of the Issue #18 agent execution plan.
+- Changes:
+  - **client/src/lab-02-tests/UiStyles.test.tsx**: New file covering UI-STYLE-01 (CSS class verification for editable/read-only/invalid/disabled/busy states, button hierarchy, nav active states), UI-STYLE-02 (required-field asterisks, inline validation messages), and UI-STYLE-03 (priority/status badge CSS classes and non-color-reliant text labels). 16 tests, all passing.
+  - **e2e/lab-02/**: 6 Playwright test spec files covering E2E-01 (requester ticket flow), E2E-02 (ownership isolation), E2E-03 (attachment lifecycle), E2E-04 (partial success/BR-17), E2E-05 (keyboard accessibility), and VISUAL-01/E2E-06 (responsive layout + screenshot evidence). All tests use route interception for mocking and capture screenshots to `artifacts/lab-02/screenshots/`.
+  - **playwright.config.ts**: Three projects (desktop 1280×800, tablet 820×1180, mobile 390×844) for responsive testing.
+  - **e2e/lab-02/responsive-visual.spec.ts**: Comprehensive visual evidence capture for all screen states (Requester Selection loading/empty/failure/populated; Create Ticket initial/validation-error/submitting/success/api-failure/invalid-attachment/partial-success; My Tickets default/loading/empty/no-results/filtered/failure; Ticket Detail default/loading/failure/attachment-active/uploading/invalid/removed/unavailable/preview-modal). Records horizontal overflow assertions for each viewport.
+  - **Artifact directories**: Full directory tree created under `artifacts/lab-02/screenshots/` with 26 subfolders for visual evidence.
+  - **docs/lab-02/tests.md**: Updated matrix rows: `UI-STYLE-01/02/03` → **Passed**, `E2E-01/02/03/04/05` → **Implemented**, `VISUAL-01/E2E-06` → **Implemented**, `STATIC-01` → **Passed**. Updated `E2E-05` row (downstream) to `Planned (E2E — requires Playwright + running backend)`. Added this results log.
+- Static/security review (STATIC-01): Confirmed BR-25 is respected (header validated server-side), BR-31 is respected (no static attachment routes), no internal leakage in errors, ownership and isRemoved checks occur server-side on all attachment operations.
+- Command(s) run:
+  ```sh
+  cd client && npx vitest run
+  cd server && npx vitest run tests/lab-02/
+  ```
+- Result:
+  - **Client**: 8 test files, 100 tests passed, 0 failed (was 84 before this issue, +16 new UI-STYLE tests)
+  - **Server**: 13 lab-02 test files passed, 216 tests passed, 110 real-DB skipped (no database), 0 failed
+  - **E2E**: Playwright tests implemented but require running client and server for execution
+  - **TypeScript**: No compilation errors
+- Notes and follow-up:
+  - E2E tests require both client dev server (`localhost:5173`) and server (`localhost:3000`) running
+  - E2E tests use mocked API responses via `page.route()`, so the server does not need a real database running for visual evidence capture
+  - Visual/responsive screenshots must be collected by running `npx playwright test --project=desktop`, `--project=tablet`, `--project=mobile`
 - Scope: Addressed PR #21 re-review findings that several matrix rows were marked `Passed` without their full contract being executable in this issue's scope. Demoted `API-REQ-02`, `API-REQ-03`, `API-CONTRACT-01`, `UI-MY-03`, and `E2E-05` from `Passed` to `Planned` (their remaining behavior belongs to the ticket-creation / my-tickets / attachments downstream issues). Removed the premature `fetchMyTickets()` runtime call that hit a non-existent `GET /api/tickets` endpoint. Restored the unrelated Lab 1 `/api/health` endpoint, client `checkHealth`, and System Overview UI that had been removed outside Issue #12 scope. Repaired the keyboard-only test so it asserts post-Continue shell state rather than the already-present `<option>` text. Added a new `agent.md` §3.4 scope/status rule.
 - Tests added/updated:
   - `docs/lab-02/tests.md`: demoted 5 rows to `Planned`; added §5.1 Issue #12 scope boundary; repaired Results Log ordering and contradictions.
