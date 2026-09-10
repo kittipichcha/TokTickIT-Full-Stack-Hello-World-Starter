@@ -418,3 +418,14 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
 5. **Comment/Note length limit:** 1–2,000 characters after trim.
 6. **Administrator Ticket operations:** Administrators may perform the same Ticket operations as
    IT Staff (per the authorization matrix), but only Administrators perform user management.
+7. **Security configuration policy:** The exact session idle timeout, session-cookie attributes,
+   and CSRF mechanism are repository/environment configuration decisions, not invented by the
+   implementation agent. The required security properties (bounded idle timeout; `httpOnly` and
+   `SameSite` cookie, `Secure` in production; every state-changing protected endpoint requiring a
+   valid CSRF token; passwords over protected transport only) are normative and are defined in
+   `docs/lab-03/api-spec.md`. The concrete configuration must be documented in the repository
+   configuration and reflected in the planned security tests.
+8. **IT Staff Queue presentation:** The Queue must make all required Ticket information
+   available, but the desktop table may condense or combine secondary columns to remain readable;
+   tablet uses a condensed representation and mobile uses cards. The implementation must not
+   create horizontal overflow or an unreadable mega-grid. See `docs/lab-03/ui-spec.md`.

@@ -88,10 +88,18 @@ require `aria-label` and a tooltip.
 
 ### 5.6 IT Staff Ticket Queue
 - Toolbar: search input, status filter, priority filter, owner filter, Clear Filters.
-- Desktop: table with columns — Ticket No., Created Date, Summary, Category, Requested Priority
-  (badge), IT Priority (badge), Current Status (badge), Ticket Owner, Last Updated, Open Detail
-  action.
-- Smaller screens: card representation.
+- Desktop: table. The following required information must be available for each Ticket: Ticket
+  No., Created Date, Summary, Category, Requested Priority, IT Priority, Current Status, Ticket
+  Owner, Last Updated, and an Open Detail action. The desktop table may display the core columns
+  (Ticket No., Summary, Current Status, IT Priority, Ticket Owner, Open Detail) and condense or
+  combine secondary information (Created Date, Category, Requested Priority, Last Updated) where
+  necessary to keep the table readable. All required information must remain accessible (e.g.
+  via the Ticket Detail screen or a condensed/combined column); the implementation must not
+  create horizontal overflow or an unreadable mega-grid at any desktop width.
+- Tablet (768–991px): condensed table representation; secondary columns may be hidden or
+  combined, with all required information still accessible.
+- Mobile (<768px): card representation, one Ticket per card, with all required information and
+  the Open Detail action.
 - Loading, empty, no-results, forbidden, and failure feedback.
 - Pagination.
 

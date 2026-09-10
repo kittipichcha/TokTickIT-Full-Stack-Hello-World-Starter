@@ -19,7 +19,9 @@ client-supplied `requesterId`, determines ownership of Requester operations (BR-
   }
 }
 ```
-`fields` is present for every `400` response and omitted for non-`400` responses.
+`fields` is present when the `400` response represents a field/body/query validation failure
+(`VALIDATION_ERROR`) and is omitted for non-`400` responses and for `400`-level conditions that
+are not field-validation errors (e.g. `ATTACHMENT_LIMIT_REACHED`).
 
 All API error responses use this JSON error object shape. `error.code` is one of `VALIDATION_ERROR`, `UNAUTHENTICATED`,
 `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `INACTIVE_REFERENCE`, `TICKET_SEQUENCE_EXHAUSTED`,
@@ -75,6 +77,27 @@ or exponent.
 - CSRF: protected endpoints require a CSRF token for state-changing requests where applicable.
 - Safe errors: login failure returns a generic message that does not reveal whether the email
   exists or the password was wrong.
+
+**Security configuration policy (frozen):** The exact session idle timeout, session-cookie
+attributes, and CSRF mechanism are repository/environment configuration decisions, not
+invented by the implementation agent. The implementation must satisfy the following required
+security properties, and the concrete configuration must be documented in the repository
+configuration and reflected in the planned security tests:
+
+- **Session idle timeout:** The server-side session store expires an idle session after a
+  bounded, configured idle timeout. An expired session behaves exactly like an unauthenticated
+  session (`401 UNAUTHENTICATED`) and the user must log in again. The timeout value is a
+  configuration decision; it must be finite and non-zero.
+- **Session-cookie attributes:** The session cookie is `httpOnly` and `SameSite`-protected. In
+  production it is `Secure`. The cookie must not be readable by client-side script.
+- **CSRF:** Every state-changing (non-`GET`/`HEAD`/`OPTIONS`) protected endpoint is protected
+  against cross-site request forgery. The CSRF token is obtained from the authenticated session
+  and validated server-side before the mutation is applied. A missing or invalid CSRF token
+  rejects the request with `403 FORBIDDEN`. The exact token mechanism (e.g. synchronizer token
+  or double-submit cookie) is a configuration decision, but the property that all state-changing
+  protected endpoints require a valid CSRF token is normative.
+- **Password transport:** Passwords are transmitted only over a protected transport (HTTPS in
+  production) (BR-06).
 
 ---
 
