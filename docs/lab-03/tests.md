@@ -34,7 +34,7 @@ means the latest run failed; and `Blocked` means it cannot run because its docum
 prerequisite is unavailable. A row must not be marked `Passed` based on this plan alone.
 
 ## 4. Coverage Completeness Gate
-Every Acceptance Criterion (AC-01 through AC-20) maps to at least one planned test below. The
+Every Acceptance Criterion (AC-01 through AC-26) maps to at least one planned test below. The
 matrix covers unit, API/integration, UI component, UI style, responsive, accessibility,
 security/authorization, migration/regression, and end-to-end coverage.
 
@@ -78,18 +78,20 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-ADM-08 | API | Set new initial password | User must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-26 | BR-30 | AC-16 | Planned |
 | UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Planned |
 | UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Planned |
-| DB-MIG-01 | DB | DevRequester → User migration | Existing ownership preserved | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-07 | Planned |
-| DB-MIG-02 | DB | Existing data preserved | Categories/RelatedSystems/Tickets/Attachments valid | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-07 | Planned |
-| SEED-01 | DB | Seed idempotency | Safe to run repeatedly | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-16 | Planned |
+| DB-MIG-01 | DB | DevRequester → User migration | Existing ownership preserved | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Planned |
+| DB-MIG-02 | DB | Existing data preserved | Categories/RelatedSystems/Tickets/Attachments valid | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Planned |
+| DB-MIG-03 | DB | Migrated requester initial password | Deterministic per-user initial password authenticates; mustChangePassword enforced | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Planned |
+| DB-MIG-04 | DB | Migrated requester password change | Normal app blocked until valid new password; allowed afterward | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Planned |
+| SEED-01 | DB | Seed idempotency | Safe to run repeatedly | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Planned |
 | UI-LOGIN-01 | UI | Login screen | Valid/invalid login; busy/safe failure; form data preserved | `client/src/lab-03-tests/Login.test.tsx` | FR-01 | BR-07, BR-33 | AC-01 | Planned |
 | UI-CHPWD-01 | UI | Change Password screen | Mandatory change; validation; continuation | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Planned |
 | UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Planned |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Planned |
 | UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
-| UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-20 | Planned |
-| VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-20 | Planned |
-| VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10 | Planned |
-| A11Y-01 | Accessibility | Keyboard/focus/aria | Keyboard-operable; focus visible | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-20 | Planned |
+| UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Planned |
+| VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Planned |
+| VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Planned |
+| A11Y-01 | Accessibility | Keyboard/focus/aria | Keyboard-operable; focus visible | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-23 | Planned |
 | E2E-01 | E2E | Authentication flow | Login → change password → app → logout | `e2e/lab-03/authentication.spec.ts` | FR-01–06 | BR-01–10 | AC-01, AC-02, AC-05, AC-06 | Planned |
 | E2E-02 | E2E | Staff ticket flow | Queue → detail → claim → priority → status → comments/notes | `e2e/lab-03/staff-ticket-flow.spec.ts` | FR-14–20 | BR-14–18 | AC-10–14 | Planned |
 | E2E-03 | E2E | User administration | List → search → create → edit → initial password | `e2e/lab-03/user-administration.spec.ts` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
@@ -103,7 +105,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-04 → SEC-AUTHZ-02
 - AC-05 → API-AUTH-02, API-AUTH-03, E2E-01
 - AC-06 → API-AUTH-04, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, E2E-01
-- AC-07 → API-REQ-01, API-REQ-02, DB-MIG-01, DB-MIG-02, E2E-04
+- AC-07 → API-REQ-01, API-REQ-02, E2E-04
 - AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
 - AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01, VISUAL-02
@@ -112,8 +114,14 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-13 → API-STAFF-03, API-STAFF-04, UI-STAFF-01, E2E-02
 - AC-14 → API-STAFF-05, UI-STAFF-01, E2E-02
 - AC-15 → API-ADM-01, API-ADM-02, UI-ADM-01, E2E-03
-- AC-16 → API-ADM-03, API-ADM-08, SEED-01, UI-ADM-01, E2E-03
+- AC-16 → API-ADM-03, API-ADM-08, UI-ADM-01, E2E-03
 - AC-17 → API-ADM-04, API-ADM-05, UI-ADM-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
 - AC-19 → API-ADM-07, API-ADM-07b, UI-ADM-01
-- AC-20 → SEC-AUTHZ-03, UI-STYLE-01, VISUAL-01, A11Y-01
+- AC-20 → SEC-AUTHZ-03
+- AC-21 → UI-STYLE-01
+- AC-22 → VISUAL-01, VISUAL-02
+- AC-23 → A11Y-01
+- AC-24 → SEED-01
+- AC-25 → DB-MIG-01, DB-MIG-02
+- AC-26 → DB-MIG-03, DB-MIG-04, API-AUTH-06, API-AUTH-07

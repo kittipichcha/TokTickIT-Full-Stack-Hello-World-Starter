@@ -319,11 +319,122 @@ inventory below.
   Ticket ownership must remain correct.
 - Existing `Category`, `RelatedSystem`, `Ticket`, and `Attachment` rows remain valid after
   migration.
-- Existing Requesters receive initial passwords via the approved local-lab behavior; the
-  temporary selector and its client-side state are removed.
 - The `X-Dev-Requester-Id` header is removed from protected behavior; the authenticated user
   identity replaces it.
 - Seed logic is idempotent and safe to run repeatedly.
+
+### 9.2 Initial-password migration mechanism (frozen)
+The following mechanism is normative for migrating existing `DevRequester` records into `User`
+records. It is a local-lab-only mechanism; no real personal passwords or secrets are placed in
+the repository.
+
+- **Identity mapping:** Each `DevRequester` becomes one `User` with the same `name`, `email`,
+  and `isActive` value. `DevRequester.id` is preserved as the `User.id` so existing Ticket and
+  Attachment ownership references remain valid without rewriting foreign keys.
+- **Role assignment:** Every migrated Requester is assigned the single role `REQUESTER`.
+- **Initial password:** Each migrated Requester receives a **deterministic per-user initial
+  password** derived from the user's own identity (email and name), so the value is stable
+  across repeated seed/migration runs and differs per user. The derivation is documented in the
+  seed module and is for local-lab use only.
+- **Storage:** The initial password is stored **only** as a bcrypt hash; the plaintext value is
+  never persisted and never committed to the repository.
+- **Password-change state:** Every migrated Requester is created with `mustChangePassword = true`.
+- **First login:** A migrated Requester can log in with the deterministic initial password, but
+  `BR-02` blocks access to normal application screens until a valid new password is saved.
+- **After change:** Once the password is changed, `mustChangePassword` becomes `false` and normal
+  application access is allowed.
+- **Determinism requirement:** Running the migration/seed twice must produce the same initial
+  password for the same user, so the migration is idempotent and reproducible.
+
+### 9.3 Data model contract (frozen)
+The following data model is normative. Issue #35 must translate it into the Prisma schema
+without inventing fields, types, or relationships. Field names, types, nullability, defaults,
+uniqueness, foreign keys, and indexes are part of the contract.
+
+**User** (replaces `DevRequester`)
+- `id` — integer, primary key, auto-increment. Preserves the original `DevRequester.id`.
+- `name` — string, required.
+- `email` — string, required, **unique**.
+- `role` — enum `REQUESTER | IT_STAFF | ADMINISTRATOR`, required.
+- `passwordHash` — string, required (bcrypt hash; never plaintext).
+- `isActive` — boolean, required, default `true`.
+- `mustChangePassword` — boolean, required, default `true` for migrated/created users.
+- `createdAt` — timestamp, required, default now.
+- `updatedAt` — timestamp, required, updated on change.
+- Relations: owns `Ticket[]` (as requester), owns `Attachment[]` (as uploader/remover), authors
+  `Comment[]` and `InternalNote[]`.
+- Indexes: `@@unique([email])`.
+
+**Role** — represented as the `User.role` enum above; no separate table.
+
+**Ticket** (evolved from Lab 2)
+- `id` — integer, primary key, auto-increment.
+- `ticketNumber` — string, required, **unique**.
+- `requesterId` — integer, required, FK → `User.id` (the authenticated Requester).
+- `categoryId` — integer, required, FK → `Category.id`.
+- `relatedSystemId` — integer, required, FK → `RelatedSystem.id`.
+- `summary` — string, required.
+- `description` — string, required.
+- `requestedPriority` — enum `LOW | MEDIUM | HIGH`, required.
+- `itPriority` — enum `LOW | MEDIUM | HIGH`, nullable; defaults to `requestedPriority` on
+  creation.
+- `ticketOwnerId` — integer, nullable, FK → `User.id` (active IT Staff or Administrator).
+- `currentStatus` — enum `NEW | OPEN | IN_PROGRESS | WAITING_FOR_REQUESTER | RESOLVED | CLOSED |
+  REOPENED | CANCELLED`, required, default `NEW`.
+- `appearsResolved` — boolean, required, default `false` (Requester "Problem Appears Resolved"
+  flag; not a status).
+- `createdAt` — timestamp, required, default now.
+- `updatedAt` — timestamp, required, updated on change.
+- Relations: requester `User`, category `Category`, relatedSystem `RelatedSystem`, owner `User?`,
+  `Attachment[]`, `Comment[]`, `InternalNote[]`.
+- Indexes: `@@index([requesterId])`, `@@index([currentStatus])`, `@@index([createdAt])`,
+  `@@index([ticketOwnerId])`.
+
+**Attachment** (evolved from Lab 2)
+- `id` — integer, primary key, auto-increment.
+- `ticketId` — integer, required, FK → `Ticket.id`.
+- `originalFilename` — string, required.
+- `storedFilename` — string, required, **unique**.
+- `mimeType` — string, required.
+- `fileSizeBytes` — integer, required.
+- `uploaderUserId` — integer, required, FK → `User.id` (renamed from `uploaderRequesterId`).
+- `isRemoved` — boolean, required, default `false`.
+- `removedAt` — timestamp, nullable.
+- `removalReason` — string, nullable.
+- `removedByUserId` — integer, nullable, FK → `User.id`.
+- `uploadedAt` — timestamp, required, default now.
+- Relations: ticket `Ticket`, uploader `User`, remover `User?`.
+- Indexes: `@@index([ticketId])`.
+
+**Comment** (new)
+- `id` — integer, primary key, auto-increment.
+- `ticketId` — integer, required, FK → `Ticket.id`.
+- `authorId` — integer, required, FK → `User.id`.
+- `content` — string, required (1–2,000 chars after trim).
+- `createdAt` — timestamp, required, default now.
+- Relations: ticket `Ticket`, author `User`.
+- Indexes: `@@index([ticketId])`.
+
+**InternalNote** (new)
+- `id` — integer, primary key, auto-increment.
+- `ticketId` — integer, required, FK → `Ticket.id`.
+- `authorId` — integer, required, FK → `User.id`.
+- `content` — string, required (1–2,000 chars after trim).
+- `createdAt` — timestamp, required, default now.
+- Relations: ticket `Ticket`, author `User`.
+- Indexes: `@@index([ticketId])`.
+
+**Category / RelatedSystem / TicketSequence** — unchanged from Lab 2 (see
+`server/prisma/schema.prisma`). `TicketSequence` remains keyed by UTC year.
+
+**Migration relationship summary**
+```
+DevRequester ──► User (id preserved, role=REQUESTER, initial password, mustChangePassword=true)
+Ticket.requesterId ──► User.id (unchanged)
+Attachment.uploaderRequesterId ──► User.id (renamed uploaderUserId)
+Attachment.removedByRequesterId ──► User.id (renamed removedByUserId)
+Category / RelatedSystem / TicketSequence ──► unchanged
+```
 - Seed data: at least four active Requester accounts and one inactive Requester account; at
   least three active IT Staff accounts and one inactive IT Staff account; at least one active
   Administrator account; realistic Tickets distributed across Requesters, statuses, priorities,
@@ -392,6 +503,19 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
   Administrator, then the operation is rejected. *(BR-28)*
 - **AC-20** Given a non-Administrator, when they request a user-management endpoint, then the
   operation is forbidden. *(FR-07, FR-09)*
+- **AC-21** Given the UI, when screens are rendered, then they use the Zen Green design tokens
+  and reusable components without ad-hoc colors. *(FR-08)*
+- **AC-22** Given the major screens, when viewed at desktop, tablet, and mobile widths, then the
+  layout remains readable with no horizontal overflow or clipped content. *(FR-08)*
+- **AC-23** Given the major screens, when operated by keyboard, then all controls are reachable
+  and focus is visible. *(FR-08)*
+- **AC-24** Given the seed logic, when it is run repeatedly, then it is idempotent and produces
+  the same result without errors. *(seed decision)*
+- **AC-25** Given existing Lab 2 data, when the DevRequester → User migration runs, then Ticket
+  and Attachment ownership is preserved and all existing data remains valid. *(FR-10, BR-11)*
+- **AC-26** Given a migrated Requester, when they log in with the deterministic initial
+  password, then authentication succeeds, `mustChangePassword` is enforced, and normal
+  application access is allowed only after a valid password change. *(FR-05, BR-02, BR-10)*
 
 ## 12. Definition of Done
 
@@ -410,7 +534,7 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
 
 **Process**
 - [ ] `docs/lab-03/specification.md`, `ui-spec.md`, `api-spec.md`, and `tests.md` exist.
-- [ ] Every Acceptance Criterion maps to at least one planned test.
+- [ ] Every Acceptance Criterion (AC-01 through AC-26) maps to at least one planned test.
 - [ ] `tests.md` exists before or alongside implementation.
 - [ ] Contract is reviewed/approved before dependent implementation begins.
 
@@ -424,14 +548,25 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
 5. **Comment/Note length limit:** 1–2,000 characters after trim.
 6. **Administrator Ticket operations:** Administrators may perform the same Ticket operations as
    IT Staff (per the authorization matrix), but only Administrators perform user management.
-7. **Security configuration policy:** The exact session idle timeout, session-cookie attributes,
-   and CSRF mechanism are repository/environment configuration decisions, not invented by the
-   implementation agent. The required security properties (bounded idle timeout; `httpOnly` and
-   `SameSite` cookie, `Secure` in production; every state-changing protected endpoint requiring a
-   valid CSRF token; passwords over protected transport only) are normative and are defined in
-   `docs/lab-03/api-spec.md`. The concrete configuration must be documented in the repository
-   configuration and reflected in the planned security tests.
+7. **Security configuration policy:** The exact session-cookie attributes and CSRF mechanism
+   are repository/environment configuration decisions, not invented by the implementation agent.
+   The required security properties (`httpOnly` and `SameSite` cookie, `Secure` in production;
+   every state-changing protected endpoint requiring a valid CSRF token; passwords over
+   protected transport only) are normative and are defined in `docs/lab-03/api-spec.md`. The
+   concrete configuration must be documented in the repository configuration and reflected in
+   the planned security tests.
 8. **IT Staff Queue presentation:** The Queue must make all required Ticket information
    available, but the desktop table may condense or combine secondary columns to remain readable;
    tablet uses a condensed representation and mobile uses cards. The implementation must not
    create horizontal overflow or an unreadable mega-grid. See `docs/lab-03/ui-spec.md`.
+9. **Session idle timeout (frozen):** The Lab 3 contract value is **30 minutes** of idle time.
+   An idle session expires after 30 minutes and behaves exactly like an unauthenticated session
+   (`401 UNAUTHENTICATED`); the user must log in again. Any request refreshes the idle timer.
+   There is no separate absolute timeout in Lab 3. See `docs/lab-03/api-spec.md`.
+10. **Initial-password migration (frozen):** Migrated Requesters receive a deterministic
+    per-user initial password derived from their own email and name, stored only as a bcrypt
+    hash, with `mustChangePassword = true`. See Section 9.2.
+11. **Staff Queue query contract (frozen):** `search` matches `ticketNumber` and `summary`
+    substring; `sort` accepts `createdAt`, `ticketNumber`, `summary`, `status`, and `priority`;
+    default sort is `createdAt desc`; `pageSize` is 1–50 default 10; invalid query values fall
+    back to safe defaults. See `docs/lab-03/api-spec.md` Section 15.
