@@ -21,7 +21,7 @@ client-supplied `requesterId`, determines ownership of Requester operations (BR-
 ```
 `fields` is present for every `400` response and omitted for non-`400` responses.
 
-All errors use this object shape. `error.code` is one of `VALIDATION_ERROR`, `UNAUTHENTICATED`,
+All API error responses use this JSON error object shape. `error.code` is one of `VALIDATION_ERROR`, `UNAUTHENTICATED`,
 `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `INACTIVE_REFERENCE`, `TICKET_SEQUENCE_EXHAUSTED`,
 `ATTACHMENT_LIMIT_REACHED`, `ATTACHMENT_REMOVED`, `FILE_TOO_LARGE`, `UNSUPPORTED_MEDIA_TYPE`,
 `INTERNAL_ERROR`, or `PASSWORD_CHANGE_REQUIRED`. `500` responses use only `INTERNAL_ERROR` and
@@ -572,6 +572,7 @@ must **not** change the formal Ticket status to Resolved or Closed.
 - `name`, `email`, `role`, `isActive` as above.
 - Cannot deactivate own account.
 - Cannot deactivate the last active Administrator.
+- Cannot change the last active Administrator's role to a non-Administrator role.
 
 **Response 200**
 ```json
@@ -580,7 +581,8 @@ must **not** change the formal Ticket status to Resolved or Closed.
 
 **Error cases**
 - `400 VALIDATION_ERROR` — invalid fields.
-- `409 CONFLICT` — duplicate email, self-deactivation, or last-active-Administrator removal.
+- `409 CONFLICT` — duplicate email, self-deactivation, last-active-Administrator deactivation,
+  or last-active-Administrator role change to a non-Administrator role.
 
 ---
 

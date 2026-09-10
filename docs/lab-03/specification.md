@@ -207,7 +207,9 @@ the correct action is to stop and request clarification rather than choose a des
 - **BR-25** An Administrator may create a user with exactly one permitted role.
 - **BR-26** An Administrator may update a user's name, email address, role, and activation state.
 - **BR-27** An Administrator cannot deactivate their own account.
-- **BR-28** The system must never remove or deactivate the last active Administrator.
+- **BR-28** The system must never remove or deactivate the last active Administrator. This
+  includes rejecting both (a) deactivation of the last active Administrator and (b) changing the
+  last active Administrator's role to a non-Administrator role.
 - **BR-29** Users are deactivated rather than deleted; there is no user deletion.
 - **BR-30** Setting a new initial password marks the user as requiring a password change at the
   next login.
