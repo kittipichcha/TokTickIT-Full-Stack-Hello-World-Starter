@@ -60,9 +60,10 @@ explicitly required by this document and the Lab 3 handout. The agent must not a
 status transitions, admin flows, UI widgets, or validation rules that are not called out in the
 requirement set.
 
-If a requirement is missing, contradictory, or ambiguous, the correct action is to stop and
-request clarification rather than choose a design. The only allowed defaults are the ones
-explicitly stated in the requirement text or in the Assumptions and Decisions section.
+If a requirement is missing, contradictory, or ambiguous, the agent must resolve the choice,
+document the decision and its rationale in the Assumptions and Decisions section, and keep the
+contract internally consistent. The only allowed defaults are the ones explicitly stated in the
+requirement text or in the Assumptions and Decisions section.
 
 ### Requirement precedence
 When Lab 3 documents conflict, the agent must resolve them in this order:
@@ -94,7 +95,8 @@ all implementation and tests:
   feedback only, never a security control.
 
 If a legal execution path is not explicitly listed here or in the functional/business rules,
-the correct action is to stop and request clarification rather than choose a design.
+the agent must resolve the choice, document the decision and its rationale in the Assumptions
+and Decisions section, and keep the contract internally consistent.
 
 ## 4. Functional Requirements
 
@@ -156,7 +158,8 @@ the correct action is to stop and request clarification rather than choose a des
   until a new valid password is saved.
 - **BR-05** A Requester may indicate that a problem appears resolved, but cannot formally set
   the Ticket to Resolved or Closed.
-- **BR-06** Passwords are hashed with bcrypt and are never stored or transmitted in plaintext.
+- **BR-06** Passwords are hashed with bcrypt and are never stored in plaintext; password values
+  are transmitted only over a protected transport (HTTPS in production).
 - **BR-07** Login failure returns a safe, generic error that does not reveal whether the email
   exists or the password was wrong.
 - **BR-08** An inactive user cannot authenticate; the login response does not reveal account
@@ -252,13 +255,20 @@ or disabled frontend control is feedback only, never a security control.
 | Edit user (name, email, role, activation) | — | — | — | ✅ |
 | Set new initial password | — | — | — | ✅ |
 
+**Attachment management:** Attachment *mutation* (upload, soft-removal) is Requester-only — the
+Requester owns the Ticket and its Attachments. IT Staff and Administrator may *view* existing
+Attachments (list, download, preview) for Ticket continuity, but do not upload or remove them in
+Lab 3.
+
 **Administrator vs IT Staff separation:** Administrator and IT Staff responsibilities remain
 conceptually separate. IT Staff manage Tickets; Administrators manage user accounts. An
 Administrator does not automatically perform IT Staff Ticket operations unless the approved
 authorization matrix explicitly permits it. In this contract, the matrix grants Administrators
 the same Ticket operations as IT Staff (Queue, Detail, ownership, IT Priority, status, Public
-Comments, Internal Notes) because an Administrator is an active IT Staff-equivalent for Ticket
-operations; however, only Administrators may perform user-management actions.
+Comments, Internal Notes). This is an explicit, approved overlap: an Administrator may act on
+Tickets in the same way as IT Staff, while only Administrators may perform user-management
+actions. The two roles remain conceptually separate — IT Staff manage Tickets, Administrators
+manage user accounts — and the overlap is limited to the Ticket operations listed in the matrix.
 
 ## 7. Status Transition Matrix
 
@@ -275,7 +285,7 @@ listed is forbidden and returns `409 CONFLICT` (or the documented safe error).
 | Resolved | Closed | IT Staff, Administrator | Ticket owned | Confirmation | Final close |
 | Resolved | Reopened | IT Staff, Administrator | Ticket owned | None | Reopen after resolution |
 | Closed | Reopened | IT Staff, Administrator | Ticket owned | None | Reopen after close |
-| Any | Cancelled | IT Staff, Administrator | Ticket owned | Confirmation | Cancelled |
+| Any non-Cancelled | Cancelled | IT Staff, Administrator | Ticket owned | Confirmation | Cancelled |
 
 **Requester "appears resolved" indication:** A Requester may set a boolean "Problem Appears
 Resolved" flag on an owned Ticket (FR-13, BR-19). This is not a status change; it does not move

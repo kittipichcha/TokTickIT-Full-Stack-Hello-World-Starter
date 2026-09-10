@@ -249,7 +249,8 @@ proceeding receives `401 PASSWORD_CHANGE_REQUIRED`; that code is **not** returne
 
 ## 10. POST /api/tickets/:ticketNumber/attachments
 
-**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+**Auth:** authenticated Requester (owner of the Ticket). Attachment mutation is Requester-only
+(BR-12); IT Staff/Administrator may view but not upload Attachments.
 
 **Request:** multipart `file` upload.
 
@@ -302,7 +303,8 @@ proceeding receives `401 PASSWORD_CHANGE_REQUIRED`; that code is **not** returne
 
 ## 14. DELETE /api/attachments/:attachmentId
 
-**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+**Auth:** authenticated Requester (owner of the Ticket). Attachment mutation is Requester-only
+(BR-12); IT Staff/Administrator may view but not remove Attachments.
 
 **Response 200**
 ```json
