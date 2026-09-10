@@ -50,7 +50,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-AUTH-06 | API | Mandatory password change | Normal app blocked until valid new password saved | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-02 | AC-02 | Planned |
 | API-AUTH-07 | API | Password boundaries | Invalid new password rejected | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-10 | AC-02 | Planned |
 | SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Planned |
-| SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Planned |
+| SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Planned |
 | SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Planned |
 | SEC-AUTHZ-04 | API | Unauthenticated protected endpoint | 401 UNAUTHENTICATED | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
 | SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Planned |
@@ -72,6 +72,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-ADM-05 | API | Edit user | Name/email/role/activation updated | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-26 | AC-17 | Planned |
 | API-ADM-06 | API | Self-deactivation | Rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-27 | AC-18 | Planned |
 | API-ADM-07 | API | Last active Administrator | Rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-28, BR-29 | AC-19 | Planned |
+| API-ADM-07b | API | Last active Administrator role change | Role change to non-Administrator rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-28 | AC-19 | Planned |
 | API-ADM-08 | API | Set new initial password | User must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-26 | BR-30 | AC-16 | Planned |
 | UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Planned |
 | UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Planned |
@@ -111,5 +112,5 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-16 → API-ADM-03, API-ADM-08, SEED-01, UI-ADM-01, E2E-03
 - AC-17 → API-ADM-04, API-ADM-05, UI-ADM-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
-- AC-19 → API-ADM-07, UI-ADM-01
+- AC-19 → API-ADM-07, API-ADM-07b, UI-ADM-01
 - AC-20 → SEC-AUTHZ-03, UI-STYLE-01, VISUAL-01, A11Y-01
