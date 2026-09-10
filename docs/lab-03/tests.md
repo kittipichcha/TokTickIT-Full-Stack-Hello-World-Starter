@@ -54,6 +54,8 @@ security/authorization, migration/regression, and end-to-end coverage.
 | SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Planned |
 | SEC-AUTHZ-04 | API | Unauthenticated protected endpoint | 401 UNAUTHENTICATED | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
 | SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Planned |
+| SEC-AUTHZ-06 | API | Session idle timeout expiration | Expired session behaves as unauthenticated (401 UNAUTHENTICATED) | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-06 | Planned |
+| SEC-AUTHZ-07 | API | CSRF on state-changing endpoint | Missing/invalid CSRF token rejected (403 FORBIDDEN); mutation not applied | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
 | API-REQ-01 | API | Requester creates Ticket | Ticket owned by authenticated identity | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-11 | AC-07 | Planned |
 | API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Planned |
 | API-REQ-03 | API | Requester posts Public Comment | Comment saved with author/timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-22, BR-23 | AC-08 | Planned |
@@ -86,6 +88,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
 | UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-20 | Planned |
 | VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-20 | Planned |
+| VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10 | Planned |
 | A11Y-01 | Accessibility | Keyboard/focus/aria | Keyboard-operable; focus visible | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-20 | Planned |
 | E2E-01 | E2E | Authentication flow | Login → change password → app → logout | `e2e/lab-03/authentication.spec.ts` | FR-01–06 | BR-01–10 | AC-01, AC-02, AC-05, AC-06 | Planned |
 | E2E-02 | E2E | Staff ticket flow | Queue → detail → claim → priority → status → comments/notes | `e2e/lab-03/staff-ticket-flow.spec.ts` | FR-14–20 | BR-14–18 | AC-10–14 | Planned |
@@ -99,11 +102,11 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05
 - AC-04 → SEC-AUTHZ-02
 - AC-05 → API-AUTH-02, API-AUTH-03, E2E-01
-- AC-06 → API-AUTH-04, SEC-AUTHZ-04, E2E-01
+- AC-06 → API-AUTH-04, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, E2E-01
 - AC-07 → API-REQ-01, API-REQ-02, DB-MIG-01, DB-MIG-02, E2E-04
 - AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
-- AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01
+- AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01, VISUAL-02
 - AC-11 → API-STAFF-01, UI-STAFF-01, E2E-02
 - AC-12 → API-STAFF-02, UI-STAFF-01, E2E-02
 - AC-13 → API-STAFF-03, API-STAFF-04, UI-STAFF-01, E2E-02
