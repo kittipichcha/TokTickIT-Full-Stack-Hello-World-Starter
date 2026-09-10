@@ -60,6 +60,12 @@ explicitly required by this document and the Lab 3 handout. The agent must not a
 status transitions, admin flows, UI widgets, or validation rules that are not called out in the
 requirement set.
 
+This rule prevents scope expansion; it does not prevent the implementation-level validation
+needed to satisfy existing requirements. The agent must still validate inputs, enforce the
+authorization and status matrices, and apply the documented error contract exactly as specified,
+even where that validation is not restated in every requirement. The agent must not invent new
+behavior, but it must implement the behavior the requirements already call for.
+
 If a requirement is missing, contradictory, or ambiguous, the agent must resolve the choice,
 document the decision and its rationale in the Assumptions and Decisions section, and keep the
 contract internally consistent. The only allowed defaults are the ones explicitly stated in the
@@ -262,10 +268,10 @@ Lab 3.
 
 **Administrator vs IT Staff separation:** Administrator and IT Staff responsibilities remain
 conceptually separate. IT Staff manage Tickets; Administrators manage user accounts. An
-Administrator does not automatically perform IT Staff Ticket operations unless the approved
-authorization matrix explicitly permits it. In this contract, the matrix grants Administrators
+Administrator does not automatically perform IT Staff Ticket operations unless the authorization
+matrix explicitly permits it. In this contract, the matrix grants Administrators
 the same Ticket operations as IT Staff (Queue, Detail, ownership, IT Priority, status, Public
-Comments, Internal Notes). This is an explicit, approved overlap: an Administrator may act on
+Comments, Internal Notes). This is an explicit overlap: an Administrator may act on
 Tickets in the same way as IT Staff, while only Administrators may perform user-management
 actions. The two roles remain conceptually separate — IT Staff manage Tickets, Administrators
 manage user accounts — and the overlap is limited to the Ticket operations listed in the matrix.
