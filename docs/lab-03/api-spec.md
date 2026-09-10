@@ -72,22 +72,22 @@ or exponent.
 **Authentication/session decisions (frozen):**
 - Mechanism: httpOnly session cookie backed by a server-side session store.
 - Password hashing: bcrypt.
-- Session expiration: defined by the server-side session store (idle timeout).
+- Session expiration: 30-minute idle timeout (see Security configuration policy below).
 - Logout invalidates the session server-side.
 - CSRF: protected endpoints require a CSRF token for state-changing requests where applicable.
 - Safe errors: login failure returns a generic message that does not reveal whether the email
   exists or the password was wrong.
 
-**Security configuration policy (frozen):** The exact session idle timeout, session-cookie
-attributes, and CSRF mechanism are repository/environment configuration decisions, not
-invented by the implementation agent. The implementation must satisfy the following required
+**Security configuration policy (frozen):** The exact session-cookie attributes and CSRF
+mechanism are repository/environment configuration decisions, not invented by the
+implementation agent. The implementation must satisfy the following required
 security properties, and the concrete configuration must be documented in the repository
 configuration and reflected in the planned security tests:
 
-- **Session idle timeout:** The server-side session store expires an idle session after a
-  bounded, configured idle timeout. An expired session behaves exactly like an unauthenticated
-  session (`401 UNAUTHENTICATED`) and the user must log in again. The timeout value is a
-  configuration decision; it must be finite and non-zero.
+- **Session idle timeout (frozen value):** The Lab 3 contract value is **30 minutes** of idle
+  time. An idle session expires after 30 minutes and behaves exactly like an unauthenticated
+  session (`401 UNAUTHENTICATED`); the user must log in again. Any request refreshes the idle
+  timer. There is no separate absolute timeout in Lab 3.
 - **Session-cookie attributes:** The session cookie is `httpOnly` and `SameSite`-protected. In
   production it is `Secure`. The cookie must not be readable by client-side script.
 - **CSRF:** Every state-changing (non-`GET`/`HEAD`/`OPTIONS`) protected endpoint is protected
@@ -240,14 +240,20 @@ proceeding receives `401 PASSWORD_CHANGE_REQUIRED`; that code is **not** returne
 **Query parameters**
 | Param | Type | Default | Notes |
 |---|---|---|---|
-| `search` | string | — | ticket number/summary substring |
+| `search` | string | — | substring match on `ticketNumber` and `summary` |
 | `categoryId` | int | — | filter |
 | `requestedPriority` | enum | — | filter |
 | `status` | enum | — | filter |
-| `sort` | string | `createdAt` | sortable fields |
+| `sort` | string | `createdAt` | one of `createdAt`, `ticketNumber`, `summary`, `status`, `priority` |
 | `order` | string | `desc` | `asc`/`desc` |
 | `page` | int | `1` | page |
 | `pageSize` | int | `10` | 1–50 |
+
+**Query semantics (frozen):** `search` is a case-insensitive substring match against
+`ticketNumber` and `summary`; filters combine with AND; `sort` accepts only `createdAt`,
+`ticketNumber`, `summary`, `status`, and `priority`; default is `createdAt desc`; `pageSize`
+defaults to `10` and accepts `1`–`50`. Invalid query values fall back to safe defaults (never
+`400`), matching `tests.md` `API-QUE-02`.
 
 **Response 200**
 ```json
@@ -347,14 +353,27 @@ proceeding receives `401 PASSWORD_CHANGE_REQUIRED`; that code is **not** returne
 **Query parameters**
 | Param | Type | Default | Notes |
 |---|---|---|---|
-| `search` | string | — | searchable fields |
-| `status` | enum | — | filter |
-| `priority` | enum | — | filter |
-| `ownerId` | int | — | filter |
-| `sort` | string | `createdAt` | sortable fields |
+| `search` | string | — | substring match on `ticketNumber` and `summary` |
+| `status` | enum | — | filter; one of the eight Ticket statuses |
+| `priority` | enum | — | filter; `LOW`/`MEDIUM`/`HIGH` (matches IT Priority) |
+| `ownerId` | int | — | filter; Ticket Owner user id |
+| `sort` | string | `createdAt` | one of `createdAt`, `ticketNumber`, `summary`, `status`, `priority` |
 | `order` | string | `desc` | `asc`/`desc` |
 | `page` | int | `1` | page |
 | `pageSize` | int | `10` | 1–50 |
+
+**Query semantics (frozen):**
+- `search` is a case-insensitive substring match against `ticketNumber` and `summary`. A match
+  on either field qualifies.
+- `status`, `priority`, and `ownerId` are exact-match filters; multiple filters combine with
+  AND.
+- `sort` accepts only `createdAt`, `ticketNumber`, `summary`, `status`, and `priority`. `order`
+  is `asc` or `desc`; default is `createdAt desc`.
+- `page` defaults to `1`; `pageSize` defaults to `10` and accepts `1`–`50`.
+- **Invalid query values fall back to safe defaults** (e.g. an unknown `sort` value falls back
+  to `createdAt desc`; an out-of-range `pageSize` is clamped to the nearest bound; a malformed
+  `page` falls back to `1`). Invalid values never return `400`; they are treated as absent.
+  This matches `tests.md` `API-QUE-02`.
 
 **Response 200**
 ```json
