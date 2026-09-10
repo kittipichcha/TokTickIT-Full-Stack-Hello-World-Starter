@@ -87,6 +87,8 @@ require `aria-label` and a tooltip.
 - Screen-level states: Loading, Not found / not owned (404), Unexpected failure (500/network).
 
 ### 5.6 IT Staff Ticket Queue
+- Accessible to IT Staff and Administrator (per the authorization matrix). The Queue is the
+  staff Ticket list; an Administrator may open it and use it in the same way as IT Staff.
 - Toolbar: search input, status filter, priority filter, owner filter, Clear Filters.
 - Desktop: table. The following required information must be available for each Ticket: Ticket
   No., Created Date, Summary, Category, Requested Priority, IT Priority, Current Status, Ticket
@@ -104,6 +106,8 @@ require `aria-label` and a tooltip.
 - Pagination.
 
 ### 5.7 IT Staff Ticket Detail
+- Accessible to IT Staff and Administrator (per the authorization matrix). An Administrator may
+  open any Ticket Detail and use the staff operations in the same way as IT Staff.
 - Ticket information clearly grouped; only permitted operational fields editable.
 - Ownership: claim/assign/reassign control.
 - IT Priority: editable by IT Staff/Administrator.
