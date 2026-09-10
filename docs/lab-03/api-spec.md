@@ -1,0 +1,606 @@
+# Lab 3 API Contract — TokTickIT Users, Roles, IT Staff Ticketing, and Admin Screens
+
+## 0. Conventions
+
+**Base path:** `/api`
+
+**Authentication (session cookie):** Lab 3 replaces the Lab 2 `X-Dev-Requester-Id` header with
+a real authenticated session. On successful login the backend establishes an httpOnly session
+cookie. Protected endpoints require a valid session. The authenticated user identity, never a
+client-supplied `requesterId`, determines ownership of Requester operations (BR-03).
+
+**Standard error shape:**
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Email and password are required.",
+    "fields": { "email": "Email is required." }
+  }
+}
+```
+`fields` is present for every `400` response and omitted for non-`400` responses.
+
+All errors use this object shape. `error.code` is one of `VALIDATION_ERROR`, `UNAUTHENTICATED`,
+`FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `INACTIVE_REFERENCE`, `TICKET_SEQUENCE_EXHAUSTED`,
+`ATTACHMENT_LIMIT_REACHED`, `ATTACHMENT_REMOVED`, `FILE_TOO_LARGE`, `UNSUPPORTED_MEDIA_TYPE`,
+`INTERNAL_ERROR`, or `PASSWORD_CHANGE_REQUIRED`. `500` responses use only `INTERNAL_ERROR` and
+the message `An unexpected error occurred.`; they must not expose stack traces, database errors,
+storage paths, or parser details.
+
+**Canonical status/condition → `error.code` table (frozen; implementations must not invent alternatives):**
+| HTTP status | Condition | `error.code` |
+|---|---|---|
+| 400 | Field/body/query validation failure | `VALIDATION_ERROR` |
+| 401 | No valid session / not authenticated | `UNAUTHENTICATED` |
+| 401 | Authenticated but must change password before proceeding | `PASSWORD_CHANGE_REQUIRED` |
+| 403 | Authenticated but role not permitted | `FORBIDDEN` |
+| 404 | Resource missing or not owned by the caller (Ticket, Attachment, Note) | `NOT_FOUND` |
+| 409 | Referenced `categoryId`/`relatedSystemId` well-formed but nonexistent | `INACTIVE_REFERENCE` |
+| 409 | Referenced `categoryId`/`relatedSystemId` exists but is inactive | `INACTIVE_REFERENCE` |
+| 409 | Ticket sequence exhausted for the UTC year | `TICKET_SEQUENCE_EXHAUSTED` |
+| 409 | Forbidden status transition | `CONFLICT` |
+| 409 | Duplicate email address | `CONFLICT` |
+| 409 | Attachment already removed (soft-delete idempotency guard) | `CONFLICT` |
+| 410 | Attachment exists but is soft-removed | `ATTACHMENT_REMOVED` |
+| 413 | Uploaded file exceeds the byte limit | `FILE_TOO_LARGE` |
+| 415 | Uploaded file type/signature not permitted | `UNSUPPORTED_MEDIA_TYPE` |
+| 500 | Unexpected server error | `INTERNAL_ERROR` |
+
+**Request parsing:** JSON endpoints require `Content-Type: application/json`; a malformed JSON
+document, a non-object JSON value, or a wrong content type returns `400 VALIDATION_ERROR`.
+Unknown JSON properties are ignored unless this contract lists them as stored data. All integer
+values accept only the decimal grammar `0|[1-9][0-9]*` with no sign, decimal point, whitespace,
+or exponent.
+
+**Standard pagination metadata (list endpoints):**
+```json
+{
+  "data": [ /* items */ ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 10,
+    "totalItems": 42,
+    "totalPages": 5,
+    "unfilteredTotalItems": 57
+  }
+}
+```
+
+**Authentication/session decisions (frozen):**
+- Mechanism: httpOnly session cookie backed by a server-side session store.
+- Password hashing: bcrypt.
+- Session expiration: defined by the server-side session store (idle timeout).
+- Logout invalidates the session server-side.
+- CSRF: protected endpoints require a CSRF token for state-changing requests where applicable.
+- Safe errors: login failure returns a generic message that does not reveal whether the email
+  exists or the password was wrong.
+
+---
+
+## 1. POST /api/auth/login
+
+**Auth:** none (public).
+
+**Request body**
+```json
+{ "email": "requester@example.com", "password": "secret" }
+```
+
+**Validation**
+- `email` required, valid email format.
+- `password` required, non-empty.
+
+**Response 200**
+```json
+{ "data": { "id": 1, "name": "Requester One", "email": "requester@example.com", "role": "REQUESTER", "mustChangePassword": false } }
+```
+
+**Error cases**
+- `400 VALIDATION_ERROR` — missing/invalid email or password.
+- `401 UNAUTHENTICATED` — invalid credentials or inactive account (safe generic message).
+
+---
+
+## 2. POST /api/auth/logout
+
+**Auth:** authenticated session.
+
+**Response 200**
+```json
+{ "data": { "success": true } }
+```
+
+**Error cases**
+- `401 UNAUTHENTICATED` — no valid session.
+
+---
+
+## 3. GET /api/auth/me
+
+**Auth:** authenticated session.
+
+**Response 200**
+```json
+{ "data": { "id": 1, "name": "Requester One", "email": "requester@example.com", "role": "REQUESTER", "mustChangePassword": false } }
+```
+
+**Error cases**
+- `401 UNAUTHENTICATED` — no valid session.
+
+---
+
+## 4. POST /api/auth/change-password
+
+**Auth:** authenticated session.
+
+**Request body**
+```json
+{ "currentPassword": "old", "newPassword": "new-secret" }
+```
+
+**Validation**
+- `currentPassword` required.
+- `newPassword` required, satisfies password rules.
+
+**Response 200**
+```json
+{ "data": { "success": true, "mustChangePassword": false } }
+```
+
+**Error cases**
+- `400 VALIDATION_ERROR` — missing/invalid fields.
+- `401 UNAUTHENTICATED` — no valid session.
+- No `PASSWORD_CHANGE_REQUIRED` case: a user who must change their password is the legitimate
+  caller of this endpoint (FR-05, BR-02). `BR-02`'s gate blocks access to *normal application*
+  screens and endpoints, not to the password-change endpoint itself.
+
+**Guard note (frozen):** For other endpoints, a user who must change their password before
+proceeding receives `401 PASSWORD_CHANGE_REQUIRED`; that code is **not** returned by the
+`change-password` endpoint itself.
+
+---
+
+## 5. GET /api/categories
+
+**Auth:** authenticated session (public reference data, but requires login in Lab 3).
+
+**Response 200**
+```json
+{ "data": [ { "id": 1, "name": "Hardware", "isActive": true } ] }
+```
+
+---
+
+## 6. GET /api/related-systems
+
+**Auth:** authenticated session.
+
+**Response 200**
+```json
+{ "data": [ { "id": 1, "name": "POS", "isActive": true } ] }
+```
+
+---
+
+## 7. POST /api/tickets
+
+**Auth:** authenticated Requester.
+
+**Request body**
+```json
+{ "categoryId": 1, "relatedSystemId": 1, "summary": "Printer not working", "description": "The printer is offline.", "requestedPriority": "MEDIUM" }
+```
+
+**Validation**
+- `categoryId`, `relatedSystemId` must reference active records.
+- `summary` 5–120 chars after trim.
+- `description` 10–2,000 chars after trim.
+- `requestedPriority` one of `LOW`, `MEDIUM`, `HIGH`.
+
+**Response 201**
+```json
+{ "data": { "id": 501, "ticketNumber": "TKT-2026-000123", "currentStatus": "NEW", "requestedPriority": "MEDIUM", "itPriority": "MEDIUM", "ticketOwnerId": null } }
+```
+
+**Error cases**
+- `400 VALIDATION_ERROR` — invalid fields.
+- `409 INACTIVE_REFERENCE` — nonexistent/inactive category or related system.
+- `409 TICKET_SEQUENCE_EXHAUSTED` — sequence exhausted.
+
+---
+
+## 8. GET /api/tickets
+
+**Auth:** authenticated Requester. Returns only owned Tickets (My Tickets).
+
+**Query parameters**
+| Param | Type | Default | Notes |
+|---|---|---|---|
+| `search` | string | — | ticket number/summary substring |
+| `categoryId` | int | — | filter |
+| `requestedPriority` | enum | — | filter |
+| `status` | enum | — | filter |
+| `sort` | string | `createdAt` | sortable fields |
+| `order` | string | `desc` | `asc`/`desc` |
+| `page` | int | `1` | page |
+| `pageSize` | int | `10` | 1–50 |
+
+**Response 200**
+```json
+{ "data": [ /* owned tickets */ ], "pagination": { "page": 1, "pageSize": 10, "totalItems": 42, "totalPages": 5, "unfilteredTotalItems": 57 } }
+```
+
+---
+
+## 9. GET /api/tickets/:ticketNumber
+
+**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+
+**Response 200**
+```json
+{ "data": { "id": 501, "ticketNumber": "TKT-2026-000123", "summary": "Printer not working", "currentStatus": "NEW", "requestedPriority": "MEDIUM", "itPriority": "MEDIUM", "ticketOwnerId": null, "requesterId": 1 } }
+```
+
+**Error cases**
+- `404 NOT_FOUND` — not found or not owned (Requester).
+
+---
+
+## 10. POST /api/tickets/:ticketNumber/attachments
+
+**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+
+**Request:** multipart `file` upload.
+
+**Response 201**
+```json
+{ "data": { "id": 10, "originalFilename": "photo.jpg", "mimeType": "image/jpeg", "fileSizeBytes": 12345, "isRemoved": false } }
+```
+
+**Error cases**
+- `400 ATTACHMENT_LIMIT_REACHED` — exceeds 5 active attachments.
+- `413 FILE_TOO_LARGE` — exceeds byte limit.
+- `415 UNSUPPORTED_MEDIA_TYPE` — type/signature not permitted.
+
+---
+
+## 11. GET /api/tickets/:ticketNumber/attachments
+
+**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+
+**Response 200**
+```json
+{ "data": [ /* attachments */ ] }
+```
+
+---
+
+## 12. GET /api/attachments/:attachmentId/download
+
+**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+
+**Response 200:** file bytes with content headers.
+
+**Error cases**
+- `404 NOT_FOUND` — not found or not owned.
+- `410 ATTACHMENT_REMOVED` — soft-removed.
+
+---
+
+## 13. GET /api/attachments/:attachmentId/preview
+
+**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+
+**Response 200:** image inline or PDF first page.
+
+**Error cases**
+- `404 NOT_FOUND` — not found or not owned.
+- `410 ATTACHMENT_REMOVED` — soft-removed.
+
+---
+
+## 14. DELETE /api/attachments/:attachmentId
+
+**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+
+**Response 200**
+```json
+{ "data": { "id": 10, "isRemoved": true, "removedAt": "2026-09-10T00:00:00Z" } }
+```
+
+**Error cases**
+- `404 NOT_FOUND` — not found or not owned.
+- `409 CONFLICT` — already removed.
+
+---
+
+## 15. GET /api/staff/queue
+
+**Auth:** IT Staff or Administrator.
+
+**Query parameters**
+| Param | Type | Default | Notes |
+|---|---|---|---|
+| `search` | string | — | searchable fields |
+| `status` | enum | — | filter |
+| `priority` | enum | — | filter |
+| `ownerId` | int | — | filter |
+| `sort` | string | `createdAt` | sortable fields |
+| `order` | string | `desc` | `asc`/`desc` |
+| `page` | int | `1` | page |
+| `pageSize` | int | `10` | 1–50 |
+
+**Response 200**
+```json
+{ "data": [ /* tickets with ownership/status/priority */ ], "pagination": { "page": 1, "pageSize": 10, "totalItems": 42, "totalPages": 5, "unfilteredTotalItems": 57 } }
+```
+
+**Error cases**
+- `403 FORBIDDEN` — not IT Staff/Administrator.
+
+---
+
+## 16. GET /api/staff/tickets/:ticketNumber
+
+**Auth:** IT Staff or Administrator.
+
+**Response 200**
+```json
+{ "data": { "id": 501, "ticketNumber": "TKT-2026-000123", "summary": "Printer not working", "currentStatus": "NEW", "requestedPriority": "MEDIUM", "itPriority": "MEDIUM", "ticketOwnerId": null, "requesterId": 1, "publicComments": [], "internalNotes": [] } }
+```
+
+**Error cases**
+- `403 FORBIDDEN` — not IT Staff/Administrator.
+- `404 NOT_FOUND` — not found.
+
+---
+
+## 17. POST /api/staff/tickets/:ticketNumber/owner
+
+**Auth:** IT Staff or Administrator.
+
+**Request body**
+```json
+{ "ownerId": 5 }
+```
+
+**Validation**
+- `ownerId` must reference an active IT Staff or Administrator user.
+
+**Response 200**
+```json
+{ "data": { "ticketOwnerId": 5 } }
+```
+
+**Error cases**
+- `400 VALIDATION_ERROR` — invalid ownerId.
+- `409 CONFLICT` — owner not active IT Staff/Administrator.
+
+---
+
+## 18. PATCH /api/staff/tickets/:ticketNumber/priority
+
+**Auth:** IT Staff or Administrator.
+
+**Request body**
+```json
+{ "itPriority": "HIGH" }
+```
+
+**Validation**
+- `itPriority` one of `LOW`, `MEDIUM`, `HIGH`.
+
+**Response 200**
+```json
+{ "data": { "itPriority": "HIGH" } }
+```
+
+---
+
+## 19. PATCH /api/staff/tickets/:ticketNumber/status
+
+**Auth:** IT Staff or Administrator.
+
+**Request body**
+```json
+{ "status": "IN_PROGRESS" }
+```
+
+**Validation**
+- `status` must be a permitted transition per the Status Transition Matrix.
+
+**Response 200**
+```json
+{ "data": { "currentStatus": "IN_PROGRESS" } }
+```
+
+**Error cases**
+- `409 CONFLICT` — forbidden transition.
+
+---
+
+## 20. POST /api/tickets/:ticketNumber/comments
+
+**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+
+**Request body**
+```json
+{ "content": "Please check the printer." }
+```
+
+**Validation**
+- `content` 1–2,000 chars after trim; whitespace-only rejected.
+
+**Response 201**
+```json
+{ "data": { "id": 1, "content": "Please check the printer.", "authorId": 1, "createdAt": "2026-09-10T00:00:00Z" } }
+```
+
+---
+
+## 20a. POST /api/tickets/:ticketNumber/appears-resolved
+
+**Auth:** authenticated Requester (owner of the Ticket). (BR-05, FR-13)
+
+**Request body**
+```json
+{ "appearsResolved": true }
+```
+
+**Validation**
+- `appearsResolved` required boolean.
+
+**Response 200**
+```json
+{ "data": { "ticketNumber": "TKT-2026-000123", "appearsResolved": true, "currentStatus": "NEW" } }
+```
+
+**Error cases**
+- `404 NOT_FOUND` — not found or not owned by the authenticated Requester (BR-12). A Requester-
+  supplied ownership mismatch returns `404`, never `403`, so a non-owner cannot confirm the
+  Ticket exists. (`403 FORBIDDEN` is not used here.)
+
+**Notes:** This sets only the Requester "Problem Appears Resolved" boolean indicator (BR-19). It
+must **not** change the formal Ticket status to Resolved or Closed.
+
+---
+
+## 21. GET /api/tickets/:ticketNumber/comments
+
+**Auth:** authenticated Requester (owned) or IT Staff/Administrator.
+
+**Response 200**
+```json
+{ "data": [ /* public comments */ ] }
+```
+
+---
+
+## 22. POST /api/staff/tickets/:ticketNumber/notes
+
+**Auth:** IT Staff or Administrator.
+
+**Request body**
+```json
+{ "content": "Internal note." }
+```
+
+**Validation**
+- `content` 1–2,000 chars after trim; whitespace-only rejected.
+
+**Response 201**
+```json
+{ "data": { "id": 1, "content": "Internal note.", "authorId": 5, "createdAt": "2026-09-10T00:00:00Z" } }
+```
+
+**Error cases**
+- `403 FORBIDDEN` — not IT Staff/Administrator.
+
+---
+
+## 23. GET /api/staff/tickets/:ticketNumber/notes
+
+**Auth:** IT Staff or Administrator.
+
+**Response 200**
+```json
+{ "data": [ /* internal notes */ ] }
+```
+
+**Error cases**
+- `403 FORBIDDEN` — not IT Staff/Administrator.
+
+---
+
+## 24. GET /api/admin/users
+
+**Auth:** Administrator.
+
+**Query parameters**
+| Param | Type | Default | Notes |
+|---|---|---|---|
+| `search` | string | — | name/email substring |
+| `role` | enum | — | optional role filter |
+
+**Response 200**
+```json
+{ "data": [ { "id": 1, "name": "Requester One", "email": "requester@example.com", "role": "REQUESTER", "isActive": true } ] }
+```
+
+**Error cases**
+- `403 FORBIDDEN` — not Administrator.
+
+---
+
+## 25. POST /api/admin/users
+
+**Auth:** Administrator.
+
+**Request body**
+```json
+{ "name": "New User", "email": "new@example.com", "role": "REQUESTER", "isActive": true, "initialPassword": "temp-secret" }
+```
+
+**Validation**
+- `name` required.
+- `email` required, valid, unique.
+- `role` one of `REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`.
+- `initialPassword` satisfies password rules.
+
+**Response 201**
+```json
+{ "data": { "id": 2, "name": "New User", "email": "new@example.com", "role": "REQUESTER", "isActive": true, "mustChangePassword": true } }
+```
+
+**Error cases**
+- `400 VALIDATION_ERROR` — invalid fields.
+- `409 CONFLICT` — duplicate email.
+
+---
+
+## 26. PATCH /api/admin/users/:userId
+
+**Auth:** Administrator.
+
+**Request body**
+```json
+{ "name": "Updated", "email": "updated@example.com", "role": "IT_STAFF", "isActive": true }
+```
+
+**Validation**
+- `name`, `email`, `role`, `isActive` as above.
+- Cannot deactivate own account.
+- Cannot deactivate the last active Administrator.
+
+**Response 200**
+```json
+{ "data": { "id": 2, "name": "Updated", "email": "updated@example.com", "role": "IT_STAFF", "isActive": true } }
+```
+
+**Error cases**
+- `400 VALIDATION_ERROR` — invalid fields.
+- `409 CONFLICT` — duplicate email, self-deactivation, or last-active-Administrator removal.
+
+---
+
+## 27. POST /api/admin/users/:userId/initial-password
+
+**Auth:** Administrator.
+
+**Request body**
+```json
+{ "initialPassword": "new-temp-secret" }
+```
+
+**Validation**
+- `initialPassword` satisfies password rules.
+
+**Response 200**
+```json
+{ "data": { "id": 2, "mustChangePassword": true } }
+```
+
+**Error cases**
+- `400 VALIDATION_ERROR` — invalid password.
+- `403 FORBIDDEN` — not Administrator.
