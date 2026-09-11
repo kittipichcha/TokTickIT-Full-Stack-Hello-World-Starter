@@ -23,6 +23,25 @@ How I responded: Addressed all five blockers in successive commits on `feature/i
 4. **Session expiration frozen** — documented a **30-minute session idle timeout** as the Lab 3 contract value (specification.md §10 item 9), including what happens on expiration and activity refresh, with corresponding planned tests.
 5. **AC-to-test traceability corrected** — added dedicated Acceptance Criteria `AC-21` (Zen Green), `AC-22` (responsive), `AC-23` (accessibility), `AC-24` (seed idempotency), `AC-25` (migration preservation), and `AC-26` (initial-password migration), and remapped each planned test to the AC it actually verifies (`UI-STYLE-01→AC-21`, `VISUAL-01/02→AC-22`, `A11Y-01→AC-23`, `SEED-01→AC-24`, `DB-MIG-01/02→AC-25`, `DB-MIG-03/04→AC-26`).
 
+**Follow-up freeze-gate revision (2026-09-11):** A subsequent review identified two remaining
+contract decisions that were still left to implementation rather than frozen in the contract:
+1. **Password policy was not frozen** — `BR-10` referenced "documented password rules (length
+   and composition)" without defining them, and `API-AUTH-07` could not be implementation-ready
+   without an exact boundary.
+2. **Migrated-Requester initial-password derivation was not frozen** — §9.2 said the derivation
+   was "documented in the seed module," leaving the formula to the implementation agent.
+
+Resolution: Both decisions were frozen in the engineering contract and propagated consistently:
+- **Password policy (Option A):** 12–128 characters; at least one uppercase ASCII letter, one
+  lowercase ASCII letter, one digit, and one ASCII special character; not trimmed before
+  validation; whitespace permitted; no reuse/history rule. Frozen in `specification.md` (BR-10,
+  §13 decision 12) and propagated to `api-spec.md` (change-password, admin create user, admin
+  initial-password), `ui-spec.md` (Change Password screen), and `tests.md` (`API-AUTH-07`).
+- **Migration derivation (Option A):** `Lab3-` + first 20 hex chars of
+  SHA-256(lowercase(trim(email)) + ":" + trim(name)), encoded as lowercase hex. Frozen in
+  `specification.md` (§9.2, §13 decision 13) and verified by `DB-MIG-03` in `tests.md`. The seed
+  module now implements the frozen rule; it does not define it.
+
 ---
 
 ## Pull Requests I reviewed (authored by my partner)

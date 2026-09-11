@@ -164,7 +164,10 @@ configuration and reflected in the planned security tests:
 
 **Validation**
 - `currentPassword` required.
-- `newPassword` required, satisfies password rules.
+- `newPassword` required and must satisfy the frozen password policy (Section 13, decision 12
+  of `specification.md`): 12–128 characters; at least one uppercase ASCII letter (A–Z), one
+  lowercase ASCII letter (a–z), one digit (0–9), and one ASCII special character from
+  `!@#$%^&*()-_=+[]{};:,.?/\`; not trimmed before validation; whitespace permitted.
 
 **Response 200**
 ```json
@@ -172,7 +175,8 @@ configuration and reflected in the planned security tests:
 ```
 
 **Error cases**
-- `400 VALIDATION_ERROR` — missing/invalid fields.
+- `400 VALIDATION_ERROR` — missing/invalid fields, or `newPassword` violates the password
+  policy (too short, too long, or missing a required character class).
 - `401 UNAUTHENTICATED` — no valid session.
 - No `PASSWORD_CHANGE_REQUIRED` case: a user who must change their password is the legitimate
   caller of this endpoint (FR-05, BR-02). `BR-02`'s gate blocks access to *normal application*
@@ -590,7 +594,10 @@ must **not** change the formal Ticket status to Resolved or Closed.
 - `name` required.
 - `email` required, valid, unique.
 - `role` one of `REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`.
-- `initialPassword` satisfies password rules.
+- `initialPassword` must satisfy the frozen password policy (Section 13, decision 12 of
+  `specification.md`): 12–128 characters; at least one uppercase ASCII letter (A–Z), one
+  lowercase ASCII letter (a–z), one digit (0–9), and one ASCII special character from
+  `!@#$%^&*()-_=+[]{};:,.?/\`; not trimmed before validation; whitespace permitted.
 
 **Response 201**
 ```json
@@ -598,7 +605,7 @@ must **not** change the formal Ticket status to Resolved or Closed.
 ```
 
 **Error cases**
-- `400 VALIDATION_ERROR` — invalid fields.
+- `400 VALIDATION_ERROR` — invalid fields, or `initialPassword` violates the password policy.
 - `409 CONFLICT` — duplicate email.
 
 ---
@@ -640,7 +647,10 @@ must **not** change the formal Ticket status to Resolved or Closed.
 ```
 
 **Validation**
-- `initialPassword` satisfies password rules.
+- `initialPassword` must satisfy the frozen password policy (Section 13, decision 12 of
+  `specification.md`): 12–128 characters; at least one uppercase ASCII letter (A–Z), one
+  lowercase ASCII letter (a–z), one digit (0–9), and one ASCII special character from
+  `!@#$%^&*()-_=+[]{};:,.?/\`; not trimmed before validation; whitespace permitted.
 
 **Response 200**
 ```json
@@ -648,5 +658,5 @@ must **not** change the formal Ticket status to Resolved or Closed.
 ```
 
 **Error cases**
-- `400 VALIDATION_ERROR` — invalid password.
+- `400 VALIDATION_ERROR` — invalid password (violates the frozen password policy).
 - `403 FORBIDDEN` — not Administrator.

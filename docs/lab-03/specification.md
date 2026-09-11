@@ -171,8 +171,13 @@ and Decisions section, and keep the contract internally consistent.
 - **BR-08** An inactive user cannot authenticate; the login response does not reveal account
   status details.
 - **BR-09** Logout invalidates the authenticated session server-side.
-- **BR-10** A new initial password must satisfy the documented password rules (length and
-  composition) and must be changed at the next login.
+- **BR-10** A new initial password must satisfy the frozen password policy (Section 13,
+  decision 12) and must be changed at the next login. The policy is: a password must be
+  **12–128 characters** long and contain **at least one uppercase ASCII letter (A–Z)**, **at
+  least one lowercase ASCII letter (a–z)**, **at least one digit (0–9)**, and **at least one
+  ASCII special character** from `!@#$%^&*()-_=+[]{};:,.?/\`. The password value is **not
+  trimmed** before validation. Whitespace is permitted. There is no password-reuse or
+  password-history rule in Lab 3.
 
 **Identity & ownership**
 - **BR-03** The authenticated user identity, not a requesterId supplied by the client,
@@ -334,8 +339,19 @@ the repository.
 - **Role assignment:** Every migrated Requester is assigned the single role `REQUESTER`.
 - **Initial password:** Each migrated Requester receives a **deterministic per-user initial
   password** derived from the user's own identity (email and name), so the value is stable
-  across repeated seed/migration runs and differs per user. The derivation is documented in the
-  seed module and is for local-lab use only.
+  across repeated seed/migration runs and differs per user. The derivation is **frozen in this
+  contract** (Section 13, decision 13) and is for local-lab use only. The seed module must
+  **implement** this frozen rule; it must **not define** the rule.
+- **Derivation formula (frozen):** For a migrated Requester with `email` and `name`:
+  1. `normalizedEmail = lowercase(trim(email))`
+  2. `normalizedName = trim(name)`
+  3. `digest = SHA-256(UTF-8(normalizedEmail + ":" + normalizedName))`
+  4. `hex = lowercase hexadecimal encoding of digest`
+  5. `initialPassword = "Lab3-" + first 20 characters of hex`
+  The normalization, separator (`:`), hash (SHA-256), encoding (lowercase hex), truncation
+  (first 20 hex chars), and prefix (`Lab3-`) are all part of the frozen contract. The same
+  `email` + `name` always yields the same initial password; different identities normally
+  produce different passwords.
 - **Storage:** The initial password is stored **only** as a bcrypt hash; the plaintext value is
   never persisted and never committed to the repository.
 - **Password-change state:** Every migrated Requester is created with `mustChangePassword = true`.
@@ -548,8 +564,9 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
 - **AC-25** Given existing Lab 2 data, when the DevRequester → User migration runs, then Ticket
   and Attachment ownership is preserved and all existing data remains valid. *(FR-10, BR-11)*
 - **AC-26** Given a migrated Requester, when they log in with the deterministic initial
-  password, then authentication succeeds, `mustChangePassword` is enforced, and normal
-  application access is allowed only after a valid password change. *(FR-05, BR-02, BR-10)*
+  password produced by the frozen derivation (Section 13, decision 13), then authentication
+  succeeds, `mustChangePassword` is enforced, and normal application access is allowed only
+  after a valid password change. *(FR-05, BR-02, BR-10)*
 
 ## 12. Definition of Done
 
@@ -604,3 +621,16 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
     substring; `sort` accepts `createdAt`, `ticketNumber`, `summary`, `status`, and `priority`;
     default sort is `createdAt desc`; `pageSize` is 1–50 default 10; invalid query values fall
     back to safe defaults. See `docs/lab-03/api-spec.md` Section 15.
+12. **Password policy (frozen):** A password must be **12–128 characters** long and contain at
+    least one uppercase ASCII letter (A–Z), at least one lowercase ASCII letter (a–z), at least
+    one digit (0–9), and at least one ASCII special character from
+    `!@#$%^&*()-_=+[]{};:,.?/\`. The password value is **not trimmed** before validation.
+    Whitespace is permitted. There is no password-reuse or password-history rule in Lab 3. This
+    policy applies uniformly to initial passwords (BR-10), administrator-set initial passwords
+    (FR-24, FR-26), and the Change Password flow (FR-05). See `docs/lab-03/api-spec.md` and
+    `docs/lab-03/ui-spec.md`.
+13. **Initial-password migration derivation (frozen):** For a migrated Requester with `email`
+    and `name`, the initial password is
+    `"Lab3-" + first 20 hex chars of SHA-256(lowercase(trim(email)) + ":" + trim(name))`,
+    encoded as lowercase hexadecimal. The seed module implements this rule; it does not define
+    it. See Section 9.2.

@@ -59,7 +59,11 @@ require `aria-label` and a tooltip.
 
 ### 5.2 Change Password
 - Current password, new password, confirm new password fields.
-- Password rules shown.
+- Password rules shown (must match the frozen policy in `specification.md` Section 13,
+  decision 12): 12–128 characters; at least one uppercase ASCII letter (A–Z), one lowercase
+  ASCII letter (a–z), one digit (0–9), and one ASCII special character from
+  `!@#$%^&*()-_=+[]{};:,.?/\`; whitespace permitted; the password value is not trimmed.
+- The confirm field must exactly equal the new password.
 - Validation: inline errors below fields.
 - On success: continue into the application.
 - Busy state while saving.
