@@ -43,3 +43,12 @@
   - **Empty-result coverage (G-09):** extended AC-10/AC-15 and added `UI-QUE-02`/`UI-ADM-02`.
   - Added 11 new planned test rows (`API-AUTH-08/09`, `API-STAFF-06/07/08/09`, `API-ADM-09/10`, `DB-MIG-05`, `UI-QUE-02`, `UI-ADM-02`) and updated the §6 AC→test mapping.
 - Reflection: The three open decisions (claim-before-status, claim race, concurrent sessions) were genuine implementation-strategy choices the handout leaves to the team; all three were resolved as Option A (the simplest behavior consistent with the existing contract) and frozen in Section 13 decisions 14–16. The contract is now closed on every legal execution path identified in this pass.
+
+## Issue #34 Contract-Freeze Revision Entry (Round 4)
+
+- Prompt summary: After Rounds 1–3, run a second, exhaustive line-by-line pass through every endpoint in `api-spec.md` and `ui-spec.md` to find completeness gaps the earlier rounds did not cover (N-01–N-07).
+- What was done with output: Closed seven remaining contract gaps across `api-spec.md`, `ui-spec.md`, and `tests.md`:
+  - **Error-case completeness (N-01–N-04):** added `404 NOT_FOUND` to `POST/GET .../comments` (Requester-ownership path, matching `#20a`'s precedent); added `403 FORBIDDEN` to `POST /api/admin/users` and `PATCH /api/admin/users/:userId`; added `403 FORBIDDEN` to attachment upload/delete for the IT Staff/Administrator view-only case; added `404 NOT_FOUND` to `POST/GET .../notes`.
+  - **Documentation-clarity fixes (N-05–N-07):** clarified in §0 that `401 UNAUTHENTICATED` applies uniformly to every protected endpoint and is not re-listed per-endpoint; confirmed `confirmPassword` is a client-side-only check never sent to the API; documented that the Status Transition Matrix's "Confirmation" transitions are a client-side modal gate only, with the API applying the transition unconditionally.
+  - Added 6 new planned test rows (`SEC-AUTHZ-08/09/10`, `API-STAFF-10`, `UI-CHPWD-02`, `UI-STAFF-02`) and updated the §6 AC→test mapping.
+- Reflection: This round was a self-directed completeness audit (not a partner review) that found only mechanical, already-implied error-case gaps against handout §6.2 and the team's own frozen decisions — no new judgment calls were required. The Attachment byte-size/MIME-type values remain intentionally unstated (inherited from the Lab 2 contract, which this document does not duplicate).
