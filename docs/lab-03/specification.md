@@ -224,6 +224,10 @@ and Decisions section, and keep the contract internally consistent.
 - **BR-28** The system must never remove or deactivate the last active Administrator. This
   includes rejecting both (a) deactivation of the last active Administrator and (b) changing the
   last active Administrator's role to a non-Administrator role.
+- **BR-34** An Administrator may change their own role away from Administrator, provided at
+  least one other active Administrator remains after the change. This is enforced by the same
+  last-active-Administrator check as BR-28: the guard blocks only the *last* active
+  Administrator from stepping down, not a non-last Administrator.
 - **BR-29** Users are deactivated rather than deleted; there is no user deletion.
 - **BR-30** Setting a new initial password marks the user as requiring a password change at the
   next login.
@@ -288,8 +292,8 @@ listed is forbidden and returns `409 CONFLICT` (or the documented safe error).
 
 | From | To | Permitted roles | Validation | Confirmation | Notes |
 |---|---|---|---|---|
-| New | Open | IT Staff, Administrator | Ticket exists | None | Initial triage |
-| Open | In Progress | IT Staff, Administrator | Ticket owned or being claimed | None | Work started |
+| New | Open | IT Staff, Administrator | Ticket exists and is claimed (owned) | None | Initial triage |
+| Open | In Progress | IT Staff, Administrator | Ticket owned | None | Work started |
 | In Progress | Waiting for Requester | IT Staff, Administrator | Ticket owned | None | Awaiting requester input |
 | Waiting for Requester | In Progress | IT Staff, Administrator | Ticket owned | None | Requester responded |
 | In Progress | Resolved | IT Staff, Administrator | Ticket owned | Confirmation | Formal resolution |
@@ -306,6 +310,11 @@ Resolved or Closed.
 **Forbidden transitions:** All transitions not listed above are forbidden (e.g., Requester
 setting Resolved/Closed, New → Closed directly, Cancelled → any other status). Forbidden
 transitions return `409 CONFLICT` with a safe message and do not change the Ticket.
+
+**Claim-before-status-change (frozen):** A status change requires the Ticket to be owned first.
+`PATCH .../status` on an unowned Ticket (`ticketOwnerId` is `null`) returns `409 CONFLICT`; it
+never auto-claims the Ticket. IT Staff/Administrator must call `POST .../owner` to claim the
+Ticket before changing its status (Section 13, decision 14).
 
 ## 8. UI Specification Summary
 The Lab 3 UI extends the Lab 2 Zen Green design language. Screens: Login, Change Password,
@@ -361,6 +370,12 @@ the repository.
   application access is allowed.
 - **Determinism requirement:** Running the migration/seed twice must produce the same initial
   password for the same user, so the migration is idempotent and reproducible.
+- **Email-collision guard (frozen):** Because `User.email` is unique (BR-13), the migration must
+  fail loudly if the derived migration would violate that constraint — e.g. two DevRequesters
+  historically shared an email, or a migrated email collides with a seeded IT Staff/Administrator
+  account. The migration must **not** silently overwrite, skip, or merge such a record; it must
+  abort with a clear error, and resolving the collision is a manual data-cleanup step performed
+  before re-running the migration (Section 13, decision 17).
 
 ### 9.3 Data model contract (frozen)
 The following data model is **normative and frozen**. Issue #35 must translate it into the
@@ -530,7 +545,8 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
   then the flag is saved but the Ticket status is not changed to Resolved or Closed. *(FR-13,
   BR-19)*
 - **AC-10** Given an IT Staff user, when they open the Ticket Queue, then they see Tickets with
-  search, filters, sorting, and pagination. *(FR-14, BR-17)*
+  search, filters, sorting, and pagination, including the empty-result case, which shows a clear
+  no-results message rather than an error. *(FR-14, BR-17)*
 - **AC-11** Given an IT Staff user, when they claim or reassign a Ticket, then the Ticket Owner
   is updated to an active IT Staff or Administrator user. *(FR-16, BR-14)*
 - **AC-12** Given an IT Staff user, when they set IT Priority, then IT Priority is updated and
@@ -540,7 +556,8 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
 - **AC-14** Given an IT Staff user, when they create an Internal Note, then the Note is saved
   and is visible only to IT Staff and Administrator. *(FR-20, BR-04)*
 - **AC-15** Given an Administrator, when they view the user list, then they see Name, Email,
-  Role, and Status with name/email search and optional role filter. *(FR-21, FR-22, FR-23)*
+  Role, and Status with name/email search and optional role filter, including the empty-result
+  case, which shows a clear no-results message rather than an error. *(FR-21, FR-22, FR-23)*
 - **AC-16** Given an Administrator, when they create a user with one role and an initial
   password, then the user is created and must change the password at next login. *(FR-24,
   BR-25, BR-30)*
@@ -634,3 +651,26 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
     `"Lab3-" + first 20 hex chars of SHA-256(lowercase(trim(email)) + ":" + trim(name))`,
     encoded as lowercase hexadecimal. The seed module implements this rule; it does not define
     it. See Section 9.2.
+14. **Claim-before-status-change (frozen):** A status change requires the Ticket to be owned
+    first. `PATCH .../status` on an unowned Ticket returns `409 CONFLICT`; it never auto-claims
+    the Ticket. IT Staff/Administrator must claim the Ticket via `POST .../owner` before
+    changing its status. This keeps each endpoint's effect matching its name (single
+    responsibility) and avoids silently mutating ownership as a side effect of a differently
+    named endpoint. See Section 7 and `api-spec.md` §19.
+15. **Concurrent claim/reassign (frozen):** Two simultaneous claim/reassign requests for the
+    same Ticket are handled as **last-write-wins**. Both requests may succeed; whichever
+    transaction commits last is the final `ticketOwnerId`. No conflict error is surfaced to the
+    "losing" caller. This matches the lab's simplicity level (no optimistic-concurrency
+    requirement exists anywhere in the handout). See `api-spec.md` §17.
+16. **Concurrent sessions (frozen):** A user may hold **multiple concurrent sessions** (e.g.
+    several devices or browsers). Logging in from a second device does **not** invalidate an
+    existing session; each session remains valid until it independently times out or logs out.
+    This is the default behavior of the frozen session-cookie mechanism and avoids the
+    server-side "one session per user" bookkeeping that edges into the handout's excluded
+    advanced identity-management functions. See `api-spec.md` §0.
+17. **Migration email-collision guard (frozen):** Because `User.email` is unique (BR-13), the
+    migration must fail loudly if the derived migration would violate that constraint (two
+    DevRequesters sharing an email, or a migrated email colliding with a seeded IT
+    Staff/Administrator account). It must not silently overwrite, skip, or merge such a record;
+    resolving the collision is a manual data-cleanup step before re-running the migration. See
+    Section 9.2.

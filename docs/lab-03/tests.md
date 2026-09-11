@@ -49,6 +49,8 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-AUTH-05 | API | Current user | Returns authenticated identity and role | `server/tests/lab-03/auth.api.test.ts` | FR-04 | — | AC-01 | Planned |
 | API-AUTH-06 | API | Mandatory password change | Normal app blocked until valid new password saved | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-02 | AC-02 | Planned |
 | API-AUTH-07 | API | Password policy boundaries | Invalid new password rejected per the frozen policy (Section 13, decision 12): below 12 chars rejected; 12 valid chars accepted; 128 valid chars accepted; above 128 chars rejected; missing uppercase rejected; missing lowercase rejected; missing digit rejected; missing special char rejected; valid composition accepted | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-10 | AC-02 | Planned |
+| API-AUTH-08 | API | Change password with wrong currentPassword | `400 VALIDATION_ERROR` with a generic message ("current password is incorrect"); no hint about why it was wrong | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-01, BR-07 | AC-02 | Planned |
+| API-AUTH-09 | API | Second concurrent login for the same user | Both sessions remain valid; the first session is not invalidated (Section 13, decision 16) | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-01 | Planned |
 | SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Planned |
 | SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Planned |
 | SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Planned |
@@ -67,6 +69,10 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-STAFF-03 | API | Permitted status change | Status changes per matrix | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Planned |
 | API-STAFF-04 | API | Forbidden status transition | 409 CONFLICT; no change | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18, BR-20 | AC-13 | Planned |
 | API-STAFF-05 | API | Create Internal Note | Note saved; visible only to IT Staff/Admin | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-21, BR-24 | AC-14 | Planned |
+| API-STAFF-06 | API | Set IT Priority on nonexistent/forbidden ticket | `403 FORBIDDEN` (not IT Staff/Admin) or `404 NOT_FOUND` (ticket not found) per BR-31 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-31 | AC-12 | Planned |
+| API-STAFF-07 | API | Status change on nonexistent/forbidden ticket | `403 FORBIDDEN` (not IT Staff/Admin) or `404 NOT_FOUND` (ticket not found) per BR-31 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-31 | AC-13 | Planned |
+| API-STAFF-08 | API | Status change on unowned ticket | `409 CONFLICT` — ticket must be claimed before a status change; no auto-claim (Section 13, decision 14) | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Planned |
+| API-STAFF-09 | API | Two concurrent claims of the same ticket | Both succeed; final owner is deterministic per last-write-wins (Section 13, decision 15); no conflict error surfaced | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-16 | BR-14 | AC-11 | Planned |
 | API-ADM-01 | API | User list | Name/Email/Role/Status returned | `server/tests/lab-03/users-admin.api.test.ts` | FR-21 | — | AC-15 | Planned |
 | API-ADM-02 | API | User search/filter | Name/email search; optional role filter | `server/tests/lab-03/users-admin.api.test.ts` | FR-22, FR-23 | — | AC-15 | Planned |
 | API-ADM-03 | API | Create user | User created; must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-24 | BR-25, BR-30 | AC-16 | Planned |
@@ -76,18 +82,23 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-ADM-07 | API | Last active Administrator | Rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-28, BR-29 | AC-19 | Planned |
 | API-ADM-07b | API | Last active Administrator role change | Role change to non-Administrator rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-28 | AC-19 | Planned |
 | API-ADM-08 | API | Set new initial password | User must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-26 | BR-30 | AC-16 | Planned |
+| API-ADM-09 | API | Edit / set-initial-password on nonexistent userId | `404 NOT_FOUND` — user does not exist | `server/tests/lab-03/users-admin.api.test.ts` | FR-25, FR-26 | BR-31 | AC-17, AC-16 | Planned |
+| API-ADM-10 | API | Non-last Administrator changes own role away from Administrator | Succeeds; rejected only if it is the last active Administrator (BR-28 path) | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-34, BR-28 | AC-19 | Planned |
 | UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Planned |
 | UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Planned |
 | DB-MIG-01 | DB | DevRequester → User migration | Existing ownership preserved | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Planned |
 | DB-MIG-02 | DB | Existing data preserved | Categories/RelatedSystems/Tickets/Attachments valid | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Planned |
 | DB-MIG-03 | DB | Migrated requester initial password | Migrated user's initial password equals the password produced by the frozen derivation (Section 13, decision 13: `Lab3-` + first 20 hex chars of SHA-256(lowercase(trim(email)) + ":" + trim(name))), authenticates successfully, and `mustChangePassword` is enforced; running migration/seed again produces the same password | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Planned |
 | DB-MIG-04 | DB | Migrated requester password change | Normal app blocked until valid new password; allowed afterward | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Planned |
+| DB-MIG-05 | DB | Migration with a colliding email | Migration fails with a clear error; no silent overwrite/skip/merge (Section 13, decision 17) | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-13 | AC-25 | Planned |
 | SEED-01 | DB | Seed idempotency | Safe to run repeatedly | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Planned |
 | UI-LOGIN-01 | UI | Login screen | Valid/invalid login; busy/safe failure; form data preserved | `client/src/lab-03-tests/Login.test.tsx` | FR-01 | BR-07, BR-33 | AC-01 | Planned |
 | UI-CHPWD-01 | UI | Change Password screen | Mandatory change; validation; continuation | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Planned |
 | UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Planned |
+| UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Planned |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Planned |
 | UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
+| UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Planned |
 | UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Planned |
 | VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Planned |
 | VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Planned |
@@ -99,8 +110,8 @@ security/authorization, migration/regression, and end-to-end coverage.
 
 ## 6. Requirement → Test Mapping Summary
 Every Acceptance Criterion maps to at least one planned test:
-- AC-01 → API-AUTH-01, API-AUTH-05, UNIT-AUTH-01, UI-LOGIN-01, E2E-01
-- AC-02 → API-AUTH-06, API-AUTH-07, UI-CHPWD-01, E2E-01
+- AC-01 → API-AUTH-01, API-AUTH-05, API-AUTH-09, UNIT-AUTH-01, UI-LOGIN-01, E2E-01
+- AC-02 → API-AUTH-06, API-AUTH-07, API-AUTH-08, UI-CHPWD-01, E2E-01
 - AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05
 - AC-04 → SEC-AUTHZ-02
 - AC-05 → API-AUTH-02, API-AUTH-03, E2E-01
@@ -108,20 +119,20 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-07 → API-REQ-01, API-REQ-02, E2E-04
 - AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
-- AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01, VISUAL-02
-- AC-11 → API-STAFF-01, UI-STAFF-01, E2E-02
-- AC-12 → API-STAFF-02, UI-STAFF-01, E2E-02
-- AC-13 → API-STAFF-03, API-STAFF-04, UI-STAFF-01, E2E-02
+- AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01, UI-QUE-02, VISUAL-02
+- AC-11 → API-STAFF-01, API-STAFF-09, UI-STAFF-01, E2E-02
+- AC-12 → API-STAFF-02, API-STAFF-06, UI-STAFF-01, E2E-02
+- AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, E2E-02
 - AC-14 → API-STAFF-05, UI-STAFF-01, E2E-02
-- AC-15 → API-ADM-01, API-ADM-02, UI-ADM-01, E2E-03
-- AC-16 → API-ADM-03, API-ADM-08, UI-ADM-01, E2E-03
-- AC-17 → API-ADM-04, API-ADM-05, UI-ADM-01, E2E-03
+- AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
+- AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, E2E-03
+- AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
-- AC-19 → API-ADM-07, API-ADM-07b, UI-ADM-01
+- AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, UI-ADM-01
 - AC-20 → SEC-AUTHZ-03
 - AC-21 → UI-STYLE-01
 - AC-22 → VISUAL-01, VISUAL-02
 - AC-23 → A11Y-01
 - AC-24 → SEED-01
-- AC-25 → DB-MIG-01, DB-MIG-02
+- AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05
 - AC-26 → DB-MIG-03, DB-MIG-04, API-AUTH-06, API-AUTH-07

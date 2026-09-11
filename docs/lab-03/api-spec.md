@@ -73,6 +73,10 @@ or exponent.
 - Mechanism: httpOnly session cookie backed by a server-side session store.
 - Password hashing: bcrypt.
 - Session expiration: 30-minute idle timeout (see Security configuration policy below).
+- Concurrent sessions: a user may hold **multiple concurrent sessions** (e.g. several devices or
+  browsers). Logging in from a second device does **not** invalidate an existing session; each
+  session remains valid until it independently times out or logs out (Section 13, decision 16 of
+  `specification.md`).
 - Logout invalidates the session server-side.
 - CSRF: protected endpoints require a CSRF token for state-changing requests where applicable.
 - Safe errors: login failure returns a generic message that does not reveal whether the email
@@ -175,8 +179,11 @@ configuration and reflected in the planned security tests:
 ```
 
 **Error cases**
-- `400 VALIDATION_ERROR` — missing/invalid fields, or `newPassword` violates the password
-  policy (too short, too long, or missing a required character class).
+- `400 VALIDATION_ERROR` — missing/invalid fields, `newPassword` violates the password policy
+  (too short, too long, or missing a required character class), or `currentPassword` does not
+  match the account's current password. The wrong-`currentPassword` message is generic (e.g.
+  "current password is incorrect") and does not reveal anything beyond that; it must not hint
+  at why it was wrong (BR-07-style safe failure).
 - `401 UNAUTHENTICATED` — no valid session.
 - No `PASSWORD_CHANGE_REQUIRED` case: a user who must change their password is the legitimate
   caller of this endpoint (FR-05, BR-02). `BR-02`'s gate blocks access to *normal application*
@@ -421,8 +428,15 @@ defaults to `10` and accepts `1`–`50`. Invalid query values fall back to safe 
 { "data": { "ticketOwnerId": 5 } }
 ```
 
+**Concurrency (frozen):** Two simultaneous claim/reassign requests for the same Ticket are
+handled as **last-write-wins**. Both requests may succeed; whichever transaction commits last is
+recorded as the final `ticketOwnerId`. No conflict error is surfaced to the "losing" caller
+(Section 13, decision 15 of `specification.md`).
+
 **Error cases**
 - `400 VALIDATION_ERROR` — invalid ownerId.
+- `403 FORBIDDEN` — not IT Staff/Administrator.
+- `404 NOT_FOUND` — Ticket not found.
 - `409 CONFLICT` — owner not active IT Staff/Administrator.
 
 ---
@@ -444,6 +458,10 @@ defaults to `10` and accepts `1`–`50`. Invalid query values fall back to safe 
 { "data": { "itPriority": "HIGH" } }
 ```
 
+**Error cases**
+- `403 FORBIDDEN` — not IT Staff/Administrator.
+- `404 NOT_FOUND` — Ticket not found.
+
 ---
 
 ## 19. PATCH /api/staff/tickets/:ticketNumber/status
@@ -463,8 +481,15 @@ defaults to `10` and accepts `1`–`50`. Invalid query values fall back to safe 
 { "data": { "currentStatus": "IN_PROGRESS" } }
 ```
 
+**Claim-before-status-change (frozen):** A status change on a Ticket that is not yet owned
+(`ticketOwnerId` is `null`) is rejected with `409 CONFLICT` — the Ticket must be claimed via
+`POST /api/staff/tickets/:ticketNumber/owner` before its status can be changed. The status
+endpoint never auto-claims a Ticket (Section 13, decision 14 of `specification.md`).
+
 **Error cases**
-- `409 CONFLICT` — forbidden transition.
+- `403 FORBIDDEN` — not IT Staff/Administrator.
+- `404 NOT_FOUND` — Ticket not found.
+- `409 CONFLICT` — forbidden transition, or the Ticket is not yet claimed (see above).
 
 ---
 
@@ -571,6 +596,11 @@ must **not** change the formal Ticket status to Resolved or Closed.
 | `search` | string | — | name/email substring |
 | `role` | enum | — | optional role filter |
 
+**Query semantics (frozen):** `search` is a case-insensitive substring match against `name` and
+`email`. `role` is an exact-match filter on `REQUESTER`, `IT_STAFF`, or `ADMINISTRATOR`. An
+**unrecognized `role` value is treated as no filter applied** (matches the Staff Queue precedent
+in §15); it never returns `400`.
+
 **Response 200**
 ```json
 { "data": [ { "id": 1, "name": "Requester One", "email": "requester@example.com", "role": "REQUESTER", "isActive": true } ] }
@@ -624,6 +654,10 @@ must **not** change the formal Ticket status to Resolved or Closed.
 - Cannot deactivate own account.
 - Cannot deactivate the last active Administrator.
 - Cannot change the last active Administrator's role to a non-Administrator role.
+- An Administrator **may** change their own role away from Administrator, provided at least one
+  other active Administrator remains after the change (BR-34). The last-active-Administrator
+  guard (BR-28) blocks only the *last* active Administrator from stepping down; it does not
+  block a non-last Administrator from doing so.
 
 **Response 200**
 ```json
@@ -632,6 +666,8 @@ must **not** change the formal Ticket status to Resolved or Closed.
 
 **Error cases**
 - `400 VALIDATION_ERROR` — invalid fields.
+- `403 FORBIDDEN` — not Administrator.
+- `404 NOT_FOUND` — user does not exist.
 - `409 CONFLICT` — duplicate email, self-deactivation, last-active-Administrator deactivation,
   or last-active-Administrator role change to a non-Administrator role.
 
@@ -660,3 +696,4 @@ must **not** change the formal Ticket status to Resolved or Closed.
 **Error cases**
 - `400 VALIDATION_ERROR` — invalid password (violates the frozen password policy).
 - `403 FORBIDDEN` — not Administrator.
+- `404 NOT_FOUND` — user does not exist.
