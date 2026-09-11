@@ -25,3 +25,11 @@
 - Prompt summary: Create the Sprint 3 engineering contract (Spec DD + Test DD) for Issue #34 from the Lab 3 handout and Lab 2 baseline.
 - What was done with output: Created `docs/lab-03/specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, `ai-use.md`, and `reviewer.md` in the `issue-34-sprint-3-contract` worktree.
 - Reflection: This issue produces documentation only; no implementation code was changed. Test rows are all `Planned` and will be executed by downstream issues.
+
+## Issue #34 Contract-Freeze Revision Entry
+
+- Prompt summary: After peer review, freeze the two remaining contract decisions that were previously left to implementation: the exact password policy and the exact migrated-Requester initial-password derivation.
+- What was done with output: Revised the engineering contract to explicitly freeze:
+  - **Password policy** (specification.md BR-10 and Section 13 decision 12): 12–128 characters; at least one uppercase ASCII letter, one lowercase ASCII letter, one digit, and one ASCII special character; not trimmed before validation; whitespace permitted; no reuse/history rule. Propagated to `api-spec.md` (change-password, admin create user, admin initial-password) and `ui-spec.md` (Change Password screen), and strengthened `API-AUTH-07` in `tests.md`.
+  - **Migrated-Requester initial-password derivation** (specification.md Section 9.2 and Section 13 decision 13): `Lab3-` + first 20 hex chars of SHA-256(lowercase(trim(email)) + ":" + trim(name)), encoded as lowercase hex. The seed module implements this frozen rule; it does not define it. Strengthened `DB-MIG-03` in `tests.md` to verify the exact derivation and repeated-run determinism.
+- Reflection: The two decisions were contract decisions, not implementation details, so they had to be frozen before implementation. The specification is now the single source of truth for both the password policy and the migration derivation; no document defers either decision to the seed module.
