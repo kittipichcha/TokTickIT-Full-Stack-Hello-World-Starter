@@ -58,6 +58,9 @@ security/authorization, migration/regression, and end-to-end coverage.
 | SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Planned |
 | SEC-AUTHZ-06 | API | Session idle timeout expiration | Expired session behaves as unauthenticated (401 UNAUTHENTICATED) | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-06 | Planned |
 | SEC-AUTHZ-07 | API | CSRF on state-changing endpoint | Missing/invalid CSRF token rejected (403 FORBIDDEN); mutation not applied | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
+| SEC-AUTHZ-08 | API | Requester posts/reads comments on a not-owned ticket | `404 NOT_FOUND`; no data leaked | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-12, BR-32 | AC-03 | Planned |
+| SEC-AUTHZ-09 | API | Non-Administrator calls create-user / edit-user | `403 FORBIDDEN` | `server/tests/lab-03/users-admin.api.test.ts` | FR-24, FR-25 | — | AC-20 | Planned |
+| SEC-AUTHZ-10 | API | IT Staff/Administrator attempts attachment upload or delete | `403 FORBIDDEN` (view-only; cannot mutate Attachments) | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12 | AC-07 | Planned |
 | API-REQ-01 | API | Requester creates Ticket | Ticket owned by authenticated identity | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-11 | AC-07 | Planned |
 | API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Planned |
 | API-REQ-03 | API | Requester posts Public Comment | Comment saved with author/timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-22, BR-23 | AC-08 | Planned |
@@ -73,6 +76,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-STAFF-07 | API | Status change on nonexistent/forbidden ticket | `403 FORBIDDEN` (not IT Staff/Admin) or `404 NOT_FOUND` (ticket not found) per BR-31 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-31 | AC-13 | Planned |
 | API-STAFF-08 | API | Status change on unowned ticket | `409 CONFLICT` — ticket must be claimed before a status change; no auto-claim (Section 13, decision 14) | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Planned |
 | API-STAFF-09 | API | Two concurrent claims of the same ticket | Both succeed; final owner is deterministic per last-write-wins (Section 13, decision 15); no conflict error surfaced | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-16 | BR-14 | AC-11 | Planned |
+| API-STAFF-10 | API | IT Staff/Administrator posts/reads notes on a nonexistent ticket | `404 NOT_FOUND` — ticket not found | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-31 | AC-14 | Planned |
 | API-ADM-01 | API | User list | Name/Email/Role/Status returned | `server/tests/lab-03/users-admin.api.test.ts` | FR-21 | — | AC-15 | Planned |
 | API-ADM-02 | API | User search/filter | Name/email search; optional role filter | `server/tests/lab-03/users-admin.api.test.ts` | FR-22, FR-23 | — | AC-15 | Planned |
 | API-ADM-03 | API | Create user | User created; must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-24 | BR-25, BR-30 | AC-16 | Planned |
@@ -94,9 +98,11 @@ security/authorization, migration/regression, and end-to-end coverage.
 | SEED-01 | DB | Seed idempotency | Safe to run repeatedly | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Planned |
 | UI-LOGIN-01 | UI | Login screen | Valid/invalid login; busy/safe failure; form data preserved | `client/src/lab-03-tests/Login.test.tsx` | FR-01 | BR-07, BR-33 | AC-01 | Planned |
 | UI-CHPWD-01 | UI | Change Password screen | Mandatory change; validation; continuation | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Planned |
+| UI-CHPWD-02 | UI | Confirm field does not match new password | Inline validation error; form not submitted; API never called | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Planned |
 | UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Planned |
 | UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Planned |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Planned |
+| UI-STAFF-02 | UI | Status change to Resolved/Closed/Cancelled | Confirm modal shown before request is sent; cancel aborts, confirm proceeds | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Planned |
 | UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
 | UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Planned |
 | UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Planned |
@@ -111,25 +117,25 @@ security/authorization, migration/regression, and end-to-end coverage.
 ## 6. Requirement → Test Mapping Summary
 Every Acceptance Criterion maps to at least one planned test:
 - AC-01 → API-AUTH-01, API-AUTH-05, API-AUTH-09, UNIT-AUTH-01, UI-LOGIN-01, E2E-01
-- AC-02 → API-AUTH-06, API-AUTH-07, API-AUTH-08, UI-CHPWD-01, E2E-01
-- AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05
+- AC-02 → API-AUTH-06, API-AUTH-07, API-AUTH-08, UI-CHPWD-01, UI-CHPWD-02, E2E-01
+- AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05, SEC-AUTHZ-08
 - AC-04 → SEC-AUTHZ-02
 - AC-05 → API-AUTH-02, API-AUTH-03, E2E-01
 - AC-06 → API-AUTH-04, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, E2E-01
-- AC-07 → API-REQ-01, API-REQ-02, E2E-04
+- AC-07 → API-REQ-01, API-REQ-02, SEC-AUTHZ-10, E2E-04
 - AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
 - AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01, UI-QUE-02, VISUAL-02
 - AC-11 → API-STAFF-01, API-STAFF-09, UI-STAFF-01, E2E-02
 - AC-12 → API-STAFF-02, API-STAFF-06, UI-STAFF-01, E2E-02
-- AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, E2E-02
-- AC-14 → API-STAFF-05, UI-STAFF-01, E2E-02
+- AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, E2E-02
+- AC-14 → API-STAFF-05, API-STAFF-10, UI-STAFF-01, E2E-02
 - AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
 - AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, E2E-03
 - AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
 - AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, UI-ADM-01
-- AC-20 → SEC-AUTHZ-03
+- AC-20 → SEC-AUTHZ-03, SEC-AUTHZ-09
 - AC-21 → UI-STYLE-01
 - AC-22 → VISUAL-01, VISUAL-02
 - AC-23 → A11Y-01

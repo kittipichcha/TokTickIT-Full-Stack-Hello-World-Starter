@@ -49,6 +49,10 @@ storage paths, or parser details.
 | 415 | Uploaded file type/signature not permitted | `UNSUPPORTED_MEDIA_TYPE` |
 | 500 | Unexpected server error | `INTERNAL_ERROR` |
 
+`401 UNAUTHENTICATED` applies to every protected endpoint per this table and is not re-listed
+in each endpoint's own Error cases unless that endpoint has additional unauthenticated-specific
+behavior (e.g. `#4`'s `PASSWORD_CHANGE_REQUIRED` interaction).
+
 **Request parsing:** JSON endpoints require `Content-Type: application/json`; a malformed JSON
 document, a non-object JSON value, or a wrong content type returns `400 VALIDATION_ERROR`.
 Unknown JSON properties are ignored unless this contract lists them as stored data. All integer
@@ -172,6 +176,9 @@ configuration and reflected in the planned security tests:
   of `specification.md`): 12–128 characters; at least one uppercase ASCII letter (A–Z), one
   lowercase ASCII letter (a–z), one digit (0–9), and one ASCII special character from
   `!@#$%^&*()-_=+[]{};:,.?/\`; not trimmed before validation; whitespace permitted.
+
+`confirmPassword` (shown in the UI per `ui-spec.md` §5.2) is a **client-side-only** check; it
+is never sent to this endpoint and the API validates only `currentPassword` and `newPassword`.
 
 **Response 200**
 ```json
@@ -487,6 +494,10 @@ recorded as the final `ticketOwnerId`. No conflict error is surfaced to the "los
 (`ticketOwnerId` is `null`) is rejected with `409 CONFLICT` — the Ticket must be claimed via
 `POST /api/staff/tickets/:ticketNumber/owner` before its status can be changed. The status
 endpoint never auto-claims a Ticket (Section 13, decision 14 of `specification.md`).
+
+The three transitions marked "Confirmation" in the Status Transition Matrix (specification.md
+§7) are confirmed client-side before this endpoint is called; the API applies the transition
+unconditionally once called and does not itself require or accept a confirmation parameter.
 
 **Error cases**
 - `403 FORBIDDEN` — not IT Staff/Administrator.
