@@ -115,7 +115,10 @@ require `aria-label` and a tooltip.
 - Ticket information clearly grouped; only permitted operational fields editable.
 - Ownership: claim/assign/reassign control.
 - IT Priority: editable by IT Staff/Administrator.
-- Status: permitted status changes per the Status Transition Matrix.
+- Status: permitted status changes per the Status Transition Matrix. Status changes to
+  Resolved, Closed, or Cancelled (per the Status Transition Matrix's "Confirmation" column)
+  show a confirm modal dialog (per the modal-dialog rule in §8) before the request is sent;
+  other transitions apply immediately.
 - Public Comments and Internal Notes sections, visually distinct so private information is not
   accidentally posted publicly.
 - Existing Attachments.
