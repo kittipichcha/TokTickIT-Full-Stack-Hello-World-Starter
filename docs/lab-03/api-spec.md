@@ -301,6 +301,7 @@ defaults to `10` and accepts `1`–`50`. Invalid query values fall back to safe 
 
 **Error cases**
 - `400 ATTACHMENT_LIMIT_REACHED` — exceeds 5 active attachments.
+- `403 FORBIDDEN` — caller is IT Staff/Administrator (view-only; cannot upload Attachments).
 - `413 FILE_TOO_LARGE` — exceeds byte limit.
 - `415 UNSUPPORTED_MEDIA_TYPE` — type/signature not permitted.
 
@@ -352,6 +353,7 @@ defaults to `10` and accepts `1`–`50`. Invalid query values fall back to safe 
 ```
 
 **Error cases**
+- `403 FORBIDDEN` — caller is IT Staff/Administrator (view-only; cannot remove Attachments).
 - `404 NOT_FOUND` — not found or not owned.
 - `409 CONFLICT` — already removed.
 
@@ -510,6 +512,12 @@ endpoint never auto-claims a Ticket (Section 13, decision 14 of `specification.m
 { "data": { "id": 1, "content": "Please check the printer.", "authorId": 1, "createdAt": "2026-09-10T00:00:00Z" } }
 ```
 
+**Error cases**
+- `404 NOT_FOUND` — ticket not found or not owned by the authenticated Requester (BR-12).
+  IT Staff/Administrator may comment on any Ticket, so `404` applies only to the Requester-
+  ownership path; a Requester-supplied ownership mismatch returns `404`, never `403`, so a
+  non-owner cannot confirm the Ticket exists (same rule as `#20a`).
+
 ---
 
 ## 20a. POST /api/tickets/:ticketNumber/appears-resolved
@@ -548,6 +556,11 @@ must **not** change the formal Ticket status to Resolved or Closed.
 { "data": [ /* public comments */ ] }
 ```
 
+**Error cases**
+- `404 NOT_FOUND` — ticket not found or not owned by the authenticated Requester (BR-12).
+  IT Staff/Administrator may read comments on any Ticket, so `404` applies only to the
+  Requester-ownership path (same rule as `#20`).
+
 ---
 
 ## 22. POST /api/staff/tickets/:ticketNumber/notes
@@ -569,6 +582,7 @@ must **not** change the formal Ticket status to Resolved or Closed.
 
 **Error cases**
 - `403 FORBIDDEN` — not IT Staff/Administrator.
+- `404 NOT_FOUND` — ticket not found.
 
 ---
 
@@ -583,6 +597,7 @@ must **not** change the formal Ticket status to Resolved or Closed.
 
 **Error cases**
 - `403 FORBIDDEN` — not IT Staff/Administrator.
+- `404 NOT_FOUND` — ticket not found.
 
 ---
 
@@ -636,6 +651,7 @@ in §15); it never returns `400`.
 
 **Error cases**
 - `400 VALIDATION_ERROR` — invalid fields, or `initialPassword` violates the password policy.
+- `403 FORBIDDEN` — not Administrator.
 - `409 CONFLICT` — duplicate email.
 
 ---
