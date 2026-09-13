@@ -425,8 +425,8 @@ must enforce these rules server-side.
 | `requesterId` | integer | no | — | FK → `User.id`; the authenticated Requester; fixed at creation (BR-11). |
 | `categoryId` | integer | no | — | FK → `Category.id`; required. |
 | `relatedSystemId` | integer | no | — | FK → `RelatedSystem.id`; required. |
-| `summary` | string | no | — | Required, trimmed, non-empty; length 1–200. |
-| `description` | string | no | — | Required, trimmed, non-empty; length 1–4,000. |
+| `summary` | string | no | — | Required, trimmed, non-empty; length 5–120. |
+| `description` | string | no | — | Required, trimmed, non-empty; length 10–2,000. |
 | `requestedPriority` | enum `Priority` | no | — | Value submitted by the Requester; never changed (BR-15). |
 | `itPriority` | enum `Priority` | yes | `requestedPriority` | Initially copies Requested Priority; changed only by IT Staff/Administrator (BR-16). |
 | `ticketOwnerId` | integer | yes | `null` | FK → `User.id`; zero or one active IT Staff/Administrator owner (BR-14). |
