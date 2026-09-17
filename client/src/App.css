@@ -198,6 +198,37 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .ticket-info-full .ticket-info-value { white-space: pre-wrap; word-break: break-word; }
 .ticket-description { font-family: inherit !important; }
 
+/* Lab 3 auth screens (ui-spec §5.1–§5.3) */
+.auth-screen { max-width: 480px; margin: 48px auto; padding: 24px; }
+.auth-screen .page-title { font-size: 24px; font-weight: 600; margin: 8px 0 12px; }
+.auth-hint { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
+.auth-form { display: grid; gap: 16px; }
+.auth-form .form-field { display: grid; gap: 8px; }
+.auth-form label { font-size: 14px; font-weight: 600; }
+.auth-form input {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--color-field-editable-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+.auth-form .field-invalid { border-color: var(--color-error) !important; }
+.auth-form .field-error { color: var(--color-error); font-size: 13px; margin: 2px 0 0; }
+.auth-form .primary-button { width: 100%; }
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-surface);
+  border-top-color: transparent;
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: auth-spin 0.7s linear infinite;
+}
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+
 /* Attachments section */
 .attachments-section { margin-top: 32px; padding-top: 24px; border-top: 2px solid var(--color-pale-green); }
 .attachments-section h2 { margin-bottom: 12px; }
