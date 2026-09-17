@@ -14,26 +14,15 @@ model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
   tickets   Ticket[]
-}
-
-model DevRequester {
-  id                  Int          @id @default(autoincrement())
-  name                String
-  email               String       @unique
-  isActive            Boolean      @default(true)
-  createdAt           DateTime     @default(now())
-  tickets             Ticket[]
-  uploadedAttachments Attachment[] @relation("AttachmentUploader")
-  removedAttachments  Attachment[] @relation("AttachmentRemover")
 }
 
 model RelatedSystem {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
   tickets   Ticket[]
 }
 
@@ -71,8 +60,9 @@ model User {
   createdAt          DateTime @default(now()) @db.Timestamptz(3)
   updatedAt          DateTime @updatedAt @db.Timestamptz(3)
 
-ownedTickets       Ticket[]        @relation("TicketOwner")
-uploadedAttachments Attachment[] @relation("AttachmentUserUploader")
+  requesterTickets   Ticket[]      @relation("TicketRequester")
+  ownedTickets       Ticket[]      @relation("TicketOwner")
+  uploadedAttachments Attachment[] @relation("AttachmentUserUploader")
   removedAttachments  Attachment[] @relation("AttachmentUserRemover")
   comments           Comment[]
   internalNotes      InternalNote[]
@@ -90,14 +80,14 @@ model Ticket {
   itPriority       Priority?
   ticketOwnerId    Int?
   currentStatus    TicketStatus @default(NEW)
-  appearsResolved  Boolean?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  appearsResolved  Boolean      @default(false)
+  createdAt        DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime     @updatedAt @db.Timestamptz(3)
 
-  requester      DevRequester  @relation(fields: [requesterId], references: [id])
-  owner          User?         @relation("TicketOwner", fields: [ticketOwnerId], references: [id])
-  category       Category      @relation(fields: [categoryId], references: [id])
-  relatedSystem  RelatedSystem @relation(fields: [relatedSystemId], references: [id])
+  requester      User            @relation("TicketRequester", fields: [requesterId], references: [id])
+  owner          User?           @relation("TicketOwner", fields: [ticketOwnerId], references: [id])
+  category       Category        @relation(fields: [categoryId], references: [id])
+  relatedSystem  RelatedSystem   @relation(fields: [relatedSystemId], references: [id])
   attachments    Attachment[]
   comments       Comment[]
   internalNotes  InternalNote[]
@@ -105,6 +95,7 @@ model Ticket {
   @@index([requesterId])
   @@index([currentStatus])
   @@index([createdAt])
+  @@index([ticketOwnerId])
 }
 
 model Attachment {
@@ -114,19 +105,15 @@ model Attachment {
   storedFilename        String        @unique
   mimeType              String
   fileSizeBytes         Int
-  uploaderRequesterId   Int
-  uploaderUserId        Int?
+  uploaderUserId        Int
   isRemoved             Boolean       @default(false)
-  removedAt             DateTime?
+  removedAt             DateTime?     @db.Timestamptz(3)
   removalReason         String?
-  removedByRequesterId  Int?
   removedByUserId       Int?
-  uploadedAt            DateTime      @default(now())
+  uploadedAt            DateTime      @default(now()) @db.Timestamptz(3)
 
   ticket            Ticket        @relation(fields: [ticketId], references: [id])
-  uploaderRequester DevRequester  @relation("AttachmentUploader", fields: [uploaderRequesterId], references: [id])
-  removedByRequester DevRequester? @relation("AttachmentRemover", fields: [removedByRequesterId], references: [id])
-  uploaderUser      User?         @relation("AttachmentUserUploader", fields: [uploaderUserId], references: [id])
+  uploaderUser      User          @relation("AttachmentUserUploader", fields: [uploaderUserId], references: [id])
   removedByUser     User?         @relation("AttachmentUserRemover", fields: [removedByUserId], references: [id])
 
   @@index([ticketId])
