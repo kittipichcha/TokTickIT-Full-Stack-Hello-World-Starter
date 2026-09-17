@@ -48,8 +48,8 @@ describe("UI-LOGIN-01: Login screen", () => {
       expect(screen.getByRole("alert")).toBeTruthy();
     });
     // BR-33: entered values remain in the form after a failed attempt.
-    expect(screen.getByLabelText(/Email/).value).toBe("ada@example.com");
-    expect(screen.getByLabelText(/Password/).value).toBe("wrong-password");
+    expect((screen.getByLabelText(/Email/) as HTMLInputElement).value).toBe("ada@example.com");
+    expect((screen.getByLabelText(/Password/) as HTMLInputElement).value).toBe("wrong-password");
     expect(onLogin).not.toHaveBeenCalled();
   });
 
@@ -66,7 +66,7 @@ describe("UI-LOGIN-01: Login screen", () => {
     await userEvent.click(screen.getByRole("button", { name: /Login/ }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Submitting/ }).disabled).toBe(true);
+      expect((screen.getByRole("button", { name: /Submitting/ }) as HTMLButtonElement).disabled).toBe(true);
     });
 
     resolveLogin!(validUser);
