@@ -18,13 +18,46 @@ Run against a Lab-3-migrated PostgreSQL database (`tocktick_lab3_scratch`).
 |---|---|---|
 | 1 | `npx prisma generate` | ✅ Generated Prisma Client (v5.22.0) |
 | 2 | `npm run build` (server, `tsc`) | ✅ exit 0 |
-| 3 | `npm run build` (client, `tsc && vite build`) | ✅ built in ~4s |
-| 4 | `npx vitest run` (server) | ✅ **366 passed / 30 files** |
+| 3 | `npm run build` (client, `tsc && vite build`) | ✅ built in ~2s |
+| 4 | `npx vitest run` (server) | ✅ **367 passed / 30 files** |
 | 5 | `npx vitest run` (client) | ✅ **107 passed / 10 files** |
+| 6 | `npx prisma validate` | ✅ schema valid |
+| 7 | `npx prisma migrate status` | ✅ Database schema is up to date |
 
 The server suite includes the full Lab 2 regression suite (adapted per DM-17) and the
 new `server/tests/lab-03/*` tests. The client suite includes the Lab 2 tests and the new
 `client/src/lab-03-tests/*` tests.
+
+### Verification remediation (PR #46 review follow-up)
+
+The review found that four requirements were claimed `Passed` but not meaningfully proven
+by executable assertions. The remediation strengthened the tests (and added the minimal
+`GET /api/app/context` protected endpoint that composes
+`requireAuth → requirePasswordChanged → handler`) so each `Passed` row now fails if the
+required behavior is broken.
+
+**Configuration verification vs behavioral verification** — these prove different things:
+
+| Requirement | Configuration verification | Behavioral verification |
+|---|---|---|
+| Session idle timeout | Cookie `Expires` ≈ 30 min; `HttpOnly`; `SameSite=Lax`; store TTL 1800 s (`SEC-AUTHZ-06` supplementary) | A real session record is deterministically expired in the `connect-pg-simple` store; the next protected request returns `401 UNAUTHENTICATED` (`SEC-AUTHZ-06`) |
+| Mandatory password change | `requirePasswordChanged` present in `session.ts` | `GET /api/app/context` returns `401 PASSWORD_CHANGE_REQUIRED` while `mustChangePassword=true`, then succeeds after the change on the same session (`API-AUTH-06`, `DB-MIG-04`) |
+| Migration collision | `normalizeEmail` equality | The real orchestrator aborts with `MigrationCollisionError` before any `User` backfill, leaves Phase A applied / Phase C unapplied, preserves legacy data, and resumes to a clean migration (`DB-MIG-05`) |
+
+Behavioral evidence (executed):
+
+- `API-AUTH-06` — login (mustChangePassword=true) → `GET /api/app/context` → `401 PASSWORD_CHANGE_REQUIRED`;
+  `/api/auth/me` still `200`; `POST /api/auth/change-password` → `200`; same cookie →
+  `GET /api/app/context` → `200`.
+- `SEC-AUTHZ-06` — login → session valid (`/api/auth/me` `200`) → `UPDATE "session" SET expire = to_timestamp(0)`
+  → `/api/auth/me` → `401 UNAUTHENTICATED`.
+- `DB-MIG-04` — migrated user login → blocked → change → same-session access; stored hash
+  changes; old password no longer verifies.
+- `DB-MIG-05` — isolated Lab 2 fixture with `ada@example.com` + `ADA@example.com` →
+  orchestrator aborts (`MigrationCollisionError`), `User` = 0, `DevRequester` = 3,
+  `Ticket` = 1, `Attachment` = 1, Phase A applied, Phase C not applied → delete colliding
+  row → orchestrator resumes → `DevRequester` dropped, `User` = 2, Phase C applied,
+  `migrate status` clean.
 
 ### Auth round-trip smoke (curl)
 
