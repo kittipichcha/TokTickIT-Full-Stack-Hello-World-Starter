@@ -100,30 +100,36 @@ async function main() {
     const requester = requesterUsers[i % requesterUsers.length];
     const category = categories[i % categories.length];
     const system = systems[i % systems.length];
-    const year = new Date().getUTCFullYear();
-    const seq = await prisma.ticketSequence.upsert({
-      where: { year },
-      update: { lastSeq: { increment: 1 } },
-      create: { year, lastSeq: 1 },
+
+    // Idempotency: reuse an existing seed ticket (matched by summary + requester)
+    // instead of creating a new one on every run.
+    let ticket = await prisma.ticket.findFirst({
+      where: { summary: t.summary, requesterId: requester.id },
     });
-    const ticketNumber = `TKT-${year}-${String(seq.lastSeq).padStart(4, '0')}`;
-    const ticket = await prisma.ticket.upsert({
-      where: { ticketNumber },
-      update: {},
-      create: {
-        ticketNumber,
-        requesterId: requester.id,
-        categoryId: category.id,
-        relatedSystemId: system.id,
-        summary: t.summary,
-        description: t.description,
-        requestedPriority: t.priority as 'LOW' | 'MEDIUM' | 'HIGH',
-        itPriority: t.priority as 'LOW' | 'MEDIUM' | 'HIGH',
-        ticketOwnerId: t.owner ? t.owner.id : null,
-        currentStatus: t.status as 'NEW' | 'OPEN' | 'IN_PROGRESS' | 'WAITING_FOR_REQUESTER' | 'RESOLVED' | 'CLOSED' | 'REOPENED' | 'CANCELLED',
-        appearsResolved: t.status === 'RESOLVED' || t.status === 'CLOSED',
-      },
-    });
+    if (!ticket) {
+      const year = new Date().getUTCFullYear();
+      const seq = await prisma.ticketSequence.upsert({
+        where: { year },
+        update: { lastSeq: { increment: 1 } },
+        create: { year, lastSeq: 1 },
+      });
+      const ticketNumber = `TKT-${year}-${String(seq.lastSeq).padStart(4, '0')}`;
+      ticket = await prisma.ticket.create({
+        data: {
+          ticketNumber,
+          requesterId: requester.id,
+          categoryId: category.id,
+          relatedSystemId: system.id,
+          summary: t.summary,
+          description: t.description,
+          requestedPriority: t.priority as 'LOW' | 'MEDIUM' | 'HIGH',
+          itPriority: t.priority as 'LOW' | 'MEDIUM' | 'HIGH',
+          ticketOwnerId: t.owner ? t.owner.id : null,
+          currentStatus: t.status as 'NEW' | 'OPEN' | 'IN_PROGRESS' | 'WAITING_FOR_REQUESTER' | 'RESOLVED' | 'CLOSED' | 'REOPENED' | 'CANCELLED',
+          appearsResolved: t.status === 'RESOLVED' || t.status === 'CLOSED',
+        },
+      });
+    }
     createdTickets.push(ticket);
   }
 

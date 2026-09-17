@@ -19,7 +19,7 @@ describe("DB-01 / DB-02: Lab 2 forward migration against the real database", () 
 
     for (const table of [
       "Category",
-      "DevRequester",
+      "User",
       "RelatedSystem",
       "Ticket",
       "Attachment",
@@ -27,6 +27,8 @@ describe("DB-01 / DB-02: Lab 2 forward migration against the real database", () 
     ]) {
       expect(names.has(table)).toBe(true);
     }
+    // The legacy DevRequester table is replaced by User in the Lab 3 final schema (Phase C).
+    expect(names.has("DevRequester")).toBe(false);
   });
 
   itIfDb("DB-01: Ticket table exposes all required columns", async () => {
