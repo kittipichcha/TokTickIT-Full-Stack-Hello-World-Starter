@@ -81,9 +81,19 @@ async function main() {
     adminUsers.push(await upsertUser(a, 'ADMINISTRATOR'));
   }
 
-  // Realistic Tickets across statuses/priorities/ownership (idempotent by ticketNumber)
-  const categories = await prisma.category.findMany({ orderBy: { id: 'asc' } });
-  const systems = await prisma.relatedSystem.findMany({ orderBy: { id: 'asc' } });
+  // Realistic Tickets across statuses/priorities/ownership (idempotent by ticketNumber).
+  // Scope the reference data to the seed's OWN categories/systems: seed tickets must never
+  // attach to pre-existing unrelated records (e.g. a Category planted by another test),
+  // which would create an FK reference that blocks that record's cleanup and break the
+  // Lab 2 regression suite. (Lab 2 regression: `tests/lab-02/seed.integration.test.ts`.)
+  const categories = await prisma.category.findMany({
+    where: { name: { in: CATEGORIES } },
+    orderBy: { id: 'asc' },
+  });
+  const systems = await prisma.relatedSystem.findMany({
+    where: { name: { in: RELATED_SYSTEMS.map((s) => s.name) } },
+    orderBy: { id: 'asc' },
+  });
 
   const tickets = [
     { summary: 'Cannot access corporate email', description: 'Email client returns an authentication error since this morning.', status: 'OPEN', priority: 'HIGH', owner: staffUsers[0] },

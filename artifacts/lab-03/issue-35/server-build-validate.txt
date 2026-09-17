@@ -1,0 +1,20 @@
+=== npx prisma validate ===
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+The schema at prisma\schema.prisma is valid 🚀
+
+=== npx prisma migrate status ===
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "tocktick", schema "public" at "localhost:5432"
+
+7 migrations found in prisma/migrations
+
+Database schema is up to date!
+
+=== server npm run build (tsc) ===
+
+> toktickit-server@1.0.0 build
+> tsc
+
+server build exit=0

@@ -7,6 +7,7 @@
 | PR | Branch | Reviewer verdict |
 |----|--------|------------------|
 | [#44 — Add Sprint 3 engineering contract (Issue #34)](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/44) | `feature/issue-34-sprint-3-contract` | Changes Requested (2026-09-10) |
+| [#46 — feat(lab-03): Issue #35 — Identity, Database Migration & Authentication](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/46) | `feature/issue-35-identity-db-migration-auth` → `lab3-staging` | Changes Requested (2026-09-17) — remediation in progress; **human review PENDING** |
 
 **Issue #34**
 Reviewer comment I received: **Request Changes** — 5 blocking issues before the contract could be considered frozen:
@@ -41,6 +42,62 @@ Resolution: Both decisions were frozen in the engineering contract and propagate
   SHA-256(lowercase(trim(email)) + ":" + trim(name)), encoded as lowercase hex. Frozen in
   `specification.md` (§9.2, §13 decision 13) and verified by `DB-MIG-03` in `tests.md`. The seed
   module now implements the frozen rule; it does not define it.
+
+### Issue #35 — Identity, Database Migration & Authentication (PR #46)
+
+**Reviewer comment I received (2026-09-17): Request Changes.** The reviewer disclosed that they
+could not read any repository files, so their review was based on the PR description alone. They
+raised: **B-1** missing `E2E-01`; **B-2** evidence bundle missing; **B-3** legacy
+`removedByRequesterId` response key present; **B-4** DB-MIG skip risk; **B-5** `reviewer.md`
+incomplete; **B-6** ground truth unreadable; plus minor session-regeneration and config items.
+
+**How I responded — per finding:**
+
+- **B-1 (E2E-01) — answered with plan authority, no code change.** `E2E-01` is a frozen Test-DD
+  row whose Automated Test File is `e2e/lab-03/authentication.spec.ts`, owned by **#42** (Locked
+  Decision: "CREATE IF MISSING … #42 is the expected initial creator of all four"). #35
+  references `E2E-01` as *basis* only (plan AU-14). Taking the reviewer's own fallback path,
+  `tests.md` now states `E2E-01..04` are **Planned, owner #42**, and this PR claims neither
+  `E2E-01` nor full-DoD completeness. The reviewer's suggested filename `auth-flow.spec.ts` is
+  **not** the frozen path and was deliberately not created; #35 creates no E2E spec.
+- **B-2 (evidence bundle) — accepted and implemented.** Published
+  `artifacts/lab-03/issue-35/` (server + client vitest at the head SHA, server + client builds,
+  `prisma validate`, `migrate status`, DB-MIG execution proof, the grep gate, `git diff --check`,
+  conflict-marker grep, `.env`-not-tracked proof, compliance map, Lab 2 test-change mapping).
+- **B-3 (legacy `removedByRequesterId` key) — answered with the authorization trail; key
+  retained.** This is an **authorized, declared, temporary deviation**, not an unauthorized one:
+  user-approved **Option A** (friend plan-review §3) → #35 Rev 13 **Locked Decision DM-17**
+  ("legacy response key names kept *only* where existing Lab 2 tests assert them", confined to a
+  declared greppable set) → deleted by **#37 Rev 12 RR-01** → absence verified by **#42**'s
+  cutover gate. The frozen `api-spec.md` Lab 3 attachment responses (§10 upload, §14 delete:
+  `{id, isRemoved, removedAt}`) do not specify the remover field, and those routes remain the
+  legacy-gated surface until #37's retrofit. The branch is explicitly **non-deployable** in this
+  intermediate state (#35 DoD). Removing the key now would break the Lab 2 suite at this merge
+  point — the exact failure DM-17 exists to prevent. Grep-gate output is recorded in the bundle.
+- **B-4 (DB-MIG execution) — accepted and implemented.** `artifacts/lab-03/issue-35/db-mig-execution.txt`
+  proves DB-MIG-01..05 **executed** (not skipped, `DATABASE_URL` present) against the
+  Lab-3-migrated database; the scratch-DB proof remains supplementary.
+- **B-5 (reviewer.md) — accepted and implemented.** This entry is truthful: findings, fixes, and
+  the human-review status is **PENDING**. No approval is pre-recorded.
+- **B-6 (ground truth unreadable) — accepted and implemented.** The frozen docs are linked from
+  the PR description, and `artifacts/lab-03/issue-35/compliance-map.md` quotes `specification.md`
+  §9.2/§9.3/§13 and `api-spec.md` §0–§4 against the implementation, tests, and evidence.
+- **Edge items — accepted.** `req.session.regenerate()` was already implemented at login
+  (`auth.controller.ts`); a supplementary fixation-safety test (`API-AUTH-09 supplementary`) was
+  added. The Secure flag is env-driven (`secure: isProduction` in `session.ts`); no `.env` is
+  committed; a build step is in the PR checklist.
+- **Lab 2 test-change mapping — documented.** `artifacts/lab-03/issue-35/lab2-test-changes.md`
+  lists every Lab 2 test adaptation against the baseline with per-test justification. The one
+  schema-assertion change (`DB-01`) reflects superseded Lab 2 behavior (table `DevRequester` →
+  `User`); no behavioral assertion was weakened or deleted. This document seeds #37's RR-04 audit.
+- **Additional regression found and fixed during remediation.** The expanded seed attached
+  seeded Tickets to reference data selected from **all** categories/systems, which let a seeded
+  Ticket reference a category planted by a Lab 2 test and blocked that test's `afterAll` cleanup.
+  Fixed by scoping the seed's reference lookups to its own declared records
+  (`server/prisma/seed.ts`); the Lab 2 suite is green again.
+
+**Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
+is claimed, and no false sign-off is recorded.
 
 ---
 

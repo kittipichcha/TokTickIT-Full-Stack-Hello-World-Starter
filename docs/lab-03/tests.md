@@ -26,7 +26,46 @@ foundation and executed its frozen test rows. Statuses are evidence-driven. The 
 updated to `Passed` by #35 are: DB-MIG-01..05, SEED-01, API-AUTH-01..09, SEC-AUTHZ-06,
 UNIT-AUTH-01, UI-LOGIN-01, UI-CHPWD-01/02. Rows owned by other issues remain `Planned`.
 
+Every `Passed` row above is backed by an executed run recorded in
+`artifacts/lab-03/issue-35/` (see that bundle's `README.md`). No row is marked `Passed`
+on the strength of the plan, a test name, or an unexecuted file.
+
+**Ownership note (frozen rows owned by other issues):** `E2E-01..04` are frozen Test-DD rows
+owned by **#42** (`e2e/lab-03/authentication.spec.ts`, `staff-ticket-flow.spec.ts`,
+`user-administration.spec.ts`, `requester-regression.spec.ts`; Locked Decision "CREATE IF
+MISSING; otherwise verify/update/re-run — #42 is the expected initial creator of all four").
+No feature issue creates an E2E spec by design. #35 references `E2E-01` as *basis* only
+(plan AU-14) and claims neither `E2E-01` nor full-DoD completeness. `SEC-AUTHZ-07` remains
+owned by **#37** (`authorization.api.test.ts`); #35 contributes only supplementary CSRF
+assertions inside `auth.api.test.ts`.
+
 ### Results Log (newest first)
+
+- **2026-09-17 — Issue #35 verification remediation (PR #46 review follow-up, round 2)**
+  - **Lab 2 regression fixed (real defect):** the expanded seed selected seed-ticket
+    reference data via `prisma.category.findMany()` / `prisma.relatedSystem.findMany()` over
+    **all** rows, so it could attach a seeded Ticket to a pre-existing unrelated Category
+    (e.g. one planted by `tests/lab-02/seed.integration.test.ts`). The resulting FK
+    (`ON DELETE RESTRICT`) then blocked that suite's `afterAll` cleanup failure
+    (`23001`/`Ticket_categoryId_fkey`) — a genuine Lab 2 regression, recorded and fixed by
+    scoping the seed's reference lookups to its own declared categories/systems
+    (`server/prisma/seed.ts`).
+  - **Session-fixation supplementary test added:** `API-AUTH-09 (supplementary)` proves
+    `req.session.regenerate()` issues a new session identifier at login and that the
+    pre-login identifier is no longer authenticated (`server/tests/lab-03/auth.api.test.ts`).
+  - **Evidence bundle published:** `artifacts/lab-03/issue-35/` — server/client vitest output
+    at the head SHA, server/client builds, `prisma validate`, `migrate status`, DB-MIG
+    execution proof (not skipped), the grep gate, `git diff --check`, conflict-marker grep,
+    the `.env`-not-tracked proof, the frozen-doc compliance map, and the Lab 2 test-change
+    mapping.
+  - Commands: `npx vitest run` (server, against a Lab-3-migrated PostgreSQL database);
+    `npm run build` (server, client); `npx vitest run` (client); `npx prisma validate`;
+    `npx prisma migrate status`; `npx vitest run tests/lab-03/migration.integration.test.ts`.
+  - Results: server **368 passed / 30 files**; client **107 passed / 10 files**; server and
+    client builds succeed; Prisma schema valid; migration status clean; DB-MIG-01..05
+    executed (not skipped).
+  - Follow-up: none. `E2E-01..04` remain `Planned` (owned by #42, see ownership note above);
+    Requester/Staff/Admin feature rows remain `Planned` (owned by #37/#38/#41).
 
 - **2026-09-17 — Issue #35 verification remediation (PR #46 review follow-up)**
   - Strengthened the four evidence gaps identified in review: `API-AUTH-06` now exercises a

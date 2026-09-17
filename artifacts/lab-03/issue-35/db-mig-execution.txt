@@ -1,0 +1,19 @@
+◇ injected env (2) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/server
+
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-01: every DevRequester became exactly one User with exact ID preservation 16ms
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-02: final schema checklist — User fields, timestamptz, passwordHash length, isRemoved invariant 91ms
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-03: migrated requester initial password matches the frozen derivation and authenticates 128ms
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-04: migrated requester is blocked until password change, then unblocked (same session) 1110ms
+NOTICE:  database "tocktick_lab3_mig05_22664" does not exist, skipping
+MigrationCollisionError: 1 collision(s) block the migration.
+  - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
+Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-05: a real migration collision aborts before backfill, preserves legacy data, and resumes after resolution 56123ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  23:30:01
+   Duration  59.36s (transform 377ms, setup 0ms, import 1.28s, tests 57.61s, environment 0ms)
+

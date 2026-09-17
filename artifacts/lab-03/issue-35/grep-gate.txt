@@ -1,0 +1,38 @@
+=== git rev-parse HEAD ===
+dcffab8603bbafdf9b114fe0a97dd36108312b18
+
+=== git diff --check ===
+(clean - no whitespace/conflict errors)
+
+=== conflict markers ===
+(none)
+
+=== tracked .env files ===
+(no .env tracked)
+
+=== grep gate: prisma.devRequester references (must be 0) ===
+(0 matches)
+
+=== grep gate: legacy identifiers (must be confined to declared DM-17 set) ===
+server/src/controller.ts:74:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:159:  res.status(200).json({ data: { requesterId: res.locals.devRequesterId as number } });
+server/src/controller.ts:227:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:257:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:383:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:412:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:484:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:511:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:557:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:595:    const requesterId = res.locals.devRequesterId as number;
+server/src/migrate-lab3.ts:139:  const devRequesterExists = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
+server/src/migrate-lab3.ts:142:  const hasDevRequester = devRequesterExists[0]?.exists === true;
+server/src/migrate-lab3.ts:316:      `UPDATE "Attachment" SET "uploaderUserId" = "uploaderRequesterId", "removedByUserId" = "removedByRequesterId"`,
+server/src/requester-context.ts:52:    res.locals.devRequesterId = requesterId;
+server/src/service.ts:66:  removedByRequesterId: number | null;
+server/src/service.ts:580:    // (removedByRequesterId) that existing Lab 2 tests assert.
+server/src/service.ts:590:      removedByRequesterId: a.removedByUserId,
+server/src/service.ts:875:    removedByRequesterId: a.removedByUserId,
+server/src/service.ts:896:  removedByRequesterId: number | null;
+server/src/service.ts:922:    removedByRequesterId: attachment.removedByUserId,
+server/src/service.ts:1023: * Sets isRemoved=true, removedAt, removalReason, removedByRequesterId.
+server/src/service.ts:1100:    removedByRequesterId: updated.removedByUserId,

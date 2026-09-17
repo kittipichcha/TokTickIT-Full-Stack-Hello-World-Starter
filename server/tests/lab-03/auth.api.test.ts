@@ -330,6 +330,32 @@ describe("API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints", () => {
     expect((await request(app).get("/api/auth/me").set("Cookie", cookie2)).status).toBe(200);
   });
 
+  itIfDb("API-AUTH-09 (supplementary): login regenerates the session identifier (fixation-safe)", async () => {
+    const derived = deriveInitialPassword("ada@example.com", "Ada Lovelace");
+
+    // Establish a session, then log in again reusing the same cookie jar. A
+    // fixation-safe login must issue a NEW session id (req.session.regenerate()).
+    const firstLogin = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "ada@example.com", password: derived });
+    const firstCookie = extractSessionCookie(firstLogin);
+    const firstSid = extractSessionId(firstCookie);
+
+    const secondLogin = await request(app)
+      .post("/api/auth/login")
+      .set("Cookie", firstCookie)
+      .send({ email: "ada@example.com", password: derived });
+    const secondCookie = extractSessionCookie(secondLogin);
+    const secondSid = extractSessionId(secondCookie);
+
+    // The session identifier changes at the privilege change (session fixation defense).
+    expect(secondSid).not.toBe(firstSid);
+    // The pre-login session identifier is no longer authenticated.
+    expect((await request(app).get("/api/auth/me").set("Cookie", firstCookie)).status).toBe(401);
+    // The regenerated session is authenticated.
+    expect((await request(app).get("/api/auth/me").set("Cookie", secondCookie)).status).toBe(200);
+  });
+
   itIfDb("SEC-AUTHZ-06: an actually expired session is rejected as unauthenticated (401 UNAUTHENTICATED)", async () => {
     const derived = deriveInitialPassword("ada@example.com", "Ada Lovelace");
     const loginRes = await request(app)
