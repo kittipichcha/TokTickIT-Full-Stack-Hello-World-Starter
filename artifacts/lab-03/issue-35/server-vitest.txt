@@ -1,14 +1,14 @@
-◇ injected env (2) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injected env (2) from .env // tip: ⌘ enable debugging { debug: true }
 
  RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/server
 
-NOTICE:  database "tocktick_lab3_mig05_27544" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_21716" does not exist, skipping
 MigrationCollisionError: 1 collision(s) block the migration.
   - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
 Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
 
  Test Files  30 passed (30)
       Tests  368 passed (368)
-   Start at  23:33:02
-   Duration  152.03s (transform 1.41s, setup 0ms, import 23.06s, tests 112.75s, environment 8ms)
+   Start at  23:37:48
+   Duration  146.58s (transform 1.35s, setup 0ms, import 19.70s, tests 113.20s, environment 7ms)
 
