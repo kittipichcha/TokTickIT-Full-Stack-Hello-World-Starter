@@ -16,21 +16,35 @@ beforeAll(async () => {
   const prisma = getPrisma();
 
   // Requester A owns the ticket + attachment.
-  let requesterA = await prisma.devRequester.findFirst({ where: { isActive: true } });
+  let requesterA = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
   if (!requesterA) {
-    requesterA = await prisma.devRequester.create({
-      data: { name: "Ownership A", email: `ownership-a-${Date.now()}@example.com`, isActive: true },
+    requesterA = await prisma.user.create({
+      data: {
+        name: "Ownership A",
+        email: `ownership-a-${Date.now()}@example.com`,
+        role: "REQUESTER",
+        passwordHash: "$2b$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0",
+        isActive: true,
+        mustChangePassword: true,
+      },
     });
   }
   requesterAId = requesterA.id;
 
   // Requester B is a different active requester who must NOT access A's attachment.
-  let requesterB = await prisma.devRequester.findFirst({
-    where: { isActive: true, id: { not: requesterAId } },
+  let requesterB = await prisma.user.findFirst({
+    where: { isActive: true, role: "REQUESTER", id: { not: requesterAId } },
   });
   if (!requesterB) {
-    requesterB = await prisma.devRequester.create({
-      data: { name: "Ownership B", email: `ownership-b-${Date.now()}@example.com`, isActive: true },
+    requesterB = await prisma.user.create({
+      data: {
+        name: "Ownership B",
+        email: `ownership-b-${Date.now()}@example.com`,
+        role: "REQUESTER",
+        passwordHash: "$2b$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0",
+        isActive: true,
+        mustChangePassword: true,
+      },
     });
   }
   requesterBId = requesterB.id;

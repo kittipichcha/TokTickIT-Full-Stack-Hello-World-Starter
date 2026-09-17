@@ -1,12 +1,23 @@
 import express from "express";
 import cors from "cors";
 import { router } from "./module.js";
+import { sessionMiddleware } from "./session.js";
 
 // The Express app is exported separately from app.listen() (see index.ts) so
 // Supertest can import `app` without opening a port. Do not merge these files.
 export const app = express();
 
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? "http://localhost:5173" })); // allow local dev by default
+// CORS (frozen §13 / review Rev5 §5.7): credentials + explicit origin + exposed CSRF header.
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
+    credentials: true,
+    exposedHeaders: ["X-CSRF-Token"],
+  }),
+);
+
+// Session middleware (httpOnly cookie + server-side store; frozen §13).
+app.use(sessionMiddleware());
 
 // Capture raw body for integer lexical validation (api-spec §0: integer grammar)
 // Stored per-request on req to avoid concurrency issues.

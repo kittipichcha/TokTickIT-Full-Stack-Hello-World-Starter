@@ -104,8 +104,10 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getActiveDevRequesters(): Promise<DevRequester[]> {
   const prisma = getPrisma();
-  return prisma.devRequester.findMany({
-    where: { isActive: true },
+  // DM-17 compatibility: identity now sourced from User (role = REQUESTER) instead of
+  // the dropped DevRequester table. Legacy response shape preserved (id/name/email).
+  return prisma.user.findMany({
+    where: { isActive: true, role: "REQUESTER" },
     select: { id: true, name: true, email: true },
     orderBy: [{ name: "asc" }, { id: "asc" }],
   });
@@ -113,8 +115,9 @@ export async function getActiveDevRequesters(): Promise<DevRequester[]> {
 
 export async function isActiveDevRequester(id: number): Promise<boolean> {
   const prisma = getPrisma();
-  const requester = await prisma.devRequester.findFirst({
-    where: { id, isActive: true },
+  // DM-17 compatibility: identity from User (role = REQUESTER); same accept/reject semantics.
+  const requester = await prisma.user.findFirst({
+    where: { id, isActive: true, role: "REQUESTER" },
     select: { id: true },
   });
   return requester !== null;
@@ -545,7 +548,7 @@ export async function getTicketByNumber(
           isRemoved: true,
           removedAt: true,
           removalReason: true,
-          removedByRequesterId: true,
+          removedByUserId: true,
         },
       },
     },
@@ -573,7 +576,19 @@ export async function getTicketByNumber(
     currentStatus: ticket.currentStatus,
     createdAt: ticket.createdAt,
     updatedAt: ticket.updatedAt,
-    attachments: ticket.attachments,
+    // DM-17 compatibility: map the renamed column back to the legacy response key
+    // (removedByRequesterId) that existing Lab 2 tests assert.
+    attachments: ticket.attachments.map((a) => ({
+      id: a.id,
+      originalFilename: a.originalFilename,
+      mimeType: a.mimeType,
+      fileSizeBytes: a.fileSizeBytes,
+      uploadedAt: a.uploadedAt,
+      isRemoved: a.isRemoved,
+      removedAt: a.removedAt,
+      removalReason: a.removalReason,
+      removedByRequesterId: a.removedByUserId,
+    })),
   };
 }
 
@@ -667,7 +682,7 @@ export async function createAttachmentMetadata(
           storedFilename: string;
           mimeType: string;
           fileSizeBytes: number;
-          uploaderRequesterId: number;
+          uploaderUserId: number;
         };
       }) => Promise<{
         id: number;
@@ -686,7 +701,7 @@ export async function createAttachmentMetadata(
     storedFilename: string;
     mimeType: string;
     fileSizeBytes: number;
-    uploaderRequesterId: number;
+    uploaderUserId: number;
   },
 ) {
   // Test seam: force metadata persistence failure
@@ -782,7 +797,7 @@ export async function uploadAttachment(
         storedFilename,
         mimeType,
         fileSizeBytes: fileBuffer.length,
-        uploaderRequesterId: requesterId,
+        uploaderUserId: requesterId,
       });
 
       // Test seam: force a failure AFTER the metadata row is created but before
@@ -843,11 +858,22 @@ export async function listAttachments(
       isRemoved: true,
       removedAt: true,
       removalReason: true,
-      removedByRequesterId: true,
+      removedByUserId: true,
     },
   });
 
-  return attachments;
+  // DM-17 compatibility: map the renamed column back to the legacy response key.
+  return attachments.map((a) => ({
+    id: a.id,
+    originalFilename: a.originalFilename,
+    mimeType: a.mimeType,
+    fileSizeBytes: a.fileSizeBytes,
+    uploadedAt: a.uploadedAt,
+    isRemoved: a.isRemoved,
+    removedAt: a.removedAt,
+    removalReason: a.removalReason,
+    removedByRequesterId: a.removedByUserId,
+  }));
 }
 
 /**
@@ -893,7 +919,7 @@ export async function getAttachmentById(
     isRemoved: attachment.isRemoved,
     removedAt: attachment.removedAt,
     removalReason: attachment.removalReason,
-    removedByRequesterId: attachment.removedByRequesterId,
+    removedByRequesterId: attachment.removedByUserId,
     uploadedAt: attachment.uploadedAt,
   };
 }
@@ -1032,7 +1058,7 @@ export async function removeAttachment(
       isRemoved: true,
       removedAt: new Date(),
       removalReason,
-      removedByRequesterId: requesterId,
+      removedByUserId: requesterId,
     },
   });
 
@@ -1054,9 +1080,23 @@ export async function removeAttachment(
       isRemoved: true,
       removedAt: true,
       removalReason: true,
-      removedByRequesterId: true,
+      removedByUserId: true,
     },
   });
 
-  return updated;
+  // DM-17 compatibility: map the renamed column back to the legacy response key.
+  if (!updated) {
+    throw new ConflictError("This attachment has already been removed.");
+  }
+  return {
+    id: updated.id,
+    originalFilename: updated.originalFilename,
+    mimeType: updated.mimeType,
+    fileSizeBytes: updated.fileSizeBytes,
+    uploadedAt: updated.uploadedAt,
+    isRemoved: updated.isRemoved,
+    removedAt: updated.removedAt,
+    removalReason: updated.removalReason,
+    removedByRequesterId: updated.removedByUserId,
+  };
 }

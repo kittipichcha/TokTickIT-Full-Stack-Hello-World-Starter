@@ -39,7 +39,7 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
       where: { year: currentYear },
     });
 
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
 

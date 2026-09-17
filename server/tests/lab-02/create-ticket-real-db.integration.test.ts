@@ -72,7 +72,7 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester).toBeTruthy();
@@ -333,7 +333,7 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
 
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
 
@@ -406,8 +406,8 @@ describe("API-TKT-INT-04: Real Ticket Detail ownership enforcement", () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
 
-    const requesters = await prisma.devRequester.findMany({
-      where: { isActive: true },
+    const requesters = await prisma.user.findMany({
+      where: { isActive: true, role: "REQUESTER" },
       take: 2,
       orderBy: { id: "asc" },
     });

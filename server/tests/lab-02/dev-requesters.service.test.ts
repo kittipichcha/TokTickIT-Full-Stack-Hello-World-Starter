@@ -11,7 +11,7 @@ describe("getActiveDevRequesters", () => {
     vi.clearAllMocks();
     findMany.mockResolvedValue([{ id: 1, name: "Ada Lovelace", email: "ada@example.com" }]);
     vi.mocked(getPrisma).mockReturnValue({
-      devRequester: { findMany },
+      user: { findMany },
     } as never);
   });
 
@@ -19,7 +19,7 @@ describe("getActiveDevRequesters", () => {
     await getActiveDevRequesters();
 
     expect(findMany).toHaveBeenCalledWith({
-      where: { isActive: true },
+      where: { isActive: true, role: "REQUESTER" },
       select: { id: true, name: true, email: true },
       orderBy: [{ name: "asc" }, { id: "asc" }],
     });

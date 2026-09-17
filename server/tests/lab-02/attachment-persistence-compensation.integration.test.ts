@@ -21,10 +21,17 @@ beforeAll(async () => {
   if (!process.env.DATABASE_URL) return;
   const prisma = getPrisma();
 
-  let requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+  let requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
   if (!requester) {
-    requester = await prisma.devRequester.create({
-      data: { name: "Test Requester", email: `test-persist-${Date.now()}@example.com`, isActive: true },
+    requester = await prisma.user.create({
+      data: {
+        name: "Test Requester",
+        email: `test-persist-${Date.now()}@example.com`,
+        role: "REQUESTER",
+        passwordHash: "$2b$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0",
+        isActive: true,
+        mustChangePassword: true,
+      },
     });
   }
   testRequesterId = requester.id;

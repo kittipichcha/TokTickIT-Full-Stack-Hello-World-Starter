@@ -22,21 +22,35 @@ beforeAll(async () => {
   if (!process.env.DATABASE_URL) return;
   const prisma = getPrisma();
 
-  let requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+  let requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
   if (!requester) {
-    requester = await prisma.devRequester.create({
-      data: { name: "Concurrency Test", email: `concurrency-${Date.now()}@example.com`, isActive: true },
+    requester = await prisma.user.create({
+      data: {
+        name: "Concurrency Test",
+        email: `concurrency-${Date.now()}@example.com`,
+        role: "REQUESTER",
+        passwordHash: "$2b$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0",
+        isActive: true,
+        mustChangePassword: true,
+      },
     });
   }
   testRequesterId = requester.id;
 
   // Create a second active requester for ownership-isolation tests.
-  let otherRequester = await prisma.devRequester.findFirst({
-    where: { isActive: true, id: { not: testRequesterId } },
+  let otherRequester = await prisma.user.findFirst({
+    where: { isActive: true, role: "REQUESTER", id: { not: testRequesterId } },
   });
   if (!otherRequester) {
-    otherRequester = await prisma.devRequester.create({
-      data: { name: "Other Requester", email: `other-${Date.now()}@example.com`, isActive: true },
+    otherRequester = await prisma.user.create({
+      data: {
+        name: "Other Requester",
+        email: `other-${Date.now()}@example.com`,
+        role: "REQUESTER",
+        passwordHash: "$2b$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0",
+        isActive: true,
+        mustChangePassword: true,
+      },
     });
   }
   otherRequesterId = otherRequester.id;
@@ -264,7 +278,7 @@ describe("API-ATT-REM-CONC: Concurrent soft removal — exactly one 200, one 409
       expect(persisted).not.toBeNull();
       expect(persisted!.isRemoved).toBe(true);
       expect(persisted!.removedAt).not.toBeNull();
-      expect(persisted!.removedByRequesterId).toBe(testRequesterId);
+      expect(persisted!.removedByUserId).toBe(testRequesterId);
       expect(persisted!.removalReason).toBe("concurrent removal");
     },
   );

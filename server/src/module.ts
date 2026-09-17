@@ -16,8 +16,23 @@ import {
   requireTicketOwnership,
 } from "./controller.js";
 import { requireDevRequesterContext } from "./requester-context.js";
+import { requireAuth, requireAuthAndCsrf } from "./session.js";
+import {
+  login,
+  logout,
+  me,
+  changePasswordHandler,
+} from "./auth.controller.js";
 
 export const router = Router();
+
+// ---- Lab 3 auth endpoints (Issue #35) ----
+// Gate exemptions (frozen): login public; me/logout/change-password authenticated,
+// content-gate-exempt. logout/change-password are state-changing -> requireAuth + requireCsrf.
+router.post("/auth/login", login);
+router.get("/auth/me", requireAuth, me);
+router.post("/auth/logout", requireAuthAndCsrf, logout);
+router.post("/auth/change-password", requireAuthAndCsrf, changePasswordHandler);
 
 const upload = multer({
   storage: multer.memoryStorage(),
