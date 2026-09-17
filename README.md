@@ -384,3 +384,68 @@ omitted/blank, 1–200 chars after trim). A removed attachment returns `409 CONF
 - Lab 2 uses development requester identity only, not real authentication.
 - Keep ownership enforcement server-side for all requester-owned resources.
 - Keep `docs/lab-02/tests.md` and `docs/lab-02/ai-use.md` updated as work progresses.
+
+## 11. Lab 3 — Identity, Database Migration & Authentication (Issue #35)
+
+Issue #35 replaces the Lab 2 `X-Dev-Requester-Id` dev identity with real session
+authentication and migrates `DevRequester` → `User`.
+
+### 11.1 Database migration (two-phase, tracked)
+
+The migration is applied by the orchestrator, never by a plain `prisma migrate deploy`
+with Phase C pending:
+
+```
+cd server && npm run migrate:lab3 -- run
+```
+
+- **Phase A** (`20260917000000_lab3_phase_a_expand`, additive-only): adds `User`, `Role`,
+  `Comment`, `InternalNote`, `Ticket.appearsResolved` (nullable), the remaining 7
+  `TicketStatus` values, and `Attachment.uploaderUserId`/`removedByUserId` shadow columns.
+- **Backfill** (single transaction): every `DevRequester` row becomes a `User` with
+  **exact ID preservation**, `role = REQUESTER`, `mustChangePassword = true`, and a
+  deterministic password.
+- **Phase C** (`20260917000001_lab3_phase_c_contract`): finalizes constraints, converts all
+  §9.3 timestamps to `timestamptz(3)` (UTC-preserving), drops the legacy Attachment
+  requester columns, and drops `DevRequester`.
+
+**Collision recovery (DM-18):** if the Stage-2 scan finds an email/ID collision, the
+orchestrator aborts loudly (`MigrationCollisionError`) and leaves the database in the
+documented Phase-A-applied state. Resolve the collision source (manual data fix or user
+decision), then re-run the orchestrator — Stage 1 recognizes the Phase-A-applied state and
+resumes at Stage 2. **Never** un-apply tracked migrations or hand-edit `_prisma_migrations`.
+
+### 11.2 Session and CSRF configuration (concrete, frozen policy)
+
+- **Session store:** `express-session` + `connect-pg-simple` (`session` table,
+  `createTableIfMissing: true`), TTL 1800 s, `rolling: true`, `disableTouch: false`.
+- **Cookie:** `httpOnly: true`, `sameSite: "lax"`, `secure: true` in production,
+  `maxAge = 30 * 60 * 1000` (30-minute rolling idle expiry; no absolute timeout).
+- **CSRF:** session-bound synchronizer token issued via the `X-CSRF-Token` response header on
+  `login`/`me`; echoed on state-changing calls; missing/invalid → `403 FORBIDDEN`.
+- **`SESSION_SECRET`:** server-only; `.env.example` carries a placeholder only. The server
+  refuses to boot without a real secret (>= 32 chars) in non-test environments; tests inject
+  a deterministic test-only secret.
+
+### 11.3 Auth endpoints
+
+| Method | Endpoint | Auth |
+|---|---|---|
+| POST | `/api/auth/login` | public; safe generic `401 UNAUTHENTICATED` for invalid credentials or inactive account |
+| POST | `/api/auth/logout` | authenticated + CSRF |
+| GET | `/api/auth/me` | authenticated |
+| POST | `/api/auth/change-password` | authenticated + CSRF |
+
+Gate rejections: `requireAuth` → `401 UNAUTHENTICATED`; `requirePasswordChanged` →
+`401 PASSWORD_CHANGE_REQUIRED`; `requireCsrf` → `403 FORBIDDEN`.
+
+### 11.4 Local development credentials (no real secrets)
+
+Seeded users are created with the deterministic password
+`Lab3-` + first 20 hex chars of `SHA-256(lowercase(trim(email)) + ":" + trim(name))`
+(frozen §13 decision 13). The seed provides 4 active + 1 inactive Requesters, 3 active + 1
+inactive IT Staff, and 1 active Administrator. Example: `ada@example.com` /
+`Lab3-18ea620d20bd6a06d667`. These are development-only values.
+
+Downstream issues (#37/#38/#41) consume the shared client transport `client/src/api-client.ts`
+and the fresh-User session authority rule delivered here.

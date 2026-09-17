@@ -21,10 +21,27 @@ E2E/Responsive/Keyboard (planned):
 - Planned folder: `e2e/lab-03/`
 
 ## 2a. Execution Evidence
-No execution evidence yet. This issue (Issue #34) is the Sprint 3 engineering contract / Spec DD
-and produces no implementation code. All test rows below are `Planned`; they will be implemented
-and executed by downstream issues (Issues 2–10). Results will be recorded here, newest first,
-as implementation proceeds.
+Issue #35 (Identity, Database Migration & Authentication) implemented the identity/auth
+foundation and executed its frozen test rows. Statuses are evidence-driven. The rows
+updated to `Passed` by #35 are: DB-MIG-01..05, SEED-01, API-AUTH-01..09, SEC-AUTHZ-06,
+UNIT-AUTH-01, UI-LOGIN-01, UI-CHPWD-01/02. Rows owned by other issues remain `Planned`.
+
+### Results Log (newest first)
+
+- **2026-09-17 — Issue #35 (Identity, Database Migration & Authentication)**
+  - Tests added: `server/tests/lab-03/auth.unit.test.ts`, `server/tests/lab-03/auth.api.test.ts`,
+    `server/tests/lab-03/migration.integration.test.ts`, `server/tests/lab-03/seed.integration.test.ts`,
+    `client/src/lab-03-tests/Login.test.tsx`, `client/src/lab-03-tests/ChangePassword.test.tsx`.
+  - Commands: `npm run build` (server, client); `npx vitest run` (server, client) against a
+    Lab-3-migrated PostgreSQL database.
+  - Results: server 366 passed / 30 files (Lab 2 regression green + lab-03); client 107 passed /
+    10 files. Auth endpoint smoke (login/me/change-password/logout, CSRF 403, wrong-current 400)
+    verified via curl. Scratch-DB proof recorded at
+    `artifacts/lab-03/migration/scratch-db-proof.md`.
+  - Follow-up: none. Requester/Staff/Admin feature rows remain `Planned` (owned by #37/#38/#41).
+
+No execution evidence yet prior to #35. Issue #34 (Sprint 3 engineering contract / Spec DD)
+produced no implementation code.
 
 ## 3. Test Status Terminology
 `Final` describes evidence status, not the expected behavior: `Planned` means the test row is
@@ -42,21 +59,21 @@ security/authorization, migration/regression, and end-to-end coverage.
 
 | Test ID | Type | What It Tests | Expected Result | Automated Test File | FR | BR | Requirement / AC | Final |
 |---|---|---|---|---|---|---|---|---|
-| API-AUTH-01 | API | Valid login | Authenticated response; safe user data | `server/tests/lab-03/auth.api.test.ts` | FR-01, FR-02 | BR-01 | AC-01 | Planned |
-| API-AUTH-02 | API | Invalid login | Safe generic error; no account-status leak | `server/tests/lab-03/auth.api.test.ts` | FR-01 | BR-07, BR-08 | AC-05 | Planned |
-| API-AUTH-03 | API | Inactive account login | Authentication fails; safe error | `server/tests/lab-03/auth.api.test.ts` | FR-06 | BR-08 | AC-05 | Planned |
-| API-AUTH-04 | API | Logout | Session invalidated; protected endpoints blocked | `server/tests/lab-03/auth.api.test.ts` | FR-03 | BR-09 | AC-06 | Planned |
-| API-AUTH-05 | API | Current user | Returns authenticated identity and role | `server/tests/lab-03/auth.api.test.ts` | FR-04 | — | AC-01 | Planned |
-| API-AUTH-06 | API | Mandatory password change | Normal app blocked until valid new password saved | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-02 | AC-02 | Planned |
-| API-AUTH-07 | API | Password policy boundaries | Invalid new password rejected per the frozen policy (Section 13, decision 12): below 12 chars rejected; 12 valid chars accepted; 128 valid chars accepted; above 128 chars rejected; missing uppercase rejected; missing lowercase rejected; missing digit rejected; missing special char rejected; valid composition accepted | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-10 | AC-02 | Planned |
-| API-AUTH-08 | API | Change password with wrong currentPassword | `400 VALIDATION_ERROR` with a generic message ("current password is incorrect"); no hint about why it was wrong | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-01, BR-07 | AC-02 | Planned |
-| API-AUTH-09 | API | Second concurrent login for the same user | Both sessions remain valid; the first session is not invalidated (Section 13, decision 16) | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-01 | Planned |
+| API-AUTH-01 | API | Valid login | Authenticated response; safe user data | `server/tests/lab-03/auth.api.test.ts` | FR-01, FR-02 | BR-01 | AC-01 | Passed |
+| API-AUTH-02 | API | Invalid login | Safe generic error; no account-status leak | `server/tests/lab-03/auth.api.test.ts` | FR-01 | BR-07, BR-08 | AC-05 | Passed |
+| API-AUTH-03 | API | Inactive account login | Authentication fails; safe error | `server/tests/lab-03/auth.api.test.ts` | FR-06 | BR-08 | AC-05 | Passed |
+| API-AUTH-04 | API | Logout | Session invalidated; protected endpoints blocked | `server/tests/lab-03/auth.api.test.ts` | FR-03 | BR-09 | AC-06 | Passed |
+| API-AUTH-05 | API | Current user | Returns authenticated identity and role | `server/tests/lab-03/auth.api.test.ts` | FR-04 | — | AC-01 | Passed |
+| API-AUTH-06 | API | Mandatory password change | Normal app blocked until valid new password saved | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-02 | AC-02 | Passed |
+| API-AUTH-07 | API | Password policy boundaries | Invalid new password rejected per the frozen policy (Section 13, decision 12): below 12 chars rejected; 12 valid chars accepted; 128 valid chars accepted; above 128 chars rejected; missing uppercase rejected; missing lowercase rejected; missing digit rejected; missing special char rejected; valid composition accepted | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-10 | AC-02 | Passed |
+| API-AUTH-08 | API | Change password with wrong currentPassword | `400 VALIDATION_ERROR` with a generic message ("current password is incorrect"); no hint about why it was wrong | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-01, BR-07 | AC-02 | Passed |
+| API-AUTH-09 | API | Second concurrent login for the same user | Both sessions remain valid; the first session is not invalidated (Section 13, decision 16) | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-01 | Passed |
 | SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Planned |
 | SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Planned |
 | SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Planned |
 | SEC-AUTHZ-04 | API | Unauthenticated protected endpoint | 401 UNAUTHENTICATED | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
 | SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Planned |
-| SEC-AUTHZ-06 | API | Session idle timeout expiration | Expired session behaves as unauthenticated (401 UNAUTHENTICATED) | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-06 | Planned |
+| SEC-AUTHZ-06 | API | Session idle timeout expiration | Expired session behaves as unauthenticated (401 UNAUTHENTICATED) | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-06 | Passed |
 | SEC-AUTHZ-07 | API | CSRF on state-changing endpoint | Missing/invalid CSRF token rejected (403 FORBIDDEN); mutation not applied | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
 | SEC-AUTHZ-08 | API | Requester posts/reads comments on a not-owned ticket | `404 NOT_FOUND`; no data leaked | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-12, BR-32 | AC-03 | Planned |
 | SEC-AUTHZ-09 | API | Non-Administrator calls create-user / edit-user | `403 FORBIDDEN` | `server/tests/lab-03/users-admin.api.test.ts` | FR-24, FR-25 | — | AC-20 | Planned |
@@ -88,17 +105,17 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-ADM-08 | API | Set new initial password | User must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-26 | BR-30 | AC-16 | Planned |
 | API-ADM-09 | API | Edit / set-initial-password on nonexistent userId | `404 NOT_FOUND` — user does not exist | `server/tests/lab-03/users-admin.api.test.ts` | FR-25, FR-26 | BR-31 | AC-17, AC-16 | Planned |
 | API-ADM-10 | API | Non-last Administrator changes own role away from Administrator | Succeeds; rejected only if it is the last active Administrator (BR-28 path) | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-34, BR-28 | AC-19 | Planned |
-| UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Planned |
+| UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Passed |
 | UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Planned |
-| DB-MIG-01 | DB | DevRequester → User migration | Existing ownership preserved | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Planned |
-| DB-MIG-02 | DB | Existing data preserved | Categories/RelatedSystems/Tickets/Attachments valid | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Planned |
-| DB-MIG-03 | DB | Migrated requester initial password | Migrated user's initial password equals the password produced by the frozen derivation (Section 13, decision 13: `Lab3-` + first 20 hex chars of SHA-256(lowercase(trim(email)) + ":" + trim(name))), authenticates successfully, and `mustChangePassword` is enforced; running migration/seed again produces the same password | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Planned |
-| DB-MIG-04 | DB | Migrated requester password change | Normal app blocked until valid new password; allowed afterward | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Planned |
-| DB-MIG-05 | DB | Migration with a colliding email | Migration fails with a clear error; no silent overwrite/skip/merge (Section 13, decision 17) | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-13 | AC-25 | Planned |
-| SEED-01 | DB | Seed idempotency | Safe to run repeatedly | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Planned |
-| UI-LOGIN-01 | UI | Login screen | Valid/invalid login; busy/safe failure; form data preserved | `client/src/lab-03-tests/Login.test.tsx` | FR-01 | BR-07, BR-33 | AC-01 | Planned |
-| UI-CHPWD-01 | UI | Change Password screen | Mandatory change; validation; continuation | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Planned |
-| UI-CHPWD-02 | UI | Confirm field does not match new password | Inline validation error; form not submitted; API never called | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Planned |
+| DB-MIG-01 | DB | DevRequester → User migration | Existing ownership preserved | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-02 | DB | Existing data preserved | Categories/RelatedSystems/Tickets/Attachments valid | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
+| DB-MIG-03 | DB | Migrated requester initial password | Migrated user's initial password equals the password produced by the frozen derivation (Section 13, decision 13: `Lab3-` + first 20 hex chars of SHA-256(lowercase(trim(email)) + ":" + trim(name))), authenticates successfully, and `mustChangePassword` is enforced; running migration/seed again produces the same password | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Passed |
+| DB-MIG-04 | DB | Migrated requester password change | Normal app blocked until valid new password; allowed afterward | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Passed |
+| DB-MIG-05 | DB | Migration with a colliding email | Migration fails with a clear error; no silent overwrite/skip/merge (Section 13, decision 17) | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-13 | AC-25 | Passed |
+| SEED-01 | DB | Seed idempotency | Safe to run repeatedly | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| UI-LOGIN-01 | UI | Login screen | Valid/invalid login; busy/safe failure; form data preserved | `client/src/lab-03-tests/Login.test.tsx` | FR-01 | BR-07, BR-33 | AC-01 | Passed |
+| UI-CHPWD-01 | UI | Change Password screen | Mandatory change; validation; continuation | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Passed |
+| UI-CHPWD-02 | UI | Confirm field does not match new password | Inline validation error; form not submitted; API never called | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Passed |
 | UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Planned |
 | UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Planned |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Planned |

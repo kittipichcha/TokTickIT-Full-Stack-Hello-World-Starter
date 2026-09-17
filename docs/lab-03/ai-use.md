@@ -52,3 +52,16 @@
   - **Documentation-clarity fixes (N-05–N-07):** clarified in §0 that `401 UNAUTHENTICATED` applies uniformly to every protected endpoint and is not re-listed per-endpoint; confirmed `confirmPassword` is a client-side-only check never sent to the API; documented that the Status Transition Matrix's "Confirmation" transitions are a client-side modal gate only, with the API applying the transition unconditionally.
   - Added 6 new planned test rows (`SEC-AUTHZ-08/09/10`, `API-STAFF-10`, `UI-CHPWD-02`, `UI-STAFF-02`) and updated the §6 AC→test mapping.
 - Reflection: This round was a self-directed completeness audit (not a partner review) that found only mechanical, already-implied error-case gaps against handout §6.2 and the team's own frozen decisions — no new judgment calls were required. The Attachment byte-size/MIME-type values remain intentionally unstated (inherited from the Lab 2 contract, which this document does not duplicate).
+
+## Issue #35 Implementation Entry (Identity, Database Migration & Authentication)
+
+- Prompt summary: Implement the Issue #35 plan (Revision 13) end-to-end — the two-phase migration, the auth surface, the seed expansion, the shared client transport, the auth UI, and all frozen tests — creating a branch/worktree from `lab3-staging` and following the plan strictly.
+- What was done with output:
+  - **Branch/worktree:** `feature/issue-35-identity-db-migration-auth` at `issue-35-worktree`, based on `origin/lab3-staging` @ `749aa96` (PR #45 merge).
+  - **Scratch-DB proof (Prisma 5.22):** proved apply-then-resolve works (out-of-band SQL + `prisma migrate resolve --applied`); ran the full orchestrator from a fresh Lab-2 baseline; demonstrated collision abort + recovery/resume (DM-18). Recorded at `artifacts/lab-03/migration/scratch-db-proof.md`.
+  - **Migrations:** Phase A (`20260917000000_lab3_phase_a_expand`) and Phase C (`20260917000001_lab3_phase_c_contract`); `migrate-lab3.ts` orchestrator (two-stage preflight, three-way collision scan, single-transaction backfill, post-backfill verification, DM-TIME-01 UTC conversion).
+  - **Auth surface:** `session.ts` (fresh-User authority; `401 UNAUTHENTICATED` / `401 PASSWORD_CHANGE_REQUIRED` / `403 FORBIDDEN`), `auth-service.ts` (bcrypt + frozen policy), `auth.controller.ts`, CORS.
+  - **Seed:** idempotent expansion (Requesters, IT Staff, Administrator, tickets, comments, notes).
+  - **Client:** `api-client.ts` transport, `Login.tsx`, `ChangePassword.tsx`, `AuthGate.tsx`.
+  - **DM-17 compatibility set:** adapted `service.ts`/`requester-context.ts` and the Lab 2 test files to the `User` model, preserving Lab 2 semantics and response shapes.
+- Reflection: The plan's DM-17 compatibility set was essential — Phase C drops `DevRequester`, and without the declared adaptation the #35 merge point would not compile and the Lab 2 regression suite would break. Adapting the Lab 2 tests to `prisma.user` (role `REQUESTER`) preserved their assertions exactly rather than weakening them. The scratch-DB proof validated the Prisma-5.22 apply-then-resolve assumption before feature work, so no stop-and-report gate was triggered.
