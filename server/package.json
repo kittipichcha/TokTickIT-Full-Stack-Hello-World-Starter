@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
+    "migrate:lab3": "tsx src/migrate-lab3.ts",
     "test": "vitest run"
   },
   "prisma": {
@@ -16,10 +17,16 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/express-session": "^1.19.0",
+    "bcrypt": "^6.0.0",
     "clawpdf": "^0.3.1",
+    "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
+    "express-session": "^1.19.0",
     "multer": "^2.2.0",
     "sharp": "^0.35.4"
   },
