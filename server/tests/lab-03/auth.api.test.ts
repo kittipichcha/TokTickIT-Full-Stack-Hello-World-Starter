@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
+import pg from "pg";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
 import { deriveInitialPassword } from "../../src/migrate-lab3.js";
@@ -18,6 +19,54 @@ function extractSessionCookie(res: { headers: Record<string, unknown> }): string
   const raw = res.headers["set-cookie"];
   const first = Array.isArray(raw) ? raw[0] : raw;
   return String(first).split(";")[0];
+}
+
+/**
+ * Extracts the raw session id from a `connect.sid` cookie value.
+ * The cookie value is `s%3A<sid>.<signature>` (URL-encoded `s:<sid>.<sig>`).
+ */
+function extractSessionId(cookie: string): string {
+  const value = cookie.slice(cookie.indexOf("=") + 1);
+  const decoded = decodeURIComponent(value);
+  const withoutPrefix = decoded.startsWith("s:") ? decoded.slice(2) : decoded;
+  return withoutPrefix.split(".")[0];
+}
+
+/**
+ * Deterministically expires a real server-side session record in the
+ * connect-pg-simple store (no 30-minute wall-clock sleep). The store's `get()`
+ * filters on `expire >= to_timestamp(now)`, so setting `expire` to the epoch
+ * makes the session behave exactly like an idle-expired session.
+ */
+async function expireSession(sid: string): Promise<void> {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is not set.");
+  const pool = new pg.Pool({ connectionString: url.split("?")[0] });
+  try {
+    await pool.query('UPDATE "session" SET expire = to_timestamp(0) WHERE sid = $1', [sid]);
+  } finally {
+    await pool.end();
+  }
+}
+
+/**
+ * Reads the remaining lifetime (seconds) of a session record, computed in the
+ * session store's own frame (`expire` is a naive timestamp compared against
+ * `to_timestamp(now)` by connect-pg-simple).
+ */
+async function readSessionRemainingSeconds(sid: string): Promise<number> {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is not set.");
+  const pool = new pg.Pool({ connectionString: url.split("?")[0] });
+  try {
+    const result = await pool.query<{ remaining: string }>(
+      'SELECT EXTRACT(EPOCH FROM (expire - to_timestamp(EXTRACT(EPOCH FROM now()))))::text AS remaining FROM "session" WHERE sid = $1',
+      [sid],
+    );
+    return Number(result.rows[0]?.remaining ?? 0);
+  } finally {
+    await pool.end();
+  }
 }
 
 describe("API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints", () => {
@@ -173,15 +222,31 @@ describe("API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints", () => {
       .post("/api/auth/login")
       .send({ email: "ada@example.com", password: derived });
     const cookie = extractSessionCookie(loginRes);
+    const csrf = loginRes.headers["x-csrf-token"];
 
-    // A protected non-exempt endpoint (e.g. /api/categories) requires requireAuth + requirePasswordChanged.
-    // Note: /api/categories is currently gated by requireDevRequesterContext in the Lab 2 surface,
-    // so we assert the gate via a route that uses requireAuth. For #35, the auth gate is exercised
-    // through the auth routes themselves; the PASSWORD_CHANGE_REQUIRED code is asserted here as
-    // supplementary evidence consistent with the frozen §0 table.
-    const res = await request(app).get("/api/auth/me").set("Cookie", cookie);
-    // /me is content-gate-exempt, so it returns 200 even when mustChangePassword is true.
-    expect(res.status).toBe(200);
+    // A real normal-application protected endpoint (requireAuth -> requirePasswordChanged).
+    // This test fails if requirePasswordChanged is removed from the route chain.
+    const blocked = await request(app).get("/api/app/context").set("Cookie", cookie);
+    expect(blocked.status).toBe(401);
+    expect(blocked.body.error.code).toBe("PASSWORD_CHANGE_REQUIRED");
+
+    // The content-gate-exempt auth routes remain reachable while the gate is active.
+    expect((await request(app).get("/api/auth/me").set("Cookie", cookie)).status).toBe(200);
+
+    // Change the password using the SAME session (no re-login).
+    const changed = await request(app)
+      .post("/api/auth/change-password")
+      .set("Cookie", cookie)
+      .set("X-CSRF-Token", csrf)
+      .send({ currentPassword: derived, newPassword: VALID_NEW_PASSWORD });
+    expect(changed.status).toBe(200);
+    expect(changed.body.data.mustChangePassword).toBe(false);
+
+    // The same session now reaches the normal protected endpoint.
+    const allowed = await request(app).get("/api/app/context").set("Cookie", cookie);
+    expect(allowed.status).toBe(200);
+    expect(allowed.body.data.email).toBe("ada@example.com");
+    expect(allowed.body.data.mustChangePassword).toBe(false);
   });
 
   itIfDb("API-AUTH-07: password policy boundaries via change-password", async () => {
@@ -265,9 +330,33 @@ describe("API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints", () => {
     expect((await request(app).get("/api/auth/me").set("Cookie", cookie2)).status).toBe(200);
   });
 
-  itIfDb("SEC-AUTHZ-06: session idle expiry is configured to 30 minutes (rolling)", async () => {
-    // The frozen contract: 30-minute rolling idle expiry. We assert the cookie maxAge
-    // reflects 30 minutes (1800s) and that the session store TTL is 1800s.
+  itIfDb("SEC-AUTHZ-06: an actually expired session is rejected as unauthenticated (401 UNAUTHENTICATED)", async () => {
+    const derived = deriveInitialPassword("ada@example.com", "Ada Lovelace");
+    const loginRes = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "ada@example.com", password: derived });
+    const cookie = extractSessionCookie(loginRes);
+    const sid = extractSessionId(cookie);
+
+    // The session exists in the real server-side store with a ~30-minute expiry.
+    const remaining = await readSessionRemainingSeconds(sid);
+    expect(remaining).toBeGreaterThan(29 * 60);
+    expect(remaining).toBeLessThanOrEqual(30 * 60 + 5);
+
+    // Before expiry the session is valid (use the requireAuth-only endpoint so this
+    // test isolates session validity from the password-change gate).
+    expect((await request(app).get("/api/auth/me").set("Cookie", cookie)).status).toBe(200);
+
+    // Deterministically expire the real session record (no 30-minute wall-clock sleep).
+    await expireSession(sid);
+
+    // The expired session behaves exactly like an unauthenticated session.
+    const expired = await request(app).get("/api/auth/me").set("Cookie", cookie);
+    expect(expired.status).toBe(401);
+    expect(expired.body.error.code).toBe("UNAUTHENTICATED");
+  });
+
+  itIfDb("SEC-AUTHZ-06 (supplementary): session cookie is configured for a 30-minute rolling idle timeout", async () => {
     const derived = deriveInitialPassword("ada@example.com", "Ada Lovelace");
     const loginRes = await request(app)
       .post("/api/auth/login")

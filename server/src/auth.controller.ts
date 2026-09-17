@@ -71,6 +71,24 @@ export async function me(_req: Request, res: Response): Promise<void> {
   res.status(200).json({ data: publicUser(user) });
 }
 
+/**
+ * GET /api/app/context — authenticated + password-change gate.
+ *
+ * This is the #35 "normal application" entry surface: it is the minimal protected
+ * endpoint that composes `requireAuth → requirePasswordChanged → handler`, so the
+ * mandatory-password-change gate (BR-02 / AC-02) is enforced by the backend on a
+ * real application endpoint rather than only on the content-gate-exempt auth routes.
+ *
+ * It is intentionally NOT one of the frozen auth endpoints (`/api/auth/me` is
+ * content-gate-exempt) and NOT a downstream #37/#38/#41 feature route. It returns
+ * only the authenticated identity already available from `res.locals` (populated by
+ * `requireAuth` from the current DB row) — no new business data, no new schema.
+ */
+export async function appContext(_req: Request, res: Response): Promise<void> {
+  const user = res.locals.user;
+  res.status(200).json({ data: publicUser(user) });
+}
+
 /** POST /api/auth/change-password — authenticated + CSRF. Never returns PASSWORD_CHANGE_REQUIRED. */
 export async function changePasswordHandler(req: Request, res: Response): Promise<void> {
   const body = req.body ?? {};
