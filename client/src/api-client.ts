@@ -30,17 +30,34 @@ export interface ApiErrorBody {
   error?: { code?: string; message?: string; fields?: Record<string, string> };
 }
 
-/** Parses a canonical API error into an Error with a `code` property. */
-export function parseApiError(response: Response, fallback: string): Error & { code?: string; status?: number } {
-  const err = new Error(fallback) as Error & { code?: string; status?: number };
+/** Canonical client error shape: an Error carrying the HTTP status and canonical error fields. */
+export type ApiError = Error & {
+  status?: number;
+  code?: string;
+  fields?: Record<string, string>;
+};
+
+/**
+ * Parses a canonical API error into an Error with `status`, `code`, and `fields`.
+ *
+ * This is ASYNC and must be awaited: the response body is read before the error is
+ * returned, so callers observe the canonical `message`/`code`/`fields` immediately.
+ * A non-JSON or empty body is tolerated — the fallback message and HTTP status are
+ * preserved and no raw server internals are exposed.
+ */
+export async function parseApiError(response: Response, fallback: string): Promise<ApiError> {
+  const err = new Error(fallback) as ApiError;
   err.status = response.status;
-  void response
-    .json()
-    .then((body: ApiErrorBody) => {
-      if (body?.error?.message) err.message = body.error.message;
-      if (body?.error?.code) err.code = body.error.code;
-    })
-    .catch(() => {});
+
+  try {
+    const body = (await response.json()) as ApiErrorBody;
+    if (body?.error?.message) err.message = body.error.message;
+    if (body?.error?.code) err.code = body.error.code;
+    if (body?.error?.fields) err.fields = body.error.fields;
+  } catch {
+    // Non-JSON / empty body: preserve the fallback message and the HTTP status.
+  }
+
   return err;
 }
 
@@ -96,7 +113,7 @@ async function request(
 export async function login(email: string, password: string): Promise<AuthUser> {
   const response = await request("/api/auth/login", { method: "POST", body: { email, password } });
   if (!response.ok) {
-    throw parseApiError(response, "Login failed.");
+    throw await parseApiError(response, "Login failed.");
   }
   const payload = (await response.json()) as AuthResponse;
   return payload.data;
@@ -106,7 +123,7 @@ export async function login(email: string, password: string): Promise<AuthUser> 
 export async function fetchMe(): Promise<AuthUser> {
   const response = await request("/api/auth/me");
   if (!response.ok) {
-    throw parseApiError(response, "Failed to fetch current user.");
+    throw await parseApiError(response, "Failed to fetch current user.");
   }
   const payload = (await response.json()) as AuthResponse;
   return payload.data;
@@ -116,7 +133,7 @@ export async function fetchMe(): Promise<AuthUser> {
 export async function logout(): Promise<void> {
   const response = await request("/api/auth/logout", { method: "POST", includeCsrf: true });
   if (!response.ok) {
-    throw parseApiError(response, "Logout failed.");
+    throw await parseApiError(response, "Logout failed.");
   }
   clearCsrfToken();
 }
@@ -129,6 +146,6 @@ export async function changePassword(currentPassword: string, newPassword: strin
     includeCsrf: true,
   });
   if (!response.ok) {
-    throw parseApiError(response, "Password change failed.");
+    throw await parseApiError(response, "Password change failed.");
   }
 }
