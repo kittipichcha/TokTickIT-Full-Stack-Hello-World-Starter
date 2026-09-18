@@ -1,1 +1,4 @@
+# Evidence head SHA
+# The commit whose implementation code this evidence bundle validates.
+# (The docs/evidence commit that follows changes no code.)
 bbc1c14cffa7816a086c7b7c82fc425bcc4407f4
