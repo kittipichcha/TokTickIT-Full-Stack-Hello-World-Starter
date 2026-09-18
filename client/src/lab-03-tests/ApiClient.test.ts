@@ -107,6 +107,58 @@ describe("UNIT-API-ERROR-03: 500 response produces a safe error", () => {
   });
 });
 
+describe("CSRF-ME-01: CSRF token capture on fetchMe and reuse in mutations", () => {
+  it("captures CSRF token from GET /api/auth/me response and attaches it to subsequent mutations", async () => {
+    const { fetchMe, changePassword, getCsrfToken, clearCsrfToken } = await import("../api-client");
+
+    // Simulate opening a new tab / page reload: no CSRF token in sessionStorage initially.
+    clearCsrfToken();
+    expect(getCsrfToken()).toBeNull();
+
+    const mockCsrf = "csrf-token-from-me-12345";
+    const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const urlStr = input.toString();
+      if (urlStr.includes("/api/auth/me")) {
+        const headers = new Headers({
+          "Content-Type": "application/json",
+          "X-CSRF-Token": mockCsrf,
+        });
+        return new Response(
+          JSON.stringify({
+            data: { id: 1, name: "Ada Lovelace", email: "ada@example.com", role: "REQUESTER", mustChangePassword: true },
+          }),
+          { status: 200, headers },
+        );
+      }
+      if (urlStr.includes("/api/auth/change-password")) {
+        // Assert the mutation request sent the captured CSRF token
+        const reqHeaders = new Headers(init?.headers);
+        const sentCsrf = reqHeaders.get("X-CSRF-Token");
+        if (sentCsrf !== mockCsrf) {
+          return new Response(JSON.stringify({ error: { code: "FORBIDDEN", message: "Invalid CSRF token" } }), { status: 403 });
+        }
+        return new Response(
+          JSON.stringify({ data: { success: true, mustChangePassword: false } }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return new Response("Not found", { status: 404 });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    // Call fetchMe()
+    const user = await fetchMe();
+    expect(user.email).toBe("ada@example.com");
+
+    // Assert CSRF token was captured in sessionStorage
+    expect(getCsrfToken()).toBe(mockCsrf);
+
+    // Now call changePassword() — must succeed and attach X-CSRF-Token
+    await expect(changePassword("oldpass", "NewPass123!xyz")).resolves.not.toThrow();
+  });
+});
+
 beforeEach(() => {
   vi.restoreAllMocks();
 });

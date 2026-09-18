@@ -216,6 +216,23 @@ describe("API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints", () => {
     expect(noSession.body.error.code).toBe("UNAUTHENTICATED");
   });
 
+  itIfDb("API-AUTH-05b: /me reissues the session's existing CSRF token", async () => {
+    const derived = deriveInitialPassword("ada@example.com", "Ada Lovelace");
+    const loginRes = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "ada@example.com", password: derived });
+    const cookie = extractSessionCookie(loginRes);
+    const loginCsrf = loginRes.headers["x-csrf-token"];
+    expect(loginCsrf).toBeDefined();
+
+    // Call /me fresh with only the session cookie (capturing nothing from login).
+    const meRes = await request(app).get("/api/auth/me").set("Cookie", cookie);
+    expect(meRes.status).toBe(200);
+    expect(meRes.headers["x-csrf-token"]).toBeDefined();
+    // Must equal the token issued at login (re-sent existing token, not regenerated).
+    expect(meRes.headers["x-csrf-token"]).toBe(loginCsrf);
+  });
+
   itIfDb("API-AUTH-06: mustChangePassword user is blocked from a protected endpoint with PASSWORD_CHANGE_REQUIRED", async () => {
     const derived = deriveInitialPassword("ada@example.com", "Ada Lovelace");
     const loginRes = await request(app)

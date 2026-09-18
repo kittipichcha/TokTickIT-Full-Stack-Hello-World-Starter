@@ -65,9 +65,10 @@ export async function logout(req: Request, res: Response): Promise<void> {
   res.status(200).json({ data: { success: true } });
 }
 
-/** GET /api/auth/me — authenticated. Returns current identity + role from the DB. */
-export async function me(_req: Request, res: Response): Promise<void> {
+/** GET /api/auth/me — authenticated. Returns current identity + role from the DB and reissues the CSRF token. */
+export async function me(req: Request, res: Response): Promise<void> {
   const user = res.locals.user;
+  issueCsrfToken(req, res);
   res.status(200).json({ data: publicUser(user) });
 }
 
