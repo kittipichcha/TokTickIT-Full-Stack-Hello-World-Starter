@@ -6,7 +6,7 @@ implementation-sha: 371329239b0eab640b0744fab3a7cb8c3a1e7c9c
 
 # Commit at which the evidence commands were executed and this bundle was written.
 # It is a docs/evidence-only commit: it changes no implementation code.
-evidence-captured-at: <pending docs commit>
+evidence-captured-at: 0c629e7
 
 # PR #46 head at the time of this capture.
 pr-head-at-capture: 371329239b0eab640b0744fab3a7cb8c3a1e7c9c
