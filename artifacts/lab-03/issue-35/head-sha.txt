@@ -1,4 +1,19 @@
 # Evidence head SHA
-# The commit whose implementation code this evidence bundle validates.
-# (The docs/evidence commit that follows changes no code.)
-bbc1c14cffa7816a086c7b7c82fc425bcc4407f4
+
+# Implementation commit validated by this evidence bundle.
+# This is the LAST commit that changed implementation code (server/, client/, e2e/).
+implementation-sha: 6f4fe22a16c4a752353092672cfd1c0a249cc3e8
+
+# Commit at which the evidence commands were executed and this bundle was written.
+# It is a docs/evidence-only commit: it changes no implementation code.
+evidence-captured-at: bbc1c14cffa7816a086c7b7c82fc425bcc4407f4
+
+# PR #46 head at the time of this clarification.
+pr-head-at-clarification: da1c7c01aaab4fe07b692670123f3e99e1817fc7
+
+# Provenance note (review B-1, round 3):
+# `git diff --name-only 6f4fe22 da1c7c0` returns ONLY artifacts/ and docs/ paths.
+# No file under server/, client/, or e2e/ changed after 6f4fe22, so the executed
+# evidence remains valid for the current PR head and does NOT need to be re-run.
+# The earlier `bbc1c14` value identified the docs commit that wrote the bundle,
+# not the implementation commit the bundle validates; this file now states both.

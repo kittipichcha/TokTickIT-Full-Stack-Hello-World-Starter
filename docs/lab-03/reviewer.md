@@ -61,7 +61,7 @@ incomplete; **B-6** ground truth unreadable; plus minor session-regeneration and
   `E2E-01` nor full-DoD completeness. The reviewer's suggested filename `auth-flow.spec.ts` is
   **not** the frozen path and was deliberately not created; #35 creates no E2E spec.
 - **B-2 (evidence bundle) — accepted and implemented.** Published
-  `artifacts/lab-03/issue-35/` (server + client vitest at the head SHA, server + client builds,
+  `artifacts/lab-03/issue-35/` (server + client vitest at the implementation SHA, server + client builds,
   `prisma validate`, `migrate status`, DB-MIG execution proof, the grep gate, `git diff --check`,
   conflict-marker grep, `.env`-not-tracked proof, compliance map, Lab 2 test-change mapping).
 - **B-3 (legacy `removedByRequesterId` key) — answered with the authorization trail; key

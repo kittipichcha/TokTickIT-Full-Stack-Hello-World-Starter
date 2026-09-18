@@ -3,8 +3,15 @@
 **Issue:** #35 — Lab 3 #2: Identity, Database Migration & Authentication
 **Branch:** `feature/issue-35-identity-db-migration-auth`
 **Base:** `origin/lab3-staging` @ `749aa966` (PR #45 merge)
-**Head SHA at capture:** see [`head-sha.txt`](./head-sha.txt)
-**Captured:** 2026-09-17
+**Implementation SHA validated:** `6f4fe22a16c4a752353092672cfd1c0a249cc3e8` — see [`head-sha.txt`](./head-sha.txt)
+**Evidence captured at:** `bbc1c14cffa7816a086c7b7c82fc425bcc4407f4` (docs/evidence-only commit)
+**Captured:** 2026-09-17 (bundle refreshed 2026-09-18)
+
+> **Provenance (review B-1, round 3).** `6f4fe22` is the last commit that changed
+> implementation code. Every commit after it (`bbc1c14`, `5e4ad2c`, `da1c7c0`) touches only
+> `artifacts/` and `docs/`; `git diff --name-only 6f4fe22 da1c7c0` returns no `server/`,
+> `client/`, or `e2e/` path. The executed evidence below therefore remains valid for the
+> current PR head and does **not** require a re-run.
 
 This bundle is the executable evidence for #35's `Passed` rows. It implements #35 Rev 13's
 **Evidence Plan** and answers the PR #46 review findings B-2 (evidence), B-4 (DB-MIG
@@ -15,9 +22,9 @@ execution) and B-6 (ground-truth compliance map). Every `Passed` claim in
 
 | File | Proves |
 |---|---|
-| [`head-sha.txt`](./head-sha.txt) | The exact commit the evidence refers to. |
-| [`server-vitest.txt`](./server-vitest.txt) | Server suite at head SHA (incl. full Lab 2 regression + `server/tests/lab-03/*`). |
-| [`client-vitest.txt`](./client-vitest.txt) | Client suite at head SHA (incl. `client/src/lab-03-tests/*`). |
+| [`head-sha.txt`](./head-sha.txt) | The implementation commit the evidence validates (`6f4fe22`) and the docs commit that captured it (`bbc1c14`). |
+| [`server-vitest.txt`](./server-vitest.txt) | Server suite at implementation SHA `6f4fe22` — **383 passed / 30 files** (incl. full Lab 2 regression + `server/tests/lab-03/*`). |
+| [`client-vitest.txt`](./client-vitest.txt) | Client suite at implementation SHA `6f4fe22` — **113 passed / 11 files** (incl. `client/src/lab-03-tests/*`). |
 | [`server-build-validate.txt`](./server-build-validate.txt) | `npx prisma validate` valid; `npx prisma migrate status` clean; server `npm run build` (`tsc`) exit 0. |
 | [`client-build.txt`](./client-build.txt) | Client `npm run build` (`tsc && vite build`) exit 0. |
 | [`db-mig-execution.txt`](./db-mig-execution.txt) | **B-4:** DB-MIG-01..05, DB-MIG-PRESERVE-01/02, MIG-FAIL-01/02/03 **executed** (not skipped) and passed against isolated Lab 2 fixtures. |
@@ -45,6 +52,22 @@ cd server && npx vitest run tests/lab-03/migration.integration.test.ts  # -> db-
 cd server && npx vitest run tests/lab-03/seed.integration.test.ts       # -> seed-execution.txt
 cd client && npx vitest run src/lab-03-tests/ApiClient.test.ts          # -> client-api-error.txt
 ```
+
+## Re-run policy (why this bundle is not regenerated per docs commit)
+
+The invariant this bundle maintains is:
+
+```text
+implementation SHA (6f4fe22)  ==  last commit touching server/ | client/ | e2e/
+```
+
+A commit that changes only `artifacts/` or `docs/` cannot invalidate an executed run, because
+it cannot change the code under test. Re-running the suites for such a commit would produce
+identical results at a different wall-clock time and would add no verification value.
+
+Evidence is therefore regenerated only when the implementation SHA changes. The current
+implementation SHA is `6f4fe22a16c4a752353092672cfd1c0a249cc3e8`; the PR head may advance
+past it with docs-only commits without invalidating this bundle.
 
 ## Non-deployable intermediate state
 

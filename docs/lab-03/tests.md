@@ -41,6 +41,27 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-18 — Issue #35 evidence provenance clarification (documentation only)**
+  - **Evidence/head-SHA synchronization clarified.** `artifacts/lab-03/issue-35/head-sha.txt`
+    previously named `bbc1c14`, which is the *docs commit that wrote the bundle*, not the
+    *implementation commit the bundle validates*. The file now states both explicitly:
+    `implementation-sha: 6f4fe22a16c4a752353092672cfd1c0a249cc3e8` and
+    `evidence-captured-at: bbc1c14cffa7816a086c7b7c82fc425bcc4407f4`.
+  - **Why no re-run is required:** `git diff --name-only 6f4fe22 da1c7c0` returns only
+    `artifacts/` and `docs/` paths — no `server/`, `client/`, or `e2e/` file changed after
+    `6f4fe22`. The executed runs therefore still describe the current implementation exactly.
+    The bundle README now documents this re-run policy: evidence is regenerated only when the
+    implementation SHA changes.
+  - **Stale counts corrected:** `lab2-test-changes.md` (368 → **383**) and
+    `artifacts/lab-03/migration/integration-gate.md` (367/107 marked superseded by
+    **383/113**) now agree with `server-vitest.txt` and `client-vitest.txt`.
+  - Commands: none executed (documentation-only change; no code under test changed).
+  - Results: unchanged and still valid — server **383 passed / 30 files**; client
+    **113 passed / 11 files**; server and client builds succeed; Prisma schema valid;
+    migration status clean.
+  - Follow-up: none. `E2E-01..04` remain `Planned` (owned by #42); Requester/Staff/Admin
+    feature rows remain `Planned` (owned by #37/#38/#41).
+
 - **2026-09-18 — Issue #35 verification remediation (PR #46 review follow-up, round 3)**
   - **B-1 migration atomicity/recovery fixed:** every tracked migration is now applied with
     `psql --single-transaction -v ON_ERROR_STOP=1`, so a late Phase C failure rolls back ALL
@@ -96,7 +117,7 @@ assertions inside `auth.api.test.ts`.
     `req.session.regenerate()` issues a new session identifier at login and that the
     pre-login identifier is no longer authenticated (`server/tests/lab-03/auth.api.test.ts`).
   - **Evidence bundle published:** `artifacts/lab-03/issue-35/` — server/client vitest output
-    at the head SHA, server/client builds, `prisma validate`, `migrate status`, DB-MIG
+    at the implementation SHA, server/client builds, `prisma validate`, `migrate status`, DB-MIG
     execution proof (not skipped), the grep gate, `git diff --check`, conflict-marker grep,
     the `.env`-not-tracked proof, the frozen-doc compliance map, and the Lab 2 test-change
     mapping.
