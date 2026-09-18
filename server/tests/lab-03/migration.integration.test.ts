@@ -77,11 +77,15 @@ function psql(url: string, args: string[]): string {
 }
 
 /** Runs the real orchestrator CLI against the fixture DB; captures output even on failure. */
-function runOrchestrator(fixtureUrlWithSchema: string): { ok: boolean; output: string } {
+function runOrchestrator(
+  fixtureUrlWithSchema: string,
+  extraEnv: NodeJS.ProcessEnv = {},
+): { ok: boolean; output: string } {
   try {
     const output = run("npx tsx src/migrate-lab3.ts run", {
       ...process.env,
       DATABASE_URL: fixtureUrlWithSchema,
+      ...extraEnv,
     });
     return { ok: true, output };
   } catch (err) {
@@ -165,6 +169,119 @@ function buildCollidingFixture(): { adminUrl: string; fixtureUrl: string; fixtur
   return urls;
 }
 
+/**
+ * Builds a fresh, fully populated Lab 2 baseline fixture (DB-MIG-PRESERVE-01/02).
+ *
+ * The fixture deliberately varies requesters, categories, related systems, statuses,
+ * priorities, ownership, and attachment removal state so that a migration which drops,
+ * reorders, or re-points a record cannot satisfy the preservation assertions.
+ */
+function buildPopulatedFixture(): { adminUrl: string; fixtureUrl: string; fixtureUrlWithSchema: string } {
+  const urls = fixtureUrls();
+
+  psql(urls.adminUrl, ["-q", "-c", `DROP DATABASE IF EXISTS "${FIXTURE_DB_NAME}";`]);
+  psql(urls.adminUrl, ["-q", "-c", `CREATE DATABASE "${FIXTURE_DB_NAME}";`]);
+
+  for (const dir of LAB2_MIGRATIONS) {
+    psql(urls.fixtureUrl, ["-v", "ON_ERROR_STOP=1", "-q", "-f", `prisma/migrations/${dir}/migration.sql`]);
+    run(`npx prisma migrate resolve --applied ${dir}`, {
+      ...process.env,
+      DATABASE_URL: urls.fixtureUrlWithSchema,
+    });
+  }
+
+  const seedSql = `
+    INSERT INTO "Category" ("name","isActive") VALUES ('Hardware',true),('Software',true);
+    INSERT INTO "RelatedSystem" ("name","isActive") VALUES ('Corporate Laptop',true),('Campus Wi-Fi',true);
+
+    -- Four legacy requesters with mixed active states.
+    INSERT INTO "DevRequester" ("name","email","isActive") VALUES
+      ('Ada Lovelace','ada@example.com',true),
+      ('Edsger Dijkstra','edsger@example.com',false),
+      ('Grace Hopper','grace@example.com',true),
+      ('Alan Turing','alan@example.com',true);
+
+    -- Tickets spread across requesters, categories, systems, priorities.
+    -- NOTE 1: the Lab 2 baseline enum only defines NEW; the remaining statuses are added by
+    -- Phase A, so a genuine Lab 2 fixture can only use NEW here.
+    -- NOTE 2: Lab 2 had no ticket-owner concept, so ticketOwnerId is authentically NULL.
+    -- Phase A adds Ticket_ticketOwnerId_fkey -> User, which cannot be satisfied before the
+    -- backfill populates User; a non-NULL legacy owner would be invalid Lab 2 data.
+    INSERT INTO "Ticket" ("ticketNumber","requesterId","categoryId","relatedSystemId","summary","description","requestedPriority","itPriority","ticketOwnerId","currentStatus","createdAt","updatedAt") VALUES
+      ('TKT-2026-000001',1,1,1,'Ticket A','Description A','HIGH','HIGH',NULL,'NEW','2026-01-01 10:00:00','2026-01-02 10:00:00'),
+      ('TKT-2026-000002',2,2,2,'Ticket B','Description B','LOW', NULL,NULL,'NEW','2026-02-01 10:00:00','2026-02-02 10:00:00'),
+      ('TKT-2026-000003',3,1,2,'Ticket C','Description C','MEDIUM','MEDIUM',NULL,'NEW','2026-03-01 10:00:00','2026-03-02 10:00:00'),
+      ('TKT-2026-000004',4,2,1,'Ticket D','Description D','HIGH','LOW',NULL,'NEW','2026-04-01 10:00:00','2026-04-02 10:00:00');
+
+    -- Attachments: normal, soft-removed with remover, and a different uploader.
+    INSERT INTO "Attachment" ("ticketId","originalFilename","storedFilename","mimeType","fileSizeBytes","uploaderRequesterId","isRemoved","removedAt","removalReason","removedByRequesterId","uploadedAt") VALUES
+      (1,'normal.txt','stored-normal.txt','text/plain',100,1,false,NULL,NULL,NULL,'2026-01-03 10:00:00'),
+      (2,'removed.txt','stored-removed.txt','text/plain',200,2,true,'2026-02-03 10:00:00','No longer needed',3,'2026-02-03 09:00:00'),
+      (3,'other-uploader.txt','stored-other.txt','text/plain',300,4,false,NULL,NULL,NULL,'2026-03-03 10:00:00');
+  `;
+  psql(urls.fixtureUrl, ["-v", "ON_ERROR_STOP=1", "-q", "-c", seedSql]);
+
+  return urls;
+}
+
+/** Captures a complete pre-migration snapshot of the Lab 2 fixture (not just counts). */
+async function snapshotFixture(fixtureUrl: string): Promise<{
+  requesters: Record<string, unknown>[];
+  categories: Record<string, unknown>[];
+  relatedSystems: Record<string, unknown>[];
+  tickets: Record<string, unknown>[];
+  attachments: Record<string, unknown>[];
+}> {
+  const requesters = await queryFixture(fixtureUrl, `SELECT id, name, email, "isActive" FROM "DevRequester" ORDER BY id`);
+  const categories = await queryFixture(fixtureUrl, `SELECT id, name, "isActive" FROM "Category" ORDER BY id`);
+  const relatedSystems = await queryFixture(fixtureUrl, `SELECT id, name, "isActive" FROM "RelatedSystem" ORDER BY id`);
+  const tickets = await queryFixture(
+    fixtureUrl,
+    `SELECT id, "ticketNumber", "requesterId", "categoryId", "relatedSystemId", summary, description,
+            "requestedPriority", "itPriority", "ticketOwnerId", "currentStatus", "createdAt", "updatedAt"
+     FROM "Ticket" ORDER BY id`,
+  );
+  const attachments = await queryFixture(
+    fixtureUrl,
+    `SELECT id, "ticketId", "originalFilename", "storedFilename", "mimeType", "fileSizeBytes",
+            "uploaderRequesterId", "isRemoved", "removalReason",
+            to_char("removedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "removedAt",
+            to_char("uploadedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "uploadedAt",
+            "removedByRequesterId"
+     FROM "Attachment" ORDER BY id`,
+  );
+  return { requesters, categories, relatedSystems, tickets, attachments };
+}
+
+/** Captures the post-migration snapshot (User replaces DevRequester; shadow columns renamed). */
+async function snapshotMigratedFixture(fixtureUrl: string): Promise<{
+  users: Record<string, unknown>[];
+  categories: Record<string, unknown>[];
+  relatedSystems: Record<string, unknown>[];
+  tickets: Record<string, unknown>[];
+  attachments: Record<string, unknown>[];
+}> {
+  const users = await queryFixture(fixtureUrl, `SELECT id, name, email, role, "isActive", "mustChangePassword" FROM "User" ORDER BY id`);
+  const categories = await queryFixture(fixtureUrl, `SELECT id, name, "isActive" FROM "Category" ORDER BY id`);
+  const relatedSystems = await queryFixture(fixtureUrl, `SELECT id, name, "isActive" FROM "RelatedSystem" ORDER BY id`);
+  const tickets = await queryFixture(
+    fixtureUrl,
+    `SELECT id, "ticketNumber", "requesterId", "categoryId", "relatedSystemId", summary, description,
+            "requestedPriority", "itPriority", "ticketOwnerId", "currentStatus", "createdAt", "updatedAt"
+     FROM "Ticket" ORDER BY id`,
+  );
+  const attachments = await queryFixture(
+    fixtureUrl,
+    `SELECT id, "ticketId", "originalFilename", "storedFilename", "mimeType", "fileSizeBytes",
+            "uploaderUserId", "isRemoved", "removalReason",
+            to_char("removedAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "removedAt",
+            to_char("uploadedAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "uploadedAt",
+            "removedByUserId"
+     FROM "Attachment" ORDER BY id`,
+  );
+  return { users, categories, relatedSystems, tickets, attachments };
+}
+
 function dropFixture(adminUrl: string): void {
   try {
     psql(adminUrl, ["-q", "-c", `DROP DATABASE IF EXISTS "${FIXTURE_DB_NAME}";`]);
@@ -230,7 +347,22 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
     );
     expect(Number(badHash[0]?.cnt ?? 0)).toBe(0);
 
-    // DM-TIME-01: all §9.3 timestamps are timestamptz.
+    // DM-TIME-01: the EXACT frozen §9.3 timestamp set must be timestamptz(3).
+    // Asserting the exact set (not merely "some column is timestamptz") proves every
+    // required column was converted.
+    const expectedTimestamptzColumns = [
+      "Attachment.removedAt",
+      "Attachment.uploadedAt",
+      "Category.createdAt",
+      "Comment.createdAt",
+      "InternalNote.createdAt",
+      "RelatedSystem.createdAt",
+      "Ticket.createdAt",
+      "Ticket.updatedAt",
+      "User.createdAt",
+      "User.updatedAt",
+    ].sort();
+
     const tzCols = await prisma.$queryRawUnsafe<{ table_name: string; column_name: string; data_type: string }[]>(
       `SELECT table_name, column_name, data_type FROM information_schema.columns
        WHERE (table_name='Category' AND column_name='createdAt')
@@ -241,7 +373,9 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
           OR (table_name='Comment' AND column_name='createdAt')
           OR (table_name='InternalNote' AND column_name='createdAt')`,
     );
-    expect(tzCols.length).toBeGreaterThan(0);
+
+    const actualTimestamptzColumns = tzCols.map((c) => `${c.table_name}.${c.column_name}`).sort();
+    expect(actualTimestamptzColumns).toEqual(expectedTimestamptzColumns);
     for (const col of tzCols) {
       expect(col.data_type).toBe("timestamp with time zone");
     }
@@ -390,5 +524,243 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
       }
     },
     180000,
+  );
+
+  itIfDb(
+    "DB-MIG-PRESERVE-01: every legacy Requester and Ticket survives the real migration unchanged",
+    async () => {
+      const urls = buildPopulatedFixture();
+      try {
+        const before = await snapshotFixture(urls.fixtureUrl);
+
+        const result = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(result.ok).toBe(true);
+        expect(result.output).toContain("Migration complete");
+
+        const after = await snapshotMigratedFixture(urls.fixtureUrl);
+
+        // --- Requester -> User: one-for-one, exact ID/name/email/isActive preservation ---
+        expect(after.users.length).toBe(before.requesters.length);
+        for (const legacy of before.requesters) {
+          const user = after.users.find((u) => u.id === legacy.id);
+          expect(user, `User for DevRequester id ${legacy.id} must exist`).toBeDefined();
+          expect(user!.id).toBe(legacy.id);
+          expect(user!.name).toBe(legacy.name);
+          expect(user!.email).toBe(String(legacy.email).trim().toLowerCase());
+          expect(user!.isActive).toBe(legacy.isActive);
+          expect(user!.role).toBe("REQUESTER");
+          expect(user!.mustChangePassword).toBe(true);
+        }
+
+        // --- Categories / Related Systems preserved exactly ---
+        expect(after.categories).toEqual(before.categories);
+        expect(after.relatedSystems).toEqual(before.relatedSystems);
+
+        // --- Tickets: exact ID set and every relationship/value preserved ---
+        expect(after.tickets.map((t) => t.id)).toEqual(before.tickets.map((t) => t.id));
+        for (const legacy of before.tickets) {
+          const ticket = after.tickets.find((t) => t.id === legacy.id);
+          expect(ticket, `Ticket id ${legacy.id} must survive`).toBeDefined();
+          expect(ticket!.ticketNumber).toBe(legacy.ticketNumber);
+          expect(ticket!.requesterId).toBe(legacy.requesterId);
+          expect(ticket!.categoryId).toBe(legacy.categoryId);
+          expect(ticket!.relatedSystemId).toBe(legacy.relatedSystemId);
+          expect(ticket!.summary).toBe(legacy.summary);
+          expect(ticket!.description).toBe(legacy.description);
+          expect(ticket!.requestedPriority).toBe(legacy.requestedPriority);
+          expect(ticket!.ticketOwnerId).toBe(legacy.ticketOwnerId);
+          expect(ticket!.currentStatus).toBe(legacy.currentStatus);
+          // DM-12: itPriority is backfilled from requestedPriority where it was NULL.
+          expect(ticket!.itPriority).toBe(legacy.itPriority ?? legacy.requestedPriority);
+        }
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    180000,
+  );
+
+  itIfDb(
+    "DB-MIG-PRESERVE-02: every legacy Attachment and its ownership/removal state survives the real migration",
+    async () => {
+      const urls = buildPopulatedFixture();
+      try {
+        const before = await snapshotFixture(urls.fixtureUrl);
+
+        const result = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(result.ok).toBe(true);
+
+        const after = await snapshotMigratedFixture(urls.fixtureUrl);
+
+        // --- Attachments: exact ID set and every field preserved ---
+        expect(after.attachments.map((a) => a.id)).toEqual(before.attachments.map((a) => a.id));
+        for (const legacy of before.attachments) {
+          const att = after.attachments.find((a) => a.id === legacy.id);
+          expect(att, `Attachment id ${legacy.id} must survive`).toBeDefined();
+          expect(att!.ticketId).toBe(legacy.ticketId);
+          expect(att!.originalFilename).toBe(legacy.originalFilename);
+          expect(att!.storedFilename).toBe(legacy.storedFilename);
+          expect(att!.mimeType).toBe(legacy.mimeType);
+          expect(att!.fileSizeBytes).toBe(legacy.fileSizeBytes);
+          expect(att!.isRemoved).toBe(legacy.isRemoved);
+          expect(att!.removalReason).toBe(legacy.removalReason);
+
+          // Ownership relationship renamed: uploaderRequesterId -> uploaderUserId.
+          expect(att!.uploaderUserId).toBe(legacy.uploaderRequesterId);
+          // Removal relationship renamed: removedByRequesterId -> removedByUserId.
+          expect(att!.removedByUserId).toBe(legacy.removedByRequesterId);
+
+          // removedAt preserved as the same UTC instant. Both snapshots render the value
+          // as an explicit UTC ISO string, so the naive Lab 2 TIMESTAMP and the migrated
+          // timestamptz are compared on equal footing (Phase C interprets the legacy
+          // naive value as UTC via `AT TIME ZONE 'UTC'`).
+          expect(att!.removedAt).toBe(legacy.removedAt);
+          expect(att!.uploadedAt).toBe(legacy.uploadedAt);
+        }
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    180000,
+  );
+
+  itIfDb(
+    "MIG-FAIL-01: a late Phase C failure rolls back ALL Phase C DDL and is never recorded as applied",
+    async () => {
+      const urls = buildPopulatedFixture();
+      try {
+        // Deliberately fail the last Phase C statement through the REAL psql mechanism.
+        const failed = runOrchestrator(urls.fixtureUrlWithSchema, {
+          NODE_ENV: "test",
+          MIGRATION_TEST_FAIL_PHASE_C_AT: "end",
+        });
+        expect(failed.ok).toBe(false);
+
+        // Phase C must NOT be recorded as applied.
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(false);
+
+        // No partially applied Phase C DDL: DevRequester still exists, legacy columns intact,
+        // and the Phase C-only index was not created.
+        expect(await fixtureTableExists(urls.fixtureUrl, "DevRequester")).toBe(true);
+        const attCols = await queryFixture<{ column_name: string }>(
+          urls.fixtureUrl,
+          `SELECT column_name FROM information_schema.columns WHERE table_name='Attachment'`,
+        );
+        const attNames = attCols.map((c) => c.column_name);
+        expect(attNames).toContain("uploaderRequesterId");
+        expect(attNames).toContain("removedByRequesterId");
+
+        const ownerIdx = await queryFixture<{ cnt: string }>(
+          urls.fixtureUrl,
+          `SELECT COUNT(*)::text AS cnt FROM pg_indexes WHERE indexname = 'Ticket_ticketOwnerId_idx'`,
+        );
+        expect(Number(ownerIdx[0]?.cnt ?? 0)).toBe(0);
+
+        // Legacy data remains intact.
+        expect(await fixtureCount(urls.fixtureUrl, "DevRequester")).toBe(4);
+        expect(await fixtureCount(urls.fixtureUrl, "Ticket")).toBe(4);
+        expect(await fixtureCount(urls.fixtureUrl, "Attachment")).toBe(3);
+
+        // The database is in the documented resumable state: Phase A applied, backfill
+        // committed, Phase C unapplied.
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_A_DIR)).toBe(true);
+        expect(await fixtureCount(urls.fixtureUrl, "User")).toBe(4);
+
+        // --- MIG-FAIL-03: a subsequent valid run resumes and completes ---
+        const resumed = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(resumed.ok).toBe(true);
+        expect(resumed.output).toContain("Migration complete");
+
+        expect(await fixtureTableExists(urls.fixtureUrl, "DevRequester")).toBe(false);
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(true);
+        expect(await fixtureCount(urls.fixtureUrl, "User")).toBe(4);
+        expect(await fixtureCount(urls.fixtureUrl, "Ticket")).toBe(4);
+        expect(await fixtureCount(urls.fixtureUrl, "Attachment")).toBe(3);
+
+        const status = run("npx prisma migrate status", {
+          ...process.env,
+          DATABASE_URL: urls.fixtureUrlWithSchema,
+        });
+        expect(status).toContain("up to date");
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
+
+  itIfDb(
+    "MIG-FAIL-02: a pre-backfill legacy-invariant failure leaves the supported Phase-A-applied state",
+    async () => {
+      const urls = buildPopulatedFixture();
+      try {
+        // Corrupt the legacy data so the pre-backfill isRemoved invariant fails. This is
+        // validated BEFORE the irreversible backfill boundary, so no User row is written.
+        await queryFixture(
+          urls.fixtureUrl,
+          `UPDATE "Attachment" SET "isRemoved" = true, "removedAt" = NULL WHERE id = 1`,
+        );
+
+        const failed = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(failed.ok).toBe(false);
+        expect(failed.output).toContain("isRemoved invariant violated");
+
+        // No backfill occurred: the database is in the supported Phase-A-applied state.
+        expect(await fixtureCount(urls.fixtureUrl, "User")).toBe(0);
+        expect(await fixtureCount(urls.fixtureUrl, "DevRequester")).toBe(4);
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_A_DIR)).toBe(true);
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(false);
+
+        // Repair the corrupt data, then resume successfully.
+        await queryFixture(
+          urls.fixtureUrl,
+          `UPDATE "Attachment" SET "isRemoved" = false, "removedAt" = NULL WHERE id = 1`,
+        );
+        const resumed = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(resumed.ok).toBe(true);
+        expect(resumed.output).toContain("Migration complete");
+        expect(await fixtureCount(urls.fixtureUrl, "User")).toBe(4);
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
+
+  itIfDb(
+    "DB-MIG-03 (supplementary): the frozen derivation is deterministic across independent fresh migrations",
+    async () => {
+      // Two independent fresh fixtures must produce the SAME initial password for the same
+      // source identity — proving determinism without relying on a hard-coded password.
+      const hashes: string[] = [];
+      for (let run = 0; run < 2; run++) {
+        const urls = buildPopulatedFixture();
+        try {
+          const result = runOrchestrator(urls.fixtureUrlWithSchema);
+          expect(result.ok).toBe(true);
+
+          const rows = await queryFixture<{ passwordHash: string }>(
+            urls.fixtureUrl,
+            `SELECT "passwordHash" FROM "User" WHERE email = 'ada@example.com'`,
+          );
+          expect(rows.length).toBe(1);
+          hashes.push(rows[0].passwordHash);
+
+          // The stored hash verifies against the frozen derivation for this identity.
+          const derived = deriveInitialPassword("ada@example.com", "Ada Lovelace");
+          expect(await bcrypt.compare(derived, rows[0].passwordHash)).toBe(true);
+        } finally {
+          dropFixture(urls.adminUrl);
+        }
+      }
+
+      // bcrypt salts differ, so the hashes differ — but both must verify the same derived
+      // password, which is what "deterministic derivation" means.
+      const derived = deriveInitialPassword("ada@example.com", "Ada Lovelace");
+      for (const hash of hashes) {
+        expect(await bcrypt.compare(derived, hash)).toBe(true);
+      }
+    },
+    240000,
   );
 });

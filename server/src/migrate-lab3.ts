@@ -13,26 +13,36 @@
  *   - Every `_prisma_migrations` record corresponds to a real tracked directory.
  *
  * Collision guard (frozen §9.2 / DM-11, amended Rev 13 — B-2):
- *   - Stage 1 (pre-Phase-A) accepts exactly two legal input states:
- *       (i) a fresh Lab 2 baseline, or
- *       (ii) Phase-A-applied / backfill-not-run (resume after a collision abort).
+ *   - Stage 1 (pre-Phase-A) accepts exactly three legal input states:
+ *       (i) a fresh Lab 2 baseline,
+ *       (ii) Phase-A-applied / backfill-not-run (resume after a collision abort), or
+ *       (iii) Phase-A-applied / backfill-complete / Phase-C-unapplied (resume after a
+ *            Phase C failure — see "Atomicity and recovery" below).
  *   - Stage 2 (post-Phase-A, pre-backfill) runs the full three-way scan:
  *       legacy↔legacy normalized emails; legacy normalized email ↔ existing User.email;
  *       legacy id ↔ existing User.id.
  *   - Any hit -> MigrationCollisionError BEFORE any User row is written, and the
  *     data-preservation abort invariant is asserted (DM-11 / DM-18).
  *
- * Recovery (DM-18): on a Stage-2 collision abort the database is left in the
- * documented Phase-A-applied state. The operator resolves the collision source
- * (manual data fix or user decision), then re-runs this orchestrator; Stage 1
- * recognizes the Phase-A-applied/backfill-not-run state and resumes at Stage 2.
- * Never un-apply tracked migrations; never hand-edit `_prisma_migrations`.
+ * Atomicity and recovery (PR #46 review follow-up):
+ *   - Every tracked migration SQL file is applied with `psql --single-transaction`, so a
+ *     late Phase C statement failure rolls back ALL Phase C DDL and the migration is never
+ *     recorded as applied. `_prisma_migrations` is never hand-edited.
+ *   - All legacy-data invariants that can be evaluated BEFORE the irreversible backfill
+ *     boundary are validated pre-backfill (`validateLegacyInvariants`). The remaining
+ *     post-backfill checks are executed INSIDE the backfill transaction, so a failure
+ *     rolls the backfill back and leaves the supported Phase-A-applied state.
+ *   - If Phase C nevertheless fails after a committed backfill, the database is left in the
+ *     documented, resumable state (iii): Phase A applied, User backfilled, Phase C unapplied.
+ *     Stage 1 recognizes it and resumes at Phase C. Never un-apply tracked migrations; never
+ *     hand-edit `_prisma_migrations`.
  */
 
 import { execSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync, rmSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { resolve, dirname } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import bcrypt from "bcrypt";
 import { getPrisma, disconnectPrisma } from "./prisma.js";
@@ -97,6 +107,31 @@ function readMigrationSql(dirName: string): string {
   return readFileSync(path, "utf-8");
 }
 
+/**
+ * Deterministic test-only failure injection (PR #46 review follow-up).
+ *
+ * When `MIGRATION_TEST_FAIL_PHASE_C_AT` is set AND `NODE_ENV === "test"`, the PHASE C
+ * migration SQL is applied with a deliberately failing statement appended at the named
+ * point, so the failure/recovery tests exercise the REAL migration mechanism (psql
+ * `--single-transaction`) rather than a bypass. This is never active outside tests, and
+ * it never affects Phase A (which must succeed for the recovery state to be reachable).
+ *
+ * Recognized values:
+ *   "end"  -> append a failing statement after the last real Phase C statement.
+ */
+function injectPhaseCFailure(dirName: string, sql: string): string {
+  const marker = process.env.MIGRATION_TEST_FAIL_PHASE_C_AT;
+  if (!marker || process.env.NODE_ENV !== "test" || dirName !== PHASE_C_DIR) {
+    return sql;
+  }
+  if (marker === "end") {
+    return `${sql}\n\n-- [test-only] deliberate late Phase C failure\nSELECT 1/0;\n`;
+  }
+  throw new MigrationStopAndReportError(
+    `Unsupported MIGRATION_TEST_FAIL_PHASE_C_AT value: ${marker} (expected "end").`,
+  );
+}
+
 /** Applies a migration SQL file out-of-band via psql (raw SQL), then records it as applied. */
 async function applyTrackedMigrationOutOfBand(dirName: string): Promise<void> {
   const sqlPath = resolve(MIGRATIONS_DIR, dirName, "migration.sql");
@@ -108,9 +143,32 @@ async function applyTrackedMigrationOutOfBand(dirName: string): Promise<void> {
   // psql does not understand Prisma's ?schema= query parameter; strip it.
   const psqlUrl = url.split("?")[0];
 
-  // Apply the SQL out-of-band (psql). ON_ERROR_STOP ensures a failure aborts loudly.
-  const psqlCmd = `psql "${psqlUrl}" -v ON_ERROR_STOP=1 -f "${sqlPath}"`;
-  run(psqlCmd);
+  // Test-only deterministic failure injection: when active, apply a modified copy of the
+  // migration SQL (real statements + one deliberate late failure) through the SAME psql
+  // mechanism, so the failure/recovery tests exercise the production path. The injected
+  // file is written OUTSIDE the migrations directory so Prisma never sees it.
+  const originalSql = readMigrationSql(dirName);
+  const injectedSql = injectPhaseCFailure(dirName, originalSql);
+  let effectiveSqlPath = sqlPath;
+  if (injectedSql !== originalSql) {
+    effectiveSqlPath = resolve(tmpdir(), `migrate-lab3-injected-${process.pid}-${Date.now()}.sql`);
+    writeFileSync(effectiveSqlPath, injectedSql, "utf-8");
+  }
+
+  // Apply the SQL out-of-band (psql) inside a SINGLE transaction.
+  // `--single-transaction` wraps the whole file in BEGIN/COMMIT, so a late statement
+  // failure rolls back every earlier statement in the file. `ON_ERROR_STOP` makes psql
+  // exit non-zero on the first error (without it, psql would continue and COMMIT).
+  // Together they guarantee: all-or-nothing DDL, and no `_prisma_migrations` record on
+  // failure (the resolve step below is only reached when psql exits 0).
+  try {
+    const psqlCmd = `psql "${psqlUrl}" --single-transaction -v ON_ERROR_STOP=1 -f "${effectiveSqlPath}"`;
+    run(psqlCmd);
+  } finally {
+    if (effectiveSqlPath !== sqlPath && existsSync(effectiveSqlPath)) {
+      rmSync(effectiveSqlPath, { force: true });
+    }
+  }
 
   // Record the migration as applied in _prisma_migrations (apply-then-resolve).
   run(`npx prisma migrate resolve --applied ${dirName}`);
@@ -131,8 +189,8 @@ async function readLegacyRequesters(): Promise<LegacyRequesterRow[]> {
   }));
 }
 
-/** Stage-1 preflight: checks Lab-2-schema facts only. Accepts exactly two legal input states. */
-async function stage1Preflight(): Promise<"fresh" | "phase-a-applied"> {
+/** Stage-1 preflight: checks Lab-2-schema facts only. Accepts exactly three legal input states. */
+async function stage1Preflight(): Promise<"fresh" | "phase-a-applied" | "backfill-complete"> {
   const prisma = getPrisma();
 
   // Does the legacy DevRequester table exist?
@@ -153,23 +211,42 @@ async function stage1Preflight(): Promise<"fresh" | "phase-a-applied"> {
   );
   const phaseAApplied = Number(phaseARecord[0]?.cnt ?? 0) > 0;
 
+  // Is Phase C recorded in _prisma_migrations?
+  const phaseCRecord = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+    `SELECT COUNT(*) AS cnt FROM _prisma_migrations WHERE migration_name = '${PHASE_C_DIR}'`,
+  );
+  const phaseCApplied = Number(phaseCRecord[0]?.cnt ?? 0) > 0;
+
   if (hasDevRequester && !hasUser) {
     // Legal input state (i): fresh Lab 2 baseline.
     return "fresh";
   }
 
-  if (hasDevRequester && hasUser && phaseAApplied) {
-    // Legal input state (ii): Phase-A-applied / backfill-not-run (resume after collision abort).
-    // Verify backfill has NOT run (User table empty of migrated requesters).
+  if (hasDevRequester && hasUser && phaseAApplied && !phaseCApplied) {
+    // Legal input states (ii) and (iii): Phase A applied, Phase C not applied.
+    // Distinguish by whether the backfill has already run.
+    const legacy = await readLegacyRequesters();
     const userCount = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
       `SELECT COUNT(*) AS cnt FROM "User"`,
     );
-    if (Number(userCount[0]?.cnt ?? 0) === 0) {
+    const actualUsers = Number(userCount[0]?.cnt ?? 0);
+
+    if (actualUsers === 0) {
+      // (ii) Phase-A-applied / backfill-not-run (resume after a collision abort).
       return "phase-a-applied";
     }
+
+    if (actualUsers === legacy.length) {
+      // (iii) Phase-A-applied / backfill-complete / Phase-C-unapplied.
+      // This is the documented resumable state left by a Phase C failure after a
+      // committed backfill. Resume at Phase C (the backfill is idempotent-safe to skip).
+      return "backfill-complete";
+    }
+
     throw new MigrationStopAndReportError(
-      "Unrecognized database state: User table is non-empty but DevRequester still exists. " +
-        "This is not a legal re-entry state. Follow the README runbook; never hand-edit _prisma_migrations.",
+      `Unrecognized database state: User table holds ${actualUsers} rows but ${legacy.length} ` +
+        `DevRequester rows exist. This is neither the pre-backfill nor the post-backfill state. ` +
+        `Follow the README runbook; never hand-edit _prisma_migrations.`,
     );
   }
 
@@ -288,7 +365,77 @@ async function captureStage1Snapshot(): Promise<Record<string, number>> {
   return snapshot;
 }
 
-/** Backfills every DevRequester row into User with exact ID preservation (single transaction). */
+/**
+ * Pre-backfill legacy-invariant validation.
+ *
+ * Every invariant that can be evaluated from the LEGACY data BEFORE the irreversible
+ * backfill boundary is validated here, so a failure leaves the database in the already
+ * supported Phase-A-applied / backfill-not-run state (resume after a collision abort).
+ * This closes the recovery hole where a post-backfill verification failure would leave a
+ * partially migrated state the orchestrator could not resume.
+ */
+async function validateLegacyInvariants(): Promise<void> {
+  const prisma = getPrisma();
+
+  // isRemoved = (removedAt IS NOT NULL) row-level invariant (BASE-1 / Rev-11).
+  const invariantViolations = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+    `SELECT COUNT(*) AS cnt FROM "Attachment" WHERE "isRemoved" <> ("removedAt" IS NOT NULL)`,
+  );
+  if (Number(invariantViolations[0]?.cnt ?? 0) > 0) {
+    throw new MigrationStopAndReportError(
+      "isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). " +
+        "This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.",
+    );
+  }
+
+  // Legacy FK integrity: every Ticket.requesterId resolves to a DevRequester row.
+  const orphanTickets = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+    `SELECT COUNT(*) AS cnt FROM "Ticket" t LEFT JOIN "DevRequester" d ON d.id = t."requesterId" WHERE d.id IS NULL`,
+  );
+  if (Number(orphanTickets[0]?.cnt ?? 0) > 0) {
+    throw new MigrationStopAndReportError(
+      "Legacy FK integrity violated: Ticket.requesterId does not resolve to a DevRequester row.",
+    );
+  }
+
+  // Legacy FK integrity: every Attachment.uploaderRequesterId resolves to a DevRequester row.
+  const orphanUploaders = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+    `SELECT COUNT(*) AS cnt FROM "Attachment" a LEFT JOIN "DevRequester" d ON d.id = a."uploaderRequesterId" WHERE a."uploaderRequesterId" IS NOT NULL AND d.id IS NULL`,
+  );
+  if (Number(orphanUploaders[0]?.cnt ?? 0) > 0) {
+    throw new MigrationStopAndReportError(
+      "Legacy FK integrity violated: Attachment.uploaderRequesterId does not resolve to a DevRequester row.",
+    );
+  }
+
+  // Legacy FK integrity: every Attachment.removedByRequesterId resolves to a DevRequester row.
+  const orphanRemovers = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+    `SELECT COUNT(*) AS cnt FROM "Attachment" a LEFT JOIN "DevRequester" d ON d.id = a."removedByRequesterId" WHERE a."removedByRequesterId" IS NOT NULL AND d.id IS NULL`,
+  );
+  if (Number(orphanRemovers[0]?.cnt ?? 0) > 0) {
+    throw new MigrationStopAndReportError(
+      "Legacy FK integrity violated: Attachment.removedByRequesterId does not resolve to a DevRequester row.",
+    );
+  }
+
+  // Legacy FK integrity: every Ticket.ticketOwnerId (if set) resolves to a DevRequester row.
+  const orphanOwners = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+    `SELECT COUNT(*) AS cnt FROM "Ticket" t LEFT JOIN "DevRequester" d ON d.id = t."ticketOwnerId" WHERE t."ticketOwnerId" IS NOT NULL AND d.id IS NULL`,
+  );
+  if (Number(orphanOwners[0]?.cnt ?? 0) > 0) {
+    throw new MigrationStopAndReportError(
+      "Legacy FK integrity violated: Ticket.ticketOwnerId does not resolve to a DevRequester row.",
+    );
+  }
+}
+
+/**
+ * Backfills every DevRequester row into User with exact ID preservation (single transaction).
+ *
+ * The post-backfill verification runs INSIDE the same transaction, so a verification
+ * failure rolls the backfill back and leaves the supported Phase-A-applied state rather
+ * than a partially migrated database.
+ */
 async function runBackfill(): Promise<void> {
   const prisma = getPrisma();
   const legacy = await readLegacyRequesters();
@@ -320,6 +467,9 @@ async function runBackfill(): Promise<void> {
     await tx.$executeRawUnsafe(
       `UPDATE "Ticket" SET "itPriority" = "requestedPriority" WHERE "itPriority" IS NULL`,
     );
+
+    // Post-backfill verification INSIDE the transaction: a failure rolls everything back.
+    await verifyBackfillWithinTransaction(tx, legacy.length);
   });
 
   // setval the User.id sequence past the max preserved ID (DM-10).
@@ -328,23 +478,19 @@ async function runBackfill(): Promise<void> {
   await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"User"', 'id'), ${nextVal})`);
 }
 
-/** Post-backfill verification (fails loudly): isRemoved invariant, FK integrity, counts. */
-async function postBackfillVerification(legacyCount: number): Promise<void> {
-  const prisma = getPrisma();
-
-  // isRemoved = (removedAt IS NOT NULL) row-level invariant (BASE-1 / Rev-11).
-  const invariantViolations = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
-    `SELECT COUNT(*) AS cnt FROM "Attachment" WHERE "isRemoved" <> ("removedAt" IS NOT NULL)`,
-  );
-  if (Number(invariantViolations[0]?.cnt ?? 0) > 0) {
-    throw new MigrationStopAndReportError(
-      "isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). " +
-        "This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.",
-    );
-  }
-
+/**
+ * Post-backfill verification executed inside the backfill transaction.
+ *
+ * These checks can only fail if the backfill transaction itself was incorrect (or the
+ * legacy data was already corrupt, which `validateLegacyInvariants` catches pre-backfill).
+ * Running them in-transaction means a failure rolls the backfill back atomically.
+ */
+async function verifyBackfillWithinTransaction(
+  tx: { $queryRawUnsafe: <T>(sql: string) => Promise<T> },
+  legacyCount: number,
+): Promise<void> {
   // FK integrity: all Ticket.requesterId resolve to User rows.
-  const orphanTickets = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+  const orphanTickets = await tx.$queryRawUnsafe<{ cnt: bigint }[]>(
     `SELECT COUNT(*) AS cnt FROM "Ticket" t LEFT JOIN "User" u ON u.id = t."requesterId" WHERE u.id IS NULL`,
   );
   if (Number(orphanTickets[0]?.cnt ?? 0) > 0) {
@@ -352,7 +498,7 @@ async function postBackfillVerification(legacyCount: number): Promise<void> {
   }
 
   // Attachment uploaderUserId/removedByUserId resolve to User rows.
-  const orphanUploaders = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+  const orphanUploaders = await tx.$queryRawUnsafe<{ cnt: bigint }[]>(
     `SELECT COUNT(*) AS cnt FROM "Attachment" a LEFT JOIN "User" u ON u.id = a."uploaderUserId" WHERE a."uploaderUserId" IS NOT NULL AND u.id IS NULL`,
   );
   if (Number(orphanUploaders[0]?.cnt ?? 0) > 0) {
@@ -360,7 +506,7 @@ async function postBackfillVerification(legacyCount: number): Promise<void> {
   }
 
   // Row counts match.
-  const userCount = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(`SELECT COUNT(*) AS cnt FROM "User"`);
+  const userCount = await tx.$queryRawUnsafe<{ cnt: bigint }[]>(`SELECT COUNT(*) AS cnt FROM "User"`);
   if (Number(userCount[0]?.cnt ?? 0) !== legacyCount) {
     throw new MigrationStopAndReportError(
       `Row count mismatch: expected ${legacyCount} Users, found ${Number(userCount[0]?.cnt ?? 0)}.`,
@@ -397,27 +543,44 @@ export async function runLab3Migration(): Promise<void> {
     console.log(`[migrate-lab3] Resuming: Phase A already applied (${PHASE_A_DIR}); skipping apply.`);
   }
 
-  // Stage 2 collision scan (post-Phase-A, pre-backfill).
-  const collisions = await stage2CollisionScan();
-  if (collisions.length > 0) {
-    // Assert the data-preservation abort invariant, then throw.
-    await assertDataPreservationInvariant(stage1Snapshot);
-    const detail = collisions.join("\n  - ");
-    throw new MigrationCollisionError(
-      `MigrationCollisionError: ${collisions.length} collision(s) block the migration.\n  - ${detail}\n` +
-        `Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), ` +
-        `then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.`,
-    );
+  // Stage 2 collision scan (post-Phase-A, PRE-backfill only).
+  //
+  // The scan compares legacy DevRequester rows against the User table. Once the backfill
+  // has committed, every legacy row legitimately has a matching User, so re-running the
+  // scan would report false collisions. On a `backfill-complete` resume the scan is
+  // therefore skipped: the backfill already passed the scan before it committed.
+  if (inputState !== "backfill-complete") {
+    const collisions = await stage2CollisionScan();
+    if (collisions.length > 0) {
+      // Assert the data-preservation abort invariant, then throw.
+      await assertDataPreservationInvariant(stage1Snapshot);
+      const detail = collisions.join("\n  - ");
+      throw new MigrationCollisionError(
+        `MigrationCollisionError: ${collisions.length} collision(s) block the migration.\n  - ${detail}\n` +
+          `Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), ` +
+          `then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.`,
+      );
+    }
+  } else {
+    console.log("[migrate-lab3] Resuming: backfill already committed; skipping the pre-backfill collision scan.");
   }
 
-  // Backfill (single transaction).
-  const legacy = await readLegacyRequesters();
-  console.log(`[migrate-lab3] Backfilling ${legacy.length} DevRequester rows into User...`);
-  await runBackfill();
+  // Pre-backfill legacy-invariant validation: anything determinable from the legacy data
+  // is validated BEFORE the irreversible backfill boundary, so a failure leaves the
+  // supported Phase-A-applied state (never a partially migrated database).
+  await validateLegacyInvariants();
 
-  // Post-backfill verification.
-  await postBackfillVerification(legacy.length);
-  console.log("[migrate-lab3] Post-backfill verification passed (isRemoved invariant, FK integrity, counts).");
+  if (inputState === "backfill-complete") {
+    // Resume after a Phase C failure: the backfill already committed and was verified
+    // in-transaction. Skip the backfill and resume at Phase C.
+    console.log("[migrate-lab3] Resuming: backfill already complete; skipping backfill, applying Phase C.");
+  } else {
+    // Backfill (single transaction, with in-transaction verification).
+    const legacy = await readLegacyRequesters();
+    console.log(`[migrate-lab3] Backfilling ${legacy.length} DevRequester rows into User...`);
+    await runBackfill();
+    console.log("[migrate-lab3] Backfill committed; in-transaction verification passed (FK integrity, counts).");
+  }
 
   // Phase C apply.
   console.log(`[migrate-lab3] Applying Phase C (${PHASE_C_DIR}) out-of-band...`);
