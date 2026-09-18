@@ -12,9 +12,9 @@ Datasource "db": PostgreSQL database "tocktick", schema "public" at "localhost:5
 
 Database schema is up to date!
 
-=== server npm run build (tsc) ===
+=== npm run build (server) ===
 
 > toktickit-server@1.0.0 build
 > tsc
 
-server build exit=0
+exit=0

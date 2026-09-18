@@ -1,14 +1,25 @@
-◇ injected env (2) from .env // tip: ⌘ enable debugging { debug: true }
+◇ injected env (2) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
 
  RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/server
 
-NOTICE:  database "tocktick_lab3_mig05_21716" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
 MigrationCollisionError: 1 collision(s) block the migration.
   - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
 Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-23776-1789708419646.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti:***REMOVED***@localhost:5432/tocktick_lab3_mig05_11336" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-23776-1789708419646.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-23776-1789708419646.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
+isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.
+NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
 
  Test Files  30 passed (30)
-      Tests  368 passed (368)
-   Start at  23:37:48
-   Duration  146.58s (transform 1.35s, setup 0ms, import 19.70s, tests 113.20s, environment 7ms)
+      Tests  383 passed (383)
+   Start at  12:10:52
+   Duration  410.10s (transform 1.19s, setup 0ms, import 18.72s, tests 379.45s, environment 7ms)
 

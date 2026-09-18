@@ -41,6 +41,48 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-18 — Issue #35 verification remediation (PR #46 review follow-up, round 3)**
+  - **B-1 migration atomicity/recovery fixed:** every tracked migration is now applied with
+    `psql --single-transaction -v ON_ERROR_STOP=1`, so a late Phase C failure rolls back ALL
+    Phase C DDL and the migration is never recorded as applied. Post-backfill verification now
+    runs INSIDE the backfill transaction, and all legacy invariants determinable before the
+    irreversible boundary are validated pre-backfill. `stage1Preflight()` now recognizes the
+    documented resumable state (Phase A applied / backfill complete / Phase C unapplied) and
+    resumes at Phase C, correctly skipping the pre-backfill collision scan on that path.
+    `MIG-FAIL-01/02/03` exercise the real orchestrator with a deterministic test-only failure
+    hook; `_prisma_migrations` is never hand-edited.
+  - **B-2 Lab 2 preservation proven:** `DB-MIG-PRESERVE-01/02` build a populated Lab 2 fixture,
+    snapshot it completely, run the real orchestrator, and compare every Requester, Ticket, and
+    Attachment field-by-field (exact ID sets, `User.id === DevRequester.id`, and the
+    `uploaderRequesterId → uploaderUserId` / `removedByRequesterId → removedByUserId` renames).
+    The timestamp assertion now compares the exact expected `timestamptz` column set.
+  - **B-3 canonical API errors fixed:** `parseApiError()` is now `async` and awaits
+    `response.json()`; all four callers await it. `UNIT-API-ERROR-01/02/03` prove the canonical
+    error is available without a microtask flush or retry, and that malformed/empty/500 bodies
+    fall back safely.
+  - **B-4 canonical ticket allocator fixed (real defect):** the seed's private `TicketSequence`
+    logic was removed in favour of `allocateTicketNumberWithClient()`. The old seed produced
+    four-digit numbers (`TKT-2026-0334`); the new seed produces canonical six-digit numbers
+    (`TKT-2026-000377`). `SEED-TKT-01..04` assert format, uniqueness, rerun stability, and
+    allocator continuity.
+  - **B-5 safe idempotent seed fixed:** `upsertUser()` → `ensureUser()` (create-if-missing), so
+    legitimate administrator changes survive a rerun. Seed Tickets carry a deterministic
+    seed-owned marker (`[seed:<key>]`) instead of the unsafe `summary + requesterId` heuristic,
+    and seed Comments/Notes are matched by exact content on a seed-owned Ticket.
+    `SEED-IDEMP-01/02`, `SEED-COLLISION-01`, `SEED-COMMENT-01`, `SEED-NOTE-01` prove
+    non-destructive reruns and that a resembling non-seed Ticket is never claimed or mutated.
+  - **Additional defect found and fixed:** the client `tsc` build emitted compiled `.js` files
+    next to the `.ts` sources in `client/src/`, and Vite resolved the stale `.js` before the
+    `.ts`, silently shadowing the `parseApiError` fix during tests. The stale artifacts were
+    removed and `client/tsconfig.json` now sets `noEmit: true`.
+  - Commands: `npx vitest run tests/lab-03/migration.integration.test.ts`;
+    `npx vitest run tests/lab-03/seed.integration.test.ts`; `npx vitest run` (server, client);
+    `npm run build` (server, client); `npx prisma validate`; `npx prisma migrate status`.
+  - Results: server **383 passed / 30 files**; client **113 passed / 11 files**; server and
+    client builds succeed; Prisma schema valid; migration status clean.
+  - Follow-up: none. `E2E-01..04` remain `Planned` (owned by #42); Requester/Staff/Admin feature
+    rows remain `Planned` (owned by #37/#38/#41).
+
 - **2026-09-17 — Issue #35 verification remediation (PR #46 review follow-up, round 2)**
   - **Lab 2 regression fixed (real defect):** the expanded seed selected seed-ticket
     reference data via `prisma.category.findMany()` / `prisma.relatedSystem.findMany()` over
@@ -165,12 +207,29 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-ADM-10 | API | Non-last Administrator changes own role away from Administrator | Succeeds; rejected only if it is the last active Administrator (BR-28 path) | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-34, BR-28 | AC-19 | Planned |
 | UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Passed |
 | UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Planned |
-| DB-MIG-01 | DB | DevRequester → User migration | Existing ownership preserved | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
-| DB-MIG-02 | DB | Existing data preserved | Categories/RelatedSystems/Tickets/Attachments valid | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
-| DB-MIG-03 | DB | Migrated requester initial password | Migrated user's initial password equals the password produced by the frozen derivation (Section 13, decision 13: `Lab3-` + first 20 hex chars of SHA-256(lowercase(trim(email)) + ":" + trim(name))), authenticates successfully, and `mustChangePassword` is enforced; running migration/seed again produces the same password | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Passed |
+| DB-MIG-01 | DB | DevRequester → User migration | Every legacy Requester becomes exactly one User with the same `id`, `name`, `email`, and `isActive`, role `REQUESTER`, and `mustChangePassword=true` | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-02 | DB | Existing data preserved | Categories/RelatedSystems/Tickets/Attachments valid; the exact frozen §9.3 timestamp set is `timestamptz(3)` | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
+| DB-MIG-03 | DB | Migrated requester initial password | Migrated user's initial password equals the password produced by the frozen derivation (Section 13, decision 13: `Lab3-` + first 20 hex chars of SHA-256(lowercase(trim(email)) + ":" + trim(name))), authenticates successfully, and `mustChangePassword` is enforced; two independent fresh migrations produce the same derived password | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Passed |
 | DB-MIG-04 | DB | Migrated requester password change | Migrated user logs in with the deterministic initial password, is blocked from normal application access (`401 PASSWORD_CHANGE_REQUIRED`) while `mustChangePassword=true`, successfully changes the password, and can then access normal protected functionality using the same session; the stored hash changes and the old password no longer verifies | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Passed |
 | DB-MIG-05 | DB | Migration with a colliding email | The real migration orchestrator aborts with `MigrationCollisionError` before any `User` backfill, leaves Phase A applied / Phase C unapplied, preserves legacy data, and completes successfully after the collision source is resolved and the orchestrator is resumed | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-13 | AC-25 | Passed |
-| SEED-01 | DB | Seed idempotency | Safe to run repeatedly | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| DB-MIG-PRESERVE-01 | DB | Full Lab 2 Requester/Ticket preservation | Against a populated Lab 2 fixture, every legacy Requester becomes a User with the same `id`/`name`/`email`/`isActive`; the exact Ticket ID set is unchanged and every Ticket's `ticketNumber`, `requesterId`, `categoryId`, `relatedSystemId`, `summary`, `description`, `requestedPriority`, `ticketOwnerId`, and `currentStatus` are preserved (`itPriority` backfilled from `requestedPriority` where NULL) | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-PRESERVE-02 | DB | Full Lab 2 Attachment preservation | Against a populated Lab 2 fixture, the exact Attachment ID set is unchanged and every Attachment's `ticketId`, filenames, MIME type, size, `isRemoved`, `removalReason`, and `removedAt` are preserved; `uploaderRequesterId → uploaderUserId` and `removedByRequesterId → removedByUserId` are verified one-for-one | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
+| MIG-FAIL-01 | DB | Late Phase C failure atomicity | A deliberately failing late Phase C statement (injected through the real `psql --single-transaction` mechanism) rolls back ALL Phase C DDL: Phase C is not recorded as applied, `DevRequester` and the legacy Attachment columns still exist, the Phase C-only index is absent, and legacy data is intact | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
+| MIG-FAIL-02 | DB | Pre-backfill invariant failure recovery | A legacy `isRemoved` invariant violation is detected BEFORE the irreversible backfill, leaving the supported Phase-A-applied state (no `User` rows, `DevRequester` intact, Phase C unapplied); after repair the orchestrator resumes and completes | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
+| MIG-FAIL-03 | DB | Recovery after a Phase C failure | After a late Phase C failure the database is in the documented resumable state (Phase A applied, backfill committed, Phase C unapplied); a subsequent valid run resumes at Phase C and completes with all Users/Tickets/Attachments present and `migrate status` clean | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
+| SEED-01 | DB | Seed idempotency | Safe to run repeatedly; two runs produce identical state with no duplicate seed records | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| SEED-TKT-01 | DB | Canonical ticket-number format | Every seed-owned Ticket number matches the canonical six-digit `TKT-YYYY-NNNNNN` contract | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| SEED-TKT-02 | DB | Ticket-number uniqueness | Seed-owned Ticket numbers are unique | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| SEED-TKT-03 | DB | Rerun does not renumber | A second seed run does not change any existing seed Ticket's number | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| SEED-TKT-04 | DB | Canonical allocator continuity | A Ticket created through the application allocator after seeding receives the next canonical sequence value, proving the seed uses the shared allocator rather than a parallel counter | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| SEED-IDEMP-01 | DB | Non-destructive rerun | Two seed runs produce no duplicate seed Tickets, Comments, Notes, or Users | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| SEED-IDEMP-02 | DB | Application state survives rerun | A legitimate administrator change to a seeded account (`role`, `isActive`, `passwordHash`, `mustChangePassword`) survives a subsequent seed run unchanged | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| SEED-COLLISION-01 | DB | Seed ownership safety | A non-seed Ticket that resembles a seed Ticket (same summary/requester, no seed marker) is never claimed, mutated, or given seed Comments/Notes | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| SEED-COMMENT-01 | DB | Comment idempotency | A second seed run does not duplicate seed Comments | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| SEED-NOTE-01 | DB | Internal Note idempotency | A second seed run does not duplicate seed Internal Notes | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
+| UNIT-API-ERROR-01 | Unit | Canonical API error parsing | A canonical JSON error body yields an Error exposing `status`, `code`, `message`, and `fields` immediately after `await` (no microtask flush or retry), including through a real caller (`login`) | `client/src/lab-03-tests/ApiClient.test.ts` | FR-01 | BR-07 | AC-01 | Passed |
+| UNIT-API-ERROR-02 | Unit | Malformed / non-JSON body | A non-JSON or empty error body preserves the fallback message and HTTP status and never throws | `client/src/lab-03-tests/ApiClient.test.ts` | FR-01 | BR-07 | AC-01 | Passed |
+| UNIT-API-ERROR-03 | Unit | 500 response safety | A 500 with a canonical body exposes the canonical message/code; a 500 without one falls back to the safe generic message | `client/src/lab-03-tests/ApiClient.test.ts` | FR-01 | BR-07 | AC-01 | Passed |
 | UI-LOGIN-01 | UI | Login screen | Valid/invalid login; busy/safe failure; form data preserved | `client/src/lab-03-tests/Login.test.tsx` | FR-01 | BR-07, BR-33 | AC-01 | Passed |
 | UI-CHPWD-01 | UI | Change Password screen | Mandatory change; validation; continuation | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Passed |
 | UI-CHPWD-02 | UI | Confirm field does not match new password | Inline validation error; form not submitted; API never called | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Passed |

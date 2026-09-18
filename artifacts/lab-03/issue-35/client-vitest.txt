@@ -4,7 +4,7 @@
 Error: Not implemented: window.open
     at module.exports (C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
     at C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
-    at onClick (C:/Users/kitti/CPE334/issue-35-worktree/client/src/App.js:225:80) undefined
+    at onClick (C:/Users/kitti/CPE334/issue-35-worktree/client/src/App.tsx:532:42) undefined
 Error: Not implemented: navigation (except hash changes)
     at module.exports (C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
     at navigateFetch (C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
@@ -13,8 +13,8 @@ Error: Not implemented: navigation (except hash changes)
     at listOnTimeout (node:internal/timers:605:17)
     at processTimers (node:internal/timers:541:7) undefined
 
- Test Files  10 passed (10)
-      Tests  107 passed (107)
-   Start at  23:41:27
-   Duration  26.76s (transform 5.01s, setup 0ms, import 18.81s, tests 57.53s, environment 29.13s)
+ Test Files  11 passed (11)
+      Tests  113 passed (113)
+   Start at  12:18:20
+   Duration  45.65s (transform 5.89s, setup 0ms, import 55.82s, tests 56.99s, environment 184.84s)
 

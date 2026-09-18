@@ -1,19 +1,25 @@
-◇ injected env (2) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injected env (2) from .env // tip: ⌘ override existing { override: true }
 
  RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/server
 
- ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-01: every DevRequester became exactly one User with exact ID preservation 15ms
- ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-02: final schema checklist — User fields, timestamptz, passwordHash length, isRemoved invariant 79ms
- ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-03: migrated requester initial password matches the frozen derivation and authenticates 117ms
- ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-04: migrated requester is blocked until password change, then unblocked (same session) 1030ms
-NOTICE:  database "tocktick_lab3_mig05_6416" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
 MigrationCollisionError: 1 collision(s) block the migration.
   - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
 Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
- ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-05: a real migration collision aborts before backfill, preserves legacy data, and resumes after resolution 53142ms
+NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-24340-1789708946155.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti:***REMOVED***@localhost:5432/tocktick_lab3_mig05_11168" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-24340-1789708946155.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-24340-1789708946155.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
+isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.
+NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
 
  Test Files  1 passed (1)
-      Tests  5 passed (5)
-   Start at  23:40:27
-   Duration  56.08s (transform 350ms, setup 0ms, import 1.06s, tests 54.62s, environment 0ms)
+      Tests  10 passed (10)
+   Start at  12:19:31
+   Duration  320.47s (transform 606ms, setup 0ms, import 8.37s, tests 311.00s, environment 0ms)
 

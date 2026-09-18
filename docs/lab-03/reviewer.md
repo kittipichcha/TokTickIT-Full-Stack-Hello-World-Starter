@@ -99,6 +99,66 @@ incomplete; **B-6** ground truth unreadable; plus minor session-regeneration and
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.
 
+### Issue #35 — PR #46 second review follow-up (2026-09-18)
+
+**Reviewer comment I received (round 2): Request Changes.** Five substantive blockers remained
+after the first remediation round. The reviewer explicitly confirmed that the provenance/evidence
+work, E2E ownership, DM-17 compatibility decision, session-fixation test, and seed-scoping
+regression fix were already addressed, and that the remaining work was concentrated in five
+areas. The reviewer also confirmed the evidence infrastructure was substantially improved but
+proved the *old* assertions rather than the missing behaviors.
+
+**How I responded — per blocker:**
+
+- **B-1 (migration atomicity/recovery) — accepted and implemented.** `applyTrackedMigrationOutOfBand()`
+  now applies every tracked migration with `psql --single-transaction -v ON_ERROR_STOP=1`, so a
+  late Phase C statement failure rolls back ALL Phase C DDL and the migration is never recorded
+  as applied. The post-backfill verification now runs INSIDE the backfill transaction, and all
+  legacy invariants that can be evaluated before the irreversible boundary are validated
+  pre-backfill (`validateLegacyInvariants`). `stage1Preflight()` now explicitly recognizes the
+  documented resumable state (Phase A applied / backfill complete / Phase C unapplied) and
+  resumes at Phase C; the pre-backfill collision scan is correctly skipped on that resume path
+  (re-running it would report false collisions against the backfilled Users). A deterministic
+  test-only failure hook (`MIGRATION_TEST_FAIL_PHASE_C_AT`, active only when `NODE_ENV=test`)
+  injects a late Phase C failure through the real psql mechanism. `_prisma_migrations` is never
+  hand-edited.
+- **B-2 (Lab 2 data preservation) — accepted and implemented.** `DB-MIG-PRESERVE-01/02` build a
+  populated Lab 2 fixture (4 requesters with mixed active states, 2 categories, 2 related
+  systems, 4 tickets, 3 attachments including a soft-removed one with a remover and a different
+  uploader), take a complete pre-migration snapshot, run the REAL orchestrator, and compare every
+  record field-by-field — including exact ID sets, `User.id === DevRequester.id`, and the
+  `uploaderRequesterId → uploaderUserId` / `removedByRequesterId → removedByUserId` renames. The
+  timestamp assertion now compares the EXACT expected `timestamptz` column set instead of
+  `tzCols.length > 0`.
+- **B-3 (canonical API errors) — accepted and implemented.** `parseApiError()` is now `async` and
+  awaits `response.json()` before returning, so callers observe `status`/`code`/`message`/`fields`
+  immediately. All four callers (`login`, `fetchMe`, `logout`, `changePassword`) now `await` it.
+  `UNIT-API-ERROR-01/02/03` prove the canonical error is available without a microtask flush or
+  retry, and that malformed/empty/500 bodies fall back safely.
+- **B-4 (canonical ticket allocator) — accepted and implemented.** The seed's private
+  `TicketSequence` logic was removed; seed Tickets are now created inside a transaction using
+  `allocateTicketNumberWithClient()` from `server/src/ticket-number.ts`. This fixed a real defect:
+  the old seed produced four-digit numbers (`TKT-2026-0334`); the new seed produces canonical
+  six-digit numbers (`TKT-2026-000377`). `SEED-TKT-01..04` assert format, uniqueness, rerun
+  stability, and allocator continuity.
+- **B-5 (safe idempotent seed) — accepted and implemented.** `upsertUser()` was replaced with
+  `ensureUser()` (create-if-missing), so a legitimate administrator change to `role`, `isActive`,
+  `passwordHash`, or `mustChangePassword` survives a rerun. Seed Tickets now carry a deterministic
+  seed-owned marker (`[seed:<key>]` in `description`) instead of the unsafe `summary + requesterId`
+  heuristic, and seed Comments/Notes are matched by their exact content on a seed-owned Ticket
+  rather than "the ticket has zero comments". `SEED-IDEMP-01/02`, `SEED-COLLISION-01`,
+  `SEED-COMMENT-01`, and `SEED-NOTE-01` prove non-destructive reruns and that a resembling
+  non-seed Ticket is never claimed or mutated.
+
+**Additional defect found and fixed during remediation.** The client `tsc` build emitted compiled
+`.js` files next to the `.ts` sources in `client/src/`, and Vite resolved the stale `.js` before
+the `.ts`. This silently shadowed the `parseApiError` fix during tests. The stale artifacts were
+removed and `client/tsconfig.json` now sets `noEmit: true` (Vite performs the actual bundling), so
+the shadowing cannot recur.
+
+**Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
+is claimed, and no false sign-off is recorded.
+
 ---
 
 ## Pull Requests I reviewed (authored by my partner)

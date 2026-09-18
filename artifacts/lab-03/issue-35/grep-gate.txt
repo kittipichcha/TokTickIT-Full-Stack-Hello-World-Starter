@@ -1,43 +1,51 @@
 === git rev-parse HEAD ===
-e052f8543d8bc28fd8570d9543baa3140764993c
+311ce7174da019355d28b46ecb4dca9485477e29
+
+=== git status --short ===
+ M artifacts/lab-03/issue-35/README.md
+ M artifacts/lab-03/issue-35/client-build.txt
+ M artifacts/lab-03/issue-35/client-vitest.txt
+ M artifacts/lab-03/issue-35/db-mig-execution.txt
+ M artifacts/lab-03/issue-35/grep-gate.txt
+ M artifacts/lab-03/issue-35/server-build-validate.txt
+ M artifacts/lab-03/issue-35/server-vitest.txt
+ M client/src/api-client.ts
+ M client/tsconfig.json
+ M docs/lab-03/reviewer.md
+ M docs/lab-03/tests.md
+ M server/prisma/seed.ts
+ M server/src/migrate-lab3.ts
+ M server/tests/lab-03/auth.api.test.ts
+ M server/tests/lab-03/migration.integration.test.ts
+ M server/tests/lab-03/seed.integration.test.ts
+?? artifacts/lab-03/issue-35/client-api-error.txt
+?? artifacts/lab-03/issue-35/seed-execution.txt
+?? client/src/lab-03-tests/ApiClient.test.ts
 
 === git diff --check ===
+warning: in the working copy of 'artifacts/lab-03/issue-35/client-build.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/client-vitest.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/db-mig-execution.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/grep-gate.txt', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'artifacts/lab-03/issue-35/head-sha.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'artifacts/lab-03/issue-35/server-build-validate.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/server-vitest.txt', LF will be replaced by CRLF the next time Git touches it
-(clean - no whitespace/conflict errors)
+exit=0
 
 === conflict markers ===
-(none)
+(none above = clean)
 
-=== tracked .env files ===
-(no .env tracked)
+=== .env tracked? ===
+no .env tracked
 
-=== grep gate: prisma.devRequester references (must be 0) ===
-(0 matches)
+=== prisma.devRequester references ===
+none
 
-=== grep gate: legacy identifiers (must be confined to declared DM-17 set) ===
-server/src/controller.ts:74:    const requesterId = res.locals.devRequesterId as number;
-server/src/controller.ts:159:  res.status(200).json({ data: { requesterId: res.locals.devRequesterId as number } });
-server/src/controller.ts:227:    const requesterId = res.locals.devRequesterId as number;
-server/src/controller.ts:257:    const requesterId = res.locals.devRequesterId as number;
-server/src/controller.ts:383:    const requesterId = res.locals.devRequesterId as number;
-server/src/controller.ts:412:    const requesterId = res.locals.devRequesterId as number;
-server/src/controller.ts:484:    const requesterId = res.locals.devRequesterId as number;
-server/src/controller.ts:511:    const requesterId = res.locals.devRequesterId as number;
-server/src/controller.ts:557:    const requesterId = res.locals.devRequesterId as number;
-server/src/controller.ts:595:    const requesterId = res.locals.devRequesterId as number;
-server/src/migrate-lab3.ts:139:  const devRequesterExists = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
-server/src/migrate-lab3.ts:142:  const hasDevRequester = devRequesterExists[0]?.exists === true;
-server/src/migrate-lab3.ts:316:      `UPDATE "Attachment" SET "uploaderUserId" = "uploaderRequesterId", "removedByUserId" = "removedByRequesterId"`,
-server/src/requester-context.ts:52:    res.locals.devRequesterId = requesterId;
-server/src/service.ts:66:  removedByRequesterId: number | null;
-server/src/service.ts:580:    // (removedByRequesterId) that existing Lab 2 tests assert.
-server/src/service.ts:590:      removedByRequesterId: a.removedByUserId,
-server/src/service.ts:875:    removedByRequesterId: a.removedByUserId,
-server/src/service.ts:896:  removedByRequesterId: number | null;
-server/src/service.ts:922:    removedByRequesterId: attachment.removedByUserId,
-server/src/service.ts:1023: * Sets isRemoved=true, removedAt, removalReason, removedByRequesterId.
-server/src/service.ts:1100:    removedByRequesterId: updated.removedByUserId,
+=== legacy identifier gate (uploaderRequesterId/removedByRequesterId) ===
+server/src/migrate-lab3.ts
+server/src/service.ts
+server/tests/lab-02/attachment-persistence-compensation.integration.test.ts
+server/tests/lab-02/attachments.api.test.ts
+server/tests/lab-02/ticket-detail.api.test.ts
+server/tests/lab-03/migration.integration.test.ts
+client/src/api.ts
+client/src/lab-02-tests/AttachmentSection.test.tsx

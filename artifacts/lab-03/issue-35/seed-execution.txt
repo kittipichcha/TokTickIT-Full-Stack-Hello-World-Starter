@@ -1,0 +1,10 @@
+◇ injected env (2) from .env // tip: ⌘ suppress logs { quiet: true }
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/server
+
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  12:24:55
+   Duration  34.81s (transform 117ms, setup 0ms, import 200ms, tests 34.22s, environment 0ms)
+
