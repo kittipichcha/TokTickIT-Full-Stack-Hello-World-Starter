@@ -23,8 +23,9 @@ E2E/Responsive/Keyboard (planned):
 ## 2a. Execution Evidence
 Issue #35 (Identity, Database Migration & Authentication) implemented the identity/auth
 foundation and executed its frozen test rows. Statuses are evidence-driven. The rows
-updated to `Passed` by #35 are: DB-MIG-01..05, SEED-01, API-AUTH-01..09, SEC-AUTHZ-06,
-UNIT-AUTH-01, UI-LOGIN-01, UI-CHPWD-01/02. Rows owned by other issues remain `Planned`.
+updated to `Passed` by #35 are: DB-MIG-01..06, SEED-01, API-AUTH-01..09, API-AUTH-05b,
+SEC-AUTHZ-06, UNIT-AUTH-01, UNIT-API-ERROR-01..03, CSRF-ME-01, UI-LOGIN-01,
+UI-CHPWD-01/02, UI-AUTHGATE-01/02. Rows owned by other issues remain `Planned`.
 
 Every `Passed` row above is backed by an executed run recorded in
 `artifacts/lab-03/issue-35/` (see that bundle's `README.md`). No row is marked `Passed`
@@ -40,6 +41,47 @@ owned by **#37** (`authorization.api.test.ts`); #35 contributes only supplementa
 assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
+
+- **2026-09-18 — Issue #35 PR #46 review follow-up, round 4 (three re-audit blockers)**
+  - **F-1 migration resume identity verification (real defect).** `stage1Preflight()` returned
+    `"backfill-complete"` on row-count equality alone, so a database whose `User` rows did not
+    correspond to the legacy `DevRequester` rows (different id/email/role) would resume at
+    Phase C and drop `DevRequester` with the wrong identity mapping. Added
+    `verifyBackfillIdentity(legacy)`, which asserts, for every legacy row, a `User` with the
+    **same `id`**, `role = 'REQUESTER'`, and `normalizeEmail(devRequester.email) === user.email`,
+    and throws `MigrationStopAndReportError` naming the mismatched id(s) otherwise. The
+    `actualUsers === 0 → "phase-a-applied"` branch is unchanged. New test
+    `DB-MIG-06` builds a fixture with 1 legacy requester and 1 unrelated `User` (counts equal,
+    identity mismatched) and asserts the abort, that Phase C is not applied, and that
+    `DevRequester` still exists.
+  - **F-2 `/api/auth/me` CSRF reissue (real defect, normal-usage path).** `AuthGate` calls
+    `fetchMe()` on every mount, so any page reload produced an authenticated session with no
+    client-side CSRF token and every subsequent mutation failed `403`. `me()` now calls
+    `issueCsrfToken(req, res)`, which re-sends the session's **existing** token (it does not
+    regenerate one). New `API-AUTH-05b` asserts the `/me` header equals the login-issued token;
+    new `CSRF-ME-01` simulates a new tab (cleared `sessionStorage`), captures the token from
+    `fetchMe()`, and proves `changePassword()` then sends it and succeeds.
+  - **F-3 logout false success (real defect).** `handleLogout()` used `finally`, so a failed
+    `logout()` still cleared the user and moved the gate to Login — presenting failure as
+    success while the server session remained live. The `finally` was replaced with a success
+    path plus a `catch` that preserves the authenticated shell and renders an inline
+    `role="alert"` error near the Logout button (no auto-retry). New `UI-AUTHGATE-01/02` cover
+    the failure and success paths.
+  - **Informational (not blocking, no change made):** `seed.ts`'s `ensureUser()` does an
+    exact-string email lookup with no `.toLowerCase()` normalization while the migration
+    backfill normalizes. Harmless today (all seed emails are hardcoded lowercase literals) and
+    duplicate-email enforcement is Administrator-management scope owned by #41; noted for that
+    issue rather than changed here.
+  - Commands: `npx vitest run` (server, against a Lab-3-migrated PostgreSQL database);
+    `npx vitest run` (client); `npm run build` (server, client); `npx prisma validate`;
+    `npx prisma migrate status`; `npx vitest run tests/lab-03/migration.integration.test.ts`;
+    `npx vitest run tests/lab-03/seed.integration.test.ts`;
+    `npx vitest run src/lab-03-tests/ApiClient.test.ts`.
+  - Results: server **385 passed / 30 files**; client **116 passed / 12 files**; server and
+    client builds succeed; Prisma schema valid; migration status clean; DB-MIG-01..06 executed
+    (not skipped).
+  - Follow-up: none. `E2E-01..04` remain `Planned` (owned by #42); Requester/Staff/Admin
+    feature rows remain `Planned` (owned by #37/#38/#41).
 
 - **2026-09-18 — Issue #35 evidence provenance clarification (documentation only)**
   - **Evidence/head-SHA synchronization clarified.** `artifacts/lab-03/issue-35/head-sha.txt`
@@ -185,6 +227,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-AUTH-03 | API | Inactive account login | Authentication fails; safe error | `server/tests/lab-03/auth.api.test.ts` | FR-06 | BR-08 | AC-05 | Passed |
 | API-AUTH-04 | API | Logout | Session invalidated; protected endpoints blocked | `server/tests/lab-03/auth.api.test.ts` | FR-03 | BR-09 | AC-06 | Passed |
 | API-AUTH-05 | API | Current user | Returns authenticated identity and role | `server/tests/lab-03/auth.api.test.ts` | FR-04 | — | AC-01 | Passed |
+| API-AUTH-05b | API | `/me` reissues the session CSRF token | `GET /api/auth/me` returns `X-CSRF-Token` equal to the token issued at login (re-sent, not regenerated), so a page reload can perform authenticated mutations | `server/tests/lab-03/auth.api.test.ts` | FR-04 | BR-31 | AC-06 | Passed |
 | API-AUTH-06 | API | Mandatory password change | Normal protected endpoint (`GET /api/app/context`) returns `401 PASSWORD_CHANGE_REQUIRED` before the password change, then succeeds after a valid password change using the same session | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-02 | AC-02 | Passed |
 | API-AUTH-07 | API | Password policy boundaries | Invalid new password rejected per the frozen policy (Section 13, decision 12): below 12 chars rejected; 12 valid chars accepted; 128 valid chars accepted; above 128 chars rejected; missing uppercase rejected; missing lowercase rejected; missing digit rejected; missing special char rejected; valid composition accepted | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-10 | AC-02 | Passed |
 | API-AUTH-08 | API | Change password with wrong currentPassword | `400 VALIDATION_ERROR` with a generic message ("current password is incorrect"); no hint about why it was wrong | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-01, BR-07 | AC-02 | Passed |
@@ -238,6 +281,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | MIG-FAIL-01 | DB | Late Phase C failure atomicity | A deliberately failing late Phase C statement (injected through the real `psql --single-transaction` mechanism) rolls back ALL Phase C DDL: Phase C is not recorded as applied, `DevRequester` and the legacy Attachment columns still exist, the Phase C-only index is absent, and legacy data is intact | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
 | MIG-FAIL-02 | DB | Pre-backfill invariant failure recovery | A legacy `isRemoved` invariant violation is detected BEFORE the irreversible backfill, leaving the supported Phase-A-applied state (no `User` rows, `DevRequester` intact, Phase C unapplied); after repair the orchestrator resumes and completes | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
 | MIG-FAIL-03 | DB | Recovery after a Phase C failure | After a late Phase C failure the database is in the documented resumable state (Phase A applied, backfill committed, Phase C unapplied); a subsequent valid run resumes at Phase C and completes with all Users/Tickets/Attachments present and `migrate status` clean | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
+| DB-MIG-06 | DB | Resume identity verification | A resume with matching row counts but mismatched legacy-to-`User` identity (different id/email/role) is rejected with `MigrationStopAndReportError`; Phase C is not applied and `DevRequester` still exists | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
 | SEED-01 | DB | Seed idempotency | Safe to run repeatedly; two runs produce identical state with no duplicate seed records | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
 | SEED-TKT-01 | DB | Canonical ticket-number format | Every seed-owned Ticket number matches the canonical six-digit `TKT-YYYY-NNNNNN` contract | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
 | SEED-TKT-02 | DB | Ticket-number uniqueness | Seed-owned Ticket numbers are unique | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
@@ -251,9 +295,12 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UNIT-API-ERROR-01 | Unit | Canonical API error parsing | A canonical JSON error body yields an Error exposing `status`, `code`, `message`, and `fields` immediately after `await` (no microtask flush or retry), including through a real caller (`login`) | `client/src/lab-03-tests/ApiClient.test.ts` | FR-01 | BR-07 | AC-01 | Passed |
 | UNIT-API-ERROR-02 | Unit | Malformed / non-JSON body | A non-JSON or empty error body preserves the fallback message and HTTP status and never throws | `client/src/lab-03-tests/ApiClient.test.ts` | FR-01 | BR-07 | AC-01 | Passed |
 | UNIT-API-ERROR-03 | Unit | 500 response safety | A 500 with a canonical body exposes the canonical message/code; a 500 without one falls back to the safe generic message | `client/src/lab-03-tests/ApiClient.test.ts` | FR-01 | BR-07 | AC-01 | Passed |
+| CSRF-ME-01 | Unit | CSRF capture on `fetchMe` and reuse | With no stored token (new tab / page reload), `fetchMe()` captures the `X-CSRF-Token` from `GET /api/auth/me` and a subsequent `changePassword()` sends it and succeeds (no `403`) | `client/src/lab-03-tests/ApiClient.test.ts` | FR-04 | BR-31 | AC-06 | Passed |
 | UI-LOGIN-01 | UI | Login screen | Valid/invalid login; busy/safe failure; form data preserved | `client/src/lab-03-tests/Login.test.tsx` | FR-01 | BR-07, BR-33 | AC-01 | Passed |
 | UI-CHPWD-01 | UI | Change Password screen | Mandatory change; validation; continuation | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Passed |
 | UI-CHPWD-02 | UI | Confirm field does not match new password | Inline validation error; form not submitted; API never called | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Passed |
+| UI-AUTHGATE-01 | UI | Logout failure preserves the authenticated shell | When `logout()` rejects, the authenticated shell (and `App`) stays mounted, state does not move to Login, and an inline `role="alert"` error is shown near the Logout button | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
+| UI-AUTHGATE-02 | UI | Successful logout transitions to Login | When `logout()` resolves, the gate transitions to the Login screen, `App` unmounts, and no error alert is shown | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09 | AC-06 | Passed |
 | UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Planned |
 | UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Planned |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Planned |
@@ -276,7 +323,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05, SEC-AUTHZ-08
 - AC-04 → SEC-AUTHZ-02
 - AC-05 → API-AUTH-02, API-AUTH-03, E2E-01
-- AC-06 → API-AUTH-04, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, E2E-01
+- AC-06 → API-AUTH-04, API-AUTH-05b, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, E2E-01
 - AC-07 → API-REQ-01, API-REQ-02, SEC-AUTHZ-10, E2E-04
 - AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
@@ -295,5 +342,5 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-22 → VISUAL-01, VISUAL-02
 - AC-23 → A11Y-01
 - AC-24 → SEED-01
-- AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05
+- AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05, DB-MIG-06
 - AC-26 → DB-MIG-03, DB-MIG-04, API-AUTH-06, API-AUTH-07

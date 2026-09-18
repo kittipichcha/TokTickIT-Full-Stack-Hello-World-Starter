@@ -159,6 +159,54 @@ the shadowing cannot recur.
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.
 
+### Issue #35 — PR #46 third review follow-up (2026-09-18)
+
+**Reviewer comment I received (round 3): Request Changes.** The reviewer re-audited the PR beyond
+the three already-flagged items — reading `service.ts`'s DM-17 compatibility layer, the Phase
+A/Phase C migration SQL, route wiring in `module.ts`/`requester-context.ts`, `auth-service.ts`'s
+password policy, `ChangePassword.tsx`, and the actual test files to confirm the gaps were not
+covered elsewhere. The reviewer confirmed **no additional blockers** beyond the three, and
+explicitly confirmed that DM-17's legacy-route compatibility layer, FK re-pointing in Phase C,
+CORS/session wiring, the password policy, and seed email casing are either correctly implemented
+or explicitly out of scope for #35 (owned by #37/#41/#42). The reviewer also confirmed that
+`AuthGate.tsx` calls `fetchMe()` on every mount, which makes the CSRF gap a normal-usage path
+(any page reload) rather than a rare edge case.
+
+**How I responded — per blocker:**
+
+- **F-1 (migration resume identity) — accepted and implemented.** `stage1Preflight()` returned
+  `"backfill-complete"` on row-count equality alone, so a database whose `User` rows did not
+  correspond to the legacy `DevRequester` rows would resume at Phase C and drop `DevRequester`
+  with the wrong identity mapping. Added `verifyBackfillIdentity(legacy)` in
+  `server/src/migrate-lab3.ts`: for every legacy row it asserts a `User` with the **same `id`**,
+  `role = 'REQUESTER'`, and `normalizeEmail(devRequester.email) === user.email`, and throws
+  `MigrationStopAndReportError` naming the mismatched id(s) otherwise. The
+  `actualUsers === 0 → "phase-a-applied"` branch is unchanged. `DB-MIG-06` builds a fixture with
+  1 legacy requester and 1 unrelated `User` (counts equal, identity mismatched) and asserts the
+  abort, that Phase C is not applied, and that `DevRequester` still exists.
+- **F-2 (`/api/auth/me` CSRF reissue) — accepted and implemented.** `me()` now calls
+  `issueCsrfToken(req, res)`, which re-sends the session's **existing** token (it does not
+  regenerate one). This closes a normal-usage gap: `AuthGate` calls `fetchMe()` on every mount,
+  so any page reload previously left an authenticated session with no client CSRF token and every
+  subsequent mutation failed `403`. `API-AUTH-05b` asserts the `/me` header equals the
+  login-issued token; `CSRF-ME-01` simulates a new tab (cleared `sessionStorage`), captures the
+  token from `fetchMe()`, and proves `changePassword()` then sends it and succeeds.
+- **F-3 (logout false success) — accepted and implemented.** `handleLogout()` used `finally`, so
+  a failed `logout()` still cleared the user and moved the gate to Login — presenting failure as
+  success while the server session remained live. The `finally` was replaced with a success path
+  plus a `catch` that preserves the authenticated shell and renders an inline `role="alert"`
+  error near the Logout button (no auto-retry). `UI-AUTHGATE-01/02` cover the failure and success
+  paths.
+- **Informational item (seed email casing) — acknowledged, no change made.** `seed.ts`'s
+  `ensureUser()` does an exact-string email lookup with no `.toLowerCase()` normalization while
+  the migration backfill normalizes. It is harmless today because all seed emails are hardcoded
+  lowercase literals, and duplicate-email enforcement is Administrator-management scope owned by
+  #41. Recorded here as a one-line note for whoever picks up that issue rather than changed in
+  this PR.
+
+**Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
+is claimed, and no false sign-off is recorded.
+
 ---
 
 ## Pull Requests I reviewed (authored by my partner)

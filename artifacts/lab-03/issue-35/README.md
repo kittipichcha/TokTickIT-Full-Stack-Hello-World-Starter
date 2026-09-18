@@ -3,15 +3,16 @@
 **Issue:** #35 — Lab 3 #2: Identity, Database Migration & Authentication
 **Branch:** `feature/issue-35-identity-db-migration-auth`
 **Base:** `origin/lab3-staging` @ `749aa966` (PR #45 merge)
-**Implementation SHA validated:** `6f4fe22a16c4a752353092672cfd1c0a249cc3e8` — see [`head-sha.txt`](./head-sha.txt)
-**Evidence captured at:** `bbc1c14cffa7816a086c7b7c82fc425bcc4407f4` (docs/evidence-only commit)
-**Captured:** 2026-09-17 (bundle refreshed 2026-09-18)
+**Implementation SHA validated:** `371329239b0eab640b0744fab3a7cb8c3a1e7c9c` — see [`head-sha.txt`](./head-sha.txt)
+**Evidence captured at:** `371329239b0eab640b0744fab3a7cb8c3a1e7c9c` (implementation SHA == evidence SHA)
+**Captured:** 2026-09-17 (bundle refreshed 2026-09-18, round 4)
 
-> **Provenance (review B-1, round 3).** `6f4fe22` is the last commit that changed
-> implementation code. Every commit after it (`bbc1c14`, `5e4ad2c`, `da1c7c0`) touches only
-> `artifacts/` and `docs/`; `git diff --name-only 6f4fe22 da1c7c0` returns no `server/`,
-> `client/`, or `e2e/` path. The executed evidence below therefore remains valid for the
-> current PR head and does **not** require a re-run.
+> **Provenance (review round 4).** `3713292` is the last commit that changed implementation
+> code and contains all three round-4 fixes (`ced02bd` migration resume identity, `b2cbb02`
+> `/me` CSRF reissue, `3713292` logout failure). The evidence below was executed **at** that
+> SHA, so implementation SHA == evidence SHA and no provenance gap exists for this capture.
+> Any later `artifacts/`- or `docs/`-only commit does not invalidate it (see the re-run policy
+> below).
 
 This bundle is the executable evidence for #35's `Passed` rows. It implements #35 Rev 13's
 **Evidence Plan** and answers the PR #46 review findings B-2 (evidence), B-4 (DB-MIG
@@ -22,14 +23,14 @@ execution) and B-6 (ground-truth compliance map). Every `Passed` claim in
 
 | File | Proves |
 |---|---|
-| [`head-sha.txt`](./head-sha.txt) | The implementation commit the evidence validates (`6f4fe22`) and the docs commit that captured it (`bbc1c14`). |
-| [`server-vitest.txt`](./server-vitest.txt) | Server suite at implementation SHA `6f4fe22` — **383 passed / 30 files** (incl. full Lab 2 regression + `server/tests/lab-03/*`). |
-| [`client-vitest.txt`](./client-vitest.txt) | Client suite at implementation SHA `6f4fe22` — **113 passed / 11 files** (incl. `client/src/lab-03-tests/*`). |
+| [`head-sha.txt`](./head-sha.txt) | The implementation commit the evidence validates (`3713292`) and the docs commit that captured it. |
+| [`server-vitest.txt`](./server-vitest.txt) | Server suite at implementation SHA `3713292` — **385 passed / 30 files** (incl. full Lab 2 regression + `server/tests/lab-03/*`). |
+| [`client-vitest.txt`](./client-vitest.txt) | Client suite at implementation SHA `3713292` — **116 passed / 12 files** (incl. `client/src/lab-03-tests/*`). |
 | [`server-build-validate.txt`](./server-build-validate.txt) | `npx prisma validate` valid; `npx prisma migrate status` clean; server `npm run build` (`tsc`) exit 0. |
 | [`client-build.txt`](./client-build.txt) | Client `npm run build` (`tsc && vite build`) exit 0. |
-| [`db-mig-execution.txt`](./db-mig-execution.txt) | **B-4:** DB-MIG-01..05, DB-MIG-PRESERVE-01/02, MIG-FAIL-01/02/03 **executed** (not skipped) and passed against isolated Lab 2 fixtures. |
+| [`db-mig-execution.txt`](./db-mig-execution.txt) | **B-4 / round 4:** DB-MIG-01..06, DB-MIG-PRESERVE-01/02, MIG-FAIL-01/02/03 **executed** (not skipped) and passed against isolated Lab 2 fixtures. |
 | [`seed-execution.txt`](./seed-execution.txt) | **B-4/B-5:** SEED-01, SEED-TKT-01..04, SEED-IDEMP-01/02, SEED-COLLISION-01, SEED-COMMENT-01, SEED-NOTE-01 executed and passed. |
-| [`client-api-error.txt`](./client-api-error.txt) | **B-3:** UNIT-API-ERROR-01/02/03 executed and passed. |
+| [`client-api-error.txt`](./client-api-error.txt) | **B-3 / round 4:** UNIT-API-ERROR-01/02/03 and CSRF-ME-01 executed and passed. |
 | [`grep-gate.txt`](./grep-gate.txt) | DM-17 grep gate: zero `prisma.devRequester` references; all legacy identifiers confined to the declared set. Plus `git diff --check`, conflict-marker grep, and `.env`-not-tracked proof. |
 | [`compliance-map.md`](./compliance-map.md) | **B-6:** frozen requirement → implementation → test mapping quoting `specification.md` §9.2/§9.3/§13 and `api-spec.md` §0–§4. |
 | [`lab2-test-changes.md`](./lab2-test-changes.md) | **Review step 7:** every Lab 2 test adaptation vs the baseline, classified, with per-test justification. Seeds #37 RR-04's audit. |
@@ -58,7 +59,7 @@ cd client && npx vitest run src/lab-03-tests/ApiClient.test.ts          # -> cli
 The invariant this bundle maintains is:
 
 ```text
-implementation SHA (6f4fe22)  ==  last commit touching server/ | client/ | e2e/
+implementation SHA (3713292)  ==  last commit touching server/ | client/ | e2e/
 ```
 
 A commit that changes only `artifacts/` or `docs/` cannot invalidate an executed run, because
@@ -66,7 +67,7 @@ it cannot change the code under test. Re-running the suites for such a commit wo
 identical results at a different wall-clock time and would add no verification value.
 
 Evidence is therefore regenerated only when the implementation SHA changes. The current
-implementation SHA is `6f4fe22a16c4a752353092672cfd1c0a249cc3e8`; the PR head may advance
+implementation SHA is `371329239b0eab640b0744fab3a7cb8c3a1e7c9c`; the PR head may advance
 past it with docs-only commits without invalidating this bundle.
 
 ## Non-deployable intermediate state

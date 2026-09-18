@@ -1,33 +1,24 @@
 === git rev-parse HEAD ===
-311ce7174da019355d28b46ecb4dca9485477e29
+371329239b0eab640b0744fab3a7cb8c3a1e7c9c
 
 === git status --short ===
+ M README.md
  M artifacts/lab-03/issue-35/README.md
- M artifacts/lab-03/issue-35/client-build.txt
  M artifacts/lab-03/issue-35/client-vitest.txt
- M artifacts/lab-03/issue-35/db-mig-execution.txt
+ M artifacts/lab-03/issue-35/compliance-map.md
  M artifacts/lab-03/issue-35/grep-gate.txt
- M artifacts/lab-03/issue-35/server-build-validate.txt
+ M artifacts/lab-03/issue-35/head-sha.txt
+ M artifacts/lab-03/issue-35/lab2-test-changes.md
  M artifacts/lab-03/issue-35/server-vitest.txt
- M client/src/api-client.ts
- M client/tsconfig.json
+ M artifacts/lab-03/migration/integration-gate.md
+ M docs/lab-03/ai-use.md
  M docs/lab-03/reviewer.md
  M docs/lab-03/tests.md
- M server/prisma/seed.ts
- M server/src/migrate-lab3.ts
- M server/tests/lab-03/auth.api.test.ts
- M server/tests/lab-03/migration.integration.test.ts
- M server/tests/lab-03/seed.integration.test.ts
-?? artifacts/lab-03/issue-35/client-api-error.txt
-?? artifacts/lab-03/issue-35/seed-execution.txt
-?? client/src/lab-03-tests/ApiClient.test.ts
 
 === git diff --check ===
-warning: in the working copy of 'artifacts/lab-03/issue-35/client-build.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/client-vitest.txt', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'artifacts/lab-03/issue-35/db-mig-execution.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/grep-gate.txt', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'artifacts/lab-03/issue-35/server-build-validate.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'artifacts/lab-03/issue-35/head-sha.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/server-vitest.txt', LF will be replaced by CRLF the next time Git touches it
 exit=0
 

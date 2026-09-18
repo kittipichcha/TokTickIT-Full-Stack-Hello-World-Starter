@@ -64,4 +64,38 @@
   - **Seed:** idempotent expansion (Requesters, IT Staff, Administrator, tickets, comments, notes).
   - **Client:** `api-client.ts` transport, `Login.tsx`, `ChangePassword.tsx`, `AuthGate.tsx`.
   - **DM-17 compatibility set:** adapted `service.ts`/`requester-context.ts` and the Lab 2 test files to the `User` model, preserving Lab 2 semantics and response shapes.
+
+## Issue #35 PR #46 Review Follow-up Entry (Round 4 — three re-audit blockers)
+
+- Prompt summary: A re-audit of PR #46 beyond the three already-flagged items confirmed the three
+  blockers were the complete set, and supplied a detailed fix plan for each. Implement the three
+  fixes strictly as specified, update the related documentation (including `README.md`), and
+  commit and push.
+- What was done with output:
+  - **F-1 — migration resume identity verification.** `stage1Preflight()` previously returned
+    `"backfill-complete"` on row-count equality alone. Added `verifyBackfillIdentity(legacy)` in
+    `server/src/migrate-lab3.ts`, which asserts same `id`, `role = 'REQUESTER'`, and normalized
+    email for every legacy `DevRequester` row before resuming at Phase C, and throws
+    `MigrationStopAndReportError` naming the mismatched id(s) otherwise. Added `DB-MIG-06`.
+  - **F-2 — `/api/auth/me` CSRF reissue.** `me()` now calls `issueCsrfToken(req, res)`, which
+    re-sends the session's existing token. This closes a normal-usage gap: `AuthGate` calls
+    `fetchMe()` on every mount, so any page reload previously left an authenticated session with
+    no client CSRF token and every mutation failed `403`. Added `API-AUTH-05b` and `CSRF-ME-01`.
+  - **F-3 — logout false success.** `handleLogout()` used `finally`, so a failed `logout()` still
+    cleared the user and moved the gate to Login. Replaced with a success path plus a `catch`
+    that preserves the authenticated shell and shows an inline `role="alert"` error. Added
+    `UI-AUTHGATE-01/02`.
+  - **Documentation:** updated `docs/lab-03/tests.md` (new rows, AC-06/AC-25 mappings, Results
+    Log), `docs/lab-03/reviewer.md` (round-4 review record), `README.md` (Lab 3 §11.2/§11.3 and
+    the test-count summary), and regenerated the `artifacts/lab-03/issue-35/` evidence bundle at
+    the new implementation SHA.
+  - **Informational, no change made:** `seed.ts`'s `ensureUser()` email lookup is not
+    case-normalized while the migration backfill is. Harmless today (hardcoded lowercase seed
+    emails) and duplicate-email enforcement belongs to #41; recorded for that issue.
+- Reflection: All three defects were in code paths that the existing tests did not exercise —
+  a resume path that only triggers after a Phase C failure, a CSRF header on a `GET` that no test
+  asserted, and a logout failure branch that the `finally` block made unreachable. The re-audit's
+  value was tracing the *actual* call paths (`AuthGate` → `fetchMe()` on every mount) rather than
+  reasoning about the endpoints in isolation, which is what reclassified the CSRF gap from a rare
+  edge case to a normal-usage path.
 - Reflection: The plan's DM-17 compatibility set was essential — Phase C drops `DevRequester`, and without the declared adaptation the #35 merge point would not compile and the Lab 2 regression suite would break. Adapting the Lab 2 tests to `prisma.user` (role `REQUESTER`) preserved their assertions exactly rather than weakening them. The scratch-DB proof validated the Prisma-5.22 apply-then-resolve assumption before feature work, so no stop-and-report gate was triggered.

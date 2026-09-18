@@ -91,19 +91,21 @@ executable test, and the executed evidence in this bundle. Authoritative sources
 |---|---|---|---|
 | §1 `POST /api/auth/login` — `200 {data:{id,name,email,role,mustChangePassword}}`; `400 VALIDATION_ERROR`; `401 UNAUTHENTICATED` (safe generic) | `login()` in `auth.controller.ts` | API-AUTH-01, API-AUTH-02, API-AUTH-03 | `server-vitest.txt` |
 | §2 `POST /api/auth/logout` — `200 {data:{success:true}}`; `401` without session | `logout()` (`req.session.destroy()`) | API-AUTH-04 | same |
-| §3 `GET /api/auth/me` — `200` identity + role; `401` without session | `me()` (fresh-User read) | API-AUTH-05 | same |
+| §3 `GET /api/auth/me` — `200` identity + role; `401` without session; reissues the session's existing `X-CSRF-Token` | `me()` (fresh-User read + `issueCsrfToken()`) | API-AUTH-05, API-AUTH-05b, CSRF-ME-01 | same |
 | §4 `POST /api/auth/change-password` — `200 {data:{success:true, mustChangePassword:false}}`; frozen password policy; wrong current → `400 VALIDATION_ERROR` generic | `changePasswordHandler()` | API-AUTH-07, API-AUTH-08 | same |
 
 ## F. Frozen `tests.md` file paths (never renamed)
 
 | Test row | Frozen Automated Test File | Present? |
 |---|---|---|
-| DB-MIG-01..05 | `server/tests/lab-03/migration.integration.test.ts` | ✅ |
+| DB-MIG-01..06 | `server/tests/lab-03/migration.integration.test.ts` | ✅ |
 | SEED-01 | `server/tests/lab-03/seed.integration.test.ts` | ✅ |
-| API-AUTH-01..09 + SEC-AUTHZ-06 | `server/tests/lab-03/auth.api.test.ts` | ✅ |
+| API-AUTH-01..09 + API-AUTH-05b + SEC-AUTHZ-06 | `server/tests/lab-03/auth.api.test.ts` | ✅ |
 | UNIT-AUTH-01 | `server/tests/lab-03/auth.unit.test.ts` | ✅ |
+| UNIT-API-ERROR-01..03 + CSRF-ME-01 | `client/src/lab-03-tests/ApiClient.test.ts` | ✅ |
 | UI-LOGIN-01 | `client/src/lab-03-tests/Login.test.tsx` | ✅ |
 | UI-CHPWD-01/02 | `client/src/lab-03-tests/ChangePassword.test.tsx` | ✅ |
+| UI-AUTHGATE-01/02 | `client/src/lab-03-tests/AuthGate.test.tsx` | ✅ |
 | SEC-AUTHZ-07 | `server/tests/lab-03/authorization.api.test.ts` | ⏳ **owned by #37** — #35 contributes only supplementary CSRF assertions inside `auth.api.test.ts` |
 | E2E-01..04 | `e2e/lab-03/*.spec.ts` | ⏳ **owned by #42** — not claimed by #35 |
 

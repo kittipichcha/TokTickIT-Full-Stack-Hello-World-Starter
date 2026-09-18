@@ -102,6 +102,11 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |  |- RequesterSelection.integration.test.tsx
 |  |  |  |- RequesterSelection.test.tsx
 |  |  |  |- UiStyles.test.tsx
+|  |  |- lab-03-tests/
+|  |  |  |- ApiClient.test.ts
+|  |  |  |- AuthGate.test.tsx
+|  |  |  |- ChangePassword.test.tsx
+|  |  |  |- Login.test.tsx
 |  |- package.json
 |  |- tsconfig.json
 |  |- vite.config.ts
@@ -109,6 +114,13 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |- docs/
 |  |- lab-01/
 |  |- lab-02/
+|  |  |- ai-use.md
+|  |  |- api-spec.md
+|  |  |- reviewer.md
+|  |  |- specification.md
+|  |  |- tests.md
+|  |  |- ui-spec.md
+|  |- lab-03/
 |     |- ai-use.md
 |     |- api-spec.md
 |     |- reviewer.md
@@ -124,22 +136,30 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |- partial-success-attachment.spec.ts
 |  |  |- requester-ticket-flow.spec.ts
 |  |  |- responsive-visual.spec.ts
+|  |- lab-03/                 # owned by #42 (E2E-01..04); not created by #35
 |- server/
 |  |- prisma/
 |  |  |- migrations/
+|  |  |  |- 20260917000000_lab3_phase_a_expand/
+|  |  |  |- 20260917000001_lab3_phase_c_contract/
 |  |  |- schema.prisma
 |  |  |- seed.ts
 |  |- src/
 |  |  |- app.ts
 |  |  |- attachment-storage.ts
+|  |  |- auth-service.ts
+|  |  |- auth.controller.ts
+|  |  |- config/
 |  |  |- controller.ts
 |  |  |- id-domain.ts
 |  |  |- index.ts
 |  |  |- integer-validation.ts
+|  |  |- migrate-lab3.ts
 |  |  |- module.ts
 |  |  |- prisma.ts
 |  |  |- requester-context.ts
 |  |  |- service.ts
+|  |  |- session.ts
 |  |  |- test-seams.ts
 |  |  |- ticket-number.ts
 |  |- tests/
@@ -171,6 +191,11 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |  |- seed.integration.test.ts
 |  |  |  |- ticket-detail.api.test.ts
 |  |  |  |- ticket-number-concurrency.integration.test.ts
+|  |  |- lab-03/
+|  |  |  |- auth.api.test.ts
+|  |  |  |- auth.unit.test.ts
+|  |  |  |- migration.integration.test.ts
+|  |  |  |- seed.integration.test.ts
 |  |- package.json
 |  |- tsconfig.json
 |  |- vitest.config.ts
@@ -267,6 +292,8 @@ Important:
 - Visual/responsive evidence: 82 screenshots (26 states × 3 viewports + 4 E2E workflow shots).
 - Final release verification evidence lives in `artifacts/lab-02/release/` and was
   produced at the authoritative baseline `8cdebe824272cf101570bb78772379a9090b497f`.
+- Lab 3 (Issue #35) current counts: server **385 passing across 30 files**; client
+  **116 passing across 12 files**. Evidence bundle: `artifacts/lab-03/issue-35/`.
 
 ## 8. API Implemented Today
 
@@ -415,6 +442,14 @@ documented Phase-A-applied state. Resolve the collision source (manual data fix 
 decision), then re-run the orchestrator — Stage 1 recognizes the Phase-A-applied state and
 resumes at Stage 2. **Never** un-apply tracked migrations or hand-edit `_prisma_migrations`.
 
+**Resume identity verification:** when Stage 1 finds the backfill-complete state (Phase A
+applied, `User` row count equal to the legacy `DevRequester` count, Phase C unapplied), it does
+not resume on the count alone. `verifyBackfillIdentity()` asserts that every legacy
+`DevRequester` row has a `User` with the **same `id`**, `role = 'REQUESTER'`, and the same
+normalized email. If any row does not match, the orchestrator throws
+`MigrationStopAndReportError` naming the mismatched id(s) and leaves the database untouched —
+it never resumes at Phase C with a wrong identity mapping.
+
 ### 11.2 Session and CSRF configuration (concrete, frozen policy)
 
 - **Session store:** `express-session` + `connect-pg-simple` (`session` table,
@@ -422,7 +457,10 @@ resumes at Stage 2. **Never** un-apply tracked migrations or hand-edit `_prisma_
 - **Cookie:** `httpOnly: true`, `sameSite: "lax"`, `secure: true` in production,
   `maxAge = 30 * 60 * 1000` (30-minute rolling idle expiry; no absolute timeout).
 - **CSRF:** session-bound synchronizer token issued via the `X-CSRF-Token` response header on
-  `login`/`me`; echoed on state-changing calls; missing/invalid → `403 FORBIDDEN`.
+  `login` **and `me`**; echoed on state-changing calls; missing/invalid → `403 FORBIDDEN`.
+  `GET /api/auth/me` re-sends the session's **existing** token (it does not regenerate one), so a
+  page reload — where the client calls `fetchMe()` on mount and has no stored token — can still
+  perform authenticated mutations.
 - **`SESSION_SECRET`:** server-only; `.env.example` carries a placeholder only. The server
   refuses to boot without a real secret (>= 32 chars) in non-test environments; tests inject
   a deterministic test-only secret.
@@ -433,11 +471,15 @@ resumes at Stage 2. **Never** un-apply tracked migrations or hand-edit `_prisma_
 |---|---|---|
 | POST | `/api/auth/login` | public; safe generic `401 UNAUTHENTICATED` for invalid credentials or inactive account |
 | POST | `/api/auth/logout` | authenticated + CSRF |
-| GET | `/api/auth/me` | authenticated |
+| GET | `/api/auth/me` | authenticated; reissues the session's existing `X-CSRF-Token` |
 | POST | `/api/auth/change-password` | authenticated + CSRF |
 
 Gate rejections: `requireAuth` → `401 UNAUTHENTICATED`; `requirePasswordChanged` →
 `401 PASSWORD_CHANGE_REQUIRED`; `requireCsrf` → `403 FORBIDDEN`.
+
+**Logout failure behavior (BR-33/AC-06):** if `POST /api/auth/logout` fails, the client keeps the
+authenticated shell and shows an inline error near the Logout button. Client state is not cleared
+until the server confirms logout succeeded — a failed logout is never presented as success.
 
 ### 11.4 Local development credentials (no real secrets)
 

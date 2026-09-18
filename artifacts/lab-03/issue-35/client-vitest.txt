@@ -13,8 +13,8 @@ Error: Not implemented: navigation (except hash changes)
     at listOnTimeout (node:internal/timers:605:17)
     at processTimers (node:internal/timers:541:7) undefined
 
- Test Files  11 passed (11)
-      Tests  113 passed (113)
-   Start at  12:18:20
-   Duration  45.65s (transform 5.89s, setup 0ms, import 55.82s, tests 56.99s, environment 184.84s)
+ Test Files  12 passed (12)
+      Tests  116 passed (116)
+   Start at  20:16:09
+   Duration  29.66s (transform 5.37s, setup 0ms, import 26.52s, tests 65.92s, environment 40.57s)
 

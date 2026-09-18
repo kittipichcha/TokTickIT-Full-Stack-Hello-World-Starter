@@ -109,7 +109,7 @@ introduced by #35's seed expansion:
 - **Fix:** scope the seed's reference lookups to its own declared records
   (`where: { name: { in: CATEGORIES } }` / `{ in: RELATED_SYSTEMS.map(...) }`). Seed tickets can
   no longer reference records the seed does not own.
-- **Verification:** full Lab 2 + lab-03 server suite green — **383 passed / 30 files**
+- **Verification:** full Lab 2 + lab-03 server suite green — **385 passed / 30 files**
   (`artifacts/lab-03/issue-35/server-vitest.txt`).
 
 ---

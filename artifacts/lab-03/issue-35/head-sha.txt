@@ -2,18 +2,21 @@
 
 # Implementation commit validated by this evidence bundle.
 # This is the LAST commit that changed implementation code (server/, client/, e2e/).
-implementation-sha: 6f4fe22a16c4a752353092672cfd1c0a249cc3e8
+implementation-sha: 371329239b0eab640b0744fab3a7cb8c3a1e7c9c
 
 # Commit at which the evidence commands were executed and this bundle was written.
 # It is a docs/evidence-only commit: it changes no implementation code.
-evidence-captured-at: bbc1c14cffa7816a086c7b7c82fc425bcc4407f4
+evidence-captured-at: <pending docs commit>
 
-# PR #46 head at the time of this clarification.
-pr-head-at-clarification: da1c7c01aaab4fe07b692670123f3e99e1817fc7
+# PR #46 head at the time of this capture.
+pr-head-at-capture: 371329239b0eab640b0744fab3a7cb8c3a1e7c9c
 
-# Provenance note (review B-1, round 3):
-# `git diff --name-only 6f4fe22 da1c7c0` returns ONLY artifacts/ and docs/ paths.
-# No file under server/, client/, or e2e/ changed after 6f4fe22, so the executed
-# evidence remains valid for the current PR head and does NOT need to be re-run.
-# The earlier `bbc1c14` value identified the docs commit that wrote the bundle,
-# not the implementation commit the bundle validates; this file now states both.
+# Provenance note (review round 4):
+# `3713292` is the last commit that changed implementation code. It contains the three
+# round-4 fixes:
+#   ced02bd  fix(lab-03): verify legacy-to-User identity before resuming migration at Phase C
+#   b2cbb02  fix(lab-03): reissue CSRF token on GET /api/auth/me
+#   3713292  fix(client): keep authenticated state on failed logout
+# The evidence below was executed at `3713292` (implementation SHA == evidence SHA), so no
+# provenance gap exists for this capture. Any later docs/evidence-only commit does not
+# invalidate it (see the bundle README re-run policy).

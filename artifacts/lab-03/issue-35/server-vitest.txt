@@ -1,25 +1,107 @@
-◇ injected env (2) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injected env (2) from .env // tip: ⌁ auth for agents [www.vestauth.com]
 
- RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/server
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90mC:/Users/kitti/CPE334/issue-35-worktree/server[39m
 
-NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_30344" does not exist, skipping
 MigrationCollisionError: 1 collision(s) block the migration.
   - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
 Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
-NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-23776-1789708419646.sql:43: ERROR:  division by zero
-Command failed: psql "postgresql://kitti:***REMOVED***@localhost:5432/tocktick_lab3_mig05_11336" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-23776-1789708419646.sql"
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-23776-1789708419646.sql:43: ERROR:  division by zero
+NOTICE:  database "tocktick_lab3_mig05_30344" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_30344" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_30344" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-30476-1789740319546.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti:***REMOVED***@localhost:5432/tocktick_lab3_mig05_30344" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-30476-1789740319546.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-30476-1789740319546.sql:43: ERROR:  division by zero
 
-NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_30344" does not exist, skipping
 isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.
-NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_11336" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_30344" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_30344" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_30344" does not exist, skipping
+Backfilled User records do not match legacy DevRequester identity for IDs: 1. Expected same ID, role='REQUESTER', and normalized email. Follow the README runbook; never hand-edit _prisma_migrations.
+ [32m✓[39m tests/lab-03/migration.integration.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 324526[2mms[22m[39m
+     [33m[2m✓[22m[39m DB-MIG-04: migrated requester is blocked until password change, then unblocked (same session) [33m 1133[2mms[22m[39m
+     [33m[2m✓[22m[39m DB-MIG-05: a real migration collision aborts before backfill, preserves legacy data, and resumes after resolution [33m 47701[2mms[22m[39m
+     [33m[2m✓[22m[39m DB-MIG-PRESERVE-01: every legacy Requester and Ticket survives the real migration unchanged [33m 40256[2mms[22m[39m
+     [33m[2m✓[22m[39m DB-MIG-PRESERVE-02: every legacy Attachment and its ownership/removal state survives the real migration [33m 40114[2mms[22m[39m
+     [33m[2m✓[22m[39m MIG-FAIL-01: a late Phase C failure rolls back ALL Phase C DDL and is never recorded as applied [33m 47675[2mms[22m[39m
+     [33m[2m✓[22m[39m MIG-FAIL-02: a pre-backfill legacy-invariant failure leaves the supported Phase-A-applied state [33m 43515[2mms[22m[39m
+     [33m[2m✓[22m[39m DB-MIG-03 (supplementary): the frozen derivation is deterministic across independent fresh migrations [33m 76108[2mms[22m[39m
+     [33m[2m✓[22m[39m DB-MIG-06: resume with matching counts but mismatched identity is rejected [33m 27668[2mms[22m[39m
+ [32m✓[39m tests/lab-03/seed.integration.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 31465[2mms[22m[39m
+     [33m[2m✓[22m[39m runs twice with identical state and no errors [33m 6223[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-TKT-03: a second seed run does not renumber existing seed tickets [33m 3073[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-IDEMP-01: two seed runs produce no duplicate seed records [33m 3219[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-IDEMP-02: a legitimate application change to a seeded account survives a rerun [33m 3139[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-COLLISION-01: a non-seed ticket resembling a seed ticket is never claimed or mutated [33m 3120[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-COMMENT-01: a second seed run does not duplicate seed comments [33m 3050[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-NOTE-01: a second seed run does not duplicate seed internal notes [33m 3088[2mms[22m[39m
+ [32m✓[39m tests/lab-02/seed.integration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 16176[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-02: contains the four required categories exactly once [33m 3116[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-02: contains at least six related systems, four active requesters, and one inactive requester [33m 3155[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-01: preserves unrelated pre-existing categories [33m 3516[2mms[22m[39m
+     [33m[2m✓[22m[39m SEED-01: is idempotent — running the seed twice creates no duplicates [33m 6235[2mms[22m[39m
+ [32m✓[39m tests/lab-03/auth.api.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 8326[2mms[22m[39m
+     [33m[2m✓[22m[39m API-AUTH-01: valid login returns 200 with safe user data and httpOnly cookie [33m 423[2mms[22m[39m
+     [33m[2m✓[22m[39m API-AUTH-03: inactive account login returns 401 indistinguishable from invalid credentials [33m 372[2mms[22m[39m
+     [33m[2m✓[22m[39m API-AUTH-06: mustChangePassword user is blocked from a protected endpoint with PASSWORD_CHANGE_REQUIRED [33m 526[2mms[22m[39m
+     [33m[2m✓[22m[39m API-AUTH-07: password policy boundaries via change-password [33m 3152[2mms[22m[39m
+     [33m[2m✓[22m[39m API-AUTH-08: wrong currentPassword returns 400 VALIDATION_ERROR with a generic message [33m 377[2mms[22m[39m
+     [33m[2m✓[22m[39m API-AUTH-09: second concurrent login keeps both sessions valid [33m 390[2mms[22m[39m
+     [33m[2m✓[22m[39m API-AUTH-09 (supplementary): login regenerates the session identifier (fixation-safe) [33m 394[2mms[22m[39m
+     [33m[2m✓[22m[39m SEC-AUTHZ-06: an actually expired session is rejected as unauthenticated (401 UNAUTHENTICATED) [33m 455[2mms[22m[39m
+     [33m[2m✓[22m[39m Supplementary AU-20: a same-session role/activation change is enforced from fresh DB authority [33m 394[2mms[22m[39m
+ [32m✓[39m tests/lab-02/my-tickets-real-db.integration.test.ts [2m([22m[2m55 tests[22m[2m)[22m[33m 1775[2mms[22m[39m
+ [32m✓[39m tests/lab-02/attachment-concurrency.integration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 921[2mms[22m[39m
+     [33m[2m✓[22m[39m populates 4 attachments, then 2 concurrent uploads — only 1 succeeds, never >5 active [33m 313[2mms[22m[39m
+ [32m✓[39m tests/lab-02/ticket-number-concurrency.integration.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 968[2mms[22m[39m
+     [33m[2m✓[22m[39m concurrent allocations for the same year receive distinct numbers [33m 323[2mms[22m[39m
+ [32m✓[39m tests/lab-03/auth.unit.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 956[2mms[22m[39m
+     [33m[2m✓[22m[39m verifyPassword returns true for the correct password and false otherwise [33m 354[2mms[22m[39m
+     [33m[2m✓[22m[39m produces a different hash for the same password (salt) but both verify [33m 470[2mms[22m[39m
+ [32m✓[39m tests/lab-02/create-ticket-real-db.integration.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 528[2mms[22m[39m
+ [32m✓[39m tests/lab-02/attachment-persistence-compensation.integration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 541[2mms[22m[39m
+ [32m✓[39m tests/lab-02/attachments.api.test.ts [2m([22m[2m41 tests[22m[2m)[22m[33m 449[2mms[22m[39m
+ [32m✓[39m tests/categories.integration.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 318[2mms[22m[39m
+ [32m✓[39m tests/lab-02/create-ticket-reference-validation.integration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 358[2mms[22m[39m
+ [32m✓[39m tests/lab-02/attachment-ownership.integration.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 347[2mms[22m[39m
+ [32m✓[39m tests/lab-02/api-contract.api.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 202[2mms[22m[39m
+ [32m✓[39m tests/lab-02/requester-context.api.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 143[2mms[22m[39m
+ [32m✓[39m tests/lab-02/create-ticket-normalization.api.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 194[2mms[22m[39m
+ [32m✓[39m tests/lab-02/my-tickets.api.test.ts [2m([22m[2m36 tests[22m[2m)[22m[32m 264[2mms[22m[39m
+ [32m✓[39m tests/lab-02/requester-selection.integration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 260[2mms[22m[39m
+ [32m✓[39m tests/lab-02/database-migration.integration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 236[2mms[22m[39m
+[90mstdout[2m | tests/lab-02/integer-validation.api.test.ts[2m > [22m[2mAPI-TKT-INT-01: Integer lexical validation[2m > [22m[2mrejects categoryId: 01 with 400 VALIDATION_ERROR (leading zero)
+[22m[39mResponse: [33m400[39m {
+  error: {
+    code: [32m'VALIDATION_ERROR'[39m,
+    message: [32m'Request body must be valid JSON.'[39m,
+    fields: {}
+  }
+}
 
- Test Files  30 passed (30)
-      Tests  383 passed (383)
-   Start at  12:10:52
-   Duration  410.10s (transform 1.19s, setup 0ms, import 18.72s, tests 379.45s, environment 7ms)
+[90mstdout[2m | tests/lab-02/integer-validation.api.test.ts[2m > [22m[2mAPI-TKT-INT-01: Integer lexical validation[2m > [22m[2mrejects relatedSystemId: 01 with 400 VALIDATION_ERROR (leading zero)
+[22m[39mResponse: [33m400[39m {
+  error: {
+    code: [32m'VALIDATION_ERROR'[39m,
+    message: [32m'Request body must be valid JSON.'[39m,
+    fields: {}
+  }
+}
+
+ [32m✓[39m tests/lab-02/integer-validation.api.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 204[2mms[22m[39m
+ [32m✓[39m tests/lab-02/create-ticket.api.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 142[2mms[22m[39m
+ [32m✓[39m tests/lab-02/dev-requesters.api.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 78[2mms[22m[39m
+ [32m✓[39m tests/categories.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 100[2mms[22m[39m
+ [32m✓[39m tests/lab-02/reference-data.api.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 94[2mms[22m[39m
+ [32m✓[39m tests/lab-02/ticket-detail.api.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m tests/lab-02/create-ticket-validation.unit.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/lab-02/attachment-validation.unit.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/categories.service.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/lab-02/dev-requesters.service.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m30 passed[39m[22m[90m (30)[39m
+[2m      Tests [22m [1m[32m385 passed[39m[22m[90m (385)[39m
+[2m   Start at [22m 21:02:40
+[2m   Duration [22m 417.36s[2m (transform 1.16s, setup 0ms, import 16.78s, tests 389.70s, environment 6ms)[22m
 

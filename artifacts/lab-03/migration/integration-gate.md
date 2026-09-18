@@ -25,10 +25,10 @@ Run against a Lab-3-migrated PostgreSQL database (`tocktick_lab3_scratch`).
 | 7 | `npx prisma migrate status` | ✅ Database schema is up to date |
 
 > **Superseded counts.** The 367/107 figures above are the gate run captured on 2026-09-17,
-> before the round-3 remediation added tests. The current authoritative counts are
-> **server 383 passed / 30 files** and **client 113 passed / 11 files**, recorded in
+> before the round-3 and round-4 remediation added tests. The current authoritative counts are
+> **server 385 passed / 30 files** and **client 116 passed / 12 files**, recorded in
 > `artifacts/lab-03/issue-35/server-vitest.txt` and `client-vitest.txt` at implementation
-> SHA `6f4fe22a16c4a752353092672cfd1c0a249cc3e8`.
+> SHA `371329239b0eab640b0744fab3a7cb8c3a1e7c9c`.
 
 The server suite includes the full Lab 2 regression suite (adapted per DM-17) and the
 new `server/tests/lab-03/*` tests. The client suite includes the Lab 2 tests and the new
