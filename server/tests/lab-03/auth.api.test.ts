@@ -417,4 +417,43 @@ describe("API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints", () => {
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
   });
+
+  itIfDb("Supplementary AU-20: a same-session role/activation change is enforced from fresh DB authority", async () => {
+    const prisma = getPrisma();
+    const derived = deriveInitialPassword("ada@example.com", "Ada Lovelace");
+
+    // Establish a live session with a password-changed (unblocked) user.
+    await prisma.user.update({
+      where: { email: "ada@example.com" },
+      data: { passwordHash: await bcrypt.hash(derived, 10), isActive: true, mustChangePassword: false },
+    });
+
+    const loginRes = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "ada@example.com", password: derived });
+    expect(loginRes.status).toBe(200);
+    const cookie = extractSessionCookie(loginRes);
+
+    // The session works before the change.
+    const before = await request(app).get("/api/app/context").set("Cookie", cookie);
+    expect(before.status).toBe(200);
+
+    try {
+      // An administrator deactivates the account while the session is still live.
+      await prisma.user.update({
+        where: { email: "ada@example.com" },
+        data: { isActive: false },
+      });
+
+      // The SAME session must now be rejected — authority comes from the DB, not the session.
+      const after = await request(app).get("/api/app/context").set("Cookie", cookie);
+      expect(after.status).toBe(401);
+      expect(after.body.error.code).toBe("UNAUTHENTICATED");
+    } finally {
+      await prisma.user.update({
+        where: { email: "ada@example.com" },
+        data: { isActive: true, mustChangePassword: true },
+      });
+    }
+  });
 });
