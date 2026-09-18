@@ -189,6 +189,44 @@ async function readLegacyRequesters(): Promise<LegacyRequesterRow[]> {
   }));
 }
 
+/**
+ * Verifies that backfilled User records match legacy DevRequester identity
+ * (same id, role = 'REQUESTER', normalized email).
+ */
+async function verifyBackfillIdentity(legacy: LegacyRequesterRow[]): Promise<void> {
+  const prisma = getPrisma();
+  const users = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+    `SELECT id, email, role FROM "User" ORDER BY id`,
+  );
+  const userMap = new Map<number, { email: string; role: string }>();
+  for (const u of users) {
+    userMap.set(Number(u.id), {
+      email: String(u.email),
+      role: String(u.role),
+    });
+  }
+
+  const mismatched: number[] = [];
+  for (const leg of legacy) {
+    const matchedUser = userMap.get(leg.id);
+    if (
+      !matchedUser ||
+      matchedUser.role !== "REQUESTER" ||
+      matchedUser.email !== normalizeEmail(leg.email)
+    ) {
+      mismatched.push(leg.id);
+    }
+  }
+
+  if (mismatched.length > 0) {
+    throw new MigrationStopAndReportError(
+      `Backfilled User records do not match legacy DevRequester identity for IDs: ${mismatched.join(", ")}. ` +
+        `Expected same ID, role='REQUESTER', and normalized email. ` +
+        `Follow the README runbook; never hand-edit _prisma_migrations.`,
+    );
+  }
+}
+
 /** Stage-1 preflight: checks Lab-2-schema facts only. Accepts exactly three legal input states. */
 async function stage1Preflight(): Promise<"fresh" | "phase-a-applied" | "backfill-complete"> {
   const prisma = getPrisma();
@@ -239,7 +277,8 @@ async function stage1Preflight(): Promise<"fresh" | "phase-a-applied" | "backfil
     if (actualUsers === legacy.length) {
       // (iii) Phase-A-applied / backfill-complete / Phase-C-unapplied.
       // This is the documented resumable state left by a Phase C failure after a
-      // committed backfill. Resume at Phase C (the backfill is idempotent-safe to skip).
+      // committed backfill. Verify legacy-to-User identity before resuming at Phase C.
+      await verifyBackfillIdentity(legacy);
       return "backfill-complete";
     }
 

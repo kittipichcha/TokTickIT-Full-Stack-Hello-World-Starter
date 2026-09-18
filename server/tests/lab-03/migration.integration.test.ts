@@ -763,4 +763,58 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
     },
     240000,
   );
+
+  itIfDb(
+    "DB-MIG-06: resume with matching counts but mismatched identity is rejected",
+    async () => {
+      const urls = fixtureUrls();
+      psql(urls.adminUrl, ["-q", "-c", `DROP DATABASE IF EXISTS "${FIXTURE_DB_NAME}";`]);
+      psql(urls.adminUrl, ["-q", "-c", `CREATE DATABASE "${FIXTURE_DB_NAME}";`]);
+
+      try {
+        for (const dir of LAB2_MIGRATIONS) {
+          psql(urls.fixtureUrl, ["-v", "ON_ERROR_STOP=1", "-q", "-f", `prisma/migrations/${dir}/migration.sql`]);
+          run(`npx prisma migrate resolve --applied ${dir}`, {
+            ...process.env,
+            DATABASE_URL: urls.fixtureUrlWithSchema,
+          });
+        }
+
+        // Seed 1 legacy requester
+        psql(urls.fixtureUrl, [
+          "-v", "ON_ERROR_STOP=1", "-q", "-c",
+          `INSERT INTO "DevRequester" ("id", "name", "email", "isActive") VALUES (1, 'Ada Lovelace', 'ada@example.com', true);`,
+        ]);
+
+        // Apply Phase A out-of-band and record as applied
+        psql(urls.fixtureUrl, [
+          "-v", "ON_ERROR_STOP=1", "-q", "-f",
+          `prisma/migrations/${PHASE_A_DIR}/migration.sql`,
+        ]);
+        run(`npx prisma migrate resolve --applied ${PHASE_A_DIR}`, {
+          ...process.env,
+          DATABASE_URL: urls.fixtureUrlWithSchema,
+        });
+
+        // Insert 1 unrelated User so actualUsers === legacy.length (1 === 1), but identity does not match
+        await queryFixture(
+          urls.fixtureUrl,
+          `INSERT INTO "User" ("id", "name", "email", "passwordHash", "role", "isActive", "mustChangePassword", "createdAt", "updatedAt")
+           VALUES (999, 'Unrelated User', 'unrelated@example.com', 'dummyhash', 'REQUESTER', true, true, now(), now())`,
+        );
+
+        // Run the orchestrator — must abort and reject resume
+        const result = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(result.ok).toBe(false);
+        expect(result.output).toContain("Backfilled User records do not match legacy DevRequester identity");
+
+        // Phase C is NOT applied and DevRequester table still exists
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(false);
+        expect(await fixtureTableExists(urls.fixtureUrl, "DevRequester")).toBe(true);
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    180000,
+  );
 });
