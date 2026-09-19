@@ -1,50 +1,472 @@
-◇ injected env (2) from .env // tip: ⌘ override existing { override: true }
+nohup: ignoring input
+◇ injected env (2) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
 
  RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/server
 
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-01: every DevRequester became exactly one User with exact ID preservation 16ms
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-02: final schema checklist — User fields, timestamptz, passwordHash length, isRemoved invariant 82ms
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-03: migrated requester initial password matches the frozen derivation and authenticates 124ms
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-04: migrated requester is blocked until password change, then unblocked (same session) 1109ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
 MigrationCollisionError: 1 collision(s) block the migration.
   - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
 Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-25584-1789810531700.sql:43: ERROR:  division by zero
-Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_24444" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-25584-1789810531700.sql"
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-25584-1789810531700.sql:43: ERROR:  division by zero
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-05: a real migration collision aborts before backfill, preserves legacy data, and resumes after resolution 51540ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-PRESERVE-01: every legacy Requester and Ticket survives the real migration unchanged 44015ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-PRESERVE-02: every legacy Attachment and its ownership/removal state survives the real migration 44929ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-16560-1789814743915.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_21464" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-16560-1789814743915.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-16560-1789814743915.sql:43: ERROR:  division by zero
 
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > MIG-FAIL-01: a late Phase C failure rolls back ALL Phase C DDL and is never recorded as applied 55698ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
 isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > MIG-FAIL-02: a pre-backfill legacy-invariant failure leaves the supported Phase-A-applied state 51984ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-03 (supplementary): the frozen derivation is deterministic across independent fresh migrations 90956ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
 Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-06: resume with matching counts but mismatched identity is rejected 32266ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
 Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-11480-1789810773414.sql:43: ERROR:  division by zero
-Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_24444" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-11480-1789810773414.sql"
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-11480-1789810773414.sql:43: ERROR:  division by zero
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-07: resume with matching id/email/role but divergent name/password/activation is rejected 33938ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-20796-1789815010804.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_21464" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-20796-1789815010804.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-20796-1789815010804.sql:43: ERROR:  division by zero
 
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-3712-1789810803637.sql:43: ERROR:  division by zero
-Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_24444" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-3712-1789810803637.sql"
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-3712-1789810803637.sql:43: ERROR:  division by zero
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > SEC-MIG-01: a failing psql migration never leaks the DB credential into captured output 34044ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-25792-1789815043929.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_21464" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-25792-1789815043929.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-25792-1789815043929.sql:43: ERROR:  division by zero
 
 Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 1. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-3572-1789810838500.sql:43: ERROR:  division by zero
-Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_24444" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-3572-1789810838500.sql"
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-3572-1789810838500.sql:43: ERROR:  division by zero
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-08: resume aborts when an attachment uploaderUserId diverges from uploaderRequesterId 37709ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-19084-1789815081460.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_21464" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-19084-1789815081460.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-19084-1789815081460.sql:43: ERROR:  division by zero
 
 Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 2. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
-NOTICE:  database "tocktick_lab3_mig05_24444" does not exist, skipping
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-14700-1789810873197.sql:43: ERROR:  division by zero
-Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_24444" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-14700-1789810873197.sql"
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-14700-1789810873197.sql:43: ERROR:  division by zero
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-09: resume aborts when removedByUserId is NULL while removedByRequesterId is set 37113ms
+NOTICE:  database "tocktick_lab3_mig05_21464" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-5896-1789815118097.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_21464" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-5896-1789815118097.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-5896-1789815118097.sql:43: ERROR:  division by zero
 
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-10: a correct backfill-complete fixture resumes and completes Phase C 54235ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-01: Seed idempotency and full mandatory population > runs twice with identical state and no errors 7292ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-01: Seed idempotency and full mandatory population > populates the mandatory user population 43ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-TKT: canonical ticket-number contract > SEED-TKT-01: every seed-owned ticket number uses the canonical six-digit format 124ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-TKT: canonical ticket-number contract > SEED-TKT-02: seed-owned ticket numbers are unique 4ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-TKT: canonical ticket-number contract > SEED-TKT-03: a second seed run does not renumber existing seed tickets 3558ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-TKT: canonical ticket-number contract > SEED-TKT-04: the seed participates in the canonical allocator sequence 21ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-IDEMP: non-destructive reruns > SEED-IDEMP-01: two seed runs produce no duplicate seed records 3755ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-IDEMP: non-destructive reruns > SEED-IDEMP-02: a legitimate application change to a seeded account survives a rerun 3823ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-IDEMP: non-destructive reruns > SEED-COLLISION-01: a non-seed ticket resembling a seed ticket is never claimed or mutated 3567ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-IDEMP: non-destructive reruns > SEED-COMMENT-01: a second seed run does not duplicate seed comments 3480ms
+ ✓ tests/lab-03/seed.integration.test.ts > SEED-IDEMP: non-destructive reruns > SEED-NOTE-01: a second seed run does not duplicate seed internal notes 3671ms
+ ✓ tests/lab-02/seed.integration.test.ts > SEED-01 / SEED-02: seed idempotency and required records > SEED-02: contains the four required categories exactly once 3615ms
+ ✓ tests/lab-02/seed.integration.test.ts > SEED-01 / SEED-02: seed idempotency and required records > SEED-02: contains at least six related systems, four active requesters, and one inactive requester 3653ms
+ ✓ tests/lab-02/seed.integration.test.ts > SEED-01 / SEED-02: seed idempotency and required records > SEED-01: preserves unrelated pre-existing categories 3465ms
+ ✓ tests/lab-02/seed.integration.test.ts > SEED-01 / SEED-02: seed idempotency and required records > SEED-01: is idempotent — running the seed twice creates no duplicates 7192ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-01: valid login returns 200 with safe user data and httpOnly cookie 449ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-02: invalid credentials return 401 UNAUTHENTICATED with a safe generic message 258ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-03: inactive account login returns 401 indistinguishable from invalid credentials 386ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-04: logout destroys the session; subsequent protected request is 401 300ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-05: /me returns identity + role; 401 without a session 296ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-05b: /me reissues the session's existing CSRF token 279ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-06: mustChangePassword user is blocked from a protected endpoint with PASSWORD_CHANGE_REQUIRED 571ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-07: password policy boundaries via change-password 3439ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-08: wrong currentPassword returns 400 VALIDATION_ERROR with a generic message 405ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-09: second concurrent login keeps both sessions valid 436ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > API-AUTH-09 (supplementary): login regenerates the session identifier (fixation-safe) 437ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > SEC-AUTHZ-06: an actually expired session is rejected as unauthenticated (401 UNAUTHENTICATED) 550ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > SEC-AUTHZ-06 (supplementary): session cookie is configured for a 30-minute rolling idle timeout 278ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > Supplementary AU-19: change-password with missing CSRF returns 403 and no state change 283ms
+ ✓ tests/lab-03/auth.api.test.ts > API-AUTH-01..09 / SEC-AUTHZ-06: Auth endpoints > Supplementary AU-20: a same-session role/activation change is enforced from fresh DB authority 439ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 1: Ownership isolation > Requester A sees only their own ticket 58ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 1: Ownership isolation > Requester B does not see Requester A's ticket 18ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2: Search > finds ticket by ticket number 22ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2: Search > finds ticket by summary substring 14ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2: Search > search is case-insensitive 14ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2: Search > search matches substring 16ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2: Search > search is trimmed before query 13ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2: Search > whitespace-only search is inactive (returns all tickets) 14ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2: Search > search with literal percent sign matches only tickets containing % 36ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2: Search > search with literal underscore matches only tickets containing _ 38ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2: Search > search with literal backslash matches only tickets containing \ 34ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 2b: Response shape > each ticket item has the exact documented response shape 16ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 3: Conjunctive filters > filters by categoryId only 18ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 3: Conjunctive filters > filters by requestedPriority only 12ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 3: Conjunctive filters > applies all three filters conjunctively (category + priority + status) 17ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 3: Conjunctive filters > conjunctive filters return intersection only 17ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 4: Priority ordering > sorts by requestedPriority ascending: LOW < MEDIUM < HIGH 13ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 4: Priority ordering > sorts by requestedPriority descending: HIGH > MEDIUM > LOW 13ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 4b: Summary ordering with distinct values > sorts by summary ascending: Apple < Banana < Cherry 14ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 4b: Summary ordering with distinct values > sorts by summary descending: Cherry > Banana > Apple 16ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 5: Tie breakers > tie-breaker: createdAt DESC, id DESC after primary sort 15ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 5: Tie breakers > tie-breaker: summary sort with same summary uses createdAt DESC, id DESC 15ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 5: Tie breakers > tie-breaker: same createdAt uses id DESC as final tie-breaker 14ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 5: Tie breakers > tie-breaker: ticketNumber sort uses createdAt DESC, id DESC as tie-breaker 39ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 6: Pagination > page 1 returns first 10 items with correct metadata 15ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 6: Pagination > page 2 returns next 10 items, exact ordered slice matching Prisma ordering 31ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 6: Pagination > page 3 returns remaining items, exact ordered slice matching Prisma ordering 15ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 6: Pagination > valid out-of-range page returns empty data with correct metadata 11ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 7: Empty vs No-Results > empty: requester with zero tickets returns unfilteredTotalItems=0 9ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 7: Empty vs No-Results > no-results: requester with tickets but filter matches nothing 11ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 7: Empty vs No-Results > totalPages=0 with giant page returns empty data without executing huge OFFSET 11ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 7: Empty vs No-Results > totalPages=0 (filtered, unfilteredTotalItems>0) with giant page returns empty data 11ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 8: Invalid category > categoryId=abc returns 400 8ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 8: Invalid category > categoryId=0 returns 400 8ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 8: Invalid category > categoryId=-1 returns 400 9ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 8: Invalid category > categoryId=999999 returns 409 12ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 8: Invalid category > inactive category returns 409 20ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > missing page defaults to 1 16ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > page=abc falls back to 1 15ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > page=0 falls back to 1 14ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > page=-1 falls back to 1 18ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > page=1.0 falls back to 1 14ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > page=1e2 falls back to 1 15ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > enormously large page value falls back to 1 instead of producing Infinity 15ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > missing pageSize defaults to 10 15ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > pageSize=0 falls back to 10 16ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 9: Defaults/fallbacks > pageSize=51 falls back to 10 13ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 10: Duplicate query parameters > duplicate search params uses first value 58ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 10: Duplicate query parameters > duplicate categoryId uses first value 19ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > My Tickets Real DB — Test 10: Duplicate query parameters > duplicate sort uses first value 16ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > API-REQ-02: Historical inactive requester — data preserved, API inaccessible > inactive requester database row still exists 3ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > API-REQ-02: Historical inactive requester — data preserved, API inaccessible > inactive requester is rejected by requester-context endpoint with 422 10ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > API-REQ-02: Historical inactive requester — data preserved, API inaccessible > inactive requester is rejected by My Tickets endpoint with 422 9ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > API-REQ-02: Historical inactive requester — data preserved, API inaccessible > inactive requester is rejected by Create Ticket endpoint with 422 12ms
+ ✓ tests/lab-02/my-tickets-real-db.integration.test.ts > API-REQ-02: Historical inactive requester — data preserved, API inaccessible > tickets owned by inactive requester are not accessible through My Tickets API 53ms
+ ✓ tests/lab-02/attachment-concurrency.integration.test.ts > API-ATT-14: Concurrent attachment limit enforcement > populates 4 attachments, then 2 concurrent uploads — only 1 succeeds, never >5 active 392ms
+ ✓ tests/lab-02/attachment-concurrency.integration.test.ts > API-ATT-OWN-INT: Ownership isolation before multipart validation (real DB) > non-owned uploads return identical 404 regardless of file payload 75ms
+ ✓ tests/lab-02/attachment-concurrency.integration.test.ts > API-ATT-REM-CONC: Concurrent soft removal — exactly one 200, one 409 > two simultaneous DELETEs produce exactly one 200 and one 409 with correct persisted metadata 94ms
+ ✓ tests/lab-02/attachment-concurrency.integration.test.ts > API-ATT-14-PDF: PDF preview returns first page as image/png (real DB) > uploads a valid PDF and preview returns 200 image/png (first page rendered) 206ms
+ ✓ tests/lab-02/attachment-concurrency.integration.test.ts > API-ATT-14-PDF: PDF preview returns first page as image/png (real DB) > preview of a corrupt PDF returns 500 INTERNAL_ERROR (never the original PDF) 80ms
+ ✓ tests/lab-03/auth.unit.test.ts > UNIT-AUTH-01: Password hashing > produces a bcrypt hash, never plaintext 131ms
+ ✓ tests/lab-03/auth.unit.test.ts > UNIT-AUTH-01: Password hashing > verifyPassword returns true for the correct password and false otherwise 363ms
+ ✓ tests/lab-03/auth.unit.test.ts > UNIT-AUTH-01: Password hashing > produces a different hash for the same password (salt) but both verify 478ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > rejects below 12 characters 1ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > accepts exactly 12 valid characters 1ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > accepts 128 valid characters 1ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > rejects above 128 characters 1ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > rejects missing uppercase 0ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > rejects missing lowercase 0ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > rejects missing digit 0ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > rejects missing special character 0ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > accepts a valid composition 0ms
+ ✓ tests/lab-03/auth.unit.test.ts > Password policy (frozen §13 decision 12) > does not trim the value; whitespace counts toward length 0ms
+ ✓ tests/lab-02/ticket-number-concurrency.integration.test.ts > API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion > allocates 000001 then 000002 within the same year (increment of exactly 1) 10ms
+ ✓ tests/lab-02/ticket-number-concurrency.integration.test.ts > API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion > resets the sequence to 000001 in a new year 5ms
+ ✓ tests/lab-02/ticket-number-concurrency.integration.test.ts > API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion > concurrent allocations for the same year receive distinct numbers 341ms
+ ✓ tests/lab-02/ticket-number-concurrency.integration.test.ts > API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion > throws TicketSequenceExhaustedError when the year sequence is exhausted 8ms
+ ✓ tests/lab-02/ticket-number-concurrency.integration.test.ts > API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion > createTicket produces distinct, format-valid numbers and currentStatus NEW 146ms
+ ✓ tests/lab-02/ticket-number-concurrency.integration.test.ts > API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion > concurrent HTTP creates all receive distinct, contiguous ticket numbers with matching persisted year 206ms
+ ✓ tests/lab-02/ticket-number-concurrency.integration.test.ts > API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion > returns 409 TICKET_SEQUENCE_EXHAUSTED and creates no ticket when exhausted 33ms
+ ✓ tests/lab-02/ticket-number-concurrency.integration.test.ts > API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion > failed post-allocation insertion leaves no sequence gap (transaction rollback) 17ms
+ ✓ tests/lab-03/auth-error-handling.api.test.ts > API-AUTH-10..12: async auth handler failures return a canonical 500 and keep the process alive > API-AUTH-10: a DB failure during login returns 500 INTERNAL_ERROR and the server stays up 82ms
+ ✓ tests/lab-03/auth-error-handling.api.test.ts > API-AUTH-10..12: async auth handler failures return a canonical 500 and keep the process alive > API-AUTH-11: a DB failure during change-password returns 500 INTERNAL_ERROR and the server stays up 656ms
+ ✓ tests/lab-03/auth-error-handling.api.test.ts > API-AUTH-10..12: async auth handler failures return a canonical 500 and keep the process alive > API-AUTH-12: a session-store failure during logout returns 500 INTERNAL_ERROR 2ms
+ ✓ tests/lab-02/attachment-persistence-compensation.integration.test.ts > ATT-PERSIST-01: Successful attachment metadata persistence > uploads a valid JPEG, persists metadata, and does not expose storedFilename 135ms
+ ✓ tests/lab-02/attachment-persistence-compensation.integration.test.ts > ATT-PERSIST-02: Metadata persistence failure compensates physical storage > deletes physical file and leaves no Attachment row when metadata insert fails after successful file write 57ms
+ ✓ tests/lab-02/attachment-persistence-compensation.integration.test.ts > ATT-PERSIST-03: Transaction-wide compensation — failure AFTER metadata insert > deletes the physical file and rolls back the Attachment row when the transaction fails after the metadata insert succeeds 52ms
+ ✓ tests/lab-02/attachment-persistence-compensation.integration.test.ts > ATT-PERSIST-04: UUID stored filename and metadata persistence (real DB) > persists a UUID+extension stored filename, preserves original filename as metadata, and never exposes storedFilename via the API 55ms
+ ✓ tests/lab-02/attachment-persistence-compensation.integration.test.ts > ATT-PERSIST-05: Removed attachment access (real DB) > soft-removed attachment returns 410 for download and preview, but remains listed with metadata 109ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > persists trimmed summary: "  abcde  " → "abcde" 109ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > persists trimmed description: "  1234567890  " → "1234567890" 25ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > rejects summary with 4 characters after trim 14ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > accepts summary with 5 characters after trim 22ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > accepts summary with 120 characters after trim 21ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > rejects summary with 121 characters after trim 10ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > rejects description with 9 characters after trim 11ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > accepts description with 10 characters after trim 20ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > accepts description with 2000 characters after trim 19ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > rejects description with 2001 characters after trim 13ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > rejects whitespace-only summary and creates no ticket 13ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-02: Real database normalization and boundaries > rejects whitespace-only description and creates no ticket 9ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-03: Real ownership and defaults > persists requesterId from X-Dev-Requester-Id header, ignores client-supplied ownership fields 19ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-03: Real ownership and defaults > returns itPriority equal to requestedPriority and ticketOwnerId null on requester-created tickets 17ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-04: Real Ticket Detail ownership enforcement > returns 200 with full ticket detail for owner (Requester A) 26ms
+ ✓ tests/lab-02/create-ticket-real-db.integration.test.ts > API-TKT-INT-04: Real Ticket Detail ownership enforcement > returns 404 NOT_FOUND for non-owner (Requester B) 15ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-01: Attachment type/content validation matrix > rejects when file part is missing with 400 VALIDATION_ERROR 47ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-01: Attachment type/content validation matrix > rejects unsupported extension with 415 UNSUPPORTED_MEDIA_TYPE 24ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-01: Attachment type/content validation matrix > accepts a valid JPEG file 14ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-16: Attachment ID range validation (never a 500) > accepts a normal valid ID (reaches the service) 11ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-16: Attachment ID range validation (never a 500) > rejects an ID above the PostgreSQL INTEGER max with 404, never 500 9ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-16: Attachment ID range validation (never a 500) > rejects a sufficiently large digit-only ID with 404, never 500 8ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-16: Attachment ID range validation (never a 500) > rejects a non-numeric attachment ID with 404 7ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-16: Attachment ID range validation (never a 500) > applies the same range guard to preview and delete 15ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-02: Sixth active attachment rejected by server > returns 400 ATTACHMENT_LIMIT_REACHED when limit exceeded 10ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-03: Oversized file rejected with 413 > returns 413 FILE_TOO_LARGE for oversized file via multer limit 30ms
+ ✓ tests/lab-02/attachments.api.test.ts > ATT-SIZE-01: Maximum accepted size boundary (4,999,999 bytes) > accepts a 4,999,999-byte file with 201 24ms
+ ✓ tests/lab-02/attachments.api.test.ts > ATT-SIZE-02: Maximum accepted size boundary (5,000,000 bytes) > accepts a 5,000,000-byte file with 201 36ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-04: Soft remove sets metadata and blocks access > soft-removes an attachment with metadata 29ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-05: Preview/download for active vs removed > download returns 200 for active attachment 7ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-05: Preview/download for active vs removed > download returns 410 ATTACHMENT_REMOVED for removed attachment 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-05: Preview/download for active vs removed > preview returns 200 for active image attachment 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-05: Preview/download for active vs removed > preview returns 200 image/png for active PDF attachment (first page rendered) 5ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-05: Preview/download for active vs removed > preview returns 500 when PDF rendering fails (never returns original PDF) 9ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-06: BR-17 partial success — ticket persists after attachment failure > ticket POST succeeds even when attachment upload fails 7ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-07: Attachment metadata and stored filename > returns attachment metadata without exposing stored filename 9ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-09: Attachment list ordering > returns attachments in deterministic order (uploadedAt ASC, id ASC) 7ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-10: Removal reason normalization > accepts omitted reason as null 7ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-10: Removal reason normalization > accepts blank reason as null 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-10: Removal reason normalization > rejects non-string reason with 400 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-11: DELETE content-type handling (api-spec §0) > accepts an omitted body with no content type 8ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-11: DELETE content-type handling (api-spec §0) > accepts a JSON body with application/json 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-11: DELETE content-type handling (api-spec §0) > accepts a JSON body with a charset parameter 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-11: DELETE content-type handling (api-spec §0) > rejects a body with non-JSON content type text/plain with 400 VALIDATION_ERROR 7ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-11: DELETE content-type handling (api-spec §0) > rejects a body with non-JSON content type text/html with 400 VALIDATION_ERROR 5ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-11: DELETE content-type handling (api-spec §0) > rejects a body with non-JSON content type application/xml with 400 VALIDATION_ERROR 7ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-11: DELETE content-type handling (api-spec §0) > rejects a body with no content type with 400 VALIDATION_ERROR 7ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-12: Second removal returns 409 CONFLICT > removing an already-removed attachment returns 409 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-13: Removal sets removedByRequesterId > records the removing requester ID 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-15: Removed slot becomes reusable > can upload after removing an attachment 7ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-OWN-01: Cross-requester ownership enforcement > upload returns 404 for non-owned ticket 8ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-OWN-01: Cross-requester ownership enforcement > list returns 404 for non-owned ticket 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-OWN-01: Cross-requester ownership enforcement > download returns 404 for non-owned attachment 5ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-OWN-01: Cross-requester ownership enforcement > preview returns 404 for non-owned attachment 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-OWN-01: Cross-requester ownership enforcement > remove returns 404 for non-owned attachment 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-08: Removal reason 200-char boundary > accepts a 200-character removal reason 6ms
+ ✓ tests/lab-02/attachments.api.test.ts > API-ATT-08: Removal reason 200-char boundary > rejects a 201-character removal reason 7ms
+ ✓ tests/lab-03/ticket-priority.integration.test.ts > TKT-PRIO: IT Priority is initialized from Requested Priority on creation > TKT-PRIO-01: the stored itPriority equals the submitted requestedPriority for every priority 152ms
+ ✓ tests/lab-03/ticket-priority.integration.test.ts > TKT-PRIO: IT Priority is initialized from Requested Priority on creation > TKT-PRIO-02: a client-supplied itPriority is ignored; the stored value follows requestedPriority 23ms
+ ✓ tests/lab-03/ticket-priority.integration.test.ts > TKT-PRIO: IT Priority is initialized from Requested Priority on creation > TKT-PRIO-03: the Lab 2 create response shape is unchanged (no regression) 22ms
+ ✓ tests/lab-02/create-ticket-reference-validation.integration.test.ts > API-TKT-02-INT: Inactive/stale reference rejection (real DB) > rejects inactive category with 409 INACTIVE_REFERENCE and creates no ticket (real DB) 98ms
+ ✓ tests/lab-02/create-ticket-reference-validation.integration.test.ts > API-TKT-02-INT: Inactive/stale reference rejection (real DB) > rejects inactive related system with 409 INACTIVE_REFERENCE and creates no ticket (real DB) 22ms
+ ✓ tests/lab-02/create-ticket-reference-validation.integration.test.ts > API-TKT-02-INT: Inactive/stale reference rejection (real DB) > rejects nonexistent categoryId with 409 INACTIVE_REFERENCE and creates no ticket (real DB) 18ms
+ ✓ tests/lab-02/create-ticket-reference-validation.integration.test.ts > API-TKT-02-INT: Inactive/stale reference rejection (real DB) > rejects nonexistent relatedSystemId with 409 INACTIVE_REFERENCE and creates no ticket (real DB) 23ms
+ ✓ tests/lab-02/create-ticket-reference-validation.integration.test.ts > API-TKT-02-INT: Inactive/stale reference rejection (real DB) > accepts valid create with active references (real DB) 25ms
+ ✓ tests/lab-02/attachment-ownership.integration.test.ts > API-ATT-OWN-MATRIX: Cross-requester ownership for list/download/preview/delete (real DB) > Requester B cannot list, download, preview, or delete Requester A's attachment 205ms
+ ✓ tests/lab-03/auth-timing.unit.test.ts > SEC-AUTHZ-12: verifyCredentials timing equalization > performs a bcrypt comparison for an unknown email 126ms
+ ✓ tests/lab-03/auth-timing.unit.test.ts > SEC-AUTHZ-12: verifyCredentials timing equalization > performs exactly one bcrypt comparison for a known email with a wrong password 240ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-01: My Tickets ownership isolation > returns only current requester's own tickets 56ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-01: My Tickets ownership isolation > returns empty array when requester has no tickets 11ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-02: Search by ticket number/summary substring > passes search term to service 14ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-02: Search by ticket number/summary substring > trims search and passes undefined when blank after trim 12ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-03: Category/Priority/Status filters are conjunctive > passes categoryId filter to service 12ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-03: Category/Priority/Status filters are conjunctive > passes requestedPriority filter to service 8ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-03: Category/Priority/Status filters are conjunctive > passes status filter to service 8ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-04: Deterministic sort with tie-breakers > passes sort and order params to service 7ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-05: Pagination metadata accurate > returns correct pagination metadata 9ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-06: Default pagination/sort values and invalid-value fallback > uses defaults when no params provided 8ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-06: Default pagination/sort values and invalid-value fallback > falls back to defaults for invalid sort 8ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-06: Default pagination/sort values and invalid-value fallback > falls back to defaults for invalid order 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-06: Default pagination/sort values and invalid-value fallback > falls back to 1 for missing page 8ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-06: Default pagination/sort values and invalid-value fallback > falls back to 10 for pageSize=0 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-06: Default pagination/sort values and invalid-value fallback > falls back to 10 for pageSize=51 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 400 for malformed categoryId 8ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 400 for invalid requestedPriority enum 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 400 for invalid status enum 8ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 409 for nonexistent categoryId 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 409 for inactive categoryId 7ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 400 for categoryId=0 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 400 for categoryId=-1 5ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 400 for categoryId=0.5 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 400 for categoryId=1e2 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 409 for enormous positive integer categoryId 5ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > falls back to page 1 for malformed page 7ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > falls back to page 1 for page=0 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > returns 200 with empty data for valid out-of-range page 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > falls back to page 1 for enormous page string that would produce Infinity 7ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > falls back to page 1 for page = Number.MAX_SAFE_INTEGER + 1 (unsafe integer) 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > uses page = Number.MAX_SAFE_INTEGER as-is (safe integer) 8ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-07: Invalid filter parameter values and pagination > falls back to page 1 for a large finite decimal string exceeding safe integer range 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-08: Search normalization and metadata values > returns unfilteredTotalItems=0 for requester with no tickets 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-08: Search normalization and metadata values > returns unfilteredTotalItems>0 when requester has tickets but filter yields zero 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-08: Search normalization and metadata values > treats empty search as no filter 6ms
+ ✓ tests/lab-02/my-tickets.api.test.ts > API-MY-08: Search normalization and metadata values > treats whitespace-only search as no filter 5ms
+ ✓ tests/lab-02/requester-selection.integration.test.ts > Requester Selection API - Real Database Connection > GET /api/dev-requesters returns only active requesters from actual database in expected shape and order 198ms
+ ✓ tests/lab-02/requester-selection.integration.test.ts > Requester Selection API - Real Database Connection > GET /api/requester-context succeeds for active requester ID in database 24ms
+ ✓ tests/lab-02/requester-selection.integration.test.ts > Requester Selection API - Real Database Connection > GET /api/requester-context returns 422 for nonexistent or inactive requester ID 17ms
+ ✓ tests/lab-02/requester-selection.integration.test.ts > Requester Selection API - Real Database Connection > GET /api/requester-context returns 422 for missing or invalid header 16ms
+ ✓ tests/lab-02/database-migration.integration.test.ts > DB-01 / DB-02: Lab 2 forward migration against the real database > DB-01: creates all required tables without resetting the database 155ms
+ ✓ tests/lab-02/database-migration.integration.test.ts > DB-01 / DB-02: Lab 2 forward migration against the real database > DB-01: Ticket table exposes all required columns 34ms
+ ✓ tests/lab-02/database-migration.integration.test.ts > DB-01 / DB-02: Lab 2 forward migration against the real database > DB-01: itPriority and ticketOwnerId are nullable (Lab 2 never writes them) 8ms
+ ✓ tests/lab-02/database-migration.integration.test.ts > DB-01 / DB-02: Lab 2 forward migration against the real database > DB-01: ticketNumber has a unique index 16ms
+ ✓ tests/lab-02/database-migration.integration.test.ts > DB-01 / DB-02: Lab 2 forward migration against the real database > DB-01: Ticket has required indexes on requesterId, currentStatus, and createdAt 4ms
+ ✓ tests/lab-02/database-migration.integration.test.ts > DB-01 / DB-02: Lab 2 forward migration against the real database > DB-01: currentStatus defaults to NEW 8ms
+ ✓ tests/lab-02/database-migration.integration.test.ts > DB-01 / DB-02: Lab 2 forward migration against the real database > DB-02: existing Lab 1 Category rows survive with isActive backfilled to true 17ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects categoryId: 1.0 with 400 VALIDATION_ERROR 70ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects categoryId: 1e0 with 400 VALIDATION_ERROR 10ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects relatedSystemId: 1.0 with 400 VALIDATION_ERROR 13ms
+stdout | tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects categoryId: 01 with 400 VALIDATION_ERROR (leading zero)
+Response: 400 {
+  error: {
+    code: 'VALIDATION_ERROR',
+    message: 'Request body must be valid JSON.',
+    fields: {}
+  }
+}
+
+stdout | tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects relatedSystemId: 01 with 400 VALIDATION_ERROR (leading zero)
+Response: 400 {
+  error: {
+    code: 'VALIDATION_ERROR',
+    message: 'Request body must be valid JSON.',
+    fields: {}
+  }
+}
+
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects relatedSystemId: 1e0 with 400 VALIDATION_ERROR 9ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects invalid top-level categoryId even when a nested property has the same name with a valid value 8ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > accepts valid top-level categoryId even when a nested property has the same name with an invalid value 11ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects escaped top-level categoryId with decimal value 7ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > ignores an unknown multi-property nested object without 500 10ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > ignores a pretty-printed unknown nested object without 500 9ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > ignores an unknown array of multi-property objects without 500 9ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects categoryId: 01 with 400 VALIDATION_ERROR (leading zero) 12ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > rejects relatedSystemId: 01 with 400 VALIDATION_ERROR (leading zero) 7ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > accepts valid integer categoryId and relatedSystemId 6ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > returns 409 for positive out-of-range categoryId=2147483648 7ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > returns 409 for positive out-of-range categoryId=9007199254740993 6ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > returns 409 for positive out-of-range categoryId=9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999 7ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > returns 409 for positive out-of-range relatedSystemId=2147483648 7ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > returns 409 for positive out-of-range relatedSystemId=9007199254740993 6ms
+ ✓ tests/lab-02/integer-validation.api.test.ts > API-TKT-INT-01: Integer lexical validation > returns 409 for positive out-of-range relatedSystemId=9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999 7ms
+ ✓ tests/categories.integration.test.ts > Categories API - Real Database Connection > should return 200 with all categories in ascending order by ID 184ms
+ ✓ tests/categories.integration.test.ts > Categories API - Real Database Connection > should return categories with id and name fields 13ms
+ ✓ tests/categories.integration.test.ts > Categories API - Real Database Connection > should return categories sorted by ID then name (composite sort) 10ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > rejects summary with 4 characters after trim 67ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > accepts summary with 5 characters after trim 15ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > accepts summary with 120 characters after trim 9ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > rejects summary with 121 characters after trim 9ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > rejects whitespace-only summary 10ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > rejects description with 9 characters after trim 8ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > accepts description with 10 characters after trim 9ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > accepts description with 2000 characters after trim 7ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > rejects description with 2001 characters after trim 12ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-01: Summary/Description trimming and boundary behavior > rejects whitespace-only description 11ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-02: CategoryId/RelatedSystemId validation > rejects missing categoryId with 400 7ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-02: CategoryId/RelatedSystemId validation > rejects non-integer categoryId with 400 9ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-02: CategoryId/RelatedSystemId validation > rejects zero categoryId with 400 7ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-02: CategoryId/RelatedSystemId validation > rejects negative categoryId with 400 9ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-02: CategoryId/RelatedSystemId validation > rejects nonexistent categoryId with 409 6ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-02: CategoryId/RelatedSystemId validation > rejects inactive categoryId with 409 8ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-02: CategoryId/RelatedSystemId validation > rejects missing relatedSystemId with 400 7ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-02: CategoryId/RelatedSystemId validation > rejects nonexistent relatedSystemId with 409 8ms
+ ✓ tests/lab-02/create-ticket-normalization.api.test.ts > API-TKT-NOR-02: CategoryId/RelatedSystemId validation > rejects inactive relatedSystemId with 409 8ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > returns active requesters in the documented envelope without a requester header 49ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > returns canonical 422 for missing requester header 14ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > returns canonical 422 for malformed requester header 11ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > returns canonical 422 for decimal requester header 13ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > returns canonical 422 for signed requester header 9ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > rejects whitespace-padded values before requester lookup 1ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > returns canonical 422 for duplicate requester header 9ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > returns canonical 422 for unknown requester id 7ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > returns canonical 422 for inactive requester id 10ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > returns safe canonical 500 when requester lookup throws 8ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > allows a valid active requester through 12ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > allows bootstrap endpoints without requester header 13ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > request parsing contract > rejects malformed JSON body with canonical 400 on POST /api/tickets 28ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > request parsing contract > rejects non-object JSON body (null) with canonical 400 on POST /api/tickets 8ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > request parsing contract > rejects array JSON body with canonical 400 on POST /api/tickets 7ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > request parsing contract > rejects primitive JSON body (string) with canonical 400 on POST /api/tickets 11ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > request parsing contract > rejects wrong Content-Type with canonical 400 on POST /api/tickets 7ms
+ ✓ tests/lab-02/api-contract.api.test.ts > API-CONTRACT-01 requester context contract > request parsing contract > uses first value for duplicate query parameters 9ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-01: Create ticket success > returns 201 with generated ticket number matching TKT-{YYYY}-{6-digit} format 65ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-01: Create ticket success > returns full ticket data in { data: {...} } envelope 16ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-04: Ownership assigned from X-Dev-Requester-Id > persists ownership from the validated caller header 8ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-05: IT Priority initialized from Requested Priority; Ticket Owner remains null > returns itPriority equal to requestedPriority and ticketOwnerId null on requester-created tickets 9ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-07: Requested Priority server-side validation > rejects missing requestedPriority with 400 9ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-07: Requested Priority server-side validation > rejects invalid enum value with 400 8ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-07: Requested Priority server-side validation > accepts LOW as valid priority 7ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-07: Requested Priority server-side validation > accepts MEDIUM as valid priority 8ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-07: Requested Priority server-side validation > accepts HIGH as valid priority 7ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-02: Inactive/stale reference rejection > rejects inactive category with 409 INACTIVE_REFERENCE 10ms
+ ✓ tests/lab-02/create-ticket.api.test.ts > API-TKT-02: Inactive/stale reference rejection > rejects inactive related system with 409 INACTIVE_REFERENCE 6ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > allows valid active requester through 51ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects missing requester header with canonical 422 12ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects malformed non-numeric requester header with canonical 422 12ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects decimal requester header with canonical 422 8ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects signed requester header with canonical 422 9ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects whitespace-padded header values before database lookup 2ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects duplicate requester header values with 422 13ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects unknown requester ID with 422 8ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects inactive requester ID with 422 7ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects out-of-range requester header 2147483648 with 422 9ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects out-of-range requester header 9007199254740993 with 422 8ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-02: Requester-scoped context enforcement > rejects out-of-range requester header 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999 with 422 8ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-03: Bootstrap & reference endpoints exemption > allows GET /api/dev-requesters without X-Dev-Requester-Id header 7ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-03: Bootstrap & reference endpoints exemption > allows GET /api/categories without X-Dev-Requester-Id header 7ms
+ ✓ tests/lab-02/requester-context.api.test.ts > API-REQ-02 & API-REQ-03: requester context & bootstrap exemptions > API-REQ-03: Bootstrap & reference endpoints exemption > allows GET /api/related-systems without X-Dev-Requester-Id header 7ms
+ ✓ tests/categories.test.ts > Categories Endpoint > should return HTTP 200 with categories array 45ms
+ ✓ tests/categories.test.ts > Categories Endpoint > should return categories with id and name fields 11ms
+ ✓ tests/categories.test.ts > Categories Endpoint > should return categories in ascending order by ID then name (composite sort) 33ms
+ ✓ tests/categories.test.ts > Categories Endpoint > should return HTTP 500 when service throws an error 13ms
+ ✓ tests/categories.test.ts > Categories Endpoint > should return empty array when no categories exist 7ms
+ ✓ tests/lab-02/reference-data.api.test.ts > API-REF-01: GET /api/categories > returns only active categories with raw array shape (no data envelope) 49ms
+ ✓ tests/lab-02/reference-data.api.test.ts > API-REF-01: GET /api/categories > does not require X-Dev-Requester-Id header 9ms
+ ✓ tests/lab-02/reference-data.api.test.ts > API-REF-01: GET /api/categories > returns safe 500 on service failure 10ms
+ ✓ tests/lab-02/reference-data.api.test.ts > API-REF-02: GET /api/related-systems > returns only active related systems with { data: [...] } envelope 8ms
+ ✓ tests/lab-02/reference-data.api.test.ts > API-REF-02: GET /api/related-systems > does not require X-Dev-Requester-Id header (bootstrap exemption) 10ms
+ ✓ tests/lab-02/reference-data.api.test.ts > API-REF-02: GET /api/related-systems > returns empty data array when no active related systems exist 8ms
+ ✓ tests/lab-02/reference-data.api.test.ts > API-REF-02: GET /api/related-systems > returns safe 500 on service failure 11ms
+ ✓ tests/lab-02/ticket-detail.api.test.ts > API-TKT-03: Ticket detail ownership enforcement > returns 200 with full ticket detail for owner 48ms
+ ✓ tests/lab-02/ticket-detail.api.test.ts > API-TKT-03: Ticket detail ownership enforcement > returns 404 for non-owner access 10ms
+ ✓ tests/lab-02/ticket-detail.api.test.ts > API-TKT-03: Ticket detail ownership enforcement > returns 404 for non-existent ticket 9ms
+ ✓ tests/lab-02/ticket-detail.api.test.ts > API-TKT-03: Ticket detail ownership enforcement > returns 404 for malformed ticket number 8ms
+ ✓ tests/lab-02/ticket-detail.api.test.ts > API-TKT-03: Ticket detail ownership enforcement > returns 422 for missing requester header 13ms
+ ✓ tests/lab-02/dev-requesters.api.test.ts > API-REQ-01: GET /api/dev-requesters > returns active requesters in the documented envelope without a requester header 58ms
+ ✓ tests/lab-02/dev-requesters.api.test.ts > API-REQ-01: GET /api/dev-requesters > excludes inactive requesters from the selector payload 16ms
+ ✓ tests/lab-02/dev-requesters.api.test.ts > API-REQ-01: GET /api/dev-requesters > returns empty data array when no active requesters exist 10ms
+ ✓ tests/lab-02/dev-requesters.api.test.ts > API-REQ-01: GET /api/dev-requesters > does not require X-Dev-Requester-Id header (bootstrap exemption) 17ms
+ ✓ tests/lab-02/dev-requesters.api.test.ts > API-REQ-01: GET /api/dev-requesters > returns safe canonical 500 when service throws 12ms
+ ✓ tests/lab-03/session-secret.unit.test.ts > SEC-AUTHZ-11: SESSION_SECRET fail-safe startup > rejects the known .env.example placeholder even though it is >= 32 chars 12ms
+ ✓ tests/lab-03/session-secret.unit.test.ts > SEC-AUTHZ-11: SESSION_SECRET fail-safe startup > rejects a missing secret in a non-test environment 3ms
+ ✓ tests/lab-03/session-secret.unit.test.ts > SEC-AUTHZ-11: SESSION_SECRET fail-safe startup > rejects a short secret in a non-test environment 2ms
+ ✓ tests/lab-03/session-secret.unit.test.ts > SEC-AUTHZ-11: SESSION_SECRET fail-safe startup > accepts a real, unique secret in a non-test environment 2ms
+ ✓ tests/lab-03/session-secret.unit.test.ts > SEC-AUTHZ-11: SESSION_SECRET fail-safe startup > allows the deterministic test-only secret under NODE_ENV=test 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > categoryId validation > rejects missing 4ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > categoryId validation > rejects null 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > categoryId validation > rejects string 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > categoryId validation > rejects decimal 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > categoryId validation > rejects zero 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > categoryId validation > rejects negative 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > relatedSystemId validation > rejects missing 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > relatedSystemId validation > rejects null 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > relatedSystemId validation > rejects string 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > relatedSystemId validation > rejects decimal 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > relatedSystemId validation > rejects zero 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > relatedSystemId validation > rejects negative 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > requestedPriority validation > rejects undefined 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > requestedPriority validation > rejects null 0ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > requestedPriority validation > rejects  1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > requestedPriority validation > rejects URGENT 0ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > requestedPriority validation > rejects low 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > requestedPriority validation > accepts LOW 1ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > requestedPriority validation > accepts MEDIUM 0ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > requestedPriority validation > accepts HIGH 0ms
+ ✓ tests/lab-02/create-ticket-validation.unit.test.ts > API-TKT-NOR-02 & API-TKT-07: Production create-ticket validator > returns trimmed summary and description 1ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-01: Attachment size boundary validator > accepts 4,999,999 bytes 4ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-01: Attachment size boundary validator > accepts 5,000,000 bytes 0ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-01: Attachment size boundary validator > rejects 5,000,001 bytes 0ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-01: Attachment size boundary validator > rejects negative bytes 1ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-02: Extension validator against production logic > accepts each allowed extension 1ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-02: Extension validator against production logic > accepts allowed extensions in upper/mixed case 1ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-02: Extension validator against production logic > rejects an unsupported extension 1ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-02: Extension validator against production logic > rejects a file with no extension 0ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-02: Extension validator against production logic > rejects a final extension that is unsupported even if an earlier segment is allowed 1ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-02: Extension validator against production logic > rejects a trailing dot with no extension 0ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-03: Content signature validator against production logic > accepts a JPG signature for .jpg 1ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-03: Content signature validator against production logic > accepts a JPEG signature for .jpeg 0ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-03: Content signature validator against production logic > accepts a PNG signature for .png 0ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-03: Content signature validator against production logic > accepts a WEBP signature for .webp 0ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-03: Content signature validator against production logic > accepts a PDF signature for .pdf 0ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-03: Content signature validator against production logic > rejects a wrong signature for an allowed extension 1ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-03: Content signature validator against production logic > rejects a truncated buffer for each extension 1ms
+ ✓ tests/lab-02/attachment-validation.unit.test.ts > UNIT-ATT-03: Content signature validator against production logic > rejects an empty buffer 0ms
+ ✓ tests/lab-02/dev-requesters.service.test.ts > getActiveDevRequesters > queries only active requesters with the documented selector shape and ordering 8ms
+ ✓ tests/categories.service.test.ts > getCategories > queries only active categories 7ms
 
  Test Files  34 passed (34)
       Tests  403 passed (403)
-   Start at  16:32:39
-   Duration  637.41s (transform 1.42s, setup 0ms, import 19.77s, tests 604.56s, environment 7ms)
+   Start at  17:42:49
+   Duration  681.40s (transform 1.51s, setup 0ms, import 21.43s, tests 645.61s, environment 8ms)
