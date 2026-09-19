@@ -14,6 +14,22 @@ const isTestEnv = (): boolean => {
 };
 
 /**
+ * Known placeholder values that must never be accepted as a real secret.
+ *
+ * The `.env.example` placeholder is 51 characters, so it passes a naive `>= 32` length
+ * check. Length alone is therefore not sufficient: a copied placeholder is a publicly
+ * known value and provides no security. These are rejected explicitly.
+ */
+const KNOWN_PLACEHOLDER_SECRETS = new Set([
+  "change-me-to-a-long-random-secret-at-least-32-chars",
+  "change-me",
+  "changeme",
+  "secret",
+  "your-secret-here",
+  "replace-me",
+]);
+
+/**
  * Returns the session signing secret, enforcing the fail-safe startup rule.
  * In non-test environments a missing/placeholder secret aborts startup.
  */
@@ -31,6 +47,13 @@ export function getSessionSecret(): string {
     throw new Error(
       "SESSION_SECRET is not configured. Set a real secret (>= 32 chars) in server/.env " +
         "before starting the server. Refusing to boot with a weak or missing secret.",
+    );
+  }
+
+  if (KNOWN_PLACEHOLDER_SECRETS.has(trimmed.toLowerCase())) {
+    throw new Error(
+      "SESSION_SECRET is set to a known placeholder value. Set a real, unique secret in " +
+        "server/.env before starting the server. Refusing to boot with a placeholder secret.",
     );
   }
 

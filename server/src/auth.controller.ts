@@ -15,6 +15,17 @@ import { issueCsrfToken } from "./session.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * Canonical 500 body (frozen §0 canonical error table). Every async auth handler must
+ * fail closed with this shape rather than letting a rejected promise escape.
+ */
+function sendInternalError(res: Response): void {
+  if (res.headersSent) {
+    return;
+  }
+  res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } });
+}
+
 function publicUser(user: { id: number; name: string; email: string; role: string; mustChangePassword: boolean }) {
   return {
     id: user.id,
@@ -27,42 +38,52 @@ function publicUser(user: { id: number; name: string; email: string; role: strin
 
 /** POST /api/auth/login — public. Establishes a fresh session (fixation-safe). */
 export async function login(req: Request, res: Response): Promise<void> {
-  const body = req.body ?? {};
-  const email = typeof body.email === "string" ? body.email : "";
-  const password = typeof body.password === "string" ? body.password : "";
+  try {
+    const body = req.body ?? {};
+    const email = typeof body.email === "string" ? body.email : "";
+    const password = typeof body.password === "string" ? body.password : "";
 
-  if (!email || !EMAIL_RE.test(email.trim())) {
-    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "A valid email is required.", fields: {} } });
-    return;
+    if (!email || !EMAIL_RE.test(email.trim())) {
+      res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "A valid email is required.", fields: {} } });
+      return;
+    }
+    if (!password) {
+      res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Password is required.", fields: {} } });
+      return;
+    }
+
+    const user = await verifyCredentials(email, password);
+    if (!user || !user.isActive) {
+      // Safe generic failure — invalid credentials and inactive accounts are indistinguishable (AC-05).
+      res.status(401).json({ error: { code: "UNAUTHENTICATED", message: "Invalid email or password." } });
+      return;
+    }
+
+    // Fixation-safe: regenerate the session identifier at privilege change.
+    await new Promise<void>((resolve, reject) => {
+      req.session.regenerate((err) => (err ? reject(err) : resolve()));
+    });
+    req.session.userId = user.id;
+    issueCsrfToken(req, res);
+
+    res.status(200).json({ data: publicUser(user) });
+  } catch {
+    // A transient DB/session-store failure must not take the process down or leave the
+    // client without a response. Fail closed with the canonical 500.
+    sendInternalError(res);
   }
-  if (!password) {
-    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Password is required.", fields: {} } });
-    return;
-  }
-
-  const user = await verifyCredentials(email, password);
-  if (!user || !user.isActive) {
-    // Safe generic failure — invalid credentials and inactive accounts are indistinguishable (AC-05).
-    res.status(401).json({ error: { code: "UNAUTHENTICATED", message: "Invalid email or password." } });
-    return;
-  }
-
-  // Fixation-safe: regenerate the session identifier at privilege change.
-  await new Promise<void>((resolve, reject) => {
-    req.session.regenerate((err) => (err ? reject(err) : resolve()));
-  });
-  req.session.userId = user.id;
-  issueCsrfToken(req, res);
-
-  res.status(200).json({ data: publicUser(user) });
 }
 
 /** POST /api/auth/logout — authenticated + CSRF. Destroys exactly one session. */
 export async function logout(req: Request, res: Response): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    req.session.destroy((err) => (err ? reject(err) : resolve()));
-  });
-  res.status(200).json({ data: { success: true } });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      req.session.destroy((err) => (err ? reject(err) : resolve()));
+    });
+    res.status(200).json({ data: { success: true } });
+  } catch {
+    sendInternalError(res);
+  }
 }
 
 /** GET /api/auth/me — authenticated. Returns current identity + role from the DB and reissues the CSRF token. */
@@ -116,6 +137,8 @@ export async function changePasswordHandler(req: Request, res: Response): Promis
       });
       return;
     }
-    throw err;
+    // Any other failure (e.g. a transient DB error) must fail closed with the canonical
+    // 500 instead of rethrowing into an unhandled rejection.
+    sendInternalError(res);
   }
 }

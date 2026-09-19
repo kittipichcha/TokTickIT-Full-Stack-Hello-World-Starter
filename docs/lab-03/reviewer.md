@@ -207,6 +207,59 @@ or explicitly out of scope for #35 (owned by #37/#41/#42). The reviewer also con
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.
 
+### Issue #35 — PR #46 fourth review follow-up (2026-09-19)
+
+**Reviewer comment I received (round 4): Request Changes.** The reviewer re-audited the PR and
+raised one blocking security finding, two blocking correctness findings, and a set of
+non-blocking hardening items.
+
+**How I responded — per finding:**
+
+- **Blocking — credential leaked into committed evidence (security).** A real DB password had
+  leaked into `artifacts/lab-03/issue-35/db-mig-execution.txt` and `server-vitest.txt` via an
+  `execSync` error message. Fixed at the source in round 5 (password stripped from the command
+  string, passed via `PGPASSWORD`, and `sanitizeExecError()` strips any credential fragment from
+  error text). In this round the credential was **rotated at the source** and repository history
+  was **rewritten with `git filter-repo`**, so the value is absent from every commit. The evidence
+  bundle was regenerated at the new head. No value is recorded in any document.
+- **Blocking — attachment ownership was not verified before Phase C (real defect).**
+  `verifyBackfillIdentity()` only checked that `uploaderUserId` resolved to a User; it did not
+  verify that the shadow columns **mirror** the legacy requester columns. Phase C drops those
+  legacy columns, so a divergence would silently destroy the true ownership/removal attribution.
+  Added `verifyAttachmentOwnership()`, called on the resume path and immediately before Phase C,
+  using `IS DISTINCT FROM` (a plain `<>` returns NULL when the remover is NULL and would silently
+  pass) plus a check that a non-null `removedByUserId` resolves to a User. `DB-MIG-08/09/10` cover
+  the uploader divergence, the NULL-remover case, and the correct resume. A mutation check
+  (removing the guard) confirmed DB-MIG-08/09 fail without it.
+- **Blocking — `itPriority` left NULL on ticket creation (real defect, frozen §9.3).**
+  `service.ts::createTicket` never set `itPriority`, violating the frozen contract ("Initially
+  copies Requested Priority"). It is now initialized from the **validated** `requestedPriority`;
+  a client-supplied `itPriority` is never read. `TKT-PRIO-01/02/03` cover each priority, the
+  spoofed-body case, and the unchanged Lab 2 response shape. The Lab 2 tests that asserted the
+  old NULL behavior were updated.
+- **Blocking — unhandled async errors in the auth handlers (real defect).** `login`, `logout`,
+  and the rethrow in `changePasswordHandler` had no `try/catch`; Express 4 does not catch rejected
+  promises, so a transient DB error could leave the client without a response and terminate the
+  process. All three now fail closed with the canonical `500 INTERNAL_ERROR`, and a final JSON
+  error middleware was added to `app.ts` as defense in depth. `API-AUTH-10/11/12` force the
+  DB/session call to reject and assert the canonical 500 with the server still up.
+- **Non-blocking — `SESSION_SECRET` placeholder accepted.** The 51-character `.env.example`
+  placeholder passed the `>= 32` length check. Known placeholders are now rejected explicitly
+  (`SEC-AUTHZ-11`).
+- **Non-blocking — login timing leaked account existence.** `verifyCredentials` returned
+  immediately for an unknown email while a known email paid the full bcrypt cost. A dummy bcrypt
+  comparison now equalizes the cost (`SEC-AUTHZ-12`).
+- **Non-blocking — `git diff --check` trailing-blank-line hits and local paths in evidence.**
+  The five trailing-blank-line hits were in the evidence logs, which were regenerated at the
+  final head. The regenerated logs are produced by the same commands; the local-path/username
+  content is inherent to the runner's output and is recorded as a known characteristic of the
+  evidence rather than a claim of cleanliness.
+- **Informational — legacy `X-Dev-Requester-Id` routes.** Acknowledged as the authorized,
+  declared temporary DM-17 compatibility layer (reviewer agreement recorded); no change made.
+
+**Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
+is claimed, and no false sign-off is recorded.
+
 ---
 
 ## Pull Requests I reviewed (authored by my partner)

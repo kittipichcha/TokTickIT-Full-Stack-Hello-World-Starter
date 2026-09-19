@@ -58,4 +58,28 @@ app.use(
   },
 );
 
+// Final JSON error middleware (defense in depth).
+//
+// Express 4 does not catch rejected promises from async handlers, and this app has no
+// async wrapper. Every handler is expected to fail closed itself, but this terminal
+// handler guarantees that any error reaching the error pipeline (including a synchronous
+// throw from middleware) still produces the canonical 500 JSON body instead of an
+// unhandled rejection that can terminate the process or leave the client hanging.
+app.use(
+  (
+    err: Error,
+    _req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ): void => {
+    if (res.headersSent) {
+      next(err);
+      return;
+    }
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+  },
+);
+
 export default app;

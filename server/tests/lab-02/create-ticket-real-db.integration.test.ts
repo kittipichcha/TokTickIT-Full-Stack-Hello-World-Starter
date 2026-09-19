@@ -370,12 +370,13 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
     });
 
     expect(ticket!.requesterId).toBe(requesterId);
-    expect(ticket!.itPriority).toBeNull();
+    // Frozen §9.3: itPriority initially copies requestedPriority.
+    expect(ticket!.itPriority).toBe("MEDIUM");
     expect(ticket!.ticketOwnerId).toBeNull();
     expect(ticket!.currentStatus).toBe("NEW");
   });
 
-  itIfDb("returns itPriority and ticketOwnerId as null on requester-created tickets", async () => {
+  itIfDb("returns itPriority equal to requestedPriority and ticketOwnerId null on requester-created tickets", async () => {
     const res = await request(app)
       .post("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
@@ -389,7 +390,7 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
 
     expect(res.status).toBe(201);
     createdTicketNumbers.push(res.body.data.ticketNumber);
-    expect(res.body.data.itPriority).toBeNull();
+    expect(res.body.data.itPriority).toBe("MEDIUM");
     expect(res.body.data.ticketOwnerId).toBeNull();
     expect(res.body.data.currentStatus).toBe("NEW");
   });

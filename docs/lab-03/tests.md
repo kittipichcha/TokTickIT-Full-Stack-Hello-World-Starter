@@ -23,8 +23,9 @@ E2E/Responsive/Keyboard (planned):
 ## 2a. Execution Evidence
 Issue #35 (Identity, Database Migration & Authentication) implemented the identity/auth
 foundation and executed its frozen test rows. Statuses are evidence-driven. The rows
-updated to `Passed` by #35 are: DB-MIG-01..07, SEC-MIG-01, SEED-01, API-AUTH-01..09,
-API-AUTH-05b, SEC-AUTHZ-06, UNIT-AUTH-01, UNIT-API-ERROR-01..03, CSRF-ME-01, UI-LOGIN-01,
+updated to `Passed` by #35 are: DB-MIG-01..10, SEC-MIG-01, SEED-01, API-AUTH-01..12,
+API-AUTH-05b, SEC-AUTHZ-06, SEC-AUTHZ-11, SEC-AUTHZ-12, UNIT-AUTH-01, UNIT-API-ERROR-01..03,
+CSRF-ME-01, TKT-PRIO-01..03, UI-LOGIN-01,
 UI-CHPWD-01/02, UI-AUTHGATE-01/02/03. Rows owned by other issues remain `Planned`.
 
 Every `Passed` row above is backed by an executed run recorded in
@@ -41,6 +42,45 @@ owned by **#37** (`authorization.api.test.ts`); #35 contributes only supplementa
 assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
+
+- **2026-09-19 — Issue #35 PR #46 review follow-up, round 6 (credential rotation, attachment ownership, IT Priority, async errors, hardening)**
+  - **Credential rotated and history rewritten (infra action completed).** The password exposed
+    in round 5 was rotated at the source, and repository history was rewritten with
+    `git filter-repo` so the value is absent from every commit. The evidence bundle was
+    regenerated at the new head. No value is recorded here.
+  - **P2 — `itPriority` was left NULL on ticket creation (real defect, frozen §9.3).**
+    `service.ts::createTicket` never set `itPriority`, so a requester-created ticket violated
+    the frozen contract ("Initially copies Requested Priority"). It is now initialized from the
+    **validated** `requestedPriority`; a client-supplied `itPriority` is never read. New
+    `TKT-PRIO-01/02/03` cover each priority, the spoofed-body case, and the unchanged Lab 2
+    response shape. The Lab 2 tests that asserted the old NULL behavior were updated.
+  - **P1-2 — attachment ownership was not verified before Phase C (real defect).**
+    `verifyBackfillIdentity()` only checked that `uploaderUserId` resolved to a User; it did not
+    verify that the shadow columns **mirror** the legacy requester columns. Phase C drops those
+    legacy columns, so a divergence would silently destroy the true ownership/removal
+    attribution. Added `verifyAttachmentOwnership()`, called on the resume path and immediately
+    before Phase C, using `IS DISTINCT FROM` (a plain `<>` returns NULL when the remover is NULL
+    and would silently pass) plus a check that a non-null `removedByUserId` resolves to a User.
+    New `DB-MIG-08/09/10` cover the uploader divergence, the NULL-remover case, and the correct
+    resume.
+  - **Unhandled async errors in the auth handlers (real defect).** `login`, `logout`, and the
+    rethrow in `changePasswordHandler` had no `try/catch`; Express 4 does not catch rejected
+    promises, so a transient DB error could leave the client without a response and terminate
+    the process. All three now fail closed with the canonical `500 INTERNAL_ERROR`, and a final
+    JSON error middleware was added to `app.ts` as defense in depth. New `API-AUTH-10/11/12`
+    force the DB/session call to reject and assert the canonical 500 with the server still up.
+  - **Non-blocking hardening.** (a) The 51-character `.env.example` `SESSION_SECRET` placeholder
+    passed the `>= 32` length check; known placeholders are now rejected explicitly
+    (`SEC-AUTHZ-11`). (b) `verifyCredentials` returned immediately for an unknown email, leaking
+    account existence through timing; a dummy bcrypt comparison now equalizes the cost
+    (`SEC-AUTHZ-12`).
+  - Commands: `npx vitest run` (server); `npx vitest run tests/lab-03/migration.integration.test.ts`;
+    `npx vitest run tests/lab-03/seed.integration.test.ts`; `npx prisma validate`;
+    `npx prisma migrate status`; `npm run build` (server, client); `npx vitest run` (client).
+  - Results: server **400 passed / 34 files**; DB-MIG-01..10, SEC-MIG-01, TKT-PRIO-01..03,
+    API-AUTH-10..12, SEC-AUTHZ-11/12 executed (not skipped).
+  - Follow-up: none. `E2E-01..04` remain `Planned` (owned by #42); Requester/Staff/Admin feature
+    rows remain `Planned` (owned by #37/#38/#41).
 
 - **2026-09-19 — Issue #35 PR #46 review follow-up, round 5 (credential leak, resume mapping, session error)**
   - **B-1 credential-bearing DB URL leaked into committed evidence (real defect, security).**
@@ -278,6 +318,14 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-AUTH-07 | API | Password policy boundaries | Invalid new password rejected per the frozen policy (Section 13, decision 12): below 12 chars rejected; 12 valid chars accepted; 128 valid chars accepted; above 128 chars rejected; missing uppercase rejected; missing lowercase rejected; missing digit rejected; missing special char rejected; valid composition accepted | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-10 | AC-02 | Passed |
 | API-AUTH-08 | API | Change password with wrong currentPassword | `400 VALIDATION_ERROR` with a generic message ("current password is incorrect"); no hint about why it was wrong | `server/tests/lab-03/auth.api.test.ts` | FR-05 | BR-01, BR-07 | AC-02 | Passed |
 | API-AUTH-09 | API | Second concurrent login for the same user | Both sessions remain valid; the first session is not invalidated (Section 13, decision 16) | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-01 | Passed |
+| API-AUTH-10 | API | Login DB failure containment | A DB failure during `login` returns the canonical `500 INTERNAL_ERROR` JSON body (not an unhandled rejection) and the server keeps serving subsequent requests | `server/tests/lab-03/auth-error-handling.api.test.ts` | FR-01 | BR-07 | AC-01 | Passed |
+| API-AUTH-11 | API | Change-password DB failure containment | A DB failure during `change-password` returns the canonical `500 INTERNAL_ERROR` JSON body and the server keeps serving subsequent requests | `server/tests/lab-03/auth-error-handling.api.test.ts` | FR-05 | BR-07 | AC-02 | Passed |
+| API-AUTH-12 | API | Logout session-store failure containment | A session-store failure during `logout` returns the canonical `500 INTERNAL_ERROR` JSON body instead of an unhandled rejection | `server/tests/lab-03/auth-error-handling.api.test.ts` | FR-03 | BR-07 | AC-06 | Passed |
+| SEC-AUTHZ-11 | Unit | SESSION_SECRET placeholder rejection | The known `.env.example` placeholder (51 chars, passes the `>= 32` length check) is rejected at startup; missing/short secrets are rejected; a real unique secret is accepted; the deterministic test-only secret is allowed under `NODE_ENV=test` | `server/tests/lab-03/session-secret.unit.test.ts` | FR-01 | BR-06 | AC-01 | Passed |
+| SEC-AUTHZ-12 | Unit | Account-existence timing equalization | `verifyCredentials` performs exactly one bcrypt comparison for an unknown email (dummy compare) and exactly one for a known email with a wrong password, so response timing does not leak account existence | `server/tests/lab-03/auth-timing.unit.test.ts` | FR-01 | BR-08 | AC-05 | Passed |
+| TKT-PRIO-01 | API | IT Priority initialized on creation | For each requested priority (`LOW`/`MEDIUM`/`HIGH`), the persisted `Ticket.itPriority` equals the submitted `requestedPriority` (frozen §9.3) | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
+| TKT-PRIO-02 | API | Client-supplied `itPriority` ignored | A request body containing a different `itPriority` is ignored; the stored value still equals the validated `requestedPriority` | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
+| TKT-PRIO-03 | API | Create response shape unchanged | The Lab 2 create response envelope and key set are unchanged; `itPriority` now reflects the frozen initialization rule and `ticketOwnerId` remains null | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
 | SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Planned |
 | SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Planned |
 | SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Planned |
@@ -329,6 +377,9 @@ security/authorization, migration/regression, and end-to-end coverage.
 | MIG-FAIL-03 | DB | Recovery after a Phase C failure | After a late Phase C failure the database is in the documented resumable state (Phase A applied, backfill committed, Phase C unapplied); a subsequent valid run resumes at Phase C and completes with all Users/Tickets/Attachments present and `migrate status` clean | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
 | DB-MIG-06 | DB | Resume identity verification | A resume with matching row counts but mismatched legacy-to-`User` identity (different id/email/role) is rejected with `MigrationStopAndReportError`; Phase C is not applied and `DevRequester` still exists | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
 | DB-MIG-07 | DB | Resume full-mapping verification | A resume whose `User` row matches a legacy row on `id`/`email`/`role` but diverges on `name`, `isActive`, or the deterministic initial password is rejected with `MigrationStopAndReportError`; Phase C is not applied and `DevRequester` still exists | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-08 | DB | Attachment uploader ownership on resume | A backfill-complete fixture whose `Attachment.uploaderUserId` diverges from `uploaderRequesterId` aborts with `MigrationStopAndReportError` naming the attachment ID; Phase C is not recorded, the legacy columns and `DevRequester` still exist, and the attachment rows are unchanged | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-09 | DB | Attachment remover ownership on resume | A backfill-complete fixture whose `removedByUserId` is NULL while `removedByRequesterId` is set aborts with `MigrationStopAndReportError` (the `IS DISTINCT FROM` guard catches the NULL case a plain `<>` would miss); Phase C is not applied and `DevRequester` still exists | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-10 | DB | Correct backfill-complete resume | A correct backfill-complete fixture (soft-removed attachment with remover, never-removed attachment with both remover columns NULL, and a different uploader) resumes and completes Phase C; ownership values survive the legacy-column drop and `migrate status` is clean | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
 | SEC-MIG-01 | DB | Migration credential non-disclosure | A failing `psql` migration (real production path) produces captured stdout/stderr/error output containing no `scheme://user:password@` credential fragment and not the password value | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-06 | AC-25 | Passed |
 | SEED-01 | DB | Seed idempotency | Safe to run repeatedly; two runs produce identical state with no duplicate seed records | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
 | SEED-TKT-01 | DB | Canonical ticket-number format | Every seed-owned Ticket number matches the canonical six-digit `TKT-YYYY-NNNNNN` contract | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
@@ -367,12 +418,12 @@ security/authorization, migration/regression, and end-to-end coverage.
 
 ## 6. Requirement → Test Mapping Summary
 Every Acceptance Criterion maps to at least one planned test:
-- AC-01 → API-AUTH-01, API-AUTH-05, API-AUTH-09, UNIT-AUTH-01, UI-LOGIN-01, E2E-01
-- AC-02 → API-AUTH-06, API-AUTH-07, API-AUTH-08, UI-CHPWD-01, UI-CHPWD-02, E2E-01
+- AC-01 → API-AUTH-01, API-AUTH-05, API-AUTH-09, API-AUTH-10, SEC-AUTHZ-11, UNIT-AUTH-01, UI-LOGIN-01, E2E-01
+- AC-02 → API-AUTH-06, API-AUTH-07, API-AUTH-08, API-AUTH-11, UI-CHPWD-01, UI-CHPWD-02, E2E-01
 - AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05, SEC-AUTHZ-08
 - AC-04 → SEC-AUTHZ-02
-- AC-05 → API-AUTH-02, API-AUTH-03, E2E-01
-- AC-06 → API-AUTH-04, API-AUTH-05b, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, UI-AUTHGATE-03, E2E-01
+- AC-05 → API-AUTH-02, API-AUTH-03, SEC-AUTHZ-12, E2E-01
+- AC-06 → API-AUTH-04, API-AUTH-05b, API-AUTH-12, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, UI-AUTHGATE-03, E2E-01
 - AC-07 → API-REQ-01, API-REQ-02, SEC-AUTHZ-10, E2E-04
 - AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
@@ -391,5 +442,5 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-22 → VISUAL-01, VISUAL-02
 - AC-23 → A11Y-01
 - AC-24 → SEED-01
-- AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05, DB-MIG-06, DB-MIG-07, SEC-MIG-01
+- AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05, DB-MIG-06, DB-MIG-07, DB-MIG-08, DB-MIG-09, DB-MIG-10, SEC-MIG-01, TKT-PRIO-01, TKT-PRIO-02, TKT-PRIO-03
 - AC-26 → DB-MIG-03, DB-MIG-04, API-AUTH-06, API-AUTH-07

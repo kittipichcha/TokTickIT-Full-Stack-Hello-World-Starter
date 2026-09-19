@@ -56,14 +56,29 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 /**
+ * A fixed bcrypt hash used only to equalize the work performed for an unknown email.
+ *
+ * Without this, `verifyCredentials` returns immediately when no User row matches, while a
+ * known email pays the full bcrypt cost. That timing difference leaks account existence
+ * (BR-08 / AC-05 require invalid credentials and inactive accounts to be indistinguishable).
+ * The value is a hash of a random string that is never a valid password for any account.
+ */
+const DUMMY_PASSWORD_HASH = "$2b$10$4YuDTpr7HDrHEZixSChkv.auLZcnuZyf.e0EuoIdkZdZK.1ExBYpy";
+
+/**
  * Verifies credentials. Returns the User on success, or null on failure.
  * Invalid credentials and inactive accounts are indistinguishable (AC-05 / BR-08):
  * the caller returns the same safe generic 401 either way.
+ *
+ * A dummy bcrypt comparison is always performed so that an unknown email costs the same
+ * as a known email with a wrong password (no account-existence timing oracle).
  */
 export async function verifyCredentials(email: string, password: string) {
   const normalized = email.trim().toLowerCase();
   const user = await getPrisma().user.findUnique({ where: { email: normalized } });
   if (!user) {
+    // Equalize timing: perform a real bcrypt comparison against a fixed dummy hash.
+    await verifyPassword(password, DUMMY_PASSWORD_HASH);
     return null;
   }
   const ok = await verifyPassword(password, user.passwordHash);

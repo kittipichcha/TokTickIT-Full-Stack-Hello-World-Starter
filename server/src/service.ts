@@ -321,6 +321,11 @@ export async function createTicket(
     }
 
     // Insert the Ticket using the same authoritative timestamp.
+    //
+    // Frozen specification §9.3: `itPriority` is required and "Initially copies Requested
+    // Priority; changed only by IT Staff/Administrator (BR-16)". It is therefore initialized
+    // from the VALIDATED `requestedPriority` — never read from the request body, which does
+    // not define an `itPriority` field (api-spec §7).
     const ticket = await tx.ticket.create({
       data: {
         ticketNumber,
@@ -330,6 +335,7 @@ export async function createTicket(
         summary: validated.summary,
         description: validated.description,
         requestedPriority: validated.requestedPriority as "LOW" | "MEDIUM" | "HIGH",
+        itPriority: validated.requestedPriority as "LOW" | "MEDIUM" | "HIGH",
         createdAt: authoritativeNow,
         updatedAt: authoritativeNow,
       },

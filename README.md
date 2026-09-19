@@ -445,10 +445,19 @@ resumes at Stage 2. **Never** un-apply tracked migrations or hand-edit `_prisma_
 **Resume identity verification:** when Stage 1 finds the backfill-complete state (Phase A
 applied, `User` row count equal to the legacy `DevRequester` count, Phase C unapplied), it does
 not resume on the count alone. `verifyBackfillIdentity()` asserts that every legacy
-`DevRequester` row has a `User` with the **same `id`**, `role = 'REQUESTER'`, and the same
-normalized email. If any row does not match, the orchestrator throws
-`MigrationStopAndReportError` naming the mismatched id(s) and leaves the database untouched —
-it never resumes at Phase C with a wrong identity mapping.
+`DevRequester` row has a `User` with the **same `id`**, `role = 'REQUESTER'`, the same
+normalized email, the same trimmed `name` and `isActive`, `mustChangePassword = true`, and a
+bcrypt-verifiable deterministic initial password. If any row does not match, the orchestrator
+throws `MigrationStopAndReportError` naming the mismatched id(s) and leaves the database
+untouched — it never resumes at Phase C with a wrong identity mapping.
+
+**Attachment ownership verification:** before Phase C drops the legacy Attachment requester
+columns, `verifyAttachmentOwnership()` asserts that `uploaderUserId` and `removedByUserId`
+exactly mirror `uploaderRequesterId` and `removedByRequesterId` for every row, and that a
+non-null `removedByUserId` resolves to a `User`. The comparison uses `IS DISTINCT FROM` (a plain
+`<>` returns NULL when the remover is NULL and would silently pass). The guard runs on the resume
+path and again immediately before Phase C is applied, so the drop cannot lose the true
+ownership/removal attribution through any entry path.
 
 ### 11.2 Session and CSRF configuration (concrete, frozen policy)
 

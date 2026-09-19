@@ -310,6 +310,56 @@ async function verifyBackfillIdentity(legacy: LegacyRequesterRow[]): Promise<voi
       "Backfilled Attachment.uploaderUserId does not fully mirror uploaderRequesterId; resume is unsafe.",
     );
   }
+
+  // Full attachment ownership verification (uploader AND remover, both directions).
+  await verifyAttachmentOwnership();
+}
+
+/**
+ * Verifies that the Attachment shadow columns exactly mirror the legacy requester columns
+ * before Phase C drops them.
+ *
+ * Phase C drops `uploaderRequesterId` and `removedByRequesterId` and makes
+ * `uploaderUserId` NOT NULL. If a shadow column diverges from its legacy source, the drop
+ * would silently destroy the true ownership/removal attribution. This guard runs on the
+ * resume path and again immediately before Phase C is applied.
+ *
+ * `IS DISTINCT FROM` is required rather than `<>`: a plain `<>` yields NULL when either
+ * side is NULL, so a row whose `removedByUserId` is NULL while `removedByRequesterId` is
+ * set would silently pass. `IS DISTINCT FROM` treats NULL as a comparable value.
+ *
+ * A non-null `removedByUserId` must also resolve to a real User row (the FK is nullable,
+ * so a dangling value would otherwise survive the drop).
+ */
+async function verifyAttachmentOwnership(): Promise<void> {
+  const prisma = getPrisma();
+
+  const mismatched = await prisma.$queryRawUnsafe<{ id: number }[]>(
+    `SELECT id FROM "Attachment"
+     WHERE "uploaderUserId"  IS DISTINCT FROM "uploaderRequesterId"
+        OR "removedByUserId" IS DISTINCT FROM "removedByRequesterId"
+     ORDER BY id`,
+  );
+  if (mismatched.length > 0) {
+    throw new MigrationStopAndReportError(
+      `Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: ` +
+        `${mismatched.map((r) => Number(r.id)).join(", ")}. ` +
+        `Phase C would drop the legacy columns and lose the true ownership/removal attribution. ` +
+        `Follow the README runbook; never hand-edit _prisma_migrations.`,
+    );
+  }
+
+  const orphanRemovers = await prisma.$queryRawUnsafe<{ id: number }[]>(
+    `SELECT a.id FROM "Attachment" a LEFT JOIN "User" u ON u.id = a."removedByUserId"
+     WHERE a."removedByUserId" IS NOT NULL AND u.id IS NULL
+     ORDER BY a.id`,
+  );
+  if (orphanRemovers.length > 0) {
+    throw new MigrationStopAndReportError(
+      `Attachment.removedByUserId does not resolve to a User row for IDs: ` +
+        `${orphanRemovers.map((r) => Number(r.id)).join(", ")}. Resume is unsafe.`,
+    );
+  }
 }
 
 /** Stage-1 preflight: checks Lab-2-schema facts only. Accepts exactly three legal input states. */
@@ -707,6 +757,11 @@ export async function runLab3Migration(): Promise<void> {
   }
 
   // Phase C apply.
+  //
+  // Final ownership guard immediately before the irreversible drop: Phase C drops the
+  // legacy Attachment requester columns, so the shadow columns must exactly mirror them.
+  // This runs on every entry path (fresh, collision-resume, and Phase-C-resume).
+  await verifyAttachmentOwnership();
   console.log(`[migrate-lab3] Applying Phase C (${PHASE_C_DIR}) out-of-band...`);
   await applyTrackedMigrationOutOfBand(PHASE_C_DIR);
 

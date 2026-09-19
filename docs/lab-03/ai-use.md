@@ -99,3 +99,39 @@
   reasoning about the endpoints in isolation, which is what reclassified the CSRF gap from a rare
   edge case to a normal-usage path.
 - Reflection: The plan's DM-17 compatibility set was essential — Phase C drops `DevRequester`, and without the declared adaptation the #35 merge point would not compile and the Lab 2 regression suite would break. Adapting the Lab 2 tests to `prisma.user` (role `REQUESTER`) preserved their assertions exactly rather than weakening them. The scratch-DB proof validated the Prisma-5.22 apply-then-resolve assumption before feature work, so no stop-and-report gate was triggered.
+
+## Issue #35 PR #46 Review Follow-up Entry (Round 6 — credential rotation, ownership guard, IT Priority, async errors)
+
+- Prompt summary: Follow the round-6 remediation plan: rotate the leaked credential (done by the
+  author), fix the attachment-ownership resume gap and the `itPriority` creation defect
+  (tests first), contain unhandled async errors in the auth handlers, apply the non-blocking
+  hardening items, rewrite repository history, and regenerate the evidence at the final head.
+- What was done with output:
+  - **Credential rotation and history rewrite (infra action).** The exposed password was rotated
+    at the source by the author. Repository history was rewritten with `git filter-repo` so the
+    value is absent from every commit, and the evidence bundle was regenerated at the new head.
+    No value is recorded in any document.
+  - **P2 — `itPriority` on creation.** `service.ts::createTicket` now sets
+    `itPriority: validated.requestedPriority` (never read from the request body). Added
+    `TKT-PRIO-01/02/03` (tests written first and confirmed failing) and updated the Lab 2 tests
+    that asserted the old NULL behavior.
+  - **P1-2 — attachment ownership on resume.** Added `verifyAttachmentOwnership()` in
+    `migrate-lab3.ts`, called on the resume path and immediately before Phase C, using
+    `IS DISTINCT FROM` plus a User-resolution check for a non-null `removedByUserId`. Added
+    `DB-MIG-08/09/10` (tests written first and confirmed failing).
+  - **Unhandled async errors.** Wrapped `login`, `logout`, and the `changePasswordHandler`
+    rethrow in `try/catch` returning the canonical `500 INTERNAL_ERROR`, and added a final JSON
+    error middleware in `app.ts`. Added `API-AUTH-10/11/12`.
+  - **Non-blocking hardening.** Rejected the known `.env.example` `SESSION_SECRET` placeholder
+    (`SEC-AUTHZ-11`) and added a dummy bcrypt comparison for unknown emails to remove the
+    account-existence timing oracle (`SEC-AUTHZ-12`).
+  - **Documentation:** updated `docs/lab-03/tests.md` (new rows, AC mappings, round-6 Results
+    Log), `README.md` §11.1 (attachment ownership verification), `docs/lab-03/reviewer.md`, and
+    regenerated the `artifacts/lab-03/issue-35/` evidence bundle at the final head.
+- Reflection: The two real defects were both "the guard checked the wrong thing" — the resume
+  check verified that a shadow column *resolved* rather than that it *mirrored* its source, and
+  the creation path simply never set a required field. Writing the tests first made both failures
+  concrete before any code changed, and the mutation check (removing the guard and confirming
+  DB-MIG-08/09 fail) proved the tests actually exercise the guard rather than passing vacuously.
+  The async-error finding was the most consequential: a transient DB error at login could take
+  the whole API down, which no existing test covered because every test used a healthy database.

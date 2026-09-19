@@ -290,6 +290,29 @@ function dropFixture(adminUrl: string): void {
   }
 }
 
+/**
+ * Builds a populated fixture and drives it into the documented resumable state:
+ * Phase A applied, backfill committed, Phase C unapplied (DB-MIG-08/09/10).
+ *
+ * The state is reached through the REAL orchestrator by injecting a late Phase C failure,
+ * exactly as MIG-FAIL-01 does — never by hand-editing `_prisma_migrations`.
+ */
+function buildBackfillCompleteFixture(): {
+  adminUrl: string;
+  fixtureUrl: string;
+  fixtureUrlWithSchema: string;
+} {
+  const urls = buildPopulatedFixture();
+  const failed = runOrchestrator(urls.fixtureUrlWithSchema, {
+    NODE_ENV: "test",
+    MIGRATION_TEST_FAIL_PHASE_C_AT: "end",
+  });
+  if (failed.ok) {
+    throw new Error("Expected the injected Phase C failure to abort the orchestrator.");
+  }
+  return urls;
+}
+
 describe("DB-MIG-01..05: DevRequester -> User migration", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
@@ -895,6 +918,113 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
         const password = decodeURIComponent(new URL(urls.fixtureUrl).password);
         expect(password.length).toBeGreaterThan(0);
         expect(failed.output).not.toContain(password);
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
+
+  itIfDb(
+    "DB-MIG-08: resume aborts when an attachment uploaderUserId diverges from uploaderRequesterId",
+    async () => {
+      const urls = buildBackfillCompleteFixture();
+      try {
+        // Corrupt exactly one attachment's shadow uploader so it no longer mirrors the
+        // legacy column. Phase C would drop the legacy column and lose the true uploader.
+        await queryFixture(
+          urls.fixtureUrl,
+          `UPDATE "Attachment" SET "uploaderUserId" = 2 WHERE id = 1`,
+        );
+
+        const result = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(result.ok).toBe(false);
+        expect(result.output).toContain("Attachment ownership shadow columns do not mirror");
+        expect(result.output).toContain("1");
+
+        // Phase C is NOT recorded; the legacy columns and DevRequester still exist.
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(false);
+        expect(await fixtureTableExists(urls.fixtureUrl, "DevRequester")).toBe(true);
+        const attCols = await queryFixture<{ column_name: string }>(
+          urls.fixtureUrl,
+          `SELECT column_name FROM information_schema.columns WHERE table_name='Attachment'`,
+        );
+        const attNames = attCols.map((c) => c.column_name);
+        expect(attNames).toContain("uploaderRequesterId");
+        expect(attNames).toContain("removedByRequesterId");
+
+        // The attachment rows are unchanged (the guard never mutates data).
+        const rows = await queryFixture<{ id: number; uploaderUserId: number; uploaderRequesterId: number }>(
+          urls.fixtureUrl,
+          `SELECT id, "uploaderUserId", "uploaderRequesterId" FROM "Attachment" ORDER BY id`,
+        );
+        expect(rows.find((r) => r.id === 1)).toMatchObject({ uploaderUserId: 2, uploaderRequesterId: 1 });
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
+
+  itIfDb(
+    "DB-MIG-09: resume aborts when removedByUserId is NULL while removedByRequesterId is set",
+    async () => {
+      const urls = buildBackfillCompleteFixture();
+      try {
+        // Attachment id 2 is soft-removed with removedByRequesterId = 3. Null the shadow
+        // remover. A plain `<>` comparison would return NULL here and silently pass; the
+        // `IS DISTINCT FROM` guard must catch it.
+        await queryFixture(
+          urls.fixtureUrl,
+          `UPDATE "Attachment" SET "removedByUserId" = NULL WHERE id = 2`,
+        );
+
+        const result = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(result.ok).toBe(false);
+        expect(result.output).toContain("Attachment ownership shadow columns do not mirror");
+        expect(result.output).toContain("2");
+
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(false);
+        expect(await fixtureTableExists(urls.fixtureUrl, "DevRequester")).toBe(true);
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
+
+  itIfDb(
+    "DB-MIG-10: a correct backfill-complete fixture resumes and completes Phase C",
+    async () => {
+      const urls = buildBackfillCompleteFixture();
+      try {
+        // The populated fixture already contains a soft-removed attachment (remover set),
+        // a never-removed attachment (both remover columns NULL), and a different uploader.
+        const resumed = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(resumed.ok).toBe(true);
+        expect(resumed.output).toContain("Migration complete");
+
+        expect(await fixtureTableExists(urls.fixtureUrl, "DevRequester")).toBe(false);
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(true);
+        expect(await fixtureCount(urls.fixtureUrl, "User")).toBe(4);
+        expect(await fixtureCount(urls.fixtureUrl, "Ticket")).toBe(4);
+        expect(await fixtureCount(urls.fixtureUrl, "Attachment")).toBe(3);
+
+        // Ownership survived the drop: uploaderUserId/removedByUserId hold the values that
+        // were in the legacy columns.
+        const rows = await queryFixture<{ id: number; uploaderUserId: number; removedByUserId: number | null }>(
+          urls.fixtureUrl,
+          `SELECT id, "uploaderUserId", "removedByUserId" FROM "Attachment" ORDER BY id`,
+        );
+        expect(rows.find((r) => r.id === 1)).toMatchObject({ uploaderUserId: 1, removedByUserId: null });
+        expect(rows.find((r) => r.id === 2)).toMatchObject({ uploaderUserId: 2, removedByUserId: 3 });
+        expect(rows.find((r) => r.id === 3)).toMatchObject({ uploaderUserId: 4, removedByUserId: null });
+
+        const status = run("npx prisma migrate status", {
+          ...process.env,
+          DATABASE_URL: urls.fixtureUrlWithSchema,
+        });
+        expect(status).toContain("up to date");
       } finally {
         dropFixture(urls.adminUrl);
       }

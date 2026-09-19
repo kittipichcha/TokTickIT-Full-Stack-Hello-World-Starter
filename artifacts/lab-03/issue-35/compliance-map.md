@@ -89,18 +89,21 @@ executable test, and the executed evidence in this bundle. Authoritative sources
 
 | Endpoint (frozen) | Implementation | Test | Evidence |
 |---|---|---|---|
-| §1 `POST /api/auth/login` — `200 {data:{id,name,email,role,mustChangePassword}}`; `400 VALIDATION_ERROR`; `401 UNAUTHENTICATED` (safe generic) | `login()` in `auth.controller.ts` | API-AUTH-01, API-AUTH-02, API-AUTH-03 | `server-vitest.txt` |
-| §2 `POST /api/auth/logout` — `200 {data:{success:true}}`; `401` without session | `logout()` (`req.session.destroy()`) | API-AUTH-04 | same |
+| §1 `POST /api/auth/login` — `200 {data:{id,name,email,role,mustChangePassword}}`; `400 VALIDATION_ERROR`; `401 UNAUTHENTICATED` (safe generic); a DB failure → canonical `500 INTERNAL_ERROR` | `login()` in `auth.controller.ts` (try/catch) | API-AUTH-01, API-AUTH-02, API-AUTH-03, API-AUTH-10 | `server-vitest.txt` |
+| §2 `POST /api/auth/logout` — `200 {data:{success:true}}`; `401` without session; a session-store failure → canonical `500 INTERNAL_ERROR` | `logout()` (`req.session.destroy()`, try/catch) | API-AUTH-04, API-AUTH-12 | same |
 | §3 `GET /api/auth/me` — `200` identity + role; `401` without session; reissues the session's existing `X-CSRF-Token` | `me()` (fresh-User read + `issueCsrfToken()`) | API-AUTH-05, API-AUTH-05b, CSRF-ME-01 | same |
-| §4 `POST /api/auth/change-password` — `200 {data:{success:true, mustChangePassword:false}}`; frozen password policy; wrong current → `400 VALIDATION_ERROR` generic | `changePasswordHandler()` | API-AUTH-07, API-AUTH-08 | same |
+| §4 `POST /api/auth/change-password` — `200 {data:{success:true, mustChangePassword:false}}`; frozen password policy; wrong current → `400 VALIDATION_ERROR` generic; a DB failure → canonical `500 INTERNAL_ERROR` | `changePasswordHandler()` (try/catch) | API-AUTH-07, API-AUTH-08, API-AUTH-11 | same |
 
 ## F. Frozen `tests.md` file paths (never renamed)
 
 | Test row | Frozen Automated Test File | Present? |
 |---|---|---|
-| DB-MIG-01..06 | `server/tests/lab-03/migration.integration.test.ts` | ✅ |
+| DB-MIG-01..10 | `server/tests/lab-03/migration.integration.test.ts` | ✅ |
 | SEED-01 | `server/tests/lab-03/seed.integration.test.ts` | ✅ |
-| API-AUTH-01..09 + API-AUTH-05b + SEC-AUTHZ-06 | `server/tests/lab-03/auth.api.test.ts` | ✅ |
+| API-AUTH-01..12 + API-AUTH-05b + SEC-AUTHZ-06 | `server/tests/lab-03/auth.api.test.ts`, `server/tests/lab-03/auth-error-handling.api.test.ts` | ✅ |
+| SEC-AUTHZ-11 | `server/tests/lab-03/session-secret.unit.test.ts` | ✅ |
+| SEC-AUTHZ-12 | `server/tests/lab-03/auth-timing.unit.test.ts` | ✅ |
+| TKT-PRIO-01..03 | `server/tests/lab-03/ticket-priority.integration.test.ts` | ✅ |
 | UNIT-AUTH-01 | `server/tests/lab-03/auth.unit.test.ts` | ✅ |
 | UNIT-API-ERROR-01..03 + CSRF-ME-01 | `client/src/lab-03-tests/ApiClient.test.ts` | ✅ |
 | UI-LOGIN-01 | `client/src/lab-03-tests/Login.test.tsx` | ✅ |
