@@ -292,8 +292,8 @@ Important:
 - Visual/responsive evidence: 82 screenshots (26 states × 3 viewports + 4 E2E workflow shots).
 - Final release verification evidence lives in `artifacts/lab-02/release/` and was
   produced at the authoritative baseline `8cdebe824272cf101570bb78772379a9090b497f`.
-- Lab 3 (Issue #35) current counts: server **385 passing across 30 files**; client
-  **116 passing across 12 files**. Evidence bundle: `artifacts/lab-03/issue-35/`.
+- Lab 3 (Issue #35) current counts: server **403 passing across 34 files**; client
+  **120 passing across 12 files**. Evidence bundle: `artifacts/lab-03/issue-35/`.
 
 ## 8. API Implemented Today
 

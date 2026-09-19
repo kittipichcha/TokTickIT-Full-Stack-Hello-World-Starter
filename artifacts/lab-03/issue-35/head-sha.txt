@@ -2,27 +2,29 @@
 
 # Implementation commit validated by this evidence bundle.
 # This is the LAST commit that changed implementation code (server/, client/, e2e/).
-implementation-sha: 14287867dd31261bb649c7d1eeb96aeb4759ade9
+implementation-sha: 2654265e9c3ba9983ac1532e3f0c1c62167fe948
 
 # Commit at which the evidence commands were executed and this bundle was written.
 # It is a docs/evidence-only commit: it changes no implementation code.
-evidence-captured-at: 14287867dd31261bb649c7d1eeb96aeb4759ade9
+evidence-captured-at: 2654265e9c3ba9983ac1532e3f0c1c62167fe948
 
 # PR #46 head at the time of this capture.
-pr-head-at-capture: 14287867dd31261bb649c7d1eeb96aeb4759ade9
+pr-head-at-capture: 2654265e9c3ba9983ac1532e3f0c1c62167fe948
 
-# Provenance note (review round 5):
-# `1428786` is the last commit that changed implementation code. It contains the three
-# round-5 fixes:
-#   642351c  fix(lab-03): stop credential-bearing DB URLs from reaching logs/errors
-#   031f8b5  fix(lab-03): verify full frozen legacy-to-User mapping before Phase-C resume
-#   1428786  fix(client): distinguish session-check failure from unauthenticated on mount
-# The evidence below was executed at `1428786` (implementation SHA == evidence SHA), so no
+# Provenance note (review round 6):
+# `2654265` is the last commit that changed implementation code. It contains the round-6
+# fixes:
+#   - service.ts: createTicket initializes itPriority from the validated requestedPriority
+#   - migrate-lab3.ts: verifyAttachmentOwnership() (IS DISTINCT FROM) before Phase C
+#   - auth.controller.ts / app.ts: async auth handlers fail closed with the canonical 500
+#   - config/env.ts: known SESSION_SECRET placeholders rejected
+#   - auth-service.ts: dummy bcrypt compare for unknown emails (no timing oracle)
+#
+# Repository history was rewritten with `git filter-repo` in round 6 to remove a credential
+# that had leaked into earlier evidence logs. Every SHA on this branch changed as a result;
+# the value is absent from all commits. The credential was also rotated at the source.
+# No credential value is recorded in this bundle.
+#
+# The evidence below was executed at `2654265` (implementation SHA == evidence SHA), so no
 # provenance gap exists for this capture. Any later docs/evidence-only commit does not
 # invalidate it (see the bundle README re-run policy).
-#
-# Security note: the round-5 B-1 fix removed a real DB password that had leaked into the
-# previously committed `db-mig-execution.txt` and `server-vitest.txt` via an execSync error
-# message. Those logs were regenerated with the fixed code and contain no credential. The
-# exposed password must still be treated as compromised and rotated, and repository history
-# rewritten (git filter-repo/BFG) — a new commit does not remove it from earlier commits.

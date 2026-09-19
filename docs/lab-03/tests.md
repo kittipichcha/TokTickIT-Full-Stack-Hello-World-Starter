@@ -77,8 +77,9 @@ assertions inside `auth.api.test.ts`.
   - Commands: `npx vitest run` (server); `npx vitest run tests/lab-03/migration.integration.test.ts`;
     `npx vitest run tests/lab-03/seed.integration.test.ts`; `npx prisma validate`;
     `npx prisma migrate status`; `npm run build` (server, client); `npx vitest run` (client).
-  - Results: server **400 passed / 34 files**; DB-MIG-01..10, SEC-MIG-01, TKT-PRIO-01..03,
-    API-AUTH-10..12, SEC-AUTHZ-11/12 executed (not skipped).
+  - Results: server **403 passed / 34 files**; client **120 passed / 12 files**; DB-MIG-01..10,
+    SEC-MIG-01, TKT-PRIO-01..03, API-AUTH-10..12, SEC-AUTHZ-11/12 executed (not skipped). The
+    DB-MIG-08/09 mutation check (guard removed) confirmed both tests fail without the guard.
   - Follow-up: none. `E2E-01..04` remain `Planned` (owned by #42); Requester/Staff/Admin feature
     rows remain `Planned` (owned by #37/#38/#41).
 

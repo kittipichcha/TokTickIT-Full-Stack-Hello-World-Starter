@@ -15,6 +15,5 @@ Error: Not implemented: navigation (except hash changes)
 
  Test Files  12 passed (12)
       Tests  120 passed (120)
-   Start at  10:10:19
-   Duration  44.97s (transform 6.29s, setup 0ms, import 69.51s, tests 56.29s, environment 187.09s)
-
+   Start at  16:52:26
+   Duration  27.06s (transform 4.63s, setup 0ms, import 16.33s, tests 59.39s, environment 39.36s)

@@ -1,69 +1,163 @@
-=== git rev-parse HEAD ===
-14287867dd31261bb649c7d1eeb96aeb4759ade9
+=== DM-17 grep gate: prisma.devRequester references (expect none) ===
+(none)
 
-=== git status --short ===
- M artifacts/lab-03/issue-35/README.md
- M artifacts/lab-03/issue-35/client-vitest.txt
- M artifacts/lab-03/issue-35/db-mig-execution.txt
- M artifacts/lab-03/issue-35/grep-gate.txt
- M artifacts/lab-03/issue-35/head-sha.txt
- M artifacts/lab-03/issue-35/server-vitest.txt
- M docs/lab-03/tests.md
+=== legacy identifiers (declared DM-17 set) ===
+client/src/App.test.tsx:12:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => [
+client/src/App.tsx:5:  fetchDevRequesters,
+client/src/App.tsx:16:  type DevRequester,
+client/src/App.tsx:37:  const [requesters, setRequesters] = useState<DevRequester[]>([]);
+client/src/App.tsx:40:  const [activeRequester, setActiveRequester] = useState<DevRequester | null>(null);
+client/src/App.tsx:85:      const data = await fetchDevRequesters();
+client/src/CreateTicket.tsx:11:  type DevRequester,
+client/src/CreateTicket.tsx:31:  requester: DevRequester;
+client/src/MyTickets.tsx:5:  type DevRequester,
+client/src/MyTickets.tsx:15:  requester: DevRequester;
+client/src/api.ts:8:export interface DevRequester {
+client/src/api.ts:14:export interface DevRequesterResponse {
+client/src/api.ts:15:  data: DevRequester[];
+client/src/api.ts:108:      removedByRequesterId: number | null;
+client/src/api.ts:168:export async function fetchDevRequesters(): Promise<DevRequester[]> {
+client/src/api.ts:172:  const payload = (await response.json()) as DevRequesterResponse;
+client/src/api.ts:198:  return { "X-Dev-Requester-Id": String(id) };
+client/src/api.ts:254:  removedByRequesterId: number | null;
+client/src/lab-02-tests/AttachmentSection.test.tsx:33:    removedByRequesterId: overrides.removedByRequesterId ?? null,
+client/src/lab-02-tests/AttachmentSection.test.tsx:67:  vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/AttachmentSection.test.tsx:160:      removedByRequesterId: 1,
+client/src/lab-02-tests/AttachmentSection.test.tsx:938:      removedByRequesterId: 1,
+client/src/lab-02-tests/AttachmentSection.test.tsx:1129:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => [
+client/src/lab-02-tests/AttachmentSection.test.tsx:1254:      removedByRequesterId: 1,
+client/src/lab-02-tests/AttachmentSection.test.tsx:1513:      removedByRequesterId: 1,
+client/src/lab-02-tests/AttachmentSection.test.tsx:1584:      removedByRequesterId: 1,
+client/src/lab-02-tests/CreateTicket.test.tsx:24:  vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/MyTickets.test.tsx:72:  vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/MyTickets.test.tsx:151:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesterSetA);
+client/src/lab-02-tests/MyTickets.test.tsx:190:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesterSetB);
+client/src/lab-02-tests/MyTickets.test.tsx:221:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/MyTickets.test.tsx:323:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/MyTickets.test.tsx:385:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/MyTickets.test.tsx:521:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/RequesterSelection.integration.test.tsx:86:    // 4b. Verify the requester-context request carried the X-Dev-Requester-Id header
+client/src/lab-02-tests/RequesterSelection.integration.test.tsx:87:    expect(capturedRequesterContextHeaders?.get("X-Dev-Requester-Id")).toBe("1");
+client/src/lab-02-tests/RequesterSelection.test.tsx:37:    vi.mocked(api.fetchDevRequesters).mockReturnValue(new Promise(() => undefined));
+client/src/lab-02-tests/RequesterSelection.test.tsx:46:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => []);
+client/src/lab-02-tests/RequesterSelection.test.tsx:54:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => {
+client/src/lab-02-tests/RequesterSelection.test.tsx:68:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/RequesterSelection.test.tsx:75:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/RequesterSelection.test.tsx:96:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/RequesterSelection.test.tsx:122:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/RequesterSelection.test.tsx:147:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/UiStyles.test.tsx:25:  vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+client/src/lab-02-tests/UiStyles.test.tsx:284:    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
+server/src/controller.ts:3:  getActiveDevRequesters,
+server/src/controller.ts:74:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:136:export async function getDevRequestersHandler(req: Request, res: Response): Promise<void> {
+server/src/controller.ts:138:    const requesters = await getActiveDevRequesters();
+server/src/controller.ts:159:  res.status(200).json({ data: { requesterId: res.locals.devRequesterId as number } });
+server/src/controller.ts:227:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:257:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:383:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:412:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:484:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:511:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:557:    const requesterId = res.locals.devRequesterId as number;
+server/src/controller.ts:595:    const requesterId = res.locals.devRequesterId as number;
+server/src/migrate-lab3.ts:219:/** Reads the legacy DevRequester rows via typed raw SQL (DM-16). */
+server/src/migrate-lab3.ts:223:    `SELECT id, name, email, "isActive", "createdAt" FROM "DevRequester" ORDER BY id`,
+server/src/migrate-lab3.ts:306:     WHERE a."uploaderRequesterId" IS NOT NULL AND (a."uploaderUserId" IS NULL OR u.id IS NULL)`,
+server/src/migrate-lab3.ts:310:      "Backfilled Attachment.uploaderUserId does not fully mirror uploaderRequesterId; resume is unsafe.",
+server/src/migrate-lab3.ts:322: * Phase C drops `uploaderRequesterId` and `removedByRequesterId` and makes
+server/src/migrate-lab3.ts:328: * side is NULL, so a row whose `removedByUserId` is NULL while `removedByRequesterId` is
+server/src/migrate-lab3.ts:339:     WHERE "uploaderUserId"  IS DISTINCT FROM "uploaderRequesterId"
+server/src/migrate-lab3.ts:340:        OR "removedByUserId" IS DISTINCT FROM "removedByRequesterId"
+server/src/migrate-lab3.ts:369:  // Does the legacy DevRequester table exist?
+server/src/migrate-lab3.ts:370:  const devRequesterExists = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
+server/src/migrate-lab3.ts:371:    `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='DevRequester') AS exists`,
+server/src/migrate-lab3.ts:373:  const hasDevRequester = devRequesterExists[0]?.exists === true;
+server/src/migrate-lab3.ts:393:  if (hasDevRequester && !hasUser) {
+server/src/migrate-lab3.ts:398:  if (hasDevRequester && hasUser && phaseAApplied && !phaseCApplied) {
+server/src/migrate-lab3.ts:422:        `DevRequester rows exist. This is neither the pre-backfill nor the post-backfill state. ` +
+server/src/migrate-lab3.ts:427:  if (!hasDevRequester && !hasUser) {
+server/src/migrate-lab3.ts:429:      "Unrecognized database state: neither DevRequester nor User exists. Expected a Lab 2 baseline.",
+server/src/migrate-lab3.ts:433:  if (!hasDevRequester && hasUser) {
+server/src/migrate-lab3.ts:435:      "Unrecognized database state: DevRequester is gone and User exists — this is a finalized " +
+server/src/migrate-lab3.ts:456:        `Duplicate normalized email "${norm}" between DevRequester id ${seenEmails.get(norm)} and ${row.id}`,
+server/src/migrate-lab3.ts:475:        `Migrated email "${norm}" (DevRequester id ${row.id}) collides with existing User id ${existingEmails.get(norm)}`,
+server/src/migrate-lab3.ts:485:        `DevRequester id ${row.id} collides with existing User id ${row.id} (blocks exact ID preservation)`,
+server/src/migrate-lab3.ts:496:  const tables = ["Category", "RelatedSystem", "Ticket", "Attachment", "DevRequester", "TicketSequence"];
+server/src/migrate-lab3.ts:523:  const tables = ["Category", "RelatedSystem", "Ticket", "Attachment", "DevRequester", "TicketSequence", "User"];
+server/src/migrate-lab3.ts:565:  // Legacy FK integrity: every Ticket.requesterId resolves to a DevRequester row.
+server/src/migrate-lab3.ts:567:    `SELECT COUNT(*) AS cnt FROM "Ticket" t LEFT JOIN "DevRequester" d ON d.id = t."requesterId" WHERE d.id IS NULL`,
+server/src/migrate-lab3.ts:571:      "Legacy FK integrity violated: Ticket.requesterId does not resolve to a DevRequester row.",
+server/src/migrate-lab3.ts:575:  // Legacy FK integrity: every Attachment.uploaderRequesterId resolves to a DevRequester row.
+server/src/migrate-lab3.ts:577:    `SELECT COUNT(*) AS cnt FROM "Attachment" a LEFT JOIN "DevRequester" d ON d.id = a."uploaderRequesterId" WHERE a."uploaderRequesterId" IS NOT NULL AND d.id IS NULL`,
+server/src/migrate-lab3.ts:581:      "Legacy FK integrity violated: Attachment.uploaderRequesterId does not resolve to a DevRequester row.",
+server/src/migrate-lab3.ts:585:  // Legacy FK integrity: every Attachment.removedByRequesterId resolves to a DevRequester row.
+server/src/migrate-lab3.ts:587:    `SELECT COUNT(*) AS cnt FROM "Attachment" a LEFT JOIN "DevRequester" d ON d.id = a."removedByRequesterId" WHERE a."removedByRequesterId" IS NOT NULL AND d.id IS NULL`,
+server/src/migrate-lab3.ts:591:      "Legacy FK integrity violated: Attachment.removedByRequesterId does not resolve to a DevRequester row.",
+server/src/migrate-lab3.ts:595:  // Legacy FK integrity: every Ticket.ticketOwnerId (if set) resolves to a DevRequester row.
+server/src/migrate-lab3.ts:597:    `SELECT COUNT(*) AS cnt FROM "Ticket" t LEFT JOIN "DevRequester" d ON d.id = t."ticketOwnerId" WHERE t."ticketOwnerId" IS NOT NULL AND d.id IS NULL`,
+server/src/migrate-lab3.ts:601:      "Legacy FK integrity violated: Ticket.ticketOwnerId does not resolve to a DevRequester row.",
+server/src/migrate-lab3.ts:607: * Backfills every DevRequester row into User with exact ID preservation (single transaction).
+server/src/migrate-lab3.ts:637:      `UPDATE "Attachment" SET "uploaderUserId" = "uploaderRequesterId", "removedByUserId" = "removedByRequesterId"`,
+server/src/migrate-lab3.ts:722:  // The scan compares legacy DevRequester rows against the User table. Once the backfill
+server/src/migrate-lab3.ts:754:    console.log(`[migrate-lab3] Backfilling ${legacy.length} DevRequester rows into User...`);
+server/src/module.ts:5:  getDevRequestersHandler,
+server/src/module.ts:18:import { requireDevRequesterContext } from "./requester-context.js";
+server/src/module.ts:58:router.get("/dev-requesters", getDevRequestersHandler);
+server/src/module.ts:62:router.get("/requester-context", requireDevRequesterContext, getRequesterContextHandler);
+server/src/module.ts:65:router.get("/tickets", requireDevRequesterContext, getMyTicketsHandler);
+server/src/module.ts:66:router.post("/tickets", requireDevRequesterContext, createTicketHandler);
+server/src/module.ts:67:router.get("/tickets/:ticketNumber", requireDevRequesterContext, getTicketDetailHandler);
+server/src/module.ts:72:  requireDevRequesterContext,
+server/src/module.ts:108:  requireDevRequesterContext,
+server/src/module.ts:113:  requireDevRequesterContext,
+server/src/module.ts:118:  requireDevRequesterContext,
+server/src/module.ts:123:  requireDevRequesterContext,
+server/src/requester-context.ts:2:import { isActiveDevRequester } from "./service.js";
+server/src/requester-context.ts:34:export async function requireDevRequesterContext(
+server/src/requester-context.ts:46:    const active = await isActiveDevRequester(requesterId);
+server/src/requester-context.ts:52:    res.locals.devRequesterId = requesterId;
+server/src/service.ts:22:export interface DevRequester {
+server/src/service.ts:66:  removedByRequesterId: number | null;
+server/src/service.ts:105:export async function getActiveDevRequesters(): Promise<DevRequester[]> {
+server/src/service.ts:108:  // the dropped DevRequester table. Legacy response shape preserved (id/name/email).
+server/src/service.ts:116:export async function isActiveDevRequester(id: number): Promise<boolean> {
+server/src/service.ts:586:    // (removedByRequesterId) that existing Lab 2 tests assert.
+server/src/service.ts:596:      removedByRequesterId: a.removedByUserId,
+server/src/service.ts:881:    removedByRequesterId: a.removedByUserId,
+server/src/service.ts:902:  removedByRequesterId: number | null;
+server/src/service.ts:928:    removedByRequesterId: attachment.removedByUserId,
+server/src/service.ts:1029: * Sets isRemoved=true, removedAt, removalReason, removedByRequesterId.
+server/src/service.ts:1106:    removedByRequesterId: updated.removedByUserId,
 
-=== git diff --check ===
+=== git diff --check (expect clean) ===
+warning: in the working copy of 'artifacts/lab-03/issue-35/client-api-error.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'artifacts/lab-03/issue-35/client-build.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/client-vitest.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/db-mig-execution.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/grep-gate.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/head-sha.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'artifacts/lab-03/issue-35/seed-execution.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'artifacts/lab-03/issue-35/server-build-validate.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/server-vitest.txt', LF will be replaced by CRLF the next time Git touches it
-exit=0
+artifacts/lab-03/issue-35/server-build-validate.txt:14: new blank line at EOF.
 
-=== conflict markers ===
-(none above = clean)
+=== conflict markers (expect none) ===
+(none)
 
-=== .env tracked? ===
-no .env tracked
+=== .env tracked (expect none) ===
+(none)
 
-=== prisma.devRequester references ===
-artifacts/lab-03/issue-35/README.md:40:| [`grep-gate.txt`](./grep-gate.txt) | DM-17 grep gate: zero `prisma.devRequester` references; all legacy identifiers confined to the declared set. Plus `git diff --check`, conflict-marker grep, and `.env`-not-tracked proof. |
-artifacts/lab-03/issue-35/grep-gate.txt:27:=== prisma.devRequester references ===
-artifacts/lab-03/issue-35/lab2-test-changes.md:19:- **(a) Mechanical identity-source rename** — `prisma.devRequester.*` → `prisma.user.*` with
-artifacts/lab-03/issue-35/lab2-test-changes.md:86:- **Class (a):** `prisma.devRequester.count(...)` → `prisma.user.count({ ... role: "REQUESTER" })`.
-artifacts/lab-03/migration/integration-gate.md:82:grep -rn "prisma.devRequester|.devRequester." server/src/
-
-=== legacy identifier gate (uploaderRequesterId/removedByRequesterId) ===
-artifacts/lab-03/issue-35/compliance-map.md
-artifacts/lab-03/issue-35/grep-gate.txt
-artifacts/lab-03/issue-35/lab2-test-changes.md
-artifacts/lab-03/migration/integration-gate.md
-client/src/api.ts
-client/src/lab-02-tests/AttachmentSection.test.tsx
-docs/lab-02/ai-use.md
-docs/lab-02/api-spec.md
-docs/lab-02/specification.md
-docs/lab-02/tests.md
-docs/lab-03/reviewer.md
-docs/lab-03/specification.md
-docs/lab-03/tests.md
-server/prisma/migrations/20260825000000_add_ticket_related_system_attachment/migration.sql
-server/prisma/migrations/20260826000000_add_ticket_indexes_attachment_relations/migration.sql
-server/prisma/migrations/20260917000001_lab3_phase_c_contract/migration.sql
-server/src/migrate-lab3.ts
-server/src/service.ts
-server/tests/lab-02/attachment-persistence-compensation.integration.test.ts
-server/tests/lab-02/attachments.api.test.ts
-server/tests/lab-02/ticket-detail.api.test.ts
-server/tests/lab-03/migration.integration.test.ts
-
-=== credential sweep: real password value ===
-none (clean)
-
-=== credential sweep: scheme://user:password@ fragments ===
+=== credential-bearing URL sweep (expect only placeholders/redactions) ===
 README.md:223:DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/toktickit?schema=public"
 artifacts/lab-02/release/environment.md:27:- **DATABASE_URL** (from `server/.env`): `postgresql://kitti:***@localhost:5432/tocktick?schema=public`
-artifacts/lab-03/issue-35/grep-gate.txt:62:README.md:223:DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/toktickit?schema=public"
-artifacts/lab-03/issue-35/grep-gate.txt:63:artifacts/lab-02/release/environment.md:27:- **DATABASE_URL** (from `server/.env`): `postgresql://kitti:***@localhost:5432/tocktick?schema=public`
-docs/lab-03/tests.md:47:    `applyTrackedMigrationOutOfBand()` built `psql "postgresql://user:pass@host/db" …` as a
-docs/lab-03/tests.md:56:    scrubbed to `postgresql://kitti:***@…`. New `SEC-MIG-01` forces a real psql failure through
-docs/lab-03/tests.md:83:    (client); `git grep -n "postgresql://.*:.*@"` (repo-wide credential sweep).
+docs/lab-03/tests.md:88:    `applyTrackedMigrationOutOfBand()` built `psql "postgresql://user:pass@host/db" …` as a
+docs/lab-03/tests.md:97:    scrubbed to `postgresql://kitti:***@…`. New `SEC-MIG-01` forces a real psql failure through
+docs/lab-03/tests.md:124:    (client); `git grep -n "postgresql://.*:.*@"` (repo-wide credential sweep).
 server/.env.example:3:DATABASE_URL="postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public"
+
+Note: every match above is a placeholder (USER:PASSWORD, toktickit:toktickit in .env.example),
+a redacted value (kitti:***), or prose describing the round-5 fix. No real credential is present.
+
+=== HEAD ===
+2654265e9c3ba9983ac1532e3f0c1c62167fe948
