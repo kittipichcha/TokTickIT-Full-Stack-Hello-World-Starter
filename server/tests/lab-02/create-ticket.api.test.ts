@@ -46,7 +46,7 @@ describe("API-TKT-01: Create ticket success", () => {
       summary: "Laptop battery drains quickly",
       description: "Battery drains much faster than usual even when idle.",
       requestedPriority: "MEDIUM",
-      itPriority: null,
+      itPriority: "MEDIUM",
       ticketOwnerId: null,
       currentStatus: "NEW",
       createdAt: new Date("2026-08-21T09:14:00.000Z"),
@@ -62,7 +62,7 @@ describe("API-TKT-01: Create ticket success", () => {
     expect(res.body.data).toBeDefined();
     expect(res.body.data.ticketNumber).toMatch(/^TKT-\d{4}-\d{6}$/);
     expect(res.body.data.currentStatus).toBe("NEW");
-    expect(res.body.data.itPriority).toBeNull();
+    expect(res.body.data.itPriority).toBe("MEDIUM");
     expect(res.body.data.ticketOwnerId).toBeNull();
   });
 
@@ -78,7 +78,7 @@ describe("API-TKT-01: Create ticket success", () => {
       summary: "Laptop battery drains quickly",
       description: "Battery drains much faster than usual even when idle.",
       requestedPriority: "MEDIUM",
-      itPriority: null,
+      itPriority: "MEDIUM",
       ticketOwnerId: null,
       currentStatus: "NEW",
       createdAt,
@@ -99,7 +99,7 @@ describe("API-TKT-01: Create ticket success", () => {
     expect(res.body.data.summary).toBe("Laptop battery drains quickly");
     expect(res.body.data.description).toBe("Battery drains much faster than usual even when idle.");
     expect(res.body.data.requestedPriority).toBe("MEDIUM");
-    expect(res.body.data.itPriority).toBeNull();
+    expect(res.body.data.itPriority).toBe("MEDIUM");
     expect(res.body.data.ticketOwnerId).toBeNull();
     expect(res.body.data.currentStatus).toBe("NEW");
   });
@@ -139,19 +139,19 @@ describe("API-TKT-04: Ownership assigned from X-Dev-Requester-Id", () => {
   });
 });
 
-describe("API-TKT-05: IT Priority and Ticket Owner remain null", () => {
+describe("API-TKT-05: IT Priority initialized from Requested Priority; Ticket Owner remains null", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
   });
 
-  it("returns itPriority and ticketOwnerId as null on requester-created tickets", async () => {
+  it("returns itPriority equal to requestedPriority and ticketOwnerId null on requester-created tickets", async () => {
     vi.mocked(service.createTicket).mockResolvedValue({
       id: 1, ticketNumber: "TKT-2026-000001", requesterId: 1,
       categoryId: 1, relatedSystemId: 1,
       summary: "Valid summary text",
       description: "Valid description text for testing",
-      requestedPriority: "MEDIUM", itPriority: null, ticketOwnerId: null,
+      requestedPriority: "MEDIUM", itPriority: "MEDIUM", ticketOwnerId: null,
       currentStatus: "NEW", createdAt: new Date(), updatedAt: new Date(),
     });
 
@@ -166,7 +166,7 @@ describe("API-TKT-05: IT Priority and Ticket Owner remain null", () => {
       });
 
     expect(res.status).toBe(201);
-    expect(res.body.data.itPriority).toBeNull();
+    expect(res.body.data.itPriority).toBe("MEDIUM");
     expect(res.body.data.ticketOwnerId).toBeNull();
   });
 });
@@ -220,7 +220,7 @@ describe("API-TKT-07: Requested Priority server-side validation", () => {
       categoryId: 1, relatedSystemId: 1,
       summary: "Valid summary text",
       description: "Valid description text for testing",
-      requestedPriority: priority, itPriority: null, ticketOwnerId: null,
+      requestedPriority: priority, itPriority: priority, ticketOwnerId: null,
       currentStatus: "NEW", createdAt: new Date(), updatedAt: new Date(),
     });
 
@@ -231,6 +231,7 @@ describe("API-TKT-07: Requested Priority server-side validation", () => {
 
     expect(res.status).toBe(201);
     expect(res.body.data.requestedPriority).toBe(priority);
+    expect(res.body.data.itPriority).toBe(priority);
   });
 });
 

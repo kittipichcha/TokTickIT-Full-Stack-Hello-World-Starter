@@ -58,10 +58,10 @@ describe("SEED-01 / SEED-02: seed idempotency and required records", () => {
     const systems = await prisma.relatedSystem.count({ where: { isActive: true } });
     expect(systems).toBeGreaterThanOrEqual(6);
 
-    const activeRequesters = await prisma.devRequester.count({ where: { isActive: true } });
+    const activeRequesters = await prisma.user.count({ where: { isActive: true, role: "REQUESTER" } });
     expect(activeRequesters).toBeGreaterThanOrEqual(4);
 
-    const inactiveRequesters = await prisma.devRequester.count({ where: { isActive: false } });
+    const inactiveRequesters = await prisma.user.count({ where: { isActive: false, role: "REQUESTER" } });
     expect(inactiveRequesters).toBeGreaterThanOrEqual(1);
   }, 60000);
 
@@ -83,12 +83,12 @@ describe("SEED-01 / SEED-02: seed idempotency and required records", () => {
 
     runSeed();
     const categories1 = await prisma.category.count();
-    const requesters1 = await prisma.devRequester.count();
+    const requesters1 = await prisma.user.count();
     const systems1 = await prisma.relatedSystem.count();
 
     runSeed();
     const categories2 = await prisma.category.count();
-    const requesters2 = await prisma.devRequester.count();
+    const requesters2 = await prisma.user.count();
     const systems2 = await prisma.relatedSystem.count();
 
     expect(categories2).toBe(categories1);

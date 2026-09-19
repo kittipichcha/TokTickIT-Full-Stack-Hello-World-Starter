@@ -41,8 +41,8 @@ afterAll(async () => {
 
   // Clean up any test-created requesters
   if (createdRequesterIds.length > 0) {
-    await prisma.devRequester.deleteMany({
-      where: { id: { in: createdRequesterIds } },
+    await prisma.user.deleteMany({
+      where: { id: { in: createdRequesterIds }, role: "REQUESTER" },
     });
   }
 
@@ -96,8 +96,8 @@ async function createTicket(
  */
 async function getTwoRequesters(): Promise<[number, number]> {
   const prisma = getPrisma();
-  const requesters = await prisma.devRequester.findMany({
-    where: { isActive: true },
+  const requesters = await prisma.user.findMany({
+    where: { isActive: true, role: "REQUESTER" },
     take: 2,
     orderBy: { id: "asc" },
   });
@@ -166,7 +166,7 @@ describe("My Tickets Real DB — Test 2: Search", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
 
@@ -316,7 +316,7 @@ describe("My Tickets Real DB — Test 2b: Response shape", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
   });
@@ -378,7 +378,7 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
 
@@ -494,7 +494,7 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
 
@@ -571,7 +571,7 @@ describe("My Tickets Real DB — Test 4b: Summary ordering with distinct values"
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
 
@@ -634,7 +634,7 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
 
@@ -777,7 +777,7 @@ describe("My Tickets Real DB — Test 6: Pagination", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
 
@@ -910,19 +910,22 @@ describe("My Tickets Real DB — Test 7: Empty vs No-Results", () => {
     const prisma = getPrisma();
 
     // Find a requester with tickets (the one we've been using)
-    const requesterWithTickets = await prisma.devRequester.findFirst({
-      where: { isActive: true },
+    const requesterWithTickets = await prisma.user.findFirst({
+      where: { isActive: true, role: "REQUESTER" },
       orderBy: { id: "asc" },
     });
     expect(requesterWithTickets).toBeTruthy();
     requesterWithTicketsId = requesterWithTickets!.id;
 
     // Create a dedicated zero-ticket requester for deterministic empty-state testing
-    const newRequester = await prisma.devRequester.create({
+    const newRequester = await prisma.user.create({
       data: {
         name: `${TEST_MARKER}-EMPTY-REQ-${Date.now()}`,
         email: `empty-${Date.now()}@test.com`,
+        role: "REQUESTER",
+        passwordHash: "$2b$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0",
         isActive: true,
+        mustChangePassword: true,
       },
     });
     requesterWithNoTicketsId = newRequester.id;
@@ -999,7 +1002,7 @@ describe("My Tickets Real DB — Test 8: Invalid category", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
   });
@@ -1086,7 +1089,7 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
   });
@@ -1202,7 +1205,7 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
   });
@@ -1276,8 +1279,8 @@ describe("API-REQ-02: Historical inactive requester — data preserved, API inac
     const prisma = getPrisma();
 
     // Find the inactive requester from seed data (Edsger Dijkstra)
-    const inactive = await prisma.devRequester.findFirst({
-      where: { isActive: false },
+    const inactive = await prisma.user.findFirst({
+      where: { isActive: false, role: "REQUESTER" },
     });
     expect(inactive).toBeTruthy();
     inactiveRequesterId = inactive!.id;
@@ -1286,7 +1289,7 @@ describe("API-REQ-02: Historical inactive requester — data preserved, API inac
 
   itIfDb("inactive requester database row still exists", async () => {
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findUnique({
+    const requester = await prisma.user.findUnique({
       where: { id: inactiveRequesterId },
     });
     expect(requester).toBeTruthy();
@@ -1335,7 +1338,7 @@ describe("API-REQ-02: Historical inactive requester — data preserved, API inac
   itIfDb("tickets owned by inactive requester are not accessible through My Tickets API", async () => {
     // First create a ticket as an active requester
     const prisma = getPrisma();
-    const activeRequester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const activeRequester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(activeRequester).toBeTruthy();
 
     const ticketNumber = await createTicket(activeRequester!.id, {

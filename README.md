@@ -102,6 +102,11 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |  |- RequesterSelection.integration.test.tsx
 |  |  |  |- RequesterSelection.test.tsx
 |  |  |  |- UiStyles.test.tsx
+|  |  |- lab-03-tests/
+|  |  |  |- ApiClient.test.ts
+|  |  |  |- AuthGate.test.tsx
+|  |  |  |- ChangePassword.test.tsx
+|  |  |  |- Login.test.tsx
 |  |- package.json
 |  |- tsconfig.json
 |  |- vite.config.ts
@@ -109,6 +114,13 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |- docs/
 |  |- lab-01/
 |  |- lab-02/
+|  |  |- ai-use.md
+|  |  |- api-spec.md
+|  |  |- reviewer.md
+|  |  |- specification.md
+|  |  |- tests.md
+|  |  |- ui-spec.md
+|  |- lab-03/
 |     |- ai-use.md
 |     |- api-spec.md
 |     |- reviewer.md
@@ -124,22 +136,30 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |- partial-success-attachment.spec.ts
 |  |  |- requester-ticket-flow.spec.ts
 |  |  |- responsive-visual.spec.ts
+|  |- lab-03/                 # owned by #42 (E2E-01..04); not created by #35
 |- server/
 |  |- prisma/
 |  |  |- migrations/
+|  |  |  |- 20260917000000_lab3_phase_a_expand/
+|  |  |  |- 20260917000001_lab3_phase_c_contract/
 |  |  |- schema.prisma
 |  |  |- seed.ts
 |  |- src/
 |  |  |- app.ts
 |  |  |- attachment-storage.ts
+|  |  |- auth-service.ts
+|  |  |- auth.controller.ts
+|  |  |- config/
 |  |  |- controller.ts
 |  |  |- id-domain.ts
 |  |  |- index.ts
 |  |  |- integer-validation.ts
+|  |  |- migrate-lab3.ts
 |  |  |- module.ts
 |  |  |- prisma.ts
 |  |  |- requester-context.ts
 |  |  |- service.ts
+|  |  |- session.ts
 |  |  |- test-seams.ts
 |  |  |- ticket-number.ts
 |  |- tests/
@@ -171,6 +191,11 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |  |- seed.integration.test.ts
 |  |  |  |- ticket-detail.api.test.ts
 |  |  |  |- ticket-number-concurrency.integration.test.ts
+|  |  |- lab-03/
+|  |  |  |- auth.api.test.ts
+|  |  |  |- auth.unit.test.ts
+|  |  |  |- migration.integration.test.ts
+|  |  |  |- seed.integration.test.ts
 |  |- package.json
 |  |- tsconfig.json
 |  |- vitest.config.ts
@@ -267,6 +292,8 @@ Important:
 - Visual/responsive evidence: 82 screenshots (26 states × 3 viewports + 4 E2E workflow shots).
 - Final release verification evidence lives in `artifacts/lab-02/release/` and was
   produced at the authoritative baseline `8cdebe824272cf101570bb78772379a9090b497f`.
+- Lab 3 (Issue #35) current counts: server **403 passing across 34 files**; client
+  **120 passing across 12 files**. Evidence bundle: `artifacts/lab-03/issue-35/`.
 
 ## 8. API Implemented Today
 
@@ -384,3 +411,103 @@ omitted/blank, 1–200 chars after trim). A removed attachment returns `409 CONF
 - Lab 2 uses development requester identity only, not real authentication.
 - Keep ownership enforcement server-side for all requester-owned resources.
 - Keep `docs/lab-02/tests.md` and `docs/lab-02/ai-use.md` updated as work progresses.
+
+## 11. Lab 3 — Identity, Database Migration & Authentication (Issue #35)
+
+Issue #35 replaces the Lab 2 `X-Dev-Requester-Id` dev identity with real session
+authentication and migrates `DevRequester` → `User`.
+
+### 11.1 Database migration (two-phase, tracked)
+
+The migration is applied by the orchestrator, never by a plain `prisma migrate deploy`
+with Phase C pending:
+
+```
+cd server && npm run migrate:lab3 -- run
+```
+
+- **Phase A** (`20260917000000_lab3_phase_a_expand`, additive-only): adds `User`, `Role`,
+  `Comment`, `InternalNote`, `Ticket.appearsResolved` (nullable), the remaining 7
+  `TicketStatus` values, and `Attachment.uploaderUserId`/`removedByUserId` shadow columns.
+- **Backfill** (single transaction): every `DevRequester` row becomes a `User` with
+  **exact ID preservation**, `role = REQUESTER`, `mustChangePassword = true`, and a
+  deterministic password.
+- **Phase C** (`20260917000001_lab3_phase_c_contract`): finalizes constraints, converts all
+  §9.3 timestamps to `timestamptz(3)` (UTC-preserving), drops the legacy Attachment
+  requester columns, and drops `DevRequester`.
+
+**Collision recovery (DM-18):** if the Stage-2 scan finds an email/ID collision, the
+orchestrator aborts loudly (`MigrationCollisionError`) and leaves the database in the
+documented Phase-A-applied state. Resolve the collision source (manual data fix or user
+decision), then re-run the orchestrator — Stage 1 recognizes the Phase-A-applied state and
+resumes at Stage 2. **Never** un-apply tracked migrations or hand-edit `_prisma_migrations`.
+
+**Resume identity verification:** when Stage 1 finds the backfill-complete state (Phase A
+applied, `User` row count equal to the legacy `DevRequester` count, Phase C unapplied), it does
+not resume on the count alone. `verifyBackfillIdentity()` asserts that every legacy
+`DevRequester` row has a `User` with the **same `id`**, `role = 'REQUESTER'`, the same
+normalized email, the same trimmed `name` and `isActive`, `mustChangePassword = true`, and a
+bcrypt-verifiable deterministic initial password. If any row does not match, the orchestrator
+throws `MigrationStopAndReportError` naming the mismatched id(s) and leaves the database
+untouched — it never resumes at Phase C with a wrong identity mapping.
+
+**Attachment ownership verification:** before Phase C drops the legacy Attachment requester
+columns, `verifyAttachmentOwnership()` asserts that `uploaderUserId` and `removedByUserId`
+exactly mirror `uploaderRequesterId` and `removedByRequesterId` for every row, and that a
+non-null `removedByUserId` resolves to a `User`. The comparison uses `IS DISTINCT FROM` (a plain
+`<>` returns NULL when the remover is NULL and would silently pass). The guard runs on the resume
+path and again immediately before Phase C is applied, so the drop cannot lose the true
+ownership/removal attribution through any entry path.
+
+**`User.id` sequence re-sync:** the backfill inserts Users with **explicit** ids (exact ID
+preservation), which does not advance the `User_id_seq` sequence. `syncUserIdSequence()` therefore
+runs on **every** entry path (fresh, collision-resume, and Phase-C-resume) immediately before
+Phase C, using the three-argument `setval` form so the next id is exactly `MAX(id) + 1` (and `1`
+on an empty table). Because it is idempotent and unconditional, a crash in the window between the
+backfill commit and the sync — or a database already stuck in that state — is repaired by the next
+run. Without it, the first insert that relies on `@default(autoincrement())` (the app's user
+creation, and the seed) would reuse a taken id and fail with a duplicate key on `User_pkey`.
+`postChecks()` additionally asserts the sequence's next value is greater than `MAX(id)`, so
+removing the sync later fails loudly at migration time rather than silently at first user creation.
+
+### 11.2 Session and CSRF configuration (concrete, frozen policy)
+
+- **Session store:** `express-session` + `connect-pg-simple` (`session` table,
+  `createTableIfMissing: true`), TTL 1800 s, `rolling: true`, `disableTouch: false`.
+- **Cookie:** `httpOnly: true`, `sameSite: "lax"`, `secure: true` in production,
+  `maxAge = 30 * 60 * 1000` (30-minute rolling idle expiry; no absolute timeout).
+- **CSRF:** session-bound synchronizer token issued via the `X-CSRF-Token` response header on
+  `login` **and `me`**; echoed on state-changing calls; missing/invalid → `403 FORBIDDEN`.
+  `GET /api/auth/me` re-sends the session's **existing** token (it does not regenerate one), so a
+  page reload — where the client calls `fetchMe()` on mount and has no stored token — can still
+  perform authenticated mutations.
+- **`SESSION_SECRET`:** server-only; `.env.example` carries a placeholder only. The server
+  refuses to boot without a real secret (>= 32 chars) in non-test environments; tests inject
+  a deterministic test-only secret.
+
+### 11.3 Auth endpoints
+
+| Method | Endpoint | Auth |
+|---|---|---|
+| POST | `/api/auth/login` | public; safe generic `401 UNAUTHENTICATED` for invalid credentials or inactive account |
+| POST | `/api/auth/logout` | authenticated + CSRF |
+| GET | `/api/auth/me` | authenticated; reissues the session's existing `X-CSRF-Token` |
+| POST | `/api/auth/change-password` | authenticated + CSRF |
+
+Gate rejections: `requireAuth` → `401 UNAUTHENTICATED`; `requirePasswordChanged` →
+`401 PASSWORD_CHANGE_REQUIRED`; `requireCsrf` → `403 FORBIDDEN`.
+
+**Logout failure behavior (BR-33/AC-06):** if `POST /api/auth/logout` fails, the client keeps the
+authenticated shell and shows an inline error near the Logout button. Client state is not cleared
+until the server confirms logout succeeded — a failed logout is never presented as success.
+
+### 11.4 Local development credentials (no real secrets)
+
+Seeded users are created with the deterministic password
+`Lab3-` + first 20 hex chars of `SHA-256(lowercase(trim(email)) + ":" + trim(name))`
+(frozen §13 decision 13). The seed provides 4 active + 1 inactive Requesters, 3 active + 1
+inactive IT Staff, and 1 active Administrator. Example: `ada@example.com` /
+`Lab3-18ea620d20bd6a06d667`. These are development-only values.
+
+Downstream issues (#37/#38/#41) consume the shared client transport `client/src/api-client.ts`
+and the fresh-User session authority rule delivered here.

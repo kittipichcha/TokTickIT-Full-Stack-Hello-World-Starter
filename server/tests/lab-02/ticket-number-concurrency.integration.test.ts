@@ -109,7 +109,7 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
   itIfDb("createTicket produces distinct, format-valid numbers and currentStatus NEW", async () => {
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester && category && system).toBeTruthy();
@@ -166,7 +166,7 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
   itIfDb("concurrent HTTP creates all receive distinct, contiguous ticket numbers with matching persisted year", async () => {
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester && category && system).toBeTruthy();
@@ -232,7 +232,7 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
   itIfDb("returns 409 TICKET_SEQUENCE_EXHAUSTED and creates no ticket when exhausted", async () => {
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester && category && system).toBeTruthy();

@@ -72,7 +72,7 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester).toBeTruthy();
@@ -333,7 +333,7 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
 
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
 
@@ -370,12 +370,13 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
     });
 
     expect(ticket!.requesterId).toBe(requesterId);
-    expect(ticket!.itPriority).toBeNull();
+    // Frozen §9.3: itPriority initially copies requestedPriority.
+    expect(ticket!.itPriority).toBe("MEDIUM");
     expect(ticket!.ticketOwnerId).toBeNull();
     expect(ticket!.currentStatus).toBe("NEW");
   });
 
-  itIfDb("returns itPriority and ticketOwnerId as null on requester-created tickets", async () => {
+  itIfDb("returns itPriority equal to requestedPriority and ticketOwnerId null on requester-created tickets", async () => {
     const res = await request(app)
       .post("/api/tickets")
       .set("X-Dev-Requester-Id", String(requesterId))
@@ -389,7 +390,7 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
 
     expect(res.status).toBe(201);
     createdTicketNumbers.push(res.body.data.ticketNumber);
-    expect(res.body.data.itPriority).toBeNull();
+    expect(res.body.data.itPriority).toBe("MEDIUM");
     expect(res.body.data.ticketOwnerId).toBeNull();
     expect(res.body.data.currentStatus).toBe("NEW");
   });
@@ -406,8 +407,8 @@ describe("API-TKT-INT-04: Real Ticket Detail ownership enforcement", () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
 
-    const requesters = await prisma.devRequester.findMany({
-      where: { isActive: true },
+    const requesters = await prisma.user.findMany({
+      where: { isActive: true, role: "REQUESTER" },
       take: 2,
       orderBy: { id: "asc" },
     });

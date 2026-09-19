@@ -16,8 +16,33 @@ import {
   requireTicketOwnership,
 } from "./controller.js";
 import { requireDevRequesterContext } from "./requester-context.js";
+import { requireAuth, requireAuthAndCsrf, requirePasswordChanged } from "./session.js";
+import {
+  login,
+  logout,
+  me,
+  changePasswordHandler,
+  appContext,
+} from "./auth.controller.js";
 
 export const router = Router();
+
+// ---- Lab 3 auth endpoints (Issue #35) ----
+// Gate exemptions (frozen): login public; me/logout/change-password authenticated,
+// content-gate-exempt. logout/change-password are state-changing -> requireAuth + requireCsrf.
+router.post("/auth/login", login);
+router.get("/auth/me", requireAuth, me);
+router.post("/auth/logout", requireAuthAndCsrf, logout);
+router.post("/auth/change-password", requireAuthAndCsrf, changePasswordHandler);
+
+// ---- Lab 3 normal-application entry (Issue #35) ----
+// The minimal protected endpoint that enforces the mandatory-password-change gate
+// (BR-02 / AC-02): requireAuth -> requirePasswordChanged -> handler. A user with
+// mustChangePassword = true receives 401 PASSWORD_CHANGE_REQUIRED here; after a
+// successful change-password the same session reaches this endpoint. This is the
+// #35-owned protected surface; downstream #37/#38/#41 feature routes are not
+// implemented here.
+router.get("/app/context", requireAuth, requirePasswordChanged, appContext);
 
 const upload = multer({
   storage: multer.memoryStorage(),

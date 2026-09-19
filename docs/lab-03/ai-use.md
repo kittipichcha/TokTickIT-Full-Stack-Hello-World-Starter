@@ -52,3 +52,123 @@
   - **Documentation-clarity fixes (N-05–N-07):** clarified in §0 that `401 UNAUTHENTICATED` applies uniformly to every protected endpoint and is not re-listed per-endpoint; confirmed `confirmPassword` is a client-side-only check never sent to the API; documented that the Status Transition Matrix's "Confirmation" transitions are a client-side modal gate only, with the API applying the transition unconditionally.
   - Added 6 new planned test rows (`SEC-AUTHZ-08/09/10`, `API-STAFF-10`, `UI-CHPWD-02`, `UI-STAFF-02`) and updated the §6 AC→test mapping.
 - Reflection: This round was a self-directed completeness audit (not a partner review) that found only mechanical, already-implied error-case gaps against handout §6.2 and the team's own frozen decisions — no new judgment calls were required. The Attachment byte-size/MIME-type values remain intentionally unstated (inherited from the Lab 2 contract, which this document does not duplicate).
+
+## Issue #35 Implementation Entry (Identity, Database Migration & Authentication)
+
+- Prompt summary: Implement the Issue #35 plan (Revision 13) end-to-end — the two-phase migration, the auth surface, the seed expansion, the shared client transport, the auth UI, and all frozen tests — creating a branch/worktree from `lab3-staging` and following the plan strictly.
+- What was done with output:
+  - **Branch/worktree:** `feature/issue-35-identity-db-migration-auth` at `issue-35-worktree`, based on `origin/lab3-staging` @ `749aa96` (PR #45 merge).
+  - **Scratch-DB proof (Prisma 5.22):** proved apply-then-resolve works (out-of-band SQL + `prisma migrate resolve --applied`); ran the full orchestrator from a fresh Lab-2 baseline; demonstrated collision abort + recovery/resume (DM-18). Recorded at `artifacts/lab-03/migration/scratch-db-proof.md`.
+  - **Migrations:** Phase A (`20260917000000_lab3_phase_a_expand`) and Phase C (`20260917000001_lab3_phase_c_contract`); `migrate-lab3.ts` orchestrator (two-stage preflight, three-way collision scan, single-transaction backfill, post-backfill verification, DM-TIME-01 UTC conversion).
+  - **Auth surface:** `session.ts` (fresh-User authority; `401 UNAUTHENTICATED` / `401 PASSWORD_CHANGE_REQUIRED` / `403 FORBIDDEN`), `auth-service.ts` (bcrypt + frozen policy), `auth.controller.ts`, CORS.
+  - **Seed:** idempotent expansion (Requesters, IT Staff, Administrator, tickets, comments, notes).
+  - **Client:** `api-client.ts` transport, `Login.tsx`, `ChangePassword.tsx`, `AuthGate.tsx`.
+  - **DM-17 compatibility set:** adapted `service.ts`/`requester-context.ts` and the Lab 2 test files to the `User` model, preserving Lab 2 semantics and response shapes.
+
+## Issue #35 PR #46 Review Follow-up Entry (Round 4 — three re-audit blockers)
+
+- Prompt summary: A re-audit of PR #46 beyond the three already-flagged items confirmed the three
+  blockers were the complete set, and supplied a detailed fix plan for each. Implement the three
+  fixes strictly as specified, update the related documentation (including `README.md`), and
+  commit and push.
+- What was done with output:
+  - **F-1 — migration resume identity verification.** `stage1Preflight()` previously returned
+    `"backfill-complete"` on row-count equality alone. Added `verifyBackfillIdentity(legacy)` in
+    `server/src/migrate-lab3.ts`, which asserts same `id`, `role = 'REQUESTER'`, and normalized
+    email for every legacy `DevRequester` row before resuming at Phase C, and throws
+    `MigrationStopAndReportError` naming the mismatched id(s) otherwise. Added `DB-MIG-06`.
+  - **F-2 — `/api/auth/me` CSRF reissue.** `me()` now calls `issueCsrfToken(req, res)`, which
+    re-sends the session's existing token. This closes a normal-usage gap: `AuthGate` calls
+    `fetchMe()` on every mount, so any page reload previously left an authenticated session with
+    no client CSRF token and every mutation failed `403`. Added `API-AUTH-05b` and `CSRF-ME-01`.
+  - **F-3 — logout false success.** `handleLogout()` used `finally`, so a failed `logout()` still
+    cleared the user and moved the gate to Login. Replaced with a success path plus a `catch`
+    that preserves the authenticated shell and shows an inline `role="alert"` error. Added
+    `UI-AUTHGATE-01/02`.
+  - **Documentation:** updated `docs/lab-03/tests.md` (new rows, AC-06/AC-25 mappings, Results
+    Log), `docs/lab-03/reviewer.md` (round-4 review record), `README.md` (Lab 3 §11.2/§11.3 and
+    the test-count summary), and regenerated the `artifacts/lab-03/issue-35/` evidence bundle at
+    the new implementation SHA.
+  - **Informational, no change made:** `seed.ts`'s `ensureUser()` email lookup is not
+    case-normalized while the migration backfill is. Harmless today (hardcoded lowercase seed
+    emails) and duplicate-email enforcement belongs to #41; recorded for that issue.
+- Reflection: All three defects were in code paths that the existing tests did not exercise —
+  a resume path that only triggers after a Phase C failure, a CSRF header on a `GET` that no test
+  asserted, and a logout failure branch that the `finally` block made unreachable. The re-audit's
+  value was tracing the *actual* call paths (`AuthGate` → `fetchMe()` on every mount) rather than
+  reasoning about the endpoints in isolation, which is what reclassified the CSRF gap from a rare
+  edge case to a normal-usage path.
+- Reflection: The plan's DM-17 compatibility set was essential — Phase C drops `DevRequester`, and without the declared adaptation the #35 merge point would not compile and the Lab 2 regression suite would break. Adapting the Lab 2 tests to `prisma.user` (role `REQUESTER`) preserved their assertions exactly rather than weakening them. The scratch-DB proof validated the Prisma-5.22 apply-then-resolve assumption before feature work, so no stop-and-report gate was triggered.
+
+## Issue #35 PR #46 Review Follow-up Entry (Round 6 — credential rotation, ownership guard, IT Priority, async errors)
+
+- Prompt summary: Follow the round-6 remediation plan: rotate the leaked credential (done by the
+  author), fix the attachment-ownership resume gap and the `itPriority` creation defect
+  (tests first), contain unhandled async errors in the auth handlers, apply the non-blocking
+  hardening items, rewrite repository history, and regenerate the evidence at the final head.
+- What was done with output:
+  - **Credential rotation and history rewrite (infra action).** The exposed password was rotated
+    at the source by the author. Repository history was rewritten with `git filter-repo` so the
+    value is absent from every commit, and the evidence bundle was regenerated at the new head.
+    No value is recorded in any document.
+  - **P2 — `itPriority` on creation.** `service.ts::createTicket` now sets
+    `itPriority: validated.requestedPriority` (never read from the request body). Added
+    `TKT-PRIO-01/02/03` (tests written first and confirmed failing) and updated the Lab 2 tests
+    that asserted the old NULL behavior.
+  - **P1-2 — attachment ownership on resume.** Added `verifyAttachmentOwnership()` in
+    `migrate-lab3.ts`, called on the resume path and immediately before Phase C, using
+    `IS DISTINCT FROM` plus a User-resolution check for a non-null `removedByUserId`. Added
+    `DB-MIG-08/09/10` (tests written first and confirmed failing).
+  - **Unhandled async errors.** Wrapped `login`, `logout`, and the `changePasswordHandler`
+    rethrow in `try/catch` returning the canonical `500 INTERNAL_ERROR`, and added a final JSON
+    error middleware in `app.ts`. Added `API-AUTH-10/11/12`.
+  - **Non-blocking hardening.** Rejected the known `.env.example` `SESSION_SECRET` placeholder
+    (`SEC-AUTHZ-11`) and added a dummy bcrypt comparison for unknown emails to remove the
+    account-existence timing oracle (`SEC-AUTHZ-12`).
+  - **Documentation:** updated `docs/lab-03/tests.md` (new rows, AC mappings, round-6 Results
+    Log), `README.md` §11.1 (attachment ownership verification), `docs/lab-03/reviewer.md`, and
+    regenerated the `artifacts/lab-03/issue-35/` evidence bundle at the final head.
+- Reflection: The two real defects were both "the guard checked the wrong thing" — the resume
+  check verified that a shadow column *resolved* rather than that it *mirrored* its source, and
+  the creation path simply never set a required field. Writing the tests first made both failures
+  concrete before any code changed, and the mutation check (removing the guard and confirming
+  DB-MIG-08/09 fail) proved the tests actually exercise the guard rather than passing vacuously.
+  The async-error finding was the most consequential: a transient DB error at login could take
+  the whole API down, which no existing test covered because every test used a healthy database.
+## Issue #35 PR #46 Review Follow-up Entry (Round 7 — User.id sequence sync after a post-backfill-commit crash)
+
+- Prompt summary: Follow the round-7 remediation plan: reproduce the "backfill committed, `setval`
+  never ran" state, write the failing tests first, replace the inline `setval` with one idempotent
+  sync that runs on every path, add a post-check guard, and regenerate the evidence.
+- What was done with output:
+  - **The defect.** `runBackfill()` committed the explicit-ID `User` inserts inside
+    `$transaction(...)`, then ran `setval` afterwards, outside the transaction. The
+    `backfill-complete` resume branch skips `runBackfill()` entirely, so a crash in that window
+    left the sequence behind `MAX(id)` and nothing ever repaired it. The failure was silent: every
+    migration check passed, and the first insert relying on `@default(autoincrement())` (the app's
+    user creation, and the seed) failed later with `duplicate key … User_pkey`.
+  - **Tests first (red).** Added a test-only hook `maybeFailAfterBackfillCommit()`
+    (`MIGRATION_TEST_FAIL_AFTER_BACKFILL_COMMIT=1` + `NODE_ENV=test`, matching the existing
+    `MIGRATION_TEST_FAIL_PHASE_C_AT` guard) called right after the `$transaction(...)` returns.
+    Added `DB-MIG-11` (crash → assert the broken precondition → resume → auto-ID create returns
+    max+1, then +2), `DB-MIG-12` (normal path), and `DB-MIG-13` (zero legacy requesters). All three
+    were confirmed failing before the fix: DB-MIG-11 with the real `duplicate key … User_pkey`
+    error, DB-MIG-12 with next value 6 instead of 5, DB-MIG-13 with next value 2 instead of 1.
+  - **Fix.** Removed the inline `setval` from `runBackfill()` and added `syncUserIdSequence()`,
+    called on **every** entry path immediately before Phase C. It uses the three-argument `setval`
+    form so the next id is exactly `MAX(id) + 1` (and `1` on an empty table); the previous
+    two-argument call skipped a value and wrongly started at 2 on an empty table.
+  - **Guard.** `postChecks()` now reads `last_value`/`is_called` from `User_id_seq` and throws if
+    the next value is `<= MAX(id)`, so removing the sync later fails loudly at migration time.
+  - **Doc nit.** Corrected the `service.ts` comment: spec §9.3 defines `itPriority` as nullable
+    with a default of `requestedPriority`, not "required".
+  - **Documentation:** added `DB-MIG-11/12/13` to `docs/lab-03/tests.md` (marked Passed only after
+    the runs), added the sequence re-sync paragraph to `README.md` §11.1, and regenerated the
+    `artifacts/lab-03/issue-35/` evidence bundle at the final head.
+- Reflection: The bug was a transaction-boundary mistake, not a logic mistake — the `setval` was
+  correct in isolation but sat outside the atomic unit and was skipped entirely on the resume path.
+  The right fix was not a second `setval` in the resume branch (which would still leave the crash
+  window open) but one idempotent sync on every path, so any crash is repaired by the next run and
+  already-broken databases are repaired too. The mutation check (removing the sync call) confirmed
+  DB-MIG-11 fails without it, and the new `postChecks` guard made that failure loud rather than
+  silent.

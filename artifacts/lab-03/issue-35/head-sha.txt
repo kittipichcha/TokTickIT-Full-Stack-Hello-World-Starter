@@ -1,0 +1,39 @@
+# Evidence head SHA
+
+# Implementation commit validated by this evidence bundle.
+# This is the LAST commit that changed implementation code (server/, client/, e2e/).
+implementation-sha: 8f143254bebb22ae27d13b2a10e4114709334737
+
+# Commit at which the evidence commands were executed and this bundle was written.
+# It is a docs/evidence-only commit: it changes no implementation code.
+evidence-captured-at: 88418ce3db8d44e88ac76a50853aefe60fa6795b
+
+# PR #46 head at the time of this capture.
+pr-head-at-capture: 88418ce3db8d44e88ac76a50853aefe60fa6795b
+
+# Provenance note (review round 7):
+# `8f14325` is the last commit that changed implementation code. It contains the round-7
+# fix:
+#   - migrate-lab3.ts: syncUserIdSequence() runs on EVERY entry path immediately before
+#     Phase C (the inline setval was removed from runBackfill()); postChecks() asserts the
+#     sequence next value > MAX(id)
+#   - migrate-lab3.ts: test-only hook maybeFailAfterBackfillCommit()
+#     (MIGRATION_TEST_FAIL_AFTER_BACKFILL_COMMIT=1 + NODE_ENV=test)
+#   - migration.integration.test.ts: DB-MIG-11/12/13
+#   - service.ts: itPriority comment corrected (spec 9.3: nullable, default requestedPriority)
+#
+# Round-6 fixes remain in this history:
+#   - service.ts: createTicket initializes itPriority from the validated requestedPriority
+#   - migrate-lab3.ts: verifyAttachmentOwnership() (IS DISTINCT FROM) before Phase C
+#   - auth.controller.ts / app.ts: async auth handlers fail closed with the canonical 500
+#   - config/env.ts: known SESSION_SECRET placeholders rejected
+#   - auth-service.ts: dummy bcrypt compare for unknown emails (no timing oracle)
+#
+# Repository history was rewritten with `git filter-repo` in round 6 to remove a credential
+# that had leaked into earlier evidence logs. Every SHA on this branch changed as a result;
+# the value is absent from all commits. The credential was also rotated at the source.
+# No credential value is recorded in this bundle.
+#
+# The evidence below was executed at `8f14325` (implementation SHA == evidence SHA), so no
+# provenance gap exists for this capture. Any later docs/evidence-only commit does not
+# invalidate it (see the bundle README re-run policy).
