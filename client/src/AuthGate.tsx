@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import Login from "./Login";
 import ChangePassword from "./ChangePassword";
-import { fetchMe, logout, type AuthUser } from "./api-client";
+import { fetchMe, logout, type ApiError, type AuthUser } from "./api-client";
 import App from "./App";
 
-type AuthState = "loading" | "login" | "change-password" | "authenticated";
+type AuthState = "loading" | "login" | "change-password" | "authenticated" | "session-error";
 
 /**
  * Authenticated shell gate (ui-spec §5.3).
@@ -16,21 +16,39 @@ type AuthState = "loading" | "login" | "change-password" | "authenticated";
  * Logout failure (BR-33, AC-06): authenticated shell is preserved; an inline error is shown
  * near the Logout button. The client state is not cleared until the server confirms logout
  * succeeded — no silent false-success transition to the login screen.
+ *
+ * Mount-time session check: only a 401 means "not authenticated" -> Login. Any other failure
+ * (network error, 5xx) is a session-verification failure, not an unauthenticated user, so it
+ * renders a distinct error screen with an explicit Retry (no auto-retry, mirroring logout).
  */
 export default function AuthGate() {
   const [state, setState] = useState<AuthState>("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
-  useEffect(() => {
+  function loadSession() {
+    setState("loading");
+    setSessionError(null);
     void fetchMe()
       .then((u) => {
         setUser(u);
         setState(u.mustChangePassword ? "change-password" : "authenticated");
       })
-      .catch(() => {
-        setState("login");
+      .catch((err) => {
+        const status = err instanceof Error ? (err as ApiError).status : undefined;
+        if (status === 401) {
+          setState("login");
+        } else {
+          const message = err instanceof Error ? err.message : "Could not verify your session.";
+          setSessionError(message);
+          setState("session-error");
+        }
       });
+  }
+
+  useEffect(() => {
+    loadSession();
   }, []);
 
   function handleLogin(nextUser: AuthUser) {
@@ -57,6 +75,15 @@ export default function AuthGate() {
 
   if (state === "loading") {
     return <div className="auth-screen" role="status">Loading…</div>;
+  }
+
+  if (state === "session-error") {
+    return (
+      <div className="auth-screen">
+        <p role="alert">{sessionError}</p>
+        <button type="button" onClick={loadSession}>Retry</button>
+      </div>
+    );
   }
 
   if (state === "login") {

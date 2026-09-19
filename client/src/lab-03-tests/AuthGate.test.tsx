@@ -97,3 +97,71 @@ describe("UI-AUTHGATE-02: successful logout transitions to Login", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
+
+describe("UI-AUTHGATE-03: mount-time session-check failure is distinct from unauthenticated", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("renders Login when fetchMe rejects with 401", async () => {
+    const err = new Error("Unauthenticated") as apiClient.ApiError;
+    err.status = 401;
+    vi.mocked(apiClient.fetchMe).mockRejectedValue(err);
+
+    render(<AuthGate />);
+
+    const emailInput = await screen.findByLabelText(/Email/i);
+    expect(emailInput).toBeTruthy();
+    expect(screen.queryByTestId("app-stub")).toBeNull();
+  });
+
+  it("renders a session-error screen with Retry (not Login) when fetchMe rejects with 500", async () => {
+    const err = new Error("Server exploded") as apiClient.ApiError;
+    err.status = 500;
+    vi.mocked(apiClient.fetchMe).mockRejectedValue(err);
+
+    render(<AuthGate />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Server exploded");
+    expect(screen.getByRole("button", { name: /Retry/i })).toBeTruthy();
+
+    // Neither the authenticated shell nor the Login screen is shown.
+    expect(screen.queryByTestId("app-stub")).toBeNull();
+    expect(screen.queryByLabelText(/Email/i)).toBeNull();
+  });
+
+  it("renders a session-error screen when fetchMe rejects without a status (network failure)", async () => {
+    vi.mocked(apiClient.fetchMe).mockRejectedValue(new Error("Network error"));
+
+    render(<AuthGate />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Network error");
+    expect(screen.getByRole("button", { name: /Retry/i })).toBeTruthy();
+    expect(screen.queryByLabelText(/Email/i)).toBeNull();
+  });
+
+  it("transitions to authenticated when Retry succeeds after a 500", async () => {
+    const err = new Error("Server exploded") as apiClient.ApiError;
+    err.status = 500;
+    vi.mocked(apiClient.fetchMe).mockRejectedValueOnce(err);
+
+    render(<AuthGate />);
+
+    const retry = await screen.findByRole("button", { name: /Retry/i });
+
+    // The retry now succeeds.
+    vi.mocked(apiClient.fetchMe).mockResolvedValue(AUTHENTICATED_USER);
+    await userEvent.click(retry);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("app-stub")).toBeTruthy();
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
