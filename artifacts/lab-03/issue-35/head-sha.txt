@@ -6,10 +6,10 @@ implementation-sha: 8f143254bebb22ae27d13b2a10e4114709334737
 
 # Commit at which the evidence commands were executed and this bundle was written.
 # It is a docs/evidence-only commit: it changes no implementation code.
-evidence-captured-at: a07f24f9c68c6b3d7793377b43558a3f4c520238
+evidence-captured-at: 88418ce3db8d44e88ac76a50853aefe60fa6795b
 
 # PR #46 head at the time of this capture.
-pr-head-at-capture: a07f24f9c68c6b3d7793377b43558a3f4c520238
+pr-head-at-capture: 88418ce3db8d44e88ac76a50853aefe60fa6795b
 
 # Provenance note (review round 7):
 # `8f14325` is the last commit that changed implementation code. It contains the round-7
