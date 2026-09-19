@@ -291,6 +291,71 @@ function dropFixture(adminUrl: string): void {
 }
 
 /**
+ * Builds a fresh Lab 2 baseline fixture with NO legacy requesters (DB-MIG-13).
+ *
+ * The backfill therefore inserts zero Users, which is the edge case where a naive
+ * `setval(seq, MAX(id) + 1)` would wrongly start the sequence at 2.
+ */
+function buildEmptyRequesterFixture(): {
+  adminUrl: string;
+  fixtureUrl: string;
+  fixtureUrlWithSchema: string;
+} {
+  const urls = fixtureUrls();
+
+  psql(urls.adminUrl, ["-q", "-c", `DROP DATABASE IF EXISTS "${FIXTURE_DB_NAME}";`]);
+  psql(urls.adminUrl, ["-q", "-c", `CREATE DATABASE "${FIXTURE_DB_NAME}";`]);
+
+  for (const dir of LAB2_MIGRATIONS) {
+    psql(urls.fixtureUrl, ["-v", "ON_ERROR_STOP=1", "-q", "-f", `prisma/migrations/${dir}/migration.sql`]);
+    run(`npx prisma migrate resolve --applied ${dir}`, {
+      ...process.env,
+      DATABASE_URL: urls.fixtureUrlWithSchema,
+    });
+  }
+
+  // A valid Lab 2 baseline with no DevRequester rows at all.
+  psql(urls.fixtureUrl, [
+    "-v", "ON_ERROR_STOP=1", "-q", "-c",
+    `INSERT INTO "Category" ("name","isActive") VALUES ('Hardware',true);`,
+  ]);
+
+  return urls;
+}
+
+/**
+ * Reads the `User.id` sequence state. The next value a default insert will consume is
+ * `is_called ? last_value + 1 : last_value`.
+ */
+async function fixtureUserIdSequence(
+  fixtureUrl: string,
+): Promise<{ lastValue: number; isCalled: boolean; nextValue: number }> {
+  const rows = await queryFixture<{ last_value: string; is_called: boolean }>(
+    fixtureUrl,
+    `SELECT last_value::text AS last_value, is_called FROM "User_id_seq"`,
+  );
+  const lastValue = Number(rows[0]?.last_value ?? 0);
+  const isCalled = rows[0]?.is_called === true;
+  return { lastValue, isCalled, nextValue: isCalled ? lastValue + 1 : lastValue };
+}
+
+/**
+ * Inserts a User with NO explicit id — exactly what Prisma's `@default(autoincrement())`
+ * does — and returns the generated id. Uses the fixture pool because the cached Prisma
+ * client is bound to the main `DATABASE_URL`, not the fixture database.
+ */
+async function createUserWithAutoId(fixtureUrl: string, email: string): Promise<number> {
+  const rows = await queryFixture<{ id: number }>(
+    fixtureUrl,
+    `INSERT INTO "User" ("name", "email", "role", "passwordHash", "isActive", "mustChangePassword", "createdAt", "updatedAt")
+     VALUES ('Auto User', $1, 'REQUESTER', repeat('x', 60), true, true, now(), now())
+     RETURNING id`,
+    [email],
+  );
+  return Number(rows[0].id);
+}
+
+/**
  * Builds a populated fixture and drives it into the documented resumable state:
  * Phase A applied, backfill committed, Phase C unapplied (DB-MIG-08/09/10).
  *
@@ -1025,6 +1090,98 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
           DATABASE_URL: urls.fixtureUrlWithSchema,
         });
         expect(status).toContain("up to date");
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
+
+  itIfDb(
+    "DB-MIG-11: a crash after the backfill commit is repaired by the next run (sequence re-sync)",
+    async () => {
+      const urls = buildPopulatedFixture();
+      try {
+        // 1. Crash the orchestrator in the window between the backfill commit and the
+        //    sequence sync. The explicit-ID User inserts are committed; the sequence is not.
+        const crashed = runOrchestrator(urls.fixtureUrlWithSchema, {
+          NODE_ENV: "test",
+          MIGRATION_TEST_FAIL_AFTER_BACKFILL_COMMIT: "1",
+        });
+        expect(crashed.ok).toBe(false);
+
+        // 2. Assert the precondition, so the test cannot pass vacuously: the backfill
+        //    committed with preserved IDs, DevRequester is still present, and the sequence
+        //    is behind MAX(id) (the broken state).
+        const users = await queryFixture<{ id: number }>(
+          urls.fixtureUrl,
+          `SELECT id FROM "User" ORDER BY id`,
+        );
+        expect(users.map((u) => Number(u.id))).toEqual([1, 2, 3, 4]);
+        expect(await fixtureTableExists(urls.fixtureUrl, "DevRequester")).toBe(true);
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(false);
+
+        const brokenSeq = await fixtureUserIdSequence(urls.fixtureUrl);
+        expect(brokenSeq.nextValue).toBeLessThanOrEqual(4);
+
+        // 3. Re-run without the hook: the resume path must repair the sequence.
+        const resumed = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(resumed.ok).toBe(true);
+        expect(resumed.output).toContain("Migration complete");
+
+        // 4. An auto-generated-ID create now returns max legacy id + 1, then +2.
+        const first = await createUserWithAutoId(urls.fixtureUrl, "auto1@example.com");
+        expect(first).toBe(5);
+        const second = await createUserWithAutoId(urls.fixtureUrl, "auto2@example.com");
+        expect(second).toBe(6);
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
+
+  itIfDb(
+    "DB-MIG-12: an uninterrupted run leaves the sequence at max legacy id + 1",
+    async () => {
+      const urls = buildPopulatedFixture();
+      try {
+        const result = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(result.ok).toBe(true);
+        expect(result.output).toContain("Migration complete");
+
+        // The normal path must also leave the sequence correct (currently untested).
+        const seq = await fixtureUserIdSequence(urls.fixtureUrl);
+        expect(seq.nextValue).toBe(5);
+
+        const first = await createUserWithAutoId(urls.fixtureUrl, "auto1@example.com");
+        expect(first).toBe(5);
+        const second = await createUserWithAutoId(urls.fixtureUrl, "auto2@example.com");
+        expect(second).toBe(6);
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
+
+  itIfDb(
+    "DB-MIG-13: zero legacy requesters — the sync does not error and the first user gets id 1",
+    async () => {
+      const urls = buildEmptyRequesterFixture();
+      try {
+        const result = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(result.ok).toBe(true);
+        expect(result.output).toContain("Migration complete");
+
+        expect(await fixtureCount(urls.fixtureUrl, "User")).toBe(0);
+
+        // With an empty table the sequence must start at 1, not 2.
+        const seq = await fixtureUserIdSequence(urls.fixtureUrl);
+        expect(seq.nextValue).toBe(1);
+
+        const first = await createUserWithAutoId(urls.fixtureUrl, "auto1@example.com");
+        expect(first).toBe(1);
       } finally {
         dropFixture(urls.adminUrl);
       }

@@ -165,6 +165,27 @@ function injectPhaseCFailure(dirName: string, sql: string): string {
   );
 }
 
+/**
+ * Deterministic test-only failure injection right after the backfill transaction commits
+ * (PR #46 review round 7).
+ *
+ * When `MIGRATION_TEST_FAIL_AFTER_BACKFILL_COMMIT === "1"` AND `NODE_ENV === "test"`, the
+ * orchestrator throws immediately after `runBackfill()`'s `$transaction(...)` returns. This
+ * reproduces the real crash window in which the explicit-ID User inserts are committed but
+ * the `User.id` sequence has not yet been advanced — the state that leaves the first
+ * auto-generated-ID insert failing with a duplicate key. Never active outside tests.
+ */
+function maybeFailAfterBackfillCommit(): void {
+  if (
+    process.env.MIGRATION_TEST_FAIL_AFTER_BACKFILL_COMMIT === "1" &&
+    process.env.NODE_ENV === "test"
+  ) {
+    throw new MigrationStopAndReportError(
+      "[test-only] simulated crash right after backfill commit.",
+    );
+  }
+}
+
 /** Applies a migration SQL file out-of-band via psql (raw SQL), then records it as applied. */
 async function applyTrackedMigrationOutOfBand(dirName: string): Promise<void> {
   const sqlPath = resolve(MIGRATIONS_DIR, dirName, "migration.sql");
@@ -646,10 +667,36 @@ async function runBackfill(): Promise<void> {
     await verifyBackfillWithinTransaction(tx, legacy.length);
   });
 
-  // setval the User.id sequence past the max preserved ID (DM-10).
-  const maxId = await prisma.$queryRawUnsafe<{ max: bigint | null }[]>(`SELECT MAX(id) AS max FROM "User"`);
-  const nextVal = Number(maxId[0]?.max ?? 0) + 1;
-  await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"User"', 'id'), ${nextVal})`);
+  // Test-only: simulate a crash in the window between the backfill commit and the
+  // sequence sync, so the recovery path is exercised against the real orchestrator.
+  maybeFailAfterBackfillCommit();
+}
+
+/**
+ * Synchronizes the `User.id` sequence with the highest preserved legacy ID (DM-10).
+ *
+ * The backfill inserts Users with EXPLICIT ids (exact ID preservation), which does not
+ * advance the `User_id_seq` sequence. Without this sync the first insert that relies on
+ * `@default(autoincrement())` — the app's user creation, and the seed — would reuse an
+ * already-taken id and fail with a duplicate key on `User_pkey`.
+ *
+ * This is idempotent and runs on EVERY entry path (fresh, collision-resume, and
+ * Phase-C-resume) immediately before Phase C. A crash at any point — including the window
+ * between the backfill commit and this call — is therefore repaired by the next run, and
+ * databases already stuck in the broken state are repaired too.
+ *
+ * The three-argument `setval` form sets the next value EXACTLY:
+ *   - non-empty table: `setval(seq, MAX(id), true)`  -> next id = MAX(id) + 1
+ *   - empty table:     `setval(seq, 1, false)`       -> next id = 1
+ * The two-argument form would skip a value on a non-empty table and wrongly start at 2 on
+ * an empty one.
+ */
+async function syncUserIdSequence(): Promise<void> {
+  await getPrisma().$executeRawUnsafe(
+    `SELECT setval(pg_get_serial_sequence('"User"', 'id'),
+                   COALESCE((SELECT MAX(id) FROM "User"), 1),
+                   (SELECT MAX(id) IS NOT NULL FROM "User"))`,
+  );
 }
 
 /**
@@ -697,6 +744,27 @@ async function postChecks(): Promise<void> {
   const validate = run("npx prisma validate");
   if (!validate.includes("valid")) {
     throw new MigrationStopAndReportError("prisma validate failed on the final schema.");
+  }
+
+  // Sequence guard (DM-10): the next auto-generated User id must be strictly greater than
+  // every existing id. This makes a future removal of `syncUserIdSequence()` fail loudly
+  // here instead of silently at the first user creation.
+  const seq = await getPrisma().$queryRawUnsafe<{ last_value: bigint; is_called: boolean }[]>(
+    `SELECT last_value, is_called FROM "User_id_seq"`,
+  );
+  const lastValue = Number(seq[0]?.last_value ?? 0);
+  const isCalled = seq[0]?.is_called === true;
+  const nextValue = isCalled ? lastValue + 1 : lastValue;
+  const maxRow = await getPrisma().$queryRawUnsafe<{ max: bigint | null }[]>(
+    `SELECT MAX(id) AS max FROM "User"`,
+  );
+  const maxId = Number(maxRow[0]?.max ?? 0);
+  if (nextValue <= maxId) {
+    throw new MigrationStopAndReportError(
+      `User.id sequence is not synchronized: next value ${nextValue} <= MAX(id) ${maxId}. ` +
+        `The next auto-generated-ID insert would collide on User_pkey. ` +
+        `Follow the README runbook; never hand-edit _prisma_migrations.`,
+    );
   }
 }
 
@@ -761,6 +829,12 @@ export async function runLab3Migration(): Promise<void> {
   // Final ownership guard immediately before the irreversible drop: Phase C drops the
   // legacy Attachment requester columns, so the shadow columns must exactly mirror them.
   // This runs on every entry path (fresh, collision-resume, and Phase-C-resume).
+  //
+  // The User.id sequence is re-synced on every path too: the backfill inserts explicit ids
+  // and never advances the sequence, so a crash between the backfill commit and the sync
+  // (or a database already stuck in that state) would otherwise leave the first
+  // auto-generated-ID insert failing with a duplicate key.
+  await syncUserIdSequence();
   await verifyAttachmentOwnership();
   console.log(`[migrate-lab3] Applying Phase C (${PHASE_C_DIR}) out-of-band...`);
   await applyTrackedMigrationOutOfBand(PHASE_C_DIR);
