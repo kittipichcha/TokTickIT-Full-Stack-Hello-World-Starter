@@ -817,4 +817,30 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
     },
     180000,
   );
+
+  itIfDb(
+    "SEC-MIG-01: a failing psql migration never leaks the DB credential into captured output",
+    async () => {
+      const urls = buildPopulatedFixture();
+      try {
+        // Force a real psql failure through the production path (late Phase C statement).
+        const failed = runOrchestrator(urls.fixtureUrlWithSchema, {
+          NODE_ENV: "test",
+          MIGRATION_TEST_FAIL_PHASE_C_AT: "end",
+        });
+        expect(failed.ok).toBe(false);
+
+        // The captured output (stdout + stderr + error message) must contain no
+        // `scheme://user:password@` credential fragment.
+        expect(failed.output).not.toMatch(/:\/\/[^/\s]*:[^@\s]*@/);
+        // The actual password value must never appear.
+        const password = decodeURIComponent(new URL(urls.fixtureUrl).password);
+        expect(password.length).toBeGreaterThan(0);
+        expect(failed.output).not.toContain(password);
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
 });

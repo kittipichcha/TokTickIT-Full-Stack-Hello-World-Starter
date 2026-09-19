@@ -95,8 +95,41 @@ function sha256Hex(input: string): string {
   return createHash("sha256").update(input).digest("hex");
 }
 
-function run(command: string): string {
-  return execSync(command, { cwd: SERVER_ROOT, encoding: "utf-8" }).toString();
+/**
+ * Strips any credential-bearing connection-string fragment from an error before it can
+ * propagate into logs, test output, or committed evidence.
+ *
+ * Defense in depth: the orchestrator never interpolates credentials into a command string
+ * (see `applyTrackedMigrationOutOfBand`), but a raw `DATABASE_URL` can still surface in an
+ * error message from psql, Prisma, or the shell. This regex removes the `user:password@`
+ * portion of any `scheme://…` URL so a password can never reach downstream output.
+ */
+function sanitizeExecError(err: unknown): Error {
+  const e = err as { message?: string; stderr?: Buffer | string; cmd?: string };
+  const scrub = (value: string): string =>
+    value.replace(/([a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^/\s:@]*):[^/\s@]*@/g, "$1:***@");
+
+  const message = scrub(String(e?.message ?? err));
+  const sanitized = new Error(message);
+  if (e?.stderr !== undefined) {
+    (sanitized as { stderr?: string }).stderr = scrub(String(e.stderr));
+  }
+  if (e?.cmd !== undefined) {
+    (sanitized as { cmd?: string }).cmd = scrub(String(e.cmd));
+  }
+  return sanitized;
+}
+
+function run(command: string, extraEnv?: Record<string, string>): string {
+  try {
+    return execSync(command, {
+      cwd: SERVER_ROOT,
+      encoding: "utf-8",
+      env: extraEnv ? { ...process.env, ...extraEnv } : process.env,
+    }).toString();
+  } catch (err) {
+    throw sanitizeExecError(err);
+  }
 }
 
 function readMigrationSql(dirName: string): string {
@@ -143,6 +176,15 @@ async function applyTrackedMigrationOutOfBand(dirName: string): Promise<void> {
   // psql does not understand Prisma's ?schema= query parameter; strip it.
   const psqlUrl = url.split("?")[0];
 
+  // Never interpolate credentials into the command string: `execSync` embeds the exact
+  // command in the error it throws on failure, and that error text is captured verbatim
+  // into committed evidence logs. Parse the URL, strip the password from the connection
+  // string that becomes part of the command, and pass the password via `PGPASSWORD`.
+  const parsed = new URL(psqlUrl);
+  const password = decodeURIComponent(parsed.password);
+  parsed.password = "";
+  const safeConnString = parsed.toString();
+
   // Test-only deterministic failure injection: when active, apply a modified copy of the
   // migration SQL (real statements + one deliberate late failure) through the SAME psql
   // mechanism, so the failure/recovery tests exercise the production path. The injected
@@ -162,8 +204,8 @@ async function applyTrackedMigrationOutOfBand(dirName: string): Promise<void> {
   // Together they guarantee: all-or-nothing DDL, and no `_prisma_migrations` record on
   // failure (the resolve step below is only reached when psql exits 0).
   try {
-    const psqlCmd = `psql "${psqlUrl}" --single-transaction -v ON_ERROR_STOP=1 -f "${effectiveSqlPath}"`;
-    run(psqlCmd);
+    const psqlCmd = `psql "${safeConnString}" --single-transaction -v ON_ERROR_STOP=1 -f "${effectiveSqlPath}"`;
+    run(psqlCmd, { PGPASSWORD: password });
   } finally {
     if (effectiveSqlPath !== sqlPath && existsSync(effectiveSqlPath)) {
       rmSync(effectiveSqlPath, { force: true });
