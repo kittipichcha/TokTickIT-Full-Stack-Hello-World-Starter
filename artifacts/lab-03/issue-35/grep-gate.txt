@@ -1,22 +1,18 @@
 === git rev-parse HEAD ===
-371329239b0eab640b0744fab3a7cb8c3a1e7c9c
+14287867dd31261bb649c7d1eeb96aeb4759ade9
 
 === git status --short ===
- M README.md
  M artifacts/lab-03/issue-35/README.md
  M artifacts/lab-03/issue-35/client-vitest.txt
- M artifacts/lab-03/issue-35/compliance-map.md
+ M artifacts/lab-03/issue-35/db-mig-execution.txt
  M artifacts/lab-03/issue-35/grep-gate.txt
  M artifacts/lab-03/issue-35/head-sha.txt
- M artifacts/lab-03/issue-35/lab2-test-changes.md
  M artifacts/lab-03/issue-35/server-vitest.txt
- M artifacts/lab-03/migration/integration-gate.md
- M docs/lab-03/ai-use.md
- M docs/lab-03/reviewer.md
  M docs/lab-03/tests.md
 
 === git diff --check ===
 warning: in the working copy of 'artifacts/lab-03/issue-35/client-vitest.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'artifacts/lab-03/issue-35/db-mig-execution.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/grep-gate.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/head-sha.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'artifacts/lab-03/issue-35/server-vitest.txt', LF will be replaced by CRLF the next time Git touches it
@@ -29,14 +25,45 @@ exit=0
 no .env tracked
 
 === prisma.devRequester references ===
-none
+artifacts/lab-03/issue-35/README.md:40:| [`grep-gate.txt`](./grep-gate.txt) | DM-17 grep gate: zero `prisma.devRequester` references; all legacy identifiers confined to the declared set. Plus `git diff --check`, conflict-marker grep, and `.env`-not-tracked proof. |
+artifacts/lab-03/issue-35/grep-gate.txt:27:=== prisma.devRequester references ===
+artifacts/lab-03/issue-35/lab2-test-changes.md:19:- **(a) Mechanical identity-source rename** — `prisma.devRequester.*` → `prisma.user.*` with
+artifacts/lab-03/issue-35/lab2-test-changes.md:86:- **Class (a):** `prisma.devRequester.count(...)` → `prisma.user.count({ ... role: "REQUESTER" })`.
+artifacts/lab-03/migration/integration-gate.md:82:grep -rn "prisma.devRequester|.devRequester." server/src/
 
 === legacy identifier gate (uploaderRequesterId/removedByRequesterId) ===
+artifacts/lab-03/issue-35/compliance-map.md
+artifacts/lab-03/issue-35/grep-gate.txt
+artifacts/lab-03/issue-35/lab2-test-changes.md
+artifacts/lab-03/migration/integration-gate.md
+client/src/api.ts
+client/src/lab-02-tests/AttachmentSection.test.tsx
+docs/lab-02/ai-use.md
+docs/lab-02/api-spec.md
+docs/lab-02/specification.md
+docs/lab-02/tests.md
+docs/lab-03/reviewer.md
+docs/lab-03/specification.md
+docs/lab-03/tests.md
+server/prisma/migrations/20260825000000_add_ticket_related_system_attachment/migration.sql
+server/prisma/migrations/20260826000000_add_ticket_indexes_attachment_relations/migration.sql
+server/prisma/migrations/20260917000001_lab3_phase_c_contract/migration.sql
 server/src/migrate-lab3.ts
 server/src/service.ts
 server/tests/lab-02/attachment-persistence-compensation.integration.test.ts
 server/tests/lab-02/attachments.api.test.ts
 server/tests/lab-02/ticket-detail.api.test.ts
 server/tests/lab-03/migration.integration.test.ts
-client/src/api.ts
-client/src/lab-02-tests/AttachmentSection.test.tsx
+
+=== credential sweep: real password value ===
+none (clean)
+
+=== credential sweep: scheme://user:password@ fragments ===
+README.md:223:DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/toktickit?schema=public"
+artifacts/lab-02/release/environment.md:27:- **DATABASE_URL** (from `server/.env`): `postgresql://kitti:***@localhost:5432/tocktick?schema=public`
+artifacts/lab-03/issue-35/grep-gate.txt:62:README.md:223:DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/toktickit?schema=public"
+artifacts/lab-03/issue-35/grep-gate.txt:63:artifacts/lab-02/release/environment.md:27:- **DATABASE_URL** (from `server/.env`): `postgresql://kitti:***@localhost:5432/tocktick?schema=public`
+docs/lab-03/tests.md:47:    `applyTrackedMigrationOutOfBand()` built `psql "postgresql://user:pass@host/db" …` as a
+docs/lab-03/tests.md:56:    scrubbed to `postgresql://kitti:***@…`. New `SEC-MIG-01` forces a real psql failure through
+docs/lab-03/tests.md:83:    (client); `git grep -n "postgresql://.*:.*@"` (repo-wide credential sweep).
+server/.env.example:3:DATABASE_URL="postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public"

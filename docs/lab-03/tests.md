@@ -23,9 +23,9 @@ E2E/Responsive/Keyboard (planned):
 ## 2a. Execution Evidence
 Issue #35 (Identity, Database Migration & Authentication) implemented the identity/auth
 foundation and executed its frozen test rows. Statuses are evidence-driven. The rows
-updated to `Passed` by #35 are: DB-MIG-01..06, SEED-01, API-AUTH-01..09, API-AUTH-05b,
-SEC-AUTHZ-06, UNIT-AUTH-01, UNIT-API-ERROR-01..03, CSRF-ME-01, UI-LOGIN-01,
-UI-CHPWD-01/02, UI-AUTHGATE-01/02. Rows owned by other issues remain `Planned`.
+updated to `Passed` by #35 are: DB-MIG-01..07, SEC-MIG-01, SEED-01, API-AUTH-01..09,
+API-AUTH-05b, SEC-AUTHZ-06, UNIT-AUTH-01, UNIT-API-ERROR-01..03, CSRF-ME-01, UI-LOGIN-01,
+UI-CHPWD-01/02, UI-AUTHGATE-01/02/03. Rows owned by other issues remain `Planned`.
 
 Every `Passed` row above is backed by an executed run recorded in
 `artifacts/lab-03/issue-35/` (see that bundle's `README.md`). No row is marked `Passed`
@@ -41,6 +41,52 @@ owned by **#37** (`authorization.api.test.ts`); #35 contributes only supplementa
 assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
+
+- **2026-09-19 — Issue #35 PR #46 review follow-up, round 5 (credential leak, resume mapping, session error)**
+  - **B-1 credential-bearing DB URL leaked into committed evidence (real defect, security).**
+    `applyTrackedMigrationOutOfBand()` built `psql "postgresql://user:pass@host/db" …` as a
+    single shell string and passed it to `execSync`. On failure, Node embeds the exact command
+    in the thrown error, which was captured verbatim into `artifacts/lab-03/issue-35/`
+    (`db-mig-execution.txt`, `server-vitest.txt`) — exposing a real password. Fixed at the
+    source: the URL is parsed, the password is stripped from the connection string that becomes
+    part of the command, and the password is passed via `PGPASSWORD` in the child environment.
+    `run()` now accepts an env override and wraps failures in `sanitizeExecError()`, which
+    regex-strips any `scheme://user:password@` fragment from `message`/`stderr`/`cmd` before
+    rethrowing (defense in depth against psql/Prisma error strings). The two committed logs were
+    scrubbed to `postgresql://kitti:***@…`. New `SEC-MIG-01` forces a real psql failure through
+    the production path and asserts the captured output contains no credential fragment and not
+    the password value. **Infra action required (not a code diff):** the exposed password must be
+    treated as compromised and rotated, and repository history rewritten (`git filter-repo`/BFG)
+    because a new commit does not remove it from earlier commits/PR diffs.
+  - **B-2 resume identity check was narrower than the frozen mapping (real defect).**
+    `verifyBackfillIdentity()` checked only `id`, `role='REQUESTER'`, and normalized `email`,
+    so a resume could accept a `User` row whose `name`, `isActive`, `mustChangePassword`, or
+    initial password diverged from the frozen §9.2/§9.3 mapping. It now also asserts trimmed
+    `name`, `isActive`, `mustChangePassword = true`, and a bcrypt-verifiable deterministic
+    initial password, and verifies the Attachment `uploaderUserId` shadow-column backfill is
+    intact. New `DB-MIG-07` builds a fixture whose `id`/`email`/`role` match a legacy row exactly
+    while `name`/`isActive`/password diverge, and asserts the abort. `DB-MIG-06` is retained
+    (narrower but still valid) with its assertion updated to the new message.
+  - **B-3 mount-time `fetchMe()` failure always rendered Login (real defect).** Any failure of
+    the mount-time session check — including a network error or 5xx — was treated as
+    "unauthenticated", silently presenting a login screen to a user whose session may be valid.
+    `AuthGate` now distinguishes a `401` (→ Login) from any other failure (→ a distinct
+    `session-error` screen with an explicit Retry button; no auto-retry, mirroring logout). New
+    `UI-AUTHGATE-03` covers 401 → Login, 500 → session-error, no-status network failure →
+    session-error, and Retry-after-500 → authenticated.
+  - **Out of scope (filed separately):** `itPriority` stays null on Ticket creation in
+    `service.ts::createTicket` violates the frozen §9.3 contract, but it is pre-existing Lab 2
+    code this PR never touches; fixing it here would be scope creep on an Identity/Auth/Migration
+    PR. Recommended as a new issue against the ticket-creation owner.
+  - Commands: `npx vitest run tests/lab-03/migration.integration.test.ts` (server, against a
+    Lab-3-migrated PostgreSQL database); `npx vitest run src/lab-03-tests/AuthGate.test.tsx`
+    (client); `git grep -n "postgresql://.*:.*@"` (repo-wide credential sweep).
+  - Results: server **387 passed / 30 files**; client **120 passed / 12 files**; repo-wide
+    credential sweep returns no tracked match; DB-MIG-01..07 and SEC-MIG-01 executed (not
+    skipped).
+  - Follow-up: rotate the exposed credential and rewrite repository history (infra action).
+    `E2E-01..04` remain `Planned` (owned by #42); Requester/Staff/Admin feature rows remain
+    `Planned` (owned by #37/#38/#41).
 
 - **2026-09-18 — Issue #35 PR #46 review follow-up, round 4 (three re-audit blockers)**
   - **F-1 migration resume identity verification (real defect).** `stage1Preflight()` returned
@@ -282,6 +328,8 @@ security/authorization, migration/regression, and end-to-end coverage.
 | MIG-FAIL-02 | DB | Pre-backfill invariant failure recovery | A legacy `isRemoved` invariant violation is detected BEFORE the irreversible backfill, leaving the supported Phase-A-applied state (no `User` rows, `DevRequester` intact, Phase C unapplied); after repair the orchestrator resumes and completes | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
 | MIG-FAIL-03 | DB | Recovery after a Phase C failure | After a late Phase C failure the database is in the documented resumable state (Phase A applied, backfill committed, Phase C unapplied); a subsequent valid run resumes at Phase C and completes with all Users/Tickets/Attachments present and `migrate status` clean | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
 | DB-MIG-06 | DB | Resume identity verification | A resume with matching row counts but mismatched legacy-to-`User` identity (different id/email/role) is rejected with `MigrationStopAndReportError`; Phase C is not applied and `DevRequester` still exists | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-07 | DB | Resume full-mapping verification | A resume whose `User` row matches a legacy row on `id`/`email`/`role` but diverges on `name`, `isActive`, or the deterministic initial password is rejected with `MigrationStopAndReportError`; Phase C is not applied and `DevRequester` still exists | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| SEC-MIG-01 | DB | Migration credential non-disclosure | A failing `psql` migration (real production path) produces captured stdout/stderr/error output containing no `scheme://user:password@` credential fragment and not the password value | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-06 | AC-25 | Passed |
 | SEED-01 | DB | Seed idempotency | Safe to run repeatedly; two runs produce identical state with no duplicate seed records | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
 | SEED-TKT-01 | DB | Canonical ticket-number format | Every seed-owned Ticket number matches the canonical six-digit `TKT-YYYY-NNNNNN` contract | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
 | SEED-TKT-02 | DB | Ticket-number uniqueness | Seed-owned Ticket numbers are unique | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
@@ -301,6 +349,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-CHPWD-02 | UI | Confirm field does not match new password | Inline validation error; form not submitted; API never called | `client/src/lab-03-tests/ChangePassword.test.tsx` | FR-05 | BR-02 | AC-02 | Passed |
 | UI-AUTHGATE-01 | UI | Logout failure preserves the authenticated shell | When `logout()` rejects, the authenticated shell (and `App`) stays mounted, state does not move to Login, and an inline `role="alert"` error is shown near the Logout button | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
 | UI-AUTHGATE-02 | UI | Successful logout transitions to Login | When `logout()` resolves, the gate transitions to the Login screen, `App` unmounts, and no error alert is shown | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09 | AC-06 | Passed |
+| UI-AUTHGATE-03 | UI | Mount-time session-check failure is distinct from unauthenticated | A `401` from `fetchMe()` renders Login; a `500` or status-less network failure renders a distinct session-error screen with a Retry button (neither Login nor the authenticated shell); clicking Retry after a `500` transitions to authenticated | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
 | UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Planned |
 | UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Planned |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Planned |
@@ -323,7 +372,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05, SEC-AUTHZ-08
 - AC-04 → SEC-AUTHZ-02
 - AC-05 → API-AUTH-02, API-AUTH-03, E2E-01
-- AC-06 → API-AUTH-04, API-AUTH-05b, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, E2E-01
+- AC-06 → API-AUTH-04, API-AUTH-05b, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, UI-AUTHGATE-03, E2E-01
 - AC-07 → API-REQ-01, API-REQ-02, SEC-AUTHZ-10, E2E-04
 - AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
@@ -342,5 +391,5 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-22 → VISUAL-01, VISUAL-02
 - AC-23 → A11Y-01
 - AC-24 → SEED-01
-- AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05, DB-MIG-06
+- AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05, DB-MIG-06, DB-MIG-07, SEC-MIG-01
 - AC-26 → DB-MIG-03, DB-MIG-04, API-AUTH-06, API-AUTH-07

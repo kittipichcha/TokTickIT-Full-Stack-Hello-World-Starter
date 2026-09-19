@@ -1,25 +1,34 @@
-◇ injected env (2) from .env // tip: ⌘ override existing { override: true }
+◇ injected env (2) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
 
  RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/server
 
-NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
 MigrationCollisionError: 1 collision(s) block the migration.
   - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
 Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
-NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-24340-1789708946155.sql:43: ERROR:  division by zero
-Command failed: psql "postgresql://kitti:***REMOVED***@localhost:5432/tocktick_lab3_mig05_11168" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-24340-1789708946155.sql"
-psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-24340-1789708946155.sql:43: ERROR:  division by zero
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-10896-1789786665375.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_25108" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-10896-1789786665375.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-10896-1789786665375.sql:43: ERROR:  division by zero
 
-NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
 isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.
-NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
-NOTICE:  database "tocktick_lab3_mig05_11168" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_25108" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-25224-1789786894256.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_25108" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-25224-1789786894256.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-25224-1789786894256.sql:43: ERROR:  division by zero
+
 
  Test Files  1 passed (1)
-      Tests  10 passed (10)
-   Start at  12:19:31
-   Duration  320.47s (transform 606ms, setup 0ms, import 8.37s, tests 311.00s, environment 0ms)
+      Tests  13 passed (13)
+   Start at  09:54:37
+   Duration  417.63s (transform 453ms, setup 0ms, import 1.32s, tests 415.91s, environment 0ms)
 

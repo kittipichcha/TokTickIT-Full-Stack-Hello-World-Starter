@@ -14,7 +14,7 @@ Error: Not implemented: navigation (except hash changes)
     at processTimers (node:internal/timers:541:7) undefined
 
  Test Files  12 passed (12)
-      Tests  116 passed (116)
-   Start at  20:16:09
-   Duration  29.66s (transform 5.37s, setup 0ms, import 26.52s, tests 65.92s, environment 40.57s)
+      Tests  120 passed (120)
+   Start at  10:10:19
+   Duration  44.97s (transform 6.29s, setup 0ms, import 69.51s, tests 56.29s, environment 187.09s)
 
