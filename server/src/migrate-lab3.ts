@@ -232,29 +232,61 @@ async function readLegacyRequesters(): Promise<LegacyRequesterRow[]> {
 }
 
 /**
- * Verifies that backfilled User records match legacy DevRequester identity
- * (same id, role = 'REQUESTER', normalized email).
+ * Verifies that backfilled User records match the FULL frozen legacy-to-User mapping
+ * (specification §9.2/§9.3): same id, role = 'REQUESTER', normalized email, trimmed name,
+ * isActive, mustChangePassword = true, and the deterministic initial password (bcrypt-
+ * verifiable). Also verifies the Attachment shadow-column backfill is intact, so a resume
+ * at Phase C is safe.
+ *
+ * Note: `bcrypt.compare` against 10-round hashes is O(n) on every resume. That is
+ * acceptable at Lab scale and this only runs on the rare resume path; it would need
+ * revisiting before pointing this at a production-sized table.
  */
 async function verifyBackfillIdentity(legacy: LegacyRequesterRow[]): Promise<void> {
   const prisma = getPrisma();
   const users = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-    `SELECT id, email, role FROM "User" ORDER BY id`,
+    `SELECT id, email, role, name, "isActive", "passwordHash", "mustChangePassword" FROM "User" ORDER BY id`,
   );
-  const userMap = new Map<number, { email: string; role: string }>();
+  const userMap = new Map<
+    number,
+    {
+      email: string;
+      role: string;
+      name: string;
+      isActive: boolean;
+      passwordHash: string;
+      mustChangePassword: boolean;
+    }
+  >();
   for (const u of users) {
     userMap.set(Number(u.id), {
       email: String(u.email),
       role: String(u.role),
+      name: String(u.name),
+      isActive: Boolean(u.isActive),
+      passwordHash: String(u.passwordHash),
+      mustChangePassword: Boolean(u.mustChangePassword),
     });
   }
 
   const mismatched: number[] = [];
   for (const leg of legacy) {
     const matchedUser = userMap.get(leg.id);
+    if (!matchedUser) {
+      mismatched.push(leg.id);
+      continue;
+    }
+
+    const expectedPassword = deriveInitialPassword(leg.email, leg.name);
+    const passwordOk = await bcrypt.compare(expectedPassword, matchedUser.passwordHash);
+
     if (
-      !matchedUser ||
       matchedUser.role !== "REQUESTER" ||
-      matchedUser.email !== normalizeEmail(leg.email)
+      matchedUser.email !== normalizeEmail(leg.email) ||
+      matchedUser.name !== leg.name.trim() ||
+      matchedUser.isActive !== leg.isActive ||
+      matchedUser.mustChangePassword !== true ||
+      !passwordOk
     ) {
       mismatched.push(leg.id);
     }
@@ -262,9 +294,20 @@ async function verifyBackfillIdentity(legacy: LegacyRequesterRow[]): Promise<voi
 
   if (mismatched.length > 0) {
     throw new MigrationStopAndReportError(
-      `Backfilled User records do not match legacy DevRequester identity for IDs: ${mismatched.join(", ")}. ` +
-        `Expected same ID, role='REQUESTER', and normalized email. ` +
+      `Backfilled User records do not match the frozen legacy-to-User mapping for IDs: ${mismatched.join(", ")}. ` +
+        `Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. ` +
         `Follow the README runbook; never hand-edit _prisma_migrations.`,
+    );
+  }
+
+  // Attachment shadow-column integrity: every non-null legacy shadow column resolves to a User.
+  const orphanAttachments = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+    `SELECT COUNT(*) AS cnt FROM "Attachment" a LEFT JOIN "User" u ON u.id = a."uploaderUserId"
+     WHERE a."uploaderRequesterId" IS NOT NULL AND (a."uploaderUserId" IS NULL OR u.id IS NULL)`,
+  );
+  if (Number(orphanAttachments[0]?.cnt ?? 0) > 0) {
+    throw new MigrationStopAndReportError(
+      "Backfilled Attachment.uploaderUserId does not fully mirror uploaderRequesterId; resume is unsafe.",
     );
   }
 }

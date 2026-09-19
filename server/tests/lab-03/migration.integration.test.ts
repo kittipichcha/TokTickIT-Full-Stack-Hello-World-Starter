@@ -806,9 +806,67 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
         // Run the orchestrator — must abort and reject resume
         const result = runOrchestrator(urls.fixtureUrlWithSchema);
         expect(result.ok).toBe(false);
-        expect(result.output).toContain("Backfilled User records do not match legacy DevRequester identity");
+        expect(result.output).toContain("Backfilled User records do not match the frozen legacy-to-User mapping");
 
         // Phase C is NOT applied and DevRequester table still exists
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(false);
+        expect(await fixtureTableExists(urls.fixtureUrl, "DevRequester")).toBe(true);
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    180000,
+  );
+
+  itIfDb(
+    "DB-MIG-07: resume with matching id/email/role but divergent name/password/activation is rejected",
+    async () => {
+      const urls = fixtureUrls();
+      psql(urls.adminUrl, ["-q", "-c", `DROP DATABASE IF EXISTS "${FIXTURE_DB_NAME}";`]);
+      psql(urls.adminUrl, ["-q", "-c", `CREATE DATABASE "${FIXTURE_DB_NAME}";`]);
+
+      try {
+        for (const dir of LAB2_MIGRATIONS) {
+          psql(urls.fixtureUrl, ["-v", "ON_ERROR_STOP=1", "-q", "-f", `prisma/migrations/${dir}/migration.sql`]);
+          run(`npx prisma migrate resolve --applied ${dir}`, {
+            ...process.env,
+            DATABASE_URL: urls.fixtureUrlWithSchema,
+          });
+        }
+
+        // Seed 1 legacy requester.
+        psql(urls.fixtureUrl, [
+          "-v", "ON_ERROR_STOP=1", "-q", "-c",
+          `INSERT INTO "DevRequester" ("id", "name", "email", "isActive") VALUES (1, 'Ada Lovelace', 'ada@example.com', true);`,
+        ]);
+
+        // Apply Phase A out-of-band and record as applied.
+        psql(urls.fixtureUrl, [
+          "-v", "ON_ERROR_STOP=1", "-q", "-f",
+          `prisma/migrations/${PHASE_A_DIR}/migration.sql`,
+        ]);
+        run(`npx prisma migrate resolve --applied ${PHASE_A_DIR}`, {
+          ...process.env,
+          DATABASE_URL: urls.fixtureUrlWithSchema,
+        });
+
+        // Insert 1 User whose id/email/role MATCH the legacy row exactly, but whose name,
+        // activation, and password hash diverge. The narrower DB-MIG-06 check would accept
+        // this; the full frozen-mapping check must reject it.
+        const wrongHash = await bcrypt.hash("WrongPassword123!", 10);
+        await queryFixture(
+          urls.fixtureUrl,
+          `INSERT INTO "User" ("id", "name", "email", "passwordHash", "role", "isActive", "mustChangePassword", "createdAt", "updatedAt")
+           VALUES (1, 'Wrong Name', 'ada@example.com', $1, 'REQUESTER', false, true, now(), now())`,
+          [wrongHash],
+        );
+
+        // Run the orchestrator — must abort and reject resume.
+        const result = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(result.ok).toBe(false);
+        expect(result.output).toContain("Backfilled User records do not match the frozen legacy-to-User mapping");
+
+        // Phase C is NOT applied and DevRequester table still exists.
         expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(false);
         expect(await fixtureTableExists(urls.fixtureUrl, "DevRequester")).toBe(true);
       } finally {
