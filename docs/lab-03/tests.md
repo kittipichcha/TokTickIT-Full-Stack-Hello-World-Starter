@@ -43,6 +43,35 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-19 — Issue #35 PR #46 review follow-up, round 7 (`User.id` sequence sync)**
+  - **B-7 — `User.id` sequence not repaired after a post-backfill-commit crash (real defect).**
+    `runBackfill()` committed the explicit-ID `User` inserts inside `$transaction(...)` and ran
+    `setval` afterwards, outside the transaction; the `backfill-complete` resume branch skips
+    `runBackfill()` entirely, so a crash in that window left the sequence behind `MAX(id)` and
+    nothing repaired it. The failure was silent — every migration check passed, and the first
+    insert relying on `@default(autoincrement())` (the app's user creation, and the seed) failed
+    later with `duplicate key … User_pkey`. Fixed by removing the inline `setval` and adding one
+    idempotent `syncUserIdSequence()` called on **every** entry path immediately before Phase C,
+    using the three-argument `setval` form so the next id is exactly `MAX(id) + 1` (and `1` on an
+    empty table). `postChecks()` now also asserts the sequence's next value is greater than
+    `MAX(id)`, so removing the sync later fails loudly at migration time.
+  - **Tests written first and confirmed failing.** Added the test-only hook
+    `maybeFailAfterBackfillCommit()` (`MIGRATION_TEST_FAIL_AFTER_BACKFILL_COMMIT=1` +
+    `NODE_ENV=test`, matching the existing `MIGRATION_TEST_FAIL_PHASE_C_AT` guard) and
+    `DB-MIG-11/12/13`. Before the fix: DB-MIG-11 failed with the real
+    `duplicate key … User_pkey` error, DB-MIG-12 with next value 6 instead of 5, DB-MIG-13 with
+    next value 2 instead of 1. DB-MIG-11 asserts the broken precondition (Users with preserved
+    IDs, `DevRequester` present, sequence next value ≤ `MAX(id)`) so it cannot pass vacuously.
+  - **Mutation check.** Removing the `syncUserIdSequence()` call made DB-MIG-11 fail again, with
+    the new `postChecks` guard reporting `next value 1 <= MAX(id) 4`.
+  - **Doc nit.** Corrected the `service.ts` comment: spec §9.3 defines `itPriority` as nullable
+    with a default of `requestedPriority`, not "required".
+  - Commands: `npx vitest run tests/lab-03/migration.integration.test.ts`; `npx vitest run`
+    (server); `npm run build` (server).
+  - Results: migration suite **19 passed / 1 file**; server suite **406 passed / 34 files**;
+    server build exit 0. DB-MIG-11/12/13 executed (not skipped).
+  - Follow-up: none.
+
 - **2026-09-19 — Issue #35 PR #46 review follow-up, round 6 (credential rotation, attachment ownership, IT Priority, async errors, hardening)**
   - **Credential rotated and history rewritten (infra action completed).** The password exposed
     in round 5 was rotated at the source, and repository history was rewritten with
@@ -381,6 +410,9 @@ security/authorization, migration/regression, and end-to-end coverage.
 | DB-MIG-08 | DB | Attachment uploader ownership on resume | A backfill-complete fixture whose `Attachment.uploaderUserId` diverges from `uploaderRequesterId` aborts with `MigrationStopAndReportError` naming the attachment ID; Phase C is not recorded, the legacy columns and `DevRequester` still exist, and the attachment rows are unchanged | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
 | DB-MIG-09 | DB | Attachment remover ownership on resume | A backfill-complete fixture whose `removedByUserId` is NULL while `removedByRequesterId` is set aborts with `MigrationStopAndReportError` (the `IS DISTINCT FROM` guard catches the NULL case a plain `<>` would miss); Phase C is not applied and `DevRequester` still exists | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
 | DB-MIG-10 | DB | Correct backfill-complete resume | A correct backfill-complete fixture (soft-removed attachment with remover, never-removed attachment with both remover columns NULL, and a different uploader) resumes and completes Phase C; ownership values survive the legacy-column drop and `migrate status` is clean | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-11 | DB | Sequence repair after a post-backfill-commit crash | A crash injected right after the backfill transaction commits (test-only hook, `NODE_ENV=test`) leaves Users with preserved IDs 1–4, `DevRequester` present, Phase C unapplied, and the `User_id_seq` next value ≤ `MAX(id)`; the next run repairs the sequence and completes, and an auto-generated-ID create then returns 5, then 6 | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-12 | DB | Sequence correctness on the normal path | An uninterrupted run leaves `User_id_seq` at `MAX(id) + 1` (next value 5 for the 4-requester fixture), and auto-generated-ID creates return 5 then 6 | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
+| DB-MIG-13 | DB | Sequence with zero legacy requesters | A Lab 2 baseline with no `DevRequester` rows migrates without error, leaves the sequence at next value 1 (not 2), and the first auto-generated-ID create returns id 1 | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
 | SEC-MIG-01 | DB | Migration credential non-disclosure | A failing `psql` migration (real production path) produces captured stdout/stderr/error output containing no `scheme://user:password@` credential fragment and not the password value | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-06 | AC-25 | Passed |
 | SEED-01 | DB | Seed idempotency | Safe to run repeatedly; two runs produce identical state with no duplicate seed records | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
 | SEED-TKT-01 | DB | Canonical ticket-number format | Every seed-owned Ticket number matches the canonical six-digit `TKT-YYYY-NNNNNN` contract | `server/tests/lab-03/seed.integration.test.ts` | — | — | AC-24 | Passed |
@@ -443,5 +475,5 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-22 → VISUAL-01, VISUAL-02
 - AC-23 → A11Y-01
 - AC-24 → SEED-01
-- AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05, DB-MIG-06, DB-MIG-07, DB-MIG-08, DB-MIG-09, DB-MIG-10, SEC-MIG-01, TKT-PRIO-01, TKT-PRIO-02, TKT-PRIO-03
+- AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05, DB-MIG-06, DB-MIG-07, DB-MIG-08, DB-MIG-09, DB-MIG-10, DB-MIG-11, DB-MIG-12, DB-MIG-13, SEC-MIG-01, TKT-PRIO-01, TKT-PRIO-02, TKT-PRIO-03
 - AC-26 → DB-MIG-03, DB-MIG-04, API-AUTH-06, API-AUTH-07

@@ -257,6 +257,51 @@ non-blocking hardening items.
 - **Informational — legacy `X-Dev-Requester-Id` routes.** Acknowledged as the authorized,
   declared temporary DM-17 compatibility layer (reviewer agreement recorded); no change made.
 
+### Issue #35 — PR #46 review follow-up, round 7 (User.id sequence sync)
+
+**Reviewer comment I received (2026-09-19): Request Changes.** The reviewer reported that the
+`User.id` sequence is not repaired when the orchestrator crashes in the window between the backfill
+commit and the `setval`. They confirmed it three ways: from the code (`runBackfill()` commits the
+explicit-ID inserts inside `$transaction(...)` and runs `setval` afterwards, outside it; the
+`backfill-complete` resume branch skips `runBackfill()` entirely), by reproduction against the real
+Phase A/Phase C SQL (sequence at `last_value=1, is_called=false`; the first auto-ID insert failed
+with `duplicate key … User_pkey … Key (id)=(1)`), and against the requirements (spec §9.3 makes
+`User.id` auto-increment while preserving `DevRequester.id`, and the seed calls
+`prisma.user.create` without an id). They also noted the failure is silent — every check passes and
+the first "create user" call fails later, up to N times where N is the number of migrated
+requesters — and raised a doc nit: the `service.ts` comment called `itPriority` "required" when
+spec §9.3 defines it as nullable with a default of `requestedPriority`.
+
+**How I responded — per finding:**
+
+- **Blocking — `User.id` sequence not repaired after a post-backfill-commit crash (real defect).**
+  Accepted. The reviewer's design choice was adopted rather than adding a second `setval` to the
+  resume branch: the inline `setval` was removed from `runBackfill()` and replaced by one
+  idempotent `syncUserIdSequence()` called on **every** entry path immediately before Phase C, so a
+  crash at any point is repaired by the next run and databases already stuck in the broken state are
+  repaired too. The three-argument `setval` form is used so the next id is exactly `MAX(id) + 1`
+  (and `1` on an empty table); the previous two-argument call skipped a value and wrongly started at
+  2 on an empty table. `postChecks()` now also asserts the sequence's next value is greater than
+  `MAX(id)`, so removing the sync later fails loudly at migration time instead of silently at first
+  user creation.
+- **Tests.** Added the test-only hook `maybeFailAfterBackfillCommit()`
+  (`MIGRATION_TEST_FAIL_AFTER_BACKFILL_COMMIT=1` + `NODE_ENV=test`, matching the existing
+  `MIGRATION_TEST_FAIL_PHASE_C_AT` guard) and `DB-MIG-11/12/13`, written first and confirmed
+  failing: DB-MIG-11 failed with the real `duplicate key … User_pkey` error, DB-MIG-12 with next
+  value 6 instead of 5, DB-MIG-13 with next value 2 instead of 1. DB-MIG-11 asserts the broken
+  precondition (Users with preserved IDs, `DevRequester` present, sequence next value ≤ `MAX(id)`)
+  so it cannot pass vacuously. A mutation check (removing the `syncUserIdSequence()` call) confirmed
+  DB-MIG-11 fails again without the fix.
+- **Doc nit — `itPriority` described as "required".** Accepted and corrected. Spec §9.3 defines
+  `itPriority` as nullable with a default of `requestedPriority`; the `service.ts` comment now says
+  so. The behavior (initialized from the validated `requestedPriority`) is unchanged.
+- **Earlier findings re-checked on the new head (`ac0bfe5`, history rewritten).** Credential: no
+  unmasked credential in this branch's history, only `USER:PASSWORD` placeholders; rotation is
+  recorded in this file and the evidence README, and I cannot verify the rotation itself. GitHub may
+  still hold the old commits, so a Support purge may still be worthwhile. Attachment ownership: the
+  guard is present, NULL-safe, and runs before Phase C on every path. `itPriority`: now set on
+  create. Async auth crash: re-ran the repro; it returns HTTP 500 and the server stays up.
+
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.
 

@@ -135,3 +135,40 @@
   DB-MIG-08/09 fail) proved the tests actually exercise the guard rather than passing vacuously.
   The async-error finding was the most consequential: a transient DB error at login could take
   the whole API down, which no existing test covered because every test used a healthy database.
+## Issue #35 PR #46 Review Follow-up Entry (Round 7 — User.id sequence sync after a post-backfill-commit crash)
+
+- Prompt summary: Follow the round-7 remediation plan: reproduce the "backfill committed, `setval`
+  never ran" state, write the failing tests first, replace the inline `setval` with one idempotent
+  sync that runs on every path, add a post-check guard, and regenerate the evidence.
+- What was done with output:
+  - **The defect.** `runBackfill()` committed the explicit-ID `User` inserts inside
+    `$transaction(...)`, then ran `setval` afterwards, outside the transaction. The
+    `backfill-complete` resume branch skips `runBackfill()` entirely, so a crash in that window
+    left the sequence behind `MAX(id)` and nothing ever repaired it. The failure was silent: every
+    migration check passed, and the first insert relying on `@default(autoincrement())` (the app's
+    user creation, and the seed) failed later with `duplicate key … User_pkey`.
+  - **Tests first (red).** Added a test-only hook `maybeFailAfterBackfillCommit()`
+    (`MIGRATION_TEST_FAIL_AFTER_BACKFILL_COMMIT=1` + `NODE_ENV=test`, matching the existing
+    `MIGRATION_TEST_FAIL_PHASE_C_AT` guard) called right after the `$transaction(...)` returns.
+    Added `DB-MIG-11` (crash → assert the broken precondition → resume → auto-ID create returns
+    max+1, then +2), `DB-MIG-12` (normal path), and `DB-MIG-13` (zero legacy requesters). All three
+    were confirmed failing before the fix: DB-MIG-11 with the real `duplicate key … User_pkey`
+    error, DB-MIG-12 with next value 6 instead of 5, DB-MIG-13 with next value 2 instead of 1.
+  - **Fix.** Removed the inline `setval` from `runBackfill()` and added `syncUserIdSequence()`,
+    called on **every** entry path immediately before Phase C. It uses the three-argument `setval`
+    form so the next id is exactly `MAX(id) + 1` (and `1` on an empty table); the previous
+    two-argument call skipped a value and wrongly started at 2 on an empty table.
+  - **Guard.** `postChecks()` now reads `last_value`/`is_called` from `User_id_seq` and throws if
+    the next value is `<= MAX(id)`, so removing the sync later fails loudly at migration time.
+  - **Doc nit.** Corrected the `service.ts` comment: spec §9.3 defines `itPriority` as nullable
+    with a default of `requestedPriority`, not "required".
+  - **Documentation:** added `DB-MIG-11/12/13` to `docs/lab-03/tests.md` (marked Passed only after
+    the runs), added the sequence re-sync paragraph to `README.md` §11.1, and regenerated the
+    `artifacts/lab-03/issue-35/` evidence bundle at the final head.
+- Reflection: The bug was a transaction-boundary mistake, not a logic mistake — the `setval` was
+  correct in isolation but sat outside the atomic unit and was skipped entirely on the resume path.
+  The right fix was not a second `setval` in the resume branch (which would still leave the crash
+  window open) but one idempotent sync on every path, so any crash is repaired by the next run and
+  already-broken databases are repaired too. The mutation check (removing the sync call) confirmed
+  DB-MIG-11 fails without it, and the new `postChecks` guard made that failure loud rather than
+  silent.

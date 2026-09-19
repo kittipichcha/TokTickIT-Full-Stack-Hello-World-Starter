@@ -2,18 +2,27 @@
 
 # Implementation commit validated by this evidence bundle.
 # This is the LAST commit that changed implementation code (server/, client/, e2e/).
-implementation-sha: 2654265e9c3ba9983ac1532e3f0c1c62167fe948
+implementation-sha: 8f143254bebb22ae27d13b2a10e4114709334737
 
 # Commit at which the evidence commands were executed and this bundle was written.
 # It is a docs/evidence-only commit: it changes no implementation code.
-evidence-captured-at: ff3fa4dad9da44da7cf03622fb1723a43f6767a7
+evidence-captured-at: a07f24f9c68c6b3d7793377b43558a3f4c520238
 
 # PR #46 head at the time of this capture.
-pr-head-at-capture: ff3fa4dad9da44da7cf03622fb1723a43f6767a7
+pr-head-at-capture: a07f24f9c68c6b3d7793377b43558a3f4c520238
 
-# Provenance note (review round 6):
-# `2654265` is the last commit that changed implementation code. It contains the round-6
-# fixes:
+# Provenance note (review round 7):
+# `8f14325` is the last commit that changed implementation code. It contains the round-7
+# fix:
+#   - migrate-lab3.ts: syncUserIdSequence() runs on EVERY entry path immediately before
+#     Phase C (the inline setval was removed from runBackfill()); postChecks() asserts the
+#     sequence next value > MAX(id)
+#   - migrate-lab3.ts: test-only hook maybeFailAfterBackfillCommit()
+#     (MIGRATION_TEST_FAIL_AFTER_BACKFILL_COMMIT=1 + NODE_ENV=test)
+#   - migration.integration.test.ts: DB-MIG-11/12/13
+#   - service.ts: itPriority comment corrected (spec 9.3: nullable, default requestedPriority)
+#
+# Round-6 fixes remain in this history:
 #   - service.ts: createTicket initializes itPriority from the validated requestedPriority
 #   - migrate-lab3.ts: verifyAttachmentOwnership() (IS DISTINCT FROM) before Phase C
 #   - auth.controller.ts / app.ts: async auth handlers fail closed with the canonical 500
@@ -25,6 +34,6 @@ pr-head-at-capture: ff3fa4dad9da44da7cf03622fb1723a43f6767a7
 # the value is absent from all commits. The credential was also rotated at the source.
 # No credential value is recorded in this bundle.
 #
-# The evidence below was executed at `2654265` (implementation SHA == evidence SHA), so no
+# The evidence below was executed at `8f14325` (implementation SHA == evidence SHA), so no
 # provenance gap exists for this capture. Any later docs/evidence-only commit does not
 # invalidate it (see the bundle README re-run policy).

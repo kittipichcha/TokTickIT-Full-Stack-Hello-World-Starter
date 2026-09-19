@@ -4,13 +4,12 @@
 **Branch:** `feature/issue-35-identity-db-migration-auth`
 **Base:** `origin/lab3-staging` @ `749aa966` (PR #45 merge)
 **Implementation SHA validated:** see [`head-sha.txt`](./head-sha.txt)
-**Captured:** 2026-09-17 (bundle refreshed 2026-09-18 round 4, 2026-09-19 rounds 5–6)
+**Captured:** 2026-09-17 (bundle refreshed 2026-09-18 round 4, 2026-09-19 rounds 5–7)
 
-> **Provenance (review round 6).** The evidence below was executed at the final head recorded
-> in [`head-sha.txt`](./head-sha.txt), after the round-6 fixes (attachment ownership guard,
-> `itPriority` initialization, async auth error containment, `SESSION_SECRET` placeholder
-> rejection, login timing equalization) and after the repository history rewrite. Implementation
-> SHA == evidence SHA for this capture.
+> **Provenance (review round 7).** The evidence below was executed at the final head recorded
+> in [`head-sha.txt`](./head-sha.txt), after the round-7 fix (`User.id` sequence re-sync on every
+> entry path, `postChecks` sequence guard, `itPriority` comment correction) and the new
+> `DB-MIG-11/12/13` tests. Implementation SHA == evidence SHA for this capture.
 
 > **Security (rounds 5–6).** A real DB password had leaked into the previously committed
 > `db-mig-execution.txt` and `server-vitest.txt` via an `execSync` error message. The leak was
@@ -30,11 +29,11 @@ execution) and B-6 (ground-truth compliance map). Every `Passed` claim in
 | File | Proves |
 |---|---|
 | [`head-sha.txt`](./head-sha.txt) | The implementation commit the evidence validates and the docs commit that captured it. |
-| [`server-vitest.txt`](./server-vitest.txt) | Server suite at the implementation SHA — **403 passed / 34 files** (incl. full Lab 2 regression + `server/tests/lab-03/*`). |
+| [`server-vitest.txt`](./server-vitest.txt) | Server suite at the implementation SHA — **406 passed / 34 files** (incl. full Lab 2 regression + `server/tests/lab-03/*`). |
 | [`client-vitest.txt`](./client-vitest.txt) | Client suite at the implementation SHA — **120 passed / 12 files** (incl. `client/src/lab-03-tests/*`). |
 | [`server-build-validate.txt`](./server-build-validate.txt) | `npx prisma validate` valid; `npx prisma migrate status` clean; server `npm run build` (`tsc`) exit 0. |
 | [`client-build.txt`](./client-build.txt) | Client `npm run build` (`tsc && vite build`) exit 0. |
-| [`db-mig-execution.txt`](./db-mig-execution.txt) | **B-4 / rounds 5–6:** DB-MIG-01..10, DB-MIG-PRESERVE-01/02, MIG-FAIL-01/02/03, SEC-MIG-01 **executed** (not skipped) and passed against isolated Lab 2 fixtures. Captured with the verbose reporter, so each executed test name is listed. Regenerated with the credential-non-disclosure fix. |
+| [`db-mig-execution.txt`](./db-mig-execution.txt) | **B-4 / rounds 5–7:** DB-MIG-01..13, DB-MIG-PRESERVE-01/02, MIG-FAIL-01/02/03, SEC-MIG-01 **executed** (not skipped) and passed against isolated Lab 2 fixtures. Captured with the verbose reporter, so each executed test name is listed. Regenerated with the credential-non-disclosure fix. |
 | [`seed-execution.txt`](./seed-execution.txt) | **B-4/B-5:** SEED-01, SEED-TKT-01..04, SEED-IDEMP-01/02, SEED-COLLISION-01, SEED-COMMENT-01, SEED-NOTE-01 executed and passed. |
 | [`client-api-error.txt`](./client-api-error.txt) | **B-3 / round 4:** UNIT-API-ERROR-01/02/03 and CSRF-ME-01 executed and passed. |
 | [`grep-gate.txt`](./grep-gate.txt) | DM-17 grep gate: zero `prisma.devRequester` references; all legacy identifiers confined to the declared set. Plus `git diff --check`, conflict-marker grep, `.env`-not-tracked proof, and a credential-bearing-URL sweep (only placeholders/redactions remain). |

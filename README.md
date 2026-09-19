@@ -459,6 +459,17 @@ non-null `removedByUserId` resolves to a `User`. The comparison uses `IS DISTINC
 path and again immediately before Phase C is applied, so the drop cannot lose the true
 ownership/removal attribution through any entry path.
 
+**`User.id` sequence re-sync:** the backfill inserts Users with **explicit** ids (exact ID
+preservation), which does not advance the `User_id_seq` sequence. `syncUserIdSequence()` therefore
+runs on **every** entry path (fresh, collision-resume, and Phase-C-resume) immediately before
+Phase C, using the three-argument `setval` form so the next id is exactly `MAX(id) + 1` (and `1`
+on an empty table). Because it is idempotent and unconditional, a crash in the window between the
+backfill commit and the sync — or a database already stuck in that state — is repaired by the next
+run. Without it, the first insert that relies on `@default(autoincrement())` (the app's user
+creation, and the seed) would reuse a taken id and fail with a duplicate key on `User_pkey`.
+`postChecks()` additionally asserts the sequence's next value is greater than `MAX(id)`, so
+removing the sync later fails loudly at migration time rather than silently at first user creation.
+
 ### 11.2 Session and CSRF configuration (concrete, frozen policy)
 
 - **Session store:** `express-session` + `connect-pg-simple` (`session` table,

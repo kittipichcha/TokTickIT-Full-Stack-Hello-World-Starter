@@ -98,7 +98,7 @@ executable test, and the executed evidence in this bundle. Authoritative sources
 
 | Test row | Frozen Automated Test File | Present? |
 |---|---|---|
-| DB-MIG-01..10 | `server/tests/lab-03/migration.integration.test.ts` | ✅ |
+| DB-MIG-01..13 | `server/tests/lab-03/migration.integration.test.ts` | ✅ |
 | SEED-01 | `server/tests/lab-03/seed.integration.test.ts` | ✅ |
 | API-AUTH-01..12 + API-AUTH-05b + SEC-AUTHZ-06 | `server/tests/lab-03/auth.api.test.ts`, `server/tests/lab-03/auth-error-handling.api.test.ts` | ✅ |
 | SEC-AUTHZ-11 | `server/tests/lab-03/session-secret.unit.test.ts` | ✅ |
