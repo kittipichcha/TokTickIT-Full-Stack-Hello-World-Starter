@@ -318,10 +318,38 @@ defaults to `10` and accepts `1`–`50`. Invalid query values fall back to safe 
 
 **Auth:** authenticated Requester (owned) or IT Staff/Administrator.
 
-**Response 200**
+**Response 200** — a **bare array** of attachment objects (no `data` envelope).
+Bare array, preserved from Lab 2 (decision D-18).
+
 ```json
-{ "data": [ /* attachments */ ] }
+[
+  {
+    "id": 10,
+    "originalFilename": "photo.jpg",
+    "mimeType": "image/jpeg",
+    "fileSizeBytes": 12345,
+    "uploadedAt": "2026-09-10T00:00:00Z",
+    "isRemoved": false,
+    "removedAt": null,
+    "removalReason": null,
+    "removedByUserId": null
+  }
+]
 ```
+
+**Attachment object shape**
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | integer | |
+| `originalFilename` | string | |
+| `mimeType` | string | |
+| `fileSizeBytes` | integer | |
+| `uploadedAt` | string (ISO 8601) | |
+| `isRemoved` | boolean | |
+| `removedAt` | string (ISO 8601) or null | set only when `isRemoved = true` |
+| `removalReason` | string or null | set only when `isRemoved = true` |
+| `removedByUserId` | integer or null | the `User.id` that performed the soft-remove; null while active. Renamed from the Lab 2 `removedByRequesterId` by #35's DM-17 step (authorized rename; see `reviewer.md`). |
 
 ---
 
@@ -356,8 +384,12 @@ defaults to `10` and accepts `1`–`50`. Invalid query values fall back to safe 
 
 **Response 200**
 ```json
-{ "data": { "id": 10, "isRemoved": true, "removedAt": "2026-09-10T00:00:00Z" } }
+{ "data": { "id": 10, "isRemoved": true, "removedAt": "2026-09-10T00:00:00Z", "removedByUserId": 1 } }
 ```
+
+`removedByUserId` (integer or null) is the `User.id` that performed the soft-remove; it is
+renamed from the Lab 2 `removedByRequesterId` by #35's DM-17 step (authorized rename; see
+`reviewer.md`).
 
 **Error cases**
 - `403 FORBIDDEN` — caller is IT Staff/Administrator (view-only; cannot remove Attachments).
