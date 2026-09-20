@@ -25,7 +25,8 @@ describe("Authenticated transport replaces header-identified requests", () => {
       capturedRequests.push({ url: urlString, init });
 
       if (urlString.includes("/api/categories")) {
-        return new Response(JSON.stringify({ data: [] }), {
+        // GET /api/categories returns a BARE ARRAY (preserved from Lab 2).
+        return new Response(JSON.stringify([]), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
