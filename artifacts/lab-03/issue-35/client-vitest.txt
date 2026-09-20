@@ -1,15 +1,15 @@
 
- RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/client
+ RUN  v4.1.10 <repo>/<worktree>/client
 
 Error: Not implemented: window.open
-    at module.exports (C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
-    at C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
-    at onClick (C:/Users/kitti/CPE334/issue-35-worktree/client/src/App.tsx:532:42) undefined
+    at module.exports (<repo>/<worktree>\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at <repo>/<worktree>\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at onClick (<repo>/<worktree>/client/src/App.tsx:532:42) undefined
 Error: Not implemented: navigation (except hash changes)
-    at module.exports (C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
-    at navigateFetch (C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
-    at exports.navigate (C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
-    at Timeout._onTimeout (C:\Users\kitti\CPE334\issue-35-worktree\client\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at module.exports (<repo>/<worktree>\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (<repo>/<worktree>\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (<repo>/<worktree>\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (<repo>/<worktree>\client\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
     at listOnTimeout (node:internal/timers:605:17)
     at processTimers (node:internal/timers:541:7) undefined
 

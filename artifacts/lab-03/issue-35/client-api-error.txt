@@ -1,5 +1,5 @@
 
- RUN  v4.1.10 C:/Users/kitti/CPE334/issue-35-worktree/client
+ RUN  v4.1.10 <repo>/<worktree>/client
 
 
  Test Files  1 passed (1)
