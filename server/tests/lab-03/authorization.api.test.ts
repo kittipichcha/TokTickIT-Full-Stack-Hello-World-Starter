@@ -534,3 +534,55 @@ describe("Supplementary — UNIT-AUTHZ-01: requireRole", () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+/**
+ * Supplementary — UNIT-AUTHZ-02 (N-3): the Lab 2 regression test seam is inert
+ * outside `NODE_ENV=test`.
+ *
+ * `testSeams.sessionIdentity` lets the Lab 2 suites inject an identity without the
+ * session/login path. That seam must never weaken production: with
+ * `NODE_ENV=production` and the seam set, a request with no session still gets 401.
+ */
+describe("Supplementary — UNIT-AUTHZ-02: test seam is inert outside NODE_ENV=test", () => {
+  it("ignores testSeams.sessionIdentity when NODE_ENV=production", async () => {
+    const { testSeams } = await import("../../src/test-seams.js");
+    const originalEnv = process.env.NODE_ENV;
+    testSeams.sessionIdentity = {
+      userId: 999999,
+      role: "REQUESTER",
+      mustChangePassword: false,
+      name: "Seam Identity",
+      email: "seam-identity@example.com",
+    };
+    try {
+      process.env.NODE_ENV = "production";
+      // No session cookie: the seam must NOT authenticate the request.
+      const res = await request(app).get("/api/categories");
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe("UNAUTHENTICATED");
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      testSeams.sessionIdentity = null;
+    }
+  });
+
+  it("honors testSeams.sessionIdentity when NODE_ENV=test", async () => {
+    const { testSeams } = await import("../../src/test-seams.js");
+    const originalEnv = process.env.NODE_ENV;
+    testSeams.sessionIdentity = {
+      userId: 1,
+      role: "REQUESTER",
+      mustChangePassword: false,
+      name: "Seam Identity",
+      email: "seam-identity@example.com",
+    };
+    try {
+      process.env.NODE_ENV = "test";
+      const res = await request(app).get("/api/categories");
+      expect(res.status).toBe(200);
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      testSeams.sessionIdentity = null;
+    }
+  });
+});

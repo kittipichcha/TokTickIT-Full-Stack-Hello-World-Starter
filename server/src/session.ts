@@ -89,12 +89,13 @@ export function issueCsrfToken(req: Request, res: Response): string {
  * Re-reads the current User row per protected request; missing/inactive -> destroy session + 401.
  *
  * Issue #37: when `testSeams.sessionIdentity` is set (Lab 2 regression fixture only),
- * the identity is taken from the seam instead of the session + DB read. The real
- * authentication boundary is covered by #35's auth suite and by #37's frozen
+ * the identity is taken from the seam instead of the session + DB read. The seam is
+ * honored ONLY when `NODE_ENV === "test"` (N-3 guard), so it is inert in production.
+ * The real authentication boundary is covered by #35's auth suite and by #37's frozen
  * authorization/requester API tests, which use real logins.
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const seam = testSeams.sessionIdentity;
+  const seam = process.env.NODE_ENV === "test" ? testSeams.sessionIdentity : null;
   if (seam) {
     res.locals.userId = seam.userId;
     res.locals.role = seam.role;
@@ -158,12 +159,13 @@ export function requirePasswordChanged(_req: Request, res: Response, next: NextF
  * Missing/invalid -> 403 FORBIDDEN (no state change).
  *
  * Issue #37: when `testSeams.sessionIdentity` is set (Lab 2 regression fixture only),
- * CSRF is satisfied by the fixture. Lab 2 had no CSRF mechanism, so those suites
- * exercise business logic only; the CSRF boundary itself is covered by the frozen
- * SEC-AUTHZ-07 row in `authorization.api.test.ts`, which uses real logins.
+ * CSRF is satisfied by the fixture. The seam is honored ONLY when `NODE_ENV === "test"`
+ * (N-3 guard), so it is inert in production. Lab 2 had no CSRF mechanism, so those
+ * suites exercise business logic only; the CSRF boundary itself is covered by the
+ * frozen SEC-AUTHZ-07 row in `authorization.api.test.ts`, which uses real logins.
  */
 export function requireCsrf(req: Request, res: Response, next: NextFunction): void {
-  if (testSeams.sessionIdentity) {
+  if (process.env.NODE_ENV === "test" && testSeams.sessionIdentity) {
     next();
     return;
   }
