@@ -56,4 +56,3 @@ NOTICE:  database "tocktick_lab3_mig05_16068" does not exist, skipping
       Tests  424 passed (424)
    Start at  17:33:58
    Duration  795.14s (transform 1.37s, setup 0ms, import 20.74s, tests 760.99s, environment 7ms)
-
