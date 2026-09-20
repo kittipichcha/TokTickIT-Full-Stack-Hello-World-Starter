@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
-  selectRequester,
+  loginAsRequesterById,
   openCreateTicket,
   createTicket,
   openMyTickets,
@@ -23,8 +23,8 @@ test.describe("E2E-01: Requester creates ticket and finds it in My Tickets", () 
     const uniqueSummary = `E2E-01 integration ticket ${Date.now()}`;
     const description = "This ticket was created by an automated Playwright E2E test and must be findable.";
 
-    // 1. Establish requester context.
-    await selectRequester(page, "1");
+    // 1. Establish requester context (authenticated login).
+    await loginAsRequesterById(page, "1");
 
     // 2. Create the ticket.
     await openCreateTicket(page);
