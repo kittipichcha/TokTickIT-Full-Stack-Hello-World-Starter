@@ -1,15 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
+import { setSeamIdentity, clearSeamIdentity } from "./helpers/identity.js";
 
 vi.mock("../../src/service.js", async () => {
   const actual = await vi.importActual<typeof import("../../src/service.js")>("../../src/service.js");
   return {
     ...actual,
-    isActiveDevRequester: vi.fn(),
     createTicket: vi.fn(),
     getCategories: vi.fn(),
-    getActiveDevRequesters: vi.fn(),
     getActiveRelatedSystems: vi.fn(),
     getTicketByNumber: vi.fn(),
     categoryExists: vi.fn(),
@@ -25,7 +24,7 @@ const { ValidationError, InactiveReferenceError } = service;
 describe("API-TKT-01: Create ticket success", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   const validBody = {
@@ -55,7 +54,6 @@ describe("API-TKT-01: Create ticket success", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send(validBody);
 
     expect(res.status).toBe(201);
@@ -87,7 +85,6 @@ describe("API-TKT-01: Create ticket success", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send(validBody);
 
     expect(res.status).toBe(201);
@@ -105,13 +102,13 @@ describe("API-TKT-01: Create ticket success", () => {
   });
 });
 
-describe("API-TKT-04: Ownership assigned from X-Dev-Requester-Id", () => {
+describe("API-TKT-04: Ownership assigned from the authenticated identity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 42 });
   });
 
-  it("persists ownership from the validated caller header", async () => {
+  it("persists ownership from the authenticated identity, never the request body", async () => {
     let capturedRequesterId: number | null = null;
     vi.mocked(service.createTicket).mockImplementation(async (rid) => {
       capturedRequesterId = rid;
@@ -127,12 +124,13 @@ describe("API-TKT-04: Ownership assigned from X-Dev-Requester-Id", () => {
 
     await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "42")
       .send({
         categoryId: 1, relatedSystemId: 1,
         summary: "Valid summary text",
         description: "Valid description text for testing",
         requestedPriority: "MEDIUM",
+        // A body-supplied requesterId must be ignored (SEC-AUTHZ-01).
+        requesterId: 999,
       });
 
     expect(capturedRequesterId).toBe(42);
@@ -142,7 +140,7 @@ describe("API-TKT-04: Ownership assigned from X-Dev-Requester-Id", () => {
 describe("API-TKT-05: IT Priority initialized from Requested Priority; Ticket Owner remains null", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   it("returns itPriority equal to requestedPriority and ticketOwnerId null on requester-created tickets", async () => {
@@ -157,7 +155,6 @@ describe("API-TKT-05: IT Priority initialized from Requested Priority; Ticket Ow
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({
         categoryId: 1, relatedSystemId: 1,
         summary: "Valid summary text",
@@ -174,7 +171,7 @@ describe("API-TKT-05: IT Priority initialized from Requested Priority; Ticket Ow
 describe("API-TKT-07: Requested Priority server-side validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   const validBody = {
@@ -191,7 +188,6 @@ describe("API-TKT-07: Requested Priority server-side validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send(validBody);
 
     expect(res.status).toBe(400);
@@ -206,7 +202,6 @@ describe("API-TKT-07: Requested Priority server-side validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, requestedPriority: "URGENT" });
 
     expect(res.status).toBe(400);
@@ -226,7 +221,6 @@ describe("API-TKT-07: Requested Priority server-side validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, requestedPriority: priority });
 
     expect(res.status).toBe(201);
@@ -238,7 +232,7 @@ describe("API-TKT-07: Requested Priority server-side validation", () => {
 describe("API-TKT-02: Inactive/stale reference rejection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   it("rejects inactive category with 409 INACTIVE_REFERENCE", async () => {
@@ -248,7 +242,6 @@ describe("API-TKT-02: Inactive/stale reference rejection", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({
         categoryId: 1, relatedSystemId: 1,
         summary: "Valid summary text",
@@ -267,7 +260,6 @@ describe("API-TKT-02: Inactive/stale reference rejection", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({
         categoryId: 1, relatedSystemId: 1,
         summary: "Valid summary text",
@@ -278,4 +270,8 @@ describe("API-TKT-02: Inactive/stale reference rejection", () => {
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("INACTIVE_REFERENCE");
   });
+});
+
+afterEach(() => {
+  clearSeamIdentity();
 });

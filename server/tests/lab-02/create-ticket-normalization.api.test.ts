@@ -1,15 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
+import { setSeamIdentity, clearSeamIdentity } from "./helpers/identity.js";
 
 vi.mock("../../src/service.js", async () => {
   const actual = await vi.importActual<typeof import("../../src/service.js")>("../../src/service.js");
   return {
     ...actual,
-    isActiveDevRequester: vi.fn(),
     createTicket: vi.fn(),
     getCategories: vi.fn(),
-    getActiveDevRequesters: vi.fn(),
     getActiveRelatedSystems: vi.fn(),
     getTicketByNumber: vi.fn(),
     categoryExists: vi.fn(),
@@ -25,7 +24,7 @@ const { ValidationError, InactiveReferenceError } = service;
 describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   const validBody = {
@@ -43,7 +42,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, summary: "abcd" });
 
     expect(res.status).toBe(400);
@@ -62,7 +60,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, summary: "abcde" });
 
     expect(res.status).toBe(201);
@@ -80,7 +77,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, summary: summary120 });
 
     expect(res.status).toBe(201);
@@ -93,7 +89,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, summary: "a".repeat(121) });
 
     expect(res.status).toBe(400);
@@ -108,7 +103,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, summary: "   " });
 
     expect(res.status).toBe(400);
@@ -123,7 +117,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, description: "123456789" });
 
     expect(res.status).toBe(400);
@@ -142,7 +135,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, description: "1234567890" });
 
     expect(res.status).toBe(201);
@@ -160,7 +152,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, description: desc2000 });
 
     expect(res.status).toBe(201);
@@ -173,7 +164,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, description: "a".repeat(2001) });
 
     expect(res.status).toBe(400);
@@ -188,7 +178,6 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, description: "   " });
 
     expect(res.status).toBe(400);
@@ -200,7 +189,7 @@ describe("API-TKT-NOR-01: Summary/Description trimming and boundary behavior", (
 describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   const validBody = {
@@ -219,7 +208,6 @@ describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
     const { categoryId, ...body } = validBody;
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send(body);
 
     expect(res.status).toBe(400);
@@ -234,7 +222,6 @@ describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, categoryId: "abc" });
 
     expect(res.status).toBe(400);
@@ -249,7 +236,6 @@ describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, categoryId: 0 });
 
     expect(res.status).toBe(400);
@@ -264,7 +250,6 @@ describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, categoryId: -1 });
 
     expect(res.status).toBe(400);
@@ -279,7 +264,6 @@ describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, categoryId: 999 });
 
     expect(res.status).toBe(409);
@@ -293,7 +277,6 @@ describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, categoryId: 1 });
 
     expect(res.status).toBe(409);
@@ -308,7 +291,6 @@ describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
     const { relatedSystemId, ...body } = validBody;
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send(body);
 
     expect(res.status).toBe(400);
@@ -323,7 +305,6 @@ describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, relatedSystemId: 999 });
 
     expect(res.status).toBe(409);
@@ -337,10 +318,13 @@ describe("API-TKT-NOR-02: CategoryId/RelatedSystemId validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, relatedSystemId: 1 });
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("INACTIVE_REFERENCE");
   });
+});
+
+afterEach(() => {
+  clearSeamIdentity();
 });

@@ -1,191 +1,99 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+/**
+ * RR-04 class (a) — behavior unchanged, auth fixture updated.
+ *
+ * The request-parsing contract assertions are unchanged from Lab 2. Only the
+ * identity fixture changed: `X-Dev-Requester-Id` header injection is replaced by
+ * an authenticated session (login → cookie + CSRF token).
+ *
+ * The former `API-CONTRACT-01 requester context contract` block asserted the
+ * removed Dev-Requester selector/context endpoints; that block is class (b) and
+ * is retired — its replacement lives in `dev-requesters.api.test.ts`.
+ */
+
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
-import * as service from "../../src/service.js";
-import { getRequesterIdFromHeaders } from "../../src/requester-context.js";
+import { disconnectPrisma } from "../../src/prisma.js";
+import { ensureAndLogin, withSession, type TestSession } from "../lab-03/helpers/auth.js";
 
-vi.mock("../../src/service.js");
+const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
-describe("API-CONTRACT-01 requester context contract", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
-    vi.mocked(service.getActiveDevRequesters).mockResolvedValue([
-      { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
-    ]);
-    vi.mocked(service.getCategories).mockResolvedValue([{ id: 1, name: "Hardware" }]);
+process.env.SESSION_SECRET = "test-only-session-secret-not-for-production";
+process.env.NODE_ENV = "test";
+
+const EMAIL = "api-contract@example.com";
+
+let session: TestSession;
+
+beforeAll(async () => {
+  if (!process.env.DATABASE_URL) return;
+  session = await ensureAndLogin({ email: EMAIL, name: "Api Contract", role: "REQUESTER" });
+});
+
+afterAll(async () => {
+  if (!process.env.DATABASE_URL) return;
+  await disconnectPrisma();
+});
+
+describe("API-CONTRACT-01 request parsing contract", () => {
+  itIfDb("rejects malformed JSON body with canonical 400 on POST /api/tickets", async () => {
+    const response = await withSession(request(app).post("/api/tickets"), session, { csrf: true })
+      .set("Content-Type", "application/json")
+      .send("{ malformed");
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+    expect(response.body.error).toHaveProperty("fields");
   });
 
-  it("returns active requesters in the documented envelope without a requester header", async () => {
-    const activeRequesters = [
-      { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
-      { id: 2, name: "Grace Hopper", email: "grace@example.com" },
-    ];
-    vi.mocked(service.getActiveDevRequesters).mockResolvedValue(activeRequesters);
+  itIfDb("rejects non-object JSON body (null) with canonical 400 on POST /api/tickets", async () => {
+    const response = await withSession(request(app).post("/api/tickets"), session, { csrf: true })
+      .set("Content-Type", "application/json")
+      .send("null");
 
-    const response = await request(app).get("/api/dev-requesters");
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+    expect(response.body.error).toHaveProperty("fields");
+  });
+
+  itIfDb("rejects array JSON body with canonical 400 on POST /api/tickets", async () => {
+    const response = await withSession(request(app).post("/api/tickets"), session, { csrf: true })
+      .set("Content-Type", "application/json")
+      .send("[]");
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+    expect(response.body.error).toHaveProperty("fields");
+  });
+
+  itIfDb("rejects primitive JSON body (string) with canonical 400 on POST /api/tickets", async () => {
+    const response = await withSession(request(app).post("/api/tickets"), session, { csrf: true })
+      .set("Content-Type", "application/json")
+      .send('"hello"');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+    expect(response.body.error).toHaveProperty("fields");
+  });
+
+  itIfDb("rejects wrong Content-Type with canonical 400 on POST /api/tickets", async () => {
+    const response = await withSession(request(app).post("/api/tickets"), session, { csrf: true })
+      .set("Content-Type", "text/plain")
+      .send("not json");
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+    expect(response.body.error).toHaveProperty("fields");
+  });
+
+  itIfDb("uses first value for duplicate query parameters", async () => {
+    const response = await withSession(
+      request(app).get("/api/tickets?sort=createdAt&sort=ticketNumber"),
+      session,
+    );
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ data: activeRequesters });
-    expect(service.getActiveDevRequesters).toHaveBeenCalledOnce();
-  });
-
-  it.each([
-    ["missing", undefined],
-    ["malformed", "abc"],
-    ["decimal", "1.0"],
-    ["signed", "+1"],
-  ])("returns canonical 422 for %s requester header", async (_label, value) => {
-    const req = request(app).get("/api/requester-context");
-    if (value !== undefined) req.set("X-Dev-Requester-Id", value);
-
-    const response = await req;
-    expect(response.status).toBe(422);
-    expect(response.body).toEqual({
-      error: {
-        code: "REQUESTER_CONTEXT_INVALID",
-        message: "A valid active requester is required.",
-      },
-    });
-    expect(response.body).not.toHaveProperty("fields");
-  });
-
-  it("rejects whitespace-padded values before requester lookup", () => {
-    const parsed = getRequesterIdFromHeaders({
-      headers: { "x-dev-requester-id": " 1" },
-    } as never);
-    expect(parsed).toBeNull();
-    expect(vi.mocked(service.isActiveDevRequester)).not.toHaveBeenCalled();
-  });
-
-  it("returns canonical 422 for duplicate requester header", async () => {
-    const response = await request(app)
-      .get("/api/requester-context")
-      .set("X-Dev-Requester-Id", ["1", "2"] as unknown as string);
-
-    expect(response.status).toBe(422);
-    expect(response.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
-  });
-
-  it.each(["unknown", "inactive"])("returns canonical 422 for %s requester id", async () => {
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(false);
-
-    const response = await request(app)
-      .get("/api/requester-context")
-      .set("X-Dev-Requester-Id", "9");
-
-    expect(response.status).toBe(422);
-    expect(response.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
-  });
-
-  it("returns safe canonical 500 when requester lookup throws", async () => {
-    vi.mocked(service.isActiveDevRequester).mockRejectedValue(new Error("db details"));
-
-    const response = await request(app)
-      .get("/api/requester-context")
-      .set("X-Dev-Requester-Id", "1");
-
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({
-      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
-    });
-  });
-
-  it("allows a valid active requester through", async () => {
-    const response = await request(app)
-      .get("/api/requester-context")
-      .set("X-Dev-Requester-Id", "1");
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({ data: { requesterId: 1 } });
-    expect(service.isActiveDevRequester).toHaveBeenCalledWith(1);
-  });
-
-  it("allows bootstrap endpoints without requester header", async () => {
-    const requesters = await request(app).get("/api/dev-requesters");
-    const categories = await request(app).get("/api/categories");
-
-    expect(requesters.status).toBe(200);
-    expect(requesters.body).toEqual({
-      data: [{ id: 1, name: "Ada Lovelace", email: "ada@example.com" }],
-    });
-    expect(categories.status).toBe(200);
-    expect(Array.isArray(categories.body)).toBe(true);
-    expect(categories.body).toEqual([{ id: 1, name: "Hardware" }]);
-  });
-
-  describe("request parsing contract", () => {
-    it("rejects malformed JSON body with canonical 400 on POST /api/tickets", async () => {
-      const response = await request(app)
-        .post("/api/tickets")
-        .set("X-Dev-Requester-Id", "1")
-        .set("Content-Type", "application/json")
-        .send('{ malformed');
-
-      expect(response.status).toBe(400);
-      expect(response.body.error.code).toBe("VALIDATION_ERROR");
-      expect(response.body.error).toHaveProperty("fields");
-    });
-
-    it("rejects non-object JSON body (null) with canonical 400 on POST /api/tickets", async () => {
-      const response = await request(app)
-        .post("/api/tickets")
-        .set("X-Dev-Requester-Id", "1")
-        .set("Content-Type", "application/json")
-        .send("null");
-
-      expect(response.status).toBe(400);
-      expect(response.body.error.code).toBe("VALIDATION_ERROR");
-      expect(response.body.error).toHaveProperty("fields");
-    });
-
-    it("rejects array JSON body with canonical 400 on POST /api/tickets", async () => {
-      const response = await request(app)
-        .post("/api/tickets")
-        .set("X-Dev-Requester-Id", "1")
-        .set("Content-Type", "application/json")
-        .send("[]");
-
-      expect(response.status).toBe(400);
-      expect(response.body.error.code).toBe("VALIDATION_ERROR");
-      expect(response.body.error).toHaveProperty("fields");
-    });
-
-    it("rejects primitive JSON body (string) with canonical 400 on POST /api/tickets", async () => {
-      const response = await request(app)
-        .post("/api/tickets")
-        .set("X-Dev-Requester-Id", "1")
-        .set("Content-Type", "application/json")
-        .send('"hello"');
-
-      expect(response.status).toBe(400);
-      expect(response.body.error.code).toBe("VALIDATION_ERROR");
-      expect(response.body.error).toHaveProperty("fields");
-    });
-
-    it("rejects wrong Content-Type with canonical 400 on POST /api/tickets", async () => {
-      const response = await request(app)
-        .post("/api/tickets")
-        .set("X-Dev-Requester-Id", "1")
-        .set("Content-Type", "text/plain")
-        .send("not json");
-
-      expect(response.status).toBe(400);
-      expect(response.body.error.code).toBe("VALIDATION_ERROR");
-      expect(response.body.error).toHaveProperty("fields");
-    });
-
-    it("uses first value for duplicate query parameters", async () => {
-      vi.mocked(service.getActiveDevRequesters).mockResolvedValue([
-        { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
-        { id: 2, name: "Grace Hopper", email: "grace@example.com" },
-      ]);
-
-      const response = await request(app).get("/api/dev-requesters?sort=name&sort=id");
-
-      expect(response.status).toBe(200);
-      // The endpoint should use the first occurrence
-      expect(service.getActiveDevRequesters).toHaveBeenCalled();
-    });
+    // The endpoint uses the first occurrence and never errors on duplicates.
+    expect(response.body).toHaveProperty("pagination");
   });
 });

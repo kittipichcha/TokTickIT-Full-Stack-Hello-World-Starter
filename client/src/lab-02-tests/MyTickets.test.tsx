@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 import * as api from "../api";
+import { TEST_USER } from "./helpers/user";
 
 vi.mock("../api");
 
@@ -69,26 +70,18 @@ function makeResult(
 }
 
 async function setupAuthenticatedApp() {
-  vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
-  vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
   vi.mocked(api.fetchCategories).mockImplementation(async () => [{ id: 1, name: "Hardware" }, { id: 2, name: "Software" }]);
 
-  render(<App />);
-
-  await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-  await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+  render(<App user={TEST_USER} />);
 
   // Wait for app shell to appear (StrictMode may double-render)
-  await screen.findAllByText(/Ada Lovelace/);
+  await screen.findByText("TokTickIT");
 }
 
 describe("UI-MY-01: Empty state when unfilteredTotalItems=0", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () =>
       makeResult([], { totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 }),
     );
@@ -122,9 +115,6 @@ describe("UI-MY-02: No-Results state when unfilteredTotalItems>0 and filtered to
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () =>
       makeResult([], { totalItems: 0, totalPages: 0, unfilteredTotalItems: 5 }),
     );
@@ -143,70 +133,34 @@ describe("UI-MY-02: No-Results state when unfilteredTotalItems>0 and filtered to
   });
 });
 
-describe("UI-MY-03: Requester switch clears prior data and reloads new scope", () => {
+describe("UI-MY-03: Ticket scope is fixed to the authenticated identity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-
-    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesterSetA);
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
     vi.mocked(api.fetchCategories).mockImplementation(async () => [{ id: 1, name: "Hardware" }]);
-
-    vi.mocked(api.getStoredRequesterId).mockImplementation(() => {
-      const stored = sessionStorage.getItem("toktickit.requesterId");
-      return stored ? Number(stored) : null;
-    });
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => {
-      sessionStorage.setItem("toktickit.requesterId", String(id));
-    });
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => {
-      sessionStorage.removeItem("toktickit.requesterId");
-    });
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it("clears prior requester data and reloads from new requester scope", async () => {
-    // Return different data based on requester ID
-    vi.mocked(api.fetchMyTickets).mockImplementation(async (requesterId) => {
-      if (requesterId === 1) {
-        return makeResult([makeTicket(1, { summary: "Ticket A" })], { unfilteredTotalItems: 1 });
-      }
-      // Requester B (id=3)
-      return makeResult([makeTicket(3, { ticketNumber: "TKT-2026-000003", summary: "Ticket B" })], { unfilteredTotalItems: 1 });
-    });
+  it("loads only the authenticated identity's tickets and offers no requester switch", async () => {
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () =>
+      makeResult([makeTicket(1, { summary: "Ticket A" })], { unfilteredTotalItems: 1 }),
+    );
 
-    render(<App />);
+    render(<App user={TEST_USER} />);
 
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-
-    // Wait for shell to appear and Ticket A to show
+    // Wait for the shell and the owned ticket to show.
     await screen.findAllByText("Ticket A");
 
-    // After Change Requester, switch mock to return requesterSetB
-    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesterSetB);
+    // The Development Requester selector and its Change Requester action are removed
+    // (Lab 3 §8.2) — identity is fixed for the session.
+    expect(screen.queryByRole("button", { name: /change requester/i })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: /development requester/i })).toBeNull();
 
-    const changeButtons = screen.getAllByRole("button", { name: "Change Requester" });
-    fireEvent.click(changeButtons[0]);
-
-    // Should be back on selector screen
-    await screen.findByRole("combobox", { name: /development requester/i });
-
-    // Verify Ticket A is no longer displayed (requester context cleared)
-    expect(screen.queryByText("Ticket A")).toBeNull();
-
-    // Select requester B (Alan Turing, id=3)
-    fireEvent.change(screen.getByRole("combobox", { name: /development requester/i }), { target: { value: "3" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-
-    // Wait for Ticket B to appear
-    await screen.findAllByText("Ticket B");
-
-    // Verify Ticket A is absent
-    expect(screen.queryByText("Ticket A")).toBeNull();
+    // My Tickets is fetched without a client-supplied requester id.
+    expect(vi.mocked(api.fetchMyTickets).mock.calls[0]!.length).toBeLessThanOrEqual(1);
   });
 });
 
@@ -214,12 +168,7 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchCategories).mockImplementation(async () => []);
-    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
   });
 
   afterEach(() => {
@@ -229,10 +178,7 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
   it("shows loading skeleton while fetching tickets", async () => {
     vi.mocked(api.fetchMyTickets).mockReturnValue(new Promise(() => undefined));
 
-    render(<App />);
-
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+    render(<App user={TEST_USER} />);
 
     expect(await screen.findByRole("status", { name: "Loading tickets" })).toBeTruthy();
   });
@@ -240,10 +186,7 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
   it("shows error state with manual retry button on API failure", async () => {
     vi.mocked(api.fetchMyTickets).mockRejectedValue(new Error("Network error"));
 
-    render(<App />);
-
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+    render(<App user={TEST_USER} />);
 
     expect(await screen.findByRole("alert")).toBeTruthy();
     const retryButton = screen.getByRole("button", { name: "Retry" });
@@ -258,10 +201,7 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
       throw new Error("Network error");
     });
 
-    render(<App />);
-
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+    render(<App user={TEST_USER} />);
 
     // Wait for error state to appear
     await screen.findByRole("alert");
@@ -290,10 +230,7 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
       );
     });
 
-    render(<App />);
-
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+    render(<App user={TEST_USER} />);
 
     // Wait for error state
     await screen.findByRole("alert");
@@ -316,12 +253,7 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
   beforeEach(() => {
     vi.resetAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchCategories).mockImplementation(async () => []);
-    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
   });
 
   afterEach(() => {
@@ -341,7 +273,7 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
 
     // Track page 1 calls to distinguish initial loads from redirect
     let page1Calls = 0;
-    vi.mocked(api.fetchMyTickets).mockImplementation(async (_rid, params) => {
+    vi.mocked(api.fetchMyTickets).mockImplementation(async (params) => {
       const p = params?.page ?? 1;
       if (p === 1) {
         page1Calls++;
@@ -352,10 +284,7 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
       return outOfRangeResult;
     });
 
-    render(<App />);
-
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+    render(<App user={TEST_USER} />);
 
     // Should show tickets from page 1
     await screen.findAllByText("Ticket 1 summary");
@@ -378,12 +307,7 @@ describe("UI-MY-06: Mobile card collapse/expand for secondary details", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchCategories).mockImplementation(async () => [{ id: 1, name: "Hardware" }]);
-    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () =>
       makeResult([
         makeTicket(1, { ticketNumber: "TKT-2026-000001", summary: "Monitor issue", categoryName: "Hardware", requestedPriority: "HIGH", createdAt: "2026-08-21T09:14:00.000Z" }),
@@ -514,12 +438,7 @@ describe("UI-MY-07: Stale-response protection — older request must not overwri
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchCategories).mockImplementation(async () => [{ id: 1, name: "Hardware" }]);
-    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
   });
 
   afterEach(() => {
@@ -534,7 +453,7 @@ describe("UI-MY-07: Stale-response protection — older request must not overwri
     const promiseB = new Promise((resolve) => { resolveB = resolve; });
 
     let callIdx = 0;
-    vi.mocked(api.fetchMyTickets).mockImplementation(async (_rid, params) => {
+    vi.mocked(api.fetchMyTickets).mockImplementation(async (params) => {
       callIdx++;
       const search = params?.search ?? "";
       // Call 1 is the initial load — resolve immediately
@@ -557,10 +476,7 @@ describe("UI-MY-07: Stale-response protection — older request must not overwri
       );
     });
 
-    render(<App />);
-
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+    render(<App user={TEST_USER} />);
 
     // Wait for initial empty state
     await screen.findByText("You haven't created any tickets yet.");
