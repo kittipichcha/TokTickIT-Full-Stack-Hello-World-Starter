@@ -26,10 +26,16 @@ foundation and executed its frozen test rows. Statuses are evidence-driven. The 
 updated to `Passed` by #35 are: DB-MIG-01..10, SEC-MIG-01, SEED-01, API-AUTH-01..12,
 API-AUTH-05b, SEC-AUTHZ-06, SEC-AUTHZ-11, SEC-AUTHZ-12, UNIT-AUTH-01, UNIT-API-ERROR-01..03,
 CSRF-ME-01, TKT-PRIO-01..03, UI-LOGIN-01,
-UI-CHPWD-01/02, UI-AUTHGATE-01/02/03. Rows owned by other issues remain `Planned`.
+UI-CHPWD-01/02, UI-AUTHGATE-01/02/03.
+
+Issue #37 (Authorization + Requester Migration / Regression) retrofitted the Lab 2
+Requester routes to authenticated identity and executed its frozen rows. The rows updated
+to `Passed` by #37 are: SEC-AUTHZ-01, SEC-AUTHZ-04, SEC-AUTHZ-05, SEC-AUTHZ-07,
+SEC-AUTHZ-10, API-REQ-01, API-REQ-02. Rows owned by other issues remain `Planned`.
 
 Every `Passed` row above is backed by an executed run recorded in
-`artifacts/lab-03/issue-35/` (see that bundle's `README.md`). No row is marked `Passed`
+`artifacts/lab-03/issue-35/` (see that bundle's `README.md`) and, for #37's rows, by the
+runs recorded in `artifacts/lab-03/regression/cutover-gate.md`. No row is marked `Passed`
 on the strength of the plan, a test name, or an unexecuted file.
 
 **Ownership note (frozen rows owned by other issues):** `E2E-01..04` are frozen Test-DD rows
