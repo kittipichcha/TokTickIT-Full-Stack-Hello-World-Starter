@@ -78,8 +78,34 @@ covered by #35's auth suite and by #37's frozen `authorization.api.test.ts` /
 | `lab-02-tests/AttachmentSection.test.tsx` | (a) + (b) | Fixture swapped; call-signature assertions updated (`previewAttachmentFile(id)`, `downloadAttachmentFile(id)`, `removeAttachment(id, reason)`, `uploadAttachment(ticketNumber, file)`); response key renamed. The "failed attachment from prior requester is absent after requester switch" test is **superseded** → replaced with a ticket-scope assertion (no requester switch exists). |
 | `lab-02-tests/UiStyles.test.tsx` | (a) + (b) | Fixture swapped. "renders the header with Change Requester secondary-style button" is **superseded** → replaced with "does not render a Change Requester action". All CSS-token assertions unchanged. |
 | `lab-02-tests/RequesterSelection.test.tsx` | (b) | Entirely superseded (selector flow, storage key, header). **Retired and replaced** with authenticated-identity assertions. |
-| `lab-02-tests/RequesterSelection.integration.test.tsx` | (b) | Entirely superseded (selector flow + `X-Dev-Requester-Id` header + `toktickit.requesterId` storage key). **Retired and replaced** with credentialed-transport assertions. |
+| `lab-02-tests/RequesterSelection.integration.test.tsx` | (b) | Entirely superseded (selector flow + `X-Dev-Requester-Id` header + `toktickit.requesterId` storage key). **Retired and replaced** with credentialed-transport assertions. The `/api/categories` mock was corrected to a bare array to match the landed response shape (class (c) fix — see below). |
 | `lab-02-tests/format.test.ts` | (a) | Unchanged — pure formatting helpers, no identity. |
+
+## E2E — `e2e/lab-02/`
+
+The Lab 2 Playwright suite drove the removed Dev-Requester selector and the
+`X-Dev-Requester-Id` header. Every spec now logs in through the real Login screen
+(class (a) fixture swap) or replaces a retired selector/header behavior with an
+authenticated-identity assertion (class (b)). A Playwright `globalSetup`
+(`e2e/lab-02/global-setup.ts`) ensures two dedicated E2E Requester accounts exist
+with `mustChangePassword = false`; credentials are test-only constants in
+`e2e/lab-02/helpers.ts` (no real secrets).
+
+| Spec file | Class | Change |
+|---|---|---|
+| `requester-ticket-flow.spec.ts` | (a) | `selectRequester` → `loginAsRequesterById`. All flow assertions unchanged. |
+| `attachment-lifecycle.spec.ts` | (a) | `selectRequester` → `loginAsRequesterById`. All lifecycle assertions unchanged. |
+| `partial-success-attachment.spec.ts` | (a) | `selectRequester` → `loginAsRequesterById`. All BR-17 assertions unchanged. |
+| `keyboard-access.spec.ts` | (a) + (b) | Fixture swapped. The `sessionStorage.removeItem("toktickit.requesterId")` line is removed. "visible focus indicators on requester selector and Continue button" is **superseded** → replaced with "visible focus indicators on the Login form controls". "mandatory keyboard-only flow: Requester Selection → Continue → Create Ticket" is **superseded** → replaced with "mandatory keyboard-only flow: Login → Create Ticket". "Change Requester is keyboard-accessible" is **superseded** → replaced with "Logout is keyboard-accessible" (the Logout button is in the `AuthGate` header). Focus-trap modal assertions unchanged. |
+| `ownership.spec.ts` | (a) + (b) | Fixture swapped. `X-Dev-Requester-Id` headers replaced with real API logins using isolated Playwright request contexts (one cookie jar per Requester, so both stay authenticated). "Change Requester" UI steps replaced with logout + re-login. The 404-for-other-Requester assertions and the 200-for-owner sanity checks are **unchanged** (never weakened). |
+| `responsive-visual.spec.ts` | (a) + (b) | Fixture swapped. The `/api/dev-requesters` + `/api/requester-context` intercepts and the `toktickit.requesterId` init scripts are removed; the shell is stubbed by intercepting `/api/auth/me` (authenticated) instead. The "Requester Selection" screenshot/visual blocks are **superseded** → replaced with "Login" blocks (default / validation-error / failure / responsive / touch-target / clipped-label). "Change Requester" assertions in the My Tickets layout checks are replaced with the "Logout" control. Every layout, overflow, and touch-target assertion is retained. |
+
+**Screenshot evidence.** The migrated suite writes the replacement Login screenshots to
+`artifacts/lab-02/screenshots/login/`. The historical
+`artifacts/lab-02/screenshots/requester-selection/` images are retained as Lab 2 release
+evidence (still referenced by `docs/lab-02/ui-spec.md` and
+`artifacts/lab-02/release/final-gate.md`); they are no longer regenerated because the
+selector screen no longer exists.
 
 ## Ambiguous cases flagged for the human reviewer
 
@@ -90,6 +116,12 @@ covered by #35's auth suite and by #37's frozen `authorization.api.test.ts` /
 | `reference-data.api.test.ts` — "does not require header" | Renamed to "requires an authenticated session" | The endpoint was public in Lab 2 and is authenticated in Lab 3 (api-spec §5/§6). The assertion direction inverts because the contract changed, not because the test was weakened. |
 | `attachments.api.test.ts` — list response shape | Kept as a bare array | The landed Lab 2 response shape is a bare array (not `{data: [...]}`). #37 preserves it (RR-02); the frozen `authorization.api.test.ts` asserts the same shape. |
 
+## Class (c) regressions found and fixed (fix the code, never the test)
+
+| Case | Resolution | Rationale |
+|---|---|---|
+| `client/src/api.ts` — `fetchCategories` response shape | Fixed the code: `fetchCategories` now returns the bare array | Commit `1bfd8c0` wrapped the response in `{data: [...]}` and read `payload.data`, but `GET /api/categories` returns a bare array. This crashed `MyTickets` (`categories.map is not a function`) the moment an authenticated session rendered the shell. The Lab 2 E2E migration surfaced it. Fixed to the landed contract; the client test mock was aligned to the bare-array shape. `fetchRelatedSystems` already matched its `{data: [...]}` contract and was left unchanged. |
+
 ## Prohibitions honored
 
 - No failing test was deleted to obtain green CI. Every deletion is a class (b)
@@ -97,4 +129,10 @@ covered by #35's auth suite and by #37's frozen `authorization.api.test.ts` /
   recorded above.
 - No Ticket/Attachment assertion was weakened. Where a signature or response key
   changed, the assertion was updated to the new contract, not relaxed.
-- Every test change appears in this mapping.
+- Every test change appears in this mapping — server unit/integration suites, client
+  suites, and the `e2e/lab-02/` Playwright suite.
+- The E2E suite is covered by the same rule: no layout, overflow, touch-target,
+  ownership, or partial-success assertion was removed; retired selector/header
+  assertions each have an authenticated-identity replacement recorded above.
+- One class (c) regression (`fetchCategories` response shape) was found while
+  migrating the E2E suite and was fixed in the code, not by changing the test.

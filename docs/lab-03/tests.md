@@ -35,7 +35,9 @@ SEC-AUTHZ-10, API-REQ-01, API-REQ-02. Rows owned by other issues remain `Planned
 
 Every `Passed` row above is backed by an executed run recorded in
 `artifacts/lab-03/issue-35/` (see that bundle's `README.md`) and, for #37's rows, by the
-runs recorded in `artifacts/lab-03/regression/cutover-gate.md`. No row is marked `Passed`
+runs recorded in `artifacts/lab-03/regression/cutover-gate.md`. The raw server/client/E2E
+run outputs are saved at `artifacts/lab-03/regression/server-vitest.txt`,
+`client-vitest.txt`, and `lab2-e2e-run.txt` (**0 skipped**). No row is marked `Passed`
 on the strength of the plan, a test name, or an unexecuted file.
 
 **Ownership note (frozen rows owned by other issues):** `E2E-01..04` are frozen Test-DD rows
@@ -48,6 +50,49 @@ owned by **#37** (`authorization.api.test.ts`); #35 contributes only supplementa
 assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
+
+- **2026-09-20 — Issue #37 remediation round (E2E migration, api-spec alignment, test-seam guard)**
+  - **B-2 — api-spec §11 aligned with the landed code.** `GET /api/tickets/:ticketNumber/attachments`
+    returns a bare array (preserved from Lab 2, decision D-18 / RR-02); the spec example no longer
+    shows a `{ "data": [...] }` envelope, and `removedByUserId` is documented in §11 and §14. The
+    frozen `authorization.api.test.ts` attachment-list assertion is unchanged and green.
+  - **B-1 — Lab 2 E2E suite migrated to authenticated login.** Every `e2e/lab-02/` spec now logs in
+    through the real Login screen (`loginAsRequester`) instead of the removed Dev-Requester selector.
+    `ownership.spec.ts` uses isolated Playwright request contexts (one cookie jar per Requester) for
+    the direct API ownership checks; `responsive-visual.spec.ts` stubs `/api/auth/me` instead of the
+    removed selector/context endpoints and replaces the "Requester Selection" screenshot blocks with
+    "Login" blocks. A Playwright `globalSetup` (`e2e/lab-02/global-setup.ts`) ensures two E2E Requester
+    accounts with `mustChangePassword = false`. Every layout, overflow, touch-target, ownership, and
+    partial-success assertion is retained. The retired selector/header assertions each have an
+    authenticated-identity replacement recorded in `artifacts/lab-03/regression/lab2-test-audit.md`
+    (new "E2E — `e2e/lab-02/`" section).
+  - **Class (c) regression found and fixed.** Migrating the E2E suite surfaced a real client bug:
+    commit `1bfd8c0` made `fetchCategories` read `payload.data` from `GET /api/categories`, which
+    returns a bare array, crashing `MyTickets` (`categories.map is not a function`) as soon as an
+    authenticated shell rendered. Fixed in `client/src/api.ts` (return the bare array); the client
+    test mock was aligned to the same shape.
+  - **N-3 — test seam guarded.** `requireAuth` and `requireCsrf` now honor `testSeams.sessionIdentity`
+    ONLY when `NODE_ENV === "test"`, so the seam is inert in production. Added supplementary
+    `UNIT-AUTHZ-02` in `authorization.api.test.ts`: with `NODE_ENV=production` and the seam set, a
+    session-less request still gets `401 UNAUTHENTICATED`; with `NODE_ENV=test` the seam is honored.
+  - **N-2 — SEC-AUTHZ-07 claim tightened.** The `tests.md` wording now states `403 FORBIDDEN` on
+    every then-protected mutation route plus explicit no-state-change checks for create and logout
+    (matching the executed assertions).
+  - **N-1 — raw evidence.** Full server and client runs are saved at
+    `artifacts/lab-03/regression/server-vitest.txt` and `client-vitest.txt`; the Lab 2 E2E run is at
+    `artifacts/lab-03/regression/lab2-e2e-run.txt`. `cutover-gate.md` §5 records "0 skipped" with
+    pointers to those files, and §4a-ii records the extended grep gate.
+  - **N-4 — README.** §1/§2/§8 now state that the selector, `X-Dev-Requester-Id`,
+    `GET /api/dev-requesters`, and `GET /api/requester-context` were removed in Lab 3 and that
+    reference data and Ticket routes require a session; `requester-context.ts` removed from the §3
+    file tree; the E2E `global-setup.ts` added to the tree.
+  - **N-6 — dead CSS.** The unused `.requester-select` rule was removed from `client/src/App.css`.
+  - Commands: `npx playwright test e2e/lab-02 --project=desktop --project=tablet --project=mobile`;
+    `cd server && npm test`; `cd client && npx vitest run`.
+  - Results: Lab 2 E2E **156 passed** across 3 projects; server suite **424 passed, 0 skipped**
+    (422 + 2 new `UNIT-AUTHZ-02` seam-guard tests); client suite **117 passed, 0 skipped**.
+    Raw outputs in `artifacts/lab-03/regression/`.
+  - Follow-up: none.
 
 - **2026-09-19 — Issue #37 (authorization + Requester migration / regression)**
   - **Cutover.** The Lab 2 Requester routes were retrofitted from the Dev-Requester header
@@ -69,9 +114,10 @@ assertions inside `auth.api.test.ts`.
   - **Frozen rows executed.** `SEC-AUTHZ-01/04/05/07/10` in
     `server/tests/lab-03/authorization.api.test.ts` and `API-REQ-01/02` in
     `server/tests/lab-03/requester.api.test.ts` — all created at their exact frozen paths
-    and marked `Passed` only after their runs. `SEC-AUTHZ-07` carries full subcase coverage
-    for every then-protected mutation route (including #35's two auth mutations) with
-    no-state-change assertions.
+    and marked `Passed` only after their runs. `SEC-AUTHZ-07` asserts `403 FORBIDDEN` on
+    every then-protected mutation route (including #35's two auth mutations), plus
+    explicit no-state-change checks for create (no ticket is left behind) and logout
+    (the session remains valid).
   - **RR-03 verified.** The soft-remove path preserves `isRemoved = true` + `removedAt` +
     `removalReason` and the atomic `WHERE isRemoved = false` guard; the remover-identity
     write targets `removedByUserId` (landed by #35's DM-17 step). The supplementary

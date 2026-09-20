@@ -220,3 +220,39 @@
   failing tests to reach green. The second lesson was that a test fixture which mutates
   shared seed data is a latent cross-suite bug; snapshotting and restoring the row is the
   correct fix, not weakening the downstream assertion.
+
+## Issue #37 — Remediation Round (agent review follow-up)
+
+- **LLM used:** GitHub Copilot (DeepSeek V4.1 Flash) in VS Code agent mode.
+- **Prompts (paraphrased):** "Apply this remediation plan (B-1, B-2, N-1..N-6) on the same
+  branch, then commit, push, and update the related docs and issue; the review came from an
+  agent, so do not log it in `reviewer.md`."
+- **What the agent did:**
+  - **B-2:** aligned `docs/lab-03/api-spec.md` §11 with the landed bare-array attachment-list
+    shape (decision D-18 / RR-02) and documented `removedByUserId` in §11/§14.
+  - **B-1:** migrated the whole `e2e/lab-02/` Playwright suite from the removed Dev-Requester
+    selector/header to real authenticated login, added a Playwright `globalSetup` that seeds
+    two E2E Requester accounts (`mustChangePassword = false`), and extended the RR-04 audit
+    with an E2E section and an extended grep gate.
+  - **N-3:** gated the `testSeams.sessionIdentity` reads on `NODE_ENV === "test"` and added
+    `UNIT-AUTHZ-02` proving the seam is inert in production.
+  - **N-2:** reworded the `SEC-AUTHZ-07` claim to match the executed assertions.
+  - **N-1:** captured raw server/client/E2E run output into `artifacts/lab-03/regression/`
+    and wired the pointers into `cutover-gate.md` and `tests.md`.
+  - **N-4/N-6:** corrected the stale README statements and removed the dead `.requester-select`
+    CSS rule.
+- **Notable engineering judgment:**
+  - Migrating the E2E suite to a real login surfaced a genuine class (c) regression that no
+    mocked test caught: `fetchCategories` read `payload.data` from an endpoint that returns a
+    bare array, so the shell crashed as soon as it rendered for an authenticated user. Per the
+    plan's rule ("a genuine regression means you fix the code, never the test"), the code was
+    fixed and the client test mock was aligned to the same shape.
+  - The direct-API ownership checks in `ownership.spec.ts` needed two identities authenticated
+    at once; a single shared Playwright request context clobbers the first cookie on the second
+    login, so each Requester gets its own isolated `request` context (separate cookie jar).
+- **Reflection:** The remediation confirmed the same theme as the original issue — the
+  dangerous surface is the one that is not exercised by mocked tests. The `fetchCategories`
+  bug lived behind a login and only appeared once an authenticated session actually rendered
+  the shell; the E2E migration was the first thing to drive that path. It also reinforced that
+  a "test seam" that bypasses production gates is a liability unless it is provably inert
+  outside the test environment, which is exactly what the N-3 guard adds.

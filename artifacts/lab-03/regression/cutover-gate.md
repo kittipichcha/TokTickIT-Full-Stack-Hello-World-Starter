@@ -82,6 +82,26 @@ Result — **no live identity/authorization reference remains**:
 `server/src/requester-context.ts` is deleted; `GET /api/dev-requesters` and
 `GET /api/requester-context` are unregistered.
 
+#### 4a-ii. Extended grep gate (E2E — Issue #37 remediation)
+
+Command (now includes the E2E suite and the Playwright config):
+
+```
+grep -rn "X-Dev-Requester-Id\|Change Requester\|toktickit.requesterId\|dev-requesters\|requester-context\|requester-select\|selectRequester" e2e server/src client/src playwright.config.ts
+```
+
+Result — **no live identity hits**:
+
+| Location | Live hits |
+|---|---|
+| `e2e/**` | 0 live — only explanatory comments in `helpers.ts` / `ownership.spec.ts` / `responsive-visual.spec.ts` describing the removed mechanism |
+| `playwright.config.ts` | 0 |
+| `server/src/**` | 0 live — one explanatory comment in `test-seams.ts` |
+| `client/src/**` | 0 live — only explanatory comments and absence assertions in `lab-02-tests/RequesterSelection*.test.tsx` / `App.test.tsx` / `UiStyles.test.tsx` / `MyTickets.test.tsx` / `AttachmentSection.test.tsx` |
+
+The dead `.requester-select` CSS rule was also removed from `client/src/App.css`.
+
+
 ### 4b. Live old-header rejection
 
 A request bearing `X-Dev-Requester-Id` and **no session** is rejected:
@@ -101,14 +121,18 @@ Asserted in `server/tests/lab-02/dev-requesters.api.test.ts` and
 Full suites re-run under authenticated identity, per
 `artifacts/lab-03/regression/lab2-test-audit.md`:
 
-| Suite | Result |
-|---|---|
-| Server (`cd server && npm test`) | 34 files passed, 422 tests passed |
-| Client (`cd client && npx vitest run`) | 12 files passed, 117 tests passed |
+| Suite | Result | Raw evidence |
+|---|---|---|
+| Server (`cd server && npm test`) | 34 files passed, 424 tests passed, **0 skipped** | `artifacts/lab-03/regression/server-vitest.txt` |
+| Client (`cd client && npx vitest run`) | 12 files passed, 117 tests passed, 0 skipped | `artifacts/lab-03/regression/client-vitest.txt` |
+| Lab 2 E2E (`npx playwright test e2e/lab-02 --project=desktop --project=tablet --project=mobile`) | 156 passed across 3 projects (desktop/tablet/mobile) | `artifacts/lab-03/regression/lab2-e2e-run.txt` |
 
 Class (a) suites keep every functional assertion and only swap the identity fixture;
 class (b) suites asserting removed Dev-Requester behavior were retired and replaced
-with authenticated-identity assertions; no class (c) regression was found.
+with authenticated-identity assertions; no class (c) regression was found in the
+server/client suites. The E2E migration surfaced one class (c) client regression
+(`fetchCategories` response shape), which was fixed in the code — see the audit's
+"Class (c) regressions found and fixed" section.
 
 ## 6. Gate result
 
