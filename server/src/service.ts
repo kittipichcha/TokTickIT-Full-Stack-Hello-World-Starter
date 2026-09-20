@@ -1,6 +1,7 @@
 import { getPrisma } from "./prisma.js";
 import { allocateTicketNumberWithClient, TicketSequenceExhaustedError } from "./ticket-number.js";
 import { MAX_DATABASE_ID } from "./id-domain.js";
+import type { Role } from "@prisma/client";
 import {
   validateExtension,
   validateContentSignature,
@@ -19,15 +20,28 @@ export interface Category {
   name: string;
 }
 
-export interface DevRequester {
-  id: number;
-  name: string;
-  email: string;
-}
-
 export interface RelatedSystem {
   id: number;
   name: string;
+}
+
+/**
+ * Explicit access context for shared reads (Issue #37).
+ *
+ * Shared Ticket/Attachment reads are authorized for the owning Requester OR for
+ * IT Staff/Administrator. Passing the caller's identity and role explicitly into
+ * the service layer keeps the ownership rule at the service boundary instead of
+ * relying on route middleware alone — a Staff/Admin request that passes the route
+ * gate must not then be rejected by a Requester-only filter inside the service.
+ */
+export interface AccessContext {
+  userId: number;
+  role: Role;
+}
+
+/** True when the caller may read any Ticket/Attachment (view-only). */
+function isStaffRole(role: Role): boolean {
+  return role === "IT_STAFF" || role === "ADMINISTRATOR";
 }
 
 export interface TicketData {
@@ -63,7 +77,7 @@ export interface AttachmentData {
   isRemoved: boolean;
   removedAt: Date | null;
   removalReason: string | null;
-  removedByRequesterId: number | null;
+  removedByUserId: number | null;
 }
 
 export class ValidationError extends Error {
@@ -100,27 +114,6 @@ export async function getCategories(): Promise<Category[]> {
   } catch (err) {
     throw new Error("Failed to fetch categories from database");
   }
-}
-
-export async function getActiveDevRequesters(): Promise<DevRequester[]> {
-  const prisma = getPrisma();
-  // DM-17 compatibility: identity now sourced from User (role = REQUESTER) instead of
-  // the dropped DevRequester table. Legacy response shape preserved (id/name/email).
-  return prisma.user.findMany({
-    where: { isActive: true, role: "REQUESTER" },
-    select: { id: true, name: true, email: true },
-    orderBy: [{ name: "asc" }, { id: "asc" }],
-  });
-}
-
-export async function isActiveDevRequester(id: number): Promise<boolean> {
-  const prisma = getPrisma();
-  // DM-17 compatibility: identity from User (role = REQUESTER); same accept/reject semantics.
-  const requester = await prisma.user.findFirst({
-    where: { id, isActive: true, role: "REQUESTER" },
-    select: { id: true },
-  });
-  return requester !== null;
 }
 
 export async function getActiveRelatedSystems(): Promise<RelatedSystem[]> {
@@ -535,7 +528,7 @@ export async function getMyTickets(
 
 export async function getTicketByNumber(
   ticketNumber: string,
-  requesterId: number,
+  access: AccessContext,
 ): Promise<TicketDetailData | null> {
   const prisma = getPrisma();
   const ticket = await prisma.ticket.findUnique({
@@ -561,7 +554,13 @@ export async function getTicketByNumber(
     },
   });
 
-  if (!ticket || ticket.requesterId !== requesterId) {
+  if (!ticket) {
+    return null;
+  }
+
+  // Shared read: Staff/Admin may read any Ticket; a Requester only their own.
+  // A non-owned Ticket is indistinguishable from a missing one (404, BR-32).
+  if (!isStaffRole(access.role) && ticket.requesterId !== access.userId) {
     return null;
   }
 
@@ -583,8 +582,6 @@ export async function getTicketByNumber(
     currentStatus: ticket.currentStatus,
     createdAt: ticket.createdAt,
     updatedAt: ticket.updatedAt,
-    // DM-17 compatibility: map the renamed column back to the legacy response key
-    // (removedByRequesterId) that existing Lab 2 tests assert.
     attachments: ticket.attachments.map((a) => ({
       id: a.id,
       originalFilename: a.originalFilename,
@@ -594,7 +591,7 @@ export async function getTicketByNumber(
       isRemoved: a.isRemoved,
       removedAt: a.removedAt,
       removalReason: a.removalReason,
-      removedByRequesterId: a.removedByUserId,
+      removedByUserId: a.removedByUserId,
     })),
   };
 }
@@ -616,6 +613,23 @@ export async function ticketOwnedByRequester(
     select: { id: true, requesterId: true },
   });
   return ticket !== null && ticket.requesterId === requesterId;
+}
+
+/**
+ * Checks whether an Attachment exists and belongs to a Ticket owned by the
+ * given requester. Used by the shared Attachment-read authorization middleware
+ * so a non-owned Attachment is indistinguishable from a missing one (404).
+ */
+export async function attachmentOwnedByRequester(
+  attachmentId: number,
+  requesterId: number,
+): Promise<boolean> {
+  const prisma = getPrisma();
+  const attachment = await prisma.attachment.findUnique({
+    where: { id: attachmentId },
+    select: { id: true, ticket: { select: { requesterId: true } } },
+  });
+  return attachment !== null && attachment.ticket.requesterId === requesterId;
 }
 
 export class AttachmentLimitError extends Error {
@@ -836,10 +850,13 @@ export async function uploadAttachment(
 
 /**
  * Lists attachments for a ticket (both active and removed).
- * Ownership is enforced by the caller.
+ *
+ * Shared read: Staff/Admin may list any Ticket's Attachments; a Requester only
+ * those of a Ticket they own. A non-owned or missing Ticket throws
+ * ValidationError, which the handler maps to 404 NOT_FOUND (BR-32).
  */
 export async function listAttachments(
-  requesterId: number,
+  access: AccessContext,
   ticketNumber: string,
 ): Promise<AttachmentData[]> {
   const prisma = getPrisma();
@@ -849,7 +866,7 @@ export async function listAttachments(
     select: { id: true, requesterId: true },
   });
 
-  if (!ticket || ticket.requesterId !== requesterId) {
+  if (!ticket || (!isStaffRole(access.role) && ticket.requesterId !== access.userId)) {
     throw new ValidationError("Ticket not found.", {});
   }
 
@@ -869,7 +886,6 @@ export async function listAttachments(
     },
   });
 
-  // DM-17 compatibility: map the renamed column back to the legacy response key.
   return attachments.map((a) => ({
     id: a.id,
     originalFilename: a.originalFilename,
@@ -879,17 +895,19 @@ export async function listAttachments(
     isRemoved: a.isRemoved,
     removedAt: a.removedAt,
     removalReason: a.removalReason,
-    removedByRequesterId: a.removedByUserId,
+    removedByUserId: a.removedByUserId,
   }));
 }
 
 /**
  * Gets attachment metadata by ID.
- * Returns null if not found or not owned.
+ *
+ * Shared read: Staff/Admin may read any Attachment; a Requester only those of a
+ * Ticket they own. Returns null when not found or not accessible (404, BR-32).
  */
 export async function getAttachmentById(
   attachmentId: number,
-  requesterId: number,
+  access: AccessContext,
 ): Promise<{
   id: number;
   ticketId: number;
@@ -900,7 +918,7 @@ export async function getAttachmentById(
   isRemoved: boolean;
   removedAt: Date | null;
   removalReason: string | null;
-  removedByRequesterId: number | null;
+  removedByUserId: number | null;
   uploadedAt: Date;
 } | null> {
   const prisma = getPrisma();
@@ -912,7 +930,10 @@ export async function getAttachmentById(
     },
   });
 
-  if (!attachment || attachment.ticket.requesterId !== requesterId) {
+  if (!attachment) {
+    return null;
+  }
+  if (!isStaffRole(access.role) && attachment.ticket.requesterId !== access.userId) {
     return null;
   }
 
@@ -926,7 +947,7 @@ export async function getAttachmentById(
     isRemoved: attachment.isRemoved,
     removedAt: attachment.removedAt,
     removalReason: attachment.removalReason,
-    removedByRequesterId: attachment.removedByUserId,
+    removedByUserId: attachment.removedByUserId,
     uploadedAt: attachment.uploadedAt,
   };
 }
@@ -937,9 +958,9 @@ export async function getAttachmentById(
  */
 export async function downloadAttachment(
   attachmentId: number,
-  requesterId: number,
+  access: AccessContext,
 ): Promise<{ buffer: Buffer; mimeType: string; originalFilename: string } | null> {
-  const attachment = await getAttachmentById(attachmentId, requesterId);
+  const attachment = await getAttachmentById(attachmentId, access);
   if (!attachment) return null;
 
   if (attachment.isRemoved) {
@@ -965,9 +986,9 @@ export async function downloadAttachment(
  */
 export async function previewAttachment(
   attachmentId: number,
-  requesterId: number,
+  access: AccessContext,
 ): Promise<{ buffer: Buffer; mimeType: string } | null> {
-  const attachment = await getAttachmentById(attachmentId, requesterId);
+  const attachment = await getAttachmentById(attachmentId, access);
   if (!attachment) return null;
 
   if (attachment.isRemoved) {
@@ -1027,13 +1048,17 @@ export function normalizeRemovalReason(reason: unknown): string | null {
 
 /**
  * Soft-removes an attachment.
- * Sets isRemoved=true, removedAt, removalReason, removedByRequesterId.
+ * Sets isRemoved=true, removedAt, removalReason, removedByUserId.
  * Returns the updated attachment data, or null if not found/not owned.
  * Throws ConflictError if already removed.
  *
  * Uses a single conditional UPDATE (WHERE isRemoved = false) so that exactly
  * one concurrent removal can win — this is an atomic ACTIVE → REMOVED state
  * transition rather than a read-then-unconditional-update (TOCTOU race).
+ *
+ * Requester-owner-only: Staff/Admin are rejected at the route layer
+ * (`requireRole(["REQUESTER"])`) and the ownership check below is the
+ * authoritative service-layer boundary.
  */
 export async function removeAttachment(
   attachmentId: number,
@@ -1091,7 +1116,6 @@ export async function removeAttachment(
     },
   });
 
-  // DM-17 compatibility: map the renamed column back to the legacy response key.
   if (!updated) {
     throw new ConflictError("This attachment has already been removed.");
   }
@@ -1104,6 +1128,6 @@ export async function removeAttachment(
     isRemoved: updated.isRemoved,
     removedAt: updated.removedAt,
     removalReason: updated.removalReason,
-    removedByRequesterId: updated.removedByUserId,
+    removedByUserId: updated.removedByUserId,
   };
 }

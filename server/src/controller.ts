@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import {
-  getActiveDevRequesters,
   getActiveRelatedSystems,
   getCategories,
   createTicket,
@@ -22,10 +21,23 @@ import {
   removeAttachment,
   normalizeRemovalReason,
   ticketOwnedByRequester,
+  type AccessContext,
 } from "./service.js";
 import { TicketSequenceExhaustedError } from "./ticket-number.js";
 import { inspectIntegerFields } from "./integer-validation.js";
 import { MAX_DATABASE_ID } from "./id-domain.js";
+import type { Role } from "@prisma/client";
+
+/**
+ * Builds the explicit access context for shared Ticket/Attachment reads from the
+ * authenticated identity populated by #35's `requireAuth` (current DB values).
+ */
+function accessContext(res: Response): AccessContext {
+  return {
+    userId: res.locals.userId as number,
+    role: res.locals.role as Role,
+  };
+}
 
 /**
  * Returns the first string value of a query parameter.
@@ -71,7 +83,7 @@ export async function requireTicketOwnership(
   next: import("express").NextFunction,
 ): Promise<void> {
   try {
-    const requesterId = res.locals.devRequesterId as number;
+    const requesterId = res.locals.userId as number;
     const ticketNumber = req.params.ticketNumber;
 
     if (!/^TKT-\d{4}-\d{6}$/.test(ticketNumber)) {
@@ -133,17 +145,6 @@ export async function getCategoriesHandler(req: Request, res: Response): Promise
   }
 }
 
-export async function getDevRequestersHandler(req: Request, res: Response): Promise<void> {
-  try {
-    const requesters = await getActiveDevRequesters();
-    res.status(200).json({ data: requesters });
-  } catch {
-    res.status(500).json({
-      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
-    });
-  }
-}
-
 export async function getRelatedSystemsHandler(req: Request, res: Response): Promise<void> {
   try {
     const systems = await getActiveRelatedSystems();
@@ -153,10 +154,6 @@ export async function getRelatedSystemsHandler(req: Request, res: Response): Pro
       error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
     });
   }
-}
-
-export function getRequesterContextHandler(req: Request, res: Response): void {
-  res.status(200).json({ data: { requesterId: res.locals.devRequesterId as number } });
 }
 
 export async function createTicketHandler(req: Request, res: Response): Promise<void> {
@@ -224,7 +221,9 @@ export async function createTicketHandler(req: Request, res: Response): Promise<
       return;
     }
 
-    const requesterId = res.locals.devRequesterId as number;
+    // Identity comes from the authenticated session only. Any `requesterId` in the
+    // request body is ignored (SEC-AUTHZ-01, BR-03).
+    const requesterId = res.locals.userId as number;
     const ticket = await createTicket(requesterId, req.body);
     res.status(201).json({ data: ticket });
   } catch (err) {
@@ -254,7 +253,7 @@ export async function createTicketHandler(req: Request, res: Response): Promise<
 
 export async function getMyTicketsHandler(req: Request, res: Response): Promise<void> {
   try {
-    const requesterId = res.locals.devRequesterId as number;
+    const requesterId = res.locals.userId as number;
 
     // Parse query params using first-value semantics for duplicates
     const rawSearch = firstQueryParam(req.query.search) ?? "";
@@ -380,7 +379,6 @@ export async function getMyTicketsHandler(req: Request, res: Response): Promise<
 
 export async function getTicketDetailHandler(req: Request, res: Response): Promise<void> {
   try {
-    const requesterId = res.locals.devRequesterId as number;
     const ticketNumber = req.params.ticketNumber;
 
     // Validate ticketNumber format
@@ -391,7 +389,7 @@ export async function getTicketDetailHandler(req: Request, res: Response): Promi
       return;
     }
 
-    const ticket = await getTicketByNumber(ticketNumber, requesterId);
+    const ticket = await getTicketByNumber(ticketNumber, accessContext(res));
     if (!ticket) {
       res.status(404).json({
         error: { code: "NOT_FOUND", message: "Ticket not found." },
@@ -409,7 +407,7 @@ export async function getTicketDetailHandler(req: Request, res: Response): Promi
 
 export async function uploadAttachmentHandler(req: Request, res: Response): Promise<void> {
   try {
-    const requesterId = res.locals.devRequesterId as number;
+    const requesterId = res.locals.userId as number;
     const ticketNumber = req.params.ticketNumber;
 
     // Validate ticketNumber format
@@ -481,7 +479,6 @@ export async function uploadAttachmentHandler(req: Request, res: Response): Prom
 
 export async function listAttachmentsHandler(req: Request, res: Response): Promise<void> {
   try {
-    const requesterId = res.locals.devRequesterId as number;
     const ticketNumber = req.params.ticketNumber;
 
     if (!/^TKT-\d{4}-\d{6}$/.test(ticketNumber)) {
@@ -491,7 +488,7 @@ export async function listAttachmentsHandler(req: Request, res: Response): Promi
       return;
     }
 
-    const attachments = await listAttachments(requesterId, ticketNumber);
+    const attachments = await listAttachments(accessContext(res), ticketNumber);
     res.status(200).json(attachments);
   } catch (err) {
     if (err instanceof ValidationError) {
@@ -508,7 +505,6 @@ export async function listAttachmentsHandler(req: Request, res: Response): Promi
 
 export async function downloadAttachmentHandler(req: Request, res: Response): Promise<void> {
   try {
-    const requesterId = res.locals.devRequesterId as number;
     const rawId = req.params.attachmentId;
 
     // Validate attachment ID format + PostgreSQL INTEGER range (never a 500).
@@ -520,7 +516,7 @@ export async function downloadAttachmentHandler(req: Request, res: Response): Pr
       return;
     }
 
-    const result = await downloadAttachment(attachmentId, requesterId);
+    const result = await downloadAttachment(attachmentId, accessContext(res));
 
     if (!result) {
       res.status(404).json({
@@ -554,7 +550,6 @@ export async function downloadAttachmentHandler(req: Request, res: Response): Pr
 
 export async function previewAttachmentHandler(req: Request, res: Response): Promise<void> {
   try {
-    const requesterId = res.locals.devRequesterId as number;
     const rawId = req.params.attachmentId;
 
     // Validate attachment ID format + PostgreSQL INTEGER range (never a 500).
@@ -566,7 +561,7 @@ export async function previewAttachmentHandler(req: Request, res: Response): Pro
       return;
     }
 
-    const result = await previewAttachment(attachmentId, requesterId);
+    const result = await previewAttachment(attachmentId, accessContext(res));
 
     if (!result) {
       res.status(404).json({
@@ -592,7 +587,7 @@ export async function previewAttachmentHandler(req: Request, res: Response): Pro
 
 export async function removeAttachmentHandler(req: Request, res: Response): Promise<void> {
   try {
-    const requesterId = res.locals.devRequesterId as number;
+    const requesterId = res.locals.userId as number;
     const rawId = req.params.attachmentId;
 
     // Validate attachment ID format + PostgreSQL INTEGER range (never a 500).
