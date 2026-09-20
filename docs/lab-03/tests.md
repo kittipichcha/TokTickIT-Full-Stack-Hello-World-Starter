@@ -43,6 +43,44 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-19 — Issue #37 (authorization + Requester migration / regression)**
+  - **Cutover.** The Lab 2 Requester routes were retrofitted from the Dev-Requester header
+    mechanism to authenticated identity: `requireAuth → requirePasswordChanged →
+    [requireCsrf on mutations] → requireRole(["REQUESTER"])` on `POST/GET /api/tickets`
+    and the attachment mutations; `requireTicketReadAccess` on Ticket Detail; and
+    `authorizeAttachmentReadByRoleOrRequesterOwnership` on the three shared attachment
+    reads. `GET /api/categories` and `GET /api/related-systems` now require a session.
+  - **Service-layer shared reads.** `getTicketByNumber`, `listAttachments`,
+    `getAttachmentById`, `downloadAttachment`, and `previewAttachment` now take an explicit
+    `{userId, role}` access context, so a Staff/Admin request that passes the route gate is
+    not then rejected by a Requester-only filter inside the service. Upload and soft-remove
+    remain Requester-owner-only at both layers.
+  - **Legacy surface removed.** `server/src/requester-context.ts` deleted (including #35's
+    DM-17 compatibility adaptation); `GET /api/dev-requesters` and
+    `GET /api/requester-context` unregistered; client header/sessionStorage helpers,
+    `activeRequester` state, and the Change Requester action removed. The grep gate returns
+    no live references.
+  - **Frozen rows executed.** `SEC-AUTHZ-01/04/05/07/10` in
+    `server/tests/lab-03/authorization.api.test.ts` and `API-REQ-01/02` in
+    `server/tests/lab-03/requester.api.test.ts` — all created at their exact frozen paths
+    and marked `Passed` only after their runs. `SEC-AUTHZ-07` carries full subcase coverage
+    for every then-protected mutation route (including #35's two auth mutations) with
+    no-state-change assertions.
+  - **RR-03 verified.** The soft-remove path preserves `isRemoved = true` + `removedAt` +
+    `removalReason` and the atomic `WHERE isRemoved = false` guard; the remover-identity
+    write targets `removedByUserId` (landed by #35's DM-17 step). The supplementary
+    invariant assertion confirms the forbidden state (`removedAt` set with
+    `isRemoved = false`) never occurs.
+  - **RR-04 audit + RR-02 re-run.** Every existing Lab 2 test was classified (a)/(b)/(c)
+    before modification; the before/after mapping is recorded at
+    `artifacts/lab-03/regression/lab2-test-audit.md`. Class (a) suites keep every functional
+    assertion and only swap the identity fixture; class (b) suites asserting removed
+    Dev-Requester behavior were retired and replaced with authenticated-identity
+    assertions; no class (c) regression was found. Full server and client suites are green.
+  - **Cutover gate.** Recorded at `artifacts/lab-03/regression/cutover-gate.md`:
+    clean-checkout `prisma generate` → server `tsc` → client build → authenticated
+    Requester smoke → old-header death proof → green Lab 2 regression.
+
 - **2026-09-19 — Issue #35 PR #46 review follow-up, round 7 (`User.id` sequence sync)**
   - **B-7 — `User.id` sequence not repaired after a post-backfill-commit crash (real defect).**
     `runBackfill()` committed the explicit-ID `User` inserts inside `$transaction(...)` and ran
@@ -356,18 +394,18 @@ security/authorization, migration/regression, and end-to-end coverage.
 | TKT-PRIO-01 | API | IT Priority initialized on creation | For each requested priority (`LOW`/`MEDIUM`/`HIGH`), the persisted `Ticket.itPriority` equals the submitted `requestedPriority` (frozen §9.3) | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
 | TKT-PRIO-02 | API | Client-supplied `itPriority` ignored | A request body containing a different `itPriority` is ignored; the stored value still equals the validated `requestedPriority` | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
 | TKT-PRIO-03 | API | Create response shape unchanged | The Lab 2 create response envelope and key set are unchanged; `itPriority` now reflects the frozen initialization rule and `ticketOwnerId` remains null | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
-| SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Planned |
+| SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Passed |
 | SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Planned |
 | SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Planned |
-| SEC-AUTHZ-04 | API | Unauthenticated protected endpoint | 401 UNAUTHENTICATED | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
-| SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Planned |
+| SEC-AUTHZ-04 | API | Unauthenticated protected endpoint | 401 UNAUTHENTICATED | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Passed |
+| SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Passed |
 | SEC-AUTHZ-06 | API | Session idle timeout expiration | An actually expired session is rejected by a protected endpoint with `401 UNAUTHENTICATED`; a valid session works before expiry; the 30-minute rolling configuration is asserted as supplementary evidence | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-06 | Passed |
-| SEC-AUTHZ-07 | API | CSRF on state-changing endpoint | Missing/invalid CSRF token rejected (403 FORBIDDEN); mutation not applied | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
+| SEC-AUTHZ-07 | API | CSRF on state-changing endpoint | Missing/invalid CSRF token rejected (403 FORBIDDEN); mutation not applied | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Passed |
 | SEC-AUTHZ-08 | API | Requester posts/reads comments on a not-owned ticket | `404 NOT_FOUND`; no data leaked | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-12, BR-32 | AC-03 | Planned |
 | SEC-AUTHZ-09 | API | Non-Administrator calls create-user / edit-user | `403 FORBIDDEN` | `server/tests/lab-03/users-admin.api.test.ts` | FR-24, FR-25 | — | AC-20 | Planned |
-| SEC-AUTHZ-10 | API | IT Staff/Administrator attempts attachment upload or delete | `403 FORBIDDEN` (view-only; cannot mutate Attachments) | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12 | AC-07 | Planned |
-| API-REQ-01 | API | Requester creates Ticket | Ticket owned by authenticated identity | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-11 | AC-07 | Planned |
-| API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Planned |
+| SEC-AUTHZ-10 | API | IT Staff/Administrator attempts attachment upload or delete | `403 FORBIDDEN` (view-only; cannot mutate Attachments) | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
+| API-REQ-01 | API | Requester creates Ticket | Ticket owned by authenticated identity | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-11 | AC-07 | Passed |
+| API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
 | API-REQ-03 | API | Requester posts Public Comment | Comment saved with author/timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-22, BR-23 | AC-08 | Planned |
 | API-REQ-04 | API | Requester indicates appears resolved | Flag saved; status unchanged | `server/tests/lab-03/requester.api.test.ts` | FR-13 | BR-05, BR-19 | AC-09 | Planned |
 | API-QUE-01 | API | IT Staff queue retrieval | Search/filter/sort/pagination works | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-17 | AC-10 | Planned |

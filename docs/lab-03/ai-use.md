@@ -172,3 +172,51 @@
   already-broken databases are repaired too. The mutation check (removing the sync call) confirmed
   DB-MIG-11 fails without it, and the new `postChecks` guard made that failure loud rather than
   silent.
+
+## Issue #37 — Authorization + Requester Migration / Regression
+
+- **LLM used:** GitHub Copilot (DeepSeek V4.1 Flash) in VS Code agent mode.
+- **Prompts (paraphrased):** "Create a worktree and branch from `lab3-staging` (pull first),
+  then implement the issue-37 plan step by step"; "double-check the work using review-pr,
+  then commit, push, and open the PR."
+- **What the agent did:**
+  - Verified the #35 dependency gate against actual branch content (not issue/Kanban state):
+    `requireAuth`/`requirePasswordChanged`/`requireCsrf`, the `User`/`Role` model, the
+    renamed `uploaderUserId`/`removedByUserId` columns, the preserved `isRemoved` column,
+    and the DM-17 compatibility set with its integration-gate and grep-gate evidence.
+  - Created `server/src/authorization.ts` with `requireRole`,
+    `requireTicketReadAccess`, and
+    `authorizeAttachmentReadByRoleOrRequesterOwnership`.
+  - Retrofitted `module.ts`, `controller.ts`, and `service.ts` to authenticated identity,
+    including the service-layer `{userId, role}` access-context refactor.
+  - Removed the Dev-Requester mechanism (server + client) and deleted
+    `server/src/requester-context.ts`.
+  - Created the two frozen test files at their exact frozen paths and executed the
+    #37-owned rows.
+  - Performed the RR-04 Lab 2 regression audit and applied the mapping.
+- **Human decisions consumed (not re-decided):** the frozen `res.locals.userId/role/
+  mustChangePassword` convention; the fresh-User session-authority rule; Option A for the
+  DM-17 handoff; the landed 5–120 / 10–2,000 validation limits; the frozen test-file paths.
+- **Notable engineering judgment:**
+  - The Lab 2 suites injected identity with a header and never exercised the session path.
+    Rather than rewrite ~200 tests around real logins, the agent added a `testSeams`
+    identity fixture (mirroring the repository's existing `testSeams` pattern) for the
+    mocked suites, and real logins for the real-DB integration suites. The real
+    authentication boundary is covered by #35's auth suite and by #37's frozen
+    authorization/requester API tests, which use real logins.
+  - The real-DB fixture (`registerSession`) snapshots and restores the `User` rows it
+    mutates, because Lab 2 integration suites reuse the seeded requesters and the
+    migration suite asserts on their original state. An earlier version was destructive
+    and caused two migration-test failures; the fix was to make the fixture
+    non-destructive rather than to relax the migration assertions.
+  - Class (b) retirements were replaced with authenticated-identity assertions rather than
+    deleted outright, and every change is recorded in
+    `artifacts/lab-03/regression/lab2-test-audit.md`.
+- **Reflection:** The largest risk in this issue was not the authorization logic but the
+  regression surface: 205 Lab 2 server tests and 93 client tests failed at the cutover.
+  Classifying each one before touching it (RR-04) was what kept the change honest — it
+  forced a distinction between "this test asserts behavior we deliberately removed" and
+  "this test caught a real break", and it prevented the tempting shortcut of deleting
+  failing tests to reach green. The second lesson was that a test fixture which mutates
+  shared seed data is a latent cross-suite bug; snapshotting and restoring the row is the
+  correct fix, not weakening the downstream assertion.
