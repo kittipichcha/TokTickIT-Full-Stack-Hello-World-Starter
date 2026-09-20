@@ -111,7 +111,7 @@ export default function AuthGate() {
           </p>
         )}
       </header>
-      <App />
+      {user && <App user={user} />}
     </div>
   );
 }
