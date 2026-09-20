@@ -140,8 +140,9 @@ export async function fetchMyTickets(
 
 /** Fetches active Categories (authenticated session required). */
 export async function fetchCategories(): Promise<Category[]> {
-  // GET /api/categories returns a BARE ARRAY (preserved from Lab 2; api-spec
-  // Categories). It is not wrapped in `{ data }`.
+  // GET /api/categories returns a BARE ARRAY (preserved from Lab 2; see
+  // docs/lab-03/api-spec.md §5 and specification.md D-19). It is not wrapped
+  // in `{ data }`.
   return apiJson<Category[]>("/api/categories", {
     fallbackError: "Failed to fetch categories.",
   });

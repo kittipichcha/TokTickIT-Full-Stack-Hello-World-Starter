@@ -206,10 +206,23 @@ proceeding receives `401 PASSWORD_CHANGE_REQUIRED`; that code is **not** returne
 
 **Auth:** authenticated session (public reference data, but requires login in Lab 3).
 
-**Response 200**
+**Response 200** — a **bare array** of active Category objects (no `data` envelope).
+Bare array, preserved from Lab 2 (decision D-19).
+
 ```json
-{ "data": [ { "id": 1, "name": "Hardware", "isActive": true } ] }
+[ { "id": 1, "name": "Hardware" } ]
 ```
+
+**Category object shape**
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | integer | |
+| `name` | string | |
+
+Only active Categories are returned (`isActive = true`), ordered by `id` ascending then `name`
+ascending. `isActive` is **not** included in the response object; the filter is applied
+server-side.
 
 ---
 
