@@ -13,10 +13,11 @@ import {
 } from "./api";
 import CreateTicket from "./CreateTicket";
 import MyTickets from "./MyTickets";
+import AdminUserManagement from "./AdminUserManagement";
 import { formatUtcDate, formatFileSize } from "./format";
 import type { AuthUser } from "./api-client";
 
-type AppView = "home" | "create-ticket" | "ticket-detail";
+type AppView = "home" | "create-ticket" | "ticket-detail" | "admin-users";
 
 interface FailedAttachment {
   id: string;
@@ -216,6 +217,15 @@ export default function App({ user }: AppProps) {
           >
             Create Ticket
           </a>
+          {user.role === "ADMINISTRATOR" && (
+            <a
+              href="#admin-users"
+              className={view === "admin-users" ? "nav-active" : ""}
+              onClick={(e) => { e.preventDefault(); setView("admin-users"); setMobileMenuOpen(false); }}
+            >
+              User Management
+            </a>
+          )}
         </nav>
       </header>
       {message && <p className="notice" role="status">{message}</p>}
@@ -233,6 +243,7 @@ export default function App({ user }: AppProps) {
           onCreateAnother={handleCreateAnother}
         />
       )}
+      {view === "admin-users" && user.role === "ADMINISTRATOR" && <AdminUserManagement />}
       {view === "ticket-detail" && (
         <main className="app-container">
           {detailLoading && (
