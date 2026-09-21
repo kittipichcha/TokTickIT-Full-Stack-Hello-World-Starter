@@ -31,6 +31,12 @@ import {
   changePasswordHandler,
   appContext,
 } from "./auth.controller.js";
+import {
+  listUsersHandler,
+  createUserHandler,
+  updateUserHandler,
+  setInitialPasswordHandler,
+} from "./admin-controller.js";
 
 export const router = Router();
 
@@ -163,4 +169,39 @@ router.delete(
   requireCsrf,
   requireRole(["REQUESTER"]),
   removeAttachmentHandler,
+);
+
+// ---- Administrator user management (Issue #41) ----
+// All four routes are Administrator-only (AC-20). The three mutations additionally
+// require CSRF (api-spec §0). `actingUserId` is taken from the session by the handler.
+router.get(
+  "/admin/users",
+  requireAuth,
+  requirePasswordChanged,
+  requireRole(["ADMINISTRATOR"]),
+  listUsersHandler,
+);
+router.post(
+  "/admin/users",
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["ADMINISTRATOR"]),
+  createUserHandler,
+);
+router.patch(
+  "/admin/users/:userId",
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["ADMINISTRATOR"]),
+  updateUserHandler,
+);
+router.post(
+  "/admin/users/:userId/initial-password",
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["ADMINISTRATOR"]),
+  setInitialPasswordHandler,
 );
