@@ -48,4 +48,18 @@ export const testSeams = {
     name: string;
     email: string;
   } | null,
+
+  /**
+   * Issue #41 — deterministic last-active-Administrator interleaving hook.
+   *
+   * When set, `updateUser`'s Serializable last-admin guard awaits this hook AFTER
+   * reading the active-Administrator count and BEFORE writing. A test can use it to
+   * force two concurrent demotions to both read the pre-write count, which is the
+   * exact interleaving the Serializable isolation level must reject.
+   *
+   * Without this hook the two requests usually serialize naturally and the race
+   * window is never exercised, so the concurrency test would pass even if the guard
+   * were weakened. Honored ONLY when `NODE_ENV === "test"`.
+   */
+  beforeLastAdminWrite: null as (() => Promise<void>) | null,
 };
