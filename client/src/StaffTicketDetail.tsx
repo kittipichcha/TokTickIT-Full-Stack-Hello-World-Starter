@@ -13,12 +13,14 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   fetchStaffTicketDetail,
+  fetchAssignableOwners,
   setTicketOwner,
   setItPriority,
   applyStatusTransition,
   postTicketComment,
   postInternalNote,
   type StaffTicketDetail as StaffTicketDetailData,
+  type AssignableOwner,
 } from "./api";
 import { formatUtcDate } from "./format";
 import CommentThread from "./CommentThread";
@@ -57,6 +59,26 @@ export default function StaffTicketDetail({
   const [actionError, setActionError] = useState<string | null>(null);
   const [isActing, setIsActing] = useState(false);
   const [pendingTransition, setPendingTransition] = useState<TicketStatus | null>(null);
+  const [owners, setOwners] = useState<AssignableOwner[]>([]);
+  const [selectedOwnerId, setSelectedOwnerId] = useState<number | undefined>();
+
+  // Eligible owners (active IT Staff / Administrators) for the ownership control.
+  // A failure here must not break the detail screen — the claim-to-me action and
+  // every other operation remain available.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await fetchAssignableOwners();
+        if (!cancelled) setOwners(result);
+      } catch {
+        if (!cancelled) setOwners([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,6 +105,30 @@ export default function StaffTicketDetail({
       await load();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to claim the ticket.");
+    } finally {
+      setIsActing(false);
+    }
+  };
+
+  /**
+   * Assigns/reassigns the Ticket to the owner chosen in the selector.
+   *
+   * Uses the existing CSRF-protected ownership endpoint (api-spec §17). On
+   * failure the local selection is cleared and the detail is re-fetched so the
+   * UI never displays an owner that was not actually persisted.
+   */
+  const handleAssignOwner = async () => {
+    if (selectedOwnerId === undefined) return;
+    setIsActing(true);
+    setActionError(null);
+    try {
+      await setTicketOwner(ticketNumber, selectedOwnerId);
+      setSelectedOwnerId(undefined);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to assign the ticket.");
+      setSelectedOwnerId(undefined);
+      await load();
     } finally {
       setIsActing(false);
     }
@@ -251,6 +297,33 @@ export default function StaffTicketDetail({
 
         <div className="action-group">
           <span className="action-label">Ownership</span>
+          <div className="owner-controls">
+            <label className="action-label" htmlFor="owner-select">
+              Ticket Owner
+            </label>
+            <select
+              id="owner-select"
+              value={selectedOwnerId === undefined ? "" : String(selectedOwnerId)}
+              onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : undefined)}
+              disabled={isActing}
+            >
+              <option value="">
+                {detail.ticketOwnerId === null ? "Select owner" : "Select a new owner"}
+              </option>
+              {owners.map((owner) => (
+                <option key={owner.id} value={String(owner.id)}>
+                  {owner.name} — {owner.role === "ADMINISTRATOR" ? "Administrator" : "IT Staff"}
+                </option>
+              ))}
+            </select>
+            <button
+              className="primary-button"
+              onClick={() => void handleAssignOwner()}
+              disabled={isActing || selectedOwnerId === undefined}
+            >
+              {detail.ticketOwnerId === null ? "Assign" : "Reassign"}
+            </button>
+          </div>
           <button
             className="secondary-button"
             onClick={() => void handleClaim()}
