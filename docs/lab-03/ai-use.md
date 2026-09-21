@@ -363,3 +363,53 @@
   `workspaces` field and the server tsconfig has no explicit `rootDir`. Running both smoke gates
   before writing feature code turned an empirical build risk into a verified fact, and the
   Option-B placement kept the server's emitted layout unchanged by construction.
+
+## Issue #38 — Review-Driven Completion (Queue owner filter, Queue information, reassignment UI)
+
+- **Prompt summary:** a review of PR #49 found three material gaps against the frozen contract —
+  the Queue had no owner filter (`ui-spec.md` §5.6), the Queue did not expose Category or Last
+  Updated (§5.6), and the Detail ownership control could only claim/reassign to the current user,
+  not to another eligible owner (FR-16, §5.7). Close exactly those three gaps without redesigning
+  the backend.
+- **What was done with output:**
+  - **Owner filter (B-01).** Added `ownerId` state to `StaffTicketQueue.tsx`, rendered a
+    `Filter by owner` select, passed `ownerId` into the existing `fetchStaffQueue()` (the client
+    type and serializer already supported it), reset to page 1 on change, and included it in
+    Clear Filters. Filtering stays server-side so it combines with search/status/priority under
+    the frozen AND semantics.
+  - **Queue information (B-02).** Added `categoryName` to the queue response — the SQL projection
+    now joins `Category` and the row mapping carries the name — and rendered Category and Last
+    Updated on both the desktop table and the mobile card. The desktop table keeps the core
+    columns and adds the two secondary ones, per §5.6's allowance for condensing secondary
+    information.
+  - **Reassignment (B-03).** Added an owner selector plus an Assign/Reassign action to
+    `StaffTicketDetail.tsx`, submitting through the existing CSRF-protected
+    `setTicketOwner()`. The "Claim / Reassign to me" convenience action is retained. On failure
+    the selection is cleared and the detail is re-fetched, so the UI never shows an owner that
+    was not persisted.
+  - **Eligible-owner source (contract addition).** The frozen contract exposed no
+    staff-accessible user list: `GET /api/admin/users` (§24) is Administrator-only and
+    `GET /api/app/context` returns only the caller's own identity. Deriving owners from the queue
+    rows would have made it impossible to assign a Ticket to a staff member who owns none, which
+    would leave FR-16's "claim, **assign**, or reassign" only partially satisfied. A minimal
+    read-only `GET /api/staff/owners` was therefore added, returning only `{id, name, role}` for
+    active IT Staff/Administrators. It is recorded as `specification.md` §13 decision 20 and
+    `api-spec.md` §17a under the closed-contract edge-case policy, and as the new `tests.md` row
+    `API-OWN-01`. No frozen Test-ID meaning was changed.
+  - **Tests.** Added `API-OWN-01` (eligibility, exclusion of Requesters/inactive users, no
+    credential field, `403` for a Requester caller, `401` unauthenticated) and a `categoryName`
+    assertion to `staff-queue.api.test.ts`; added owner-filter, combined-filter, Clear Filters,
+    required-information (desktop + mobile), assign/reassign, and ineligible-owner-failure
+    coverage to the two frozen UI test files.
+  - **Results:** server suite **516 passed** across 38 files; client suite **153 passed** across
+    14 files; both builds succeed.
+- **Notable engineering judgment:** the backend was left as the final authorization boundary. The
+  owner dropdown filters for UX only; `setTicketOwner` still rejects ineligible targets with
+  `409 CONFLICT`, and the new endpoint grants no authority of its own. The contract addition was
+  documented rather than made silently, because the Lab 3 contract is explicitly closed and
+  additions must be recorded in the Assumptions and Decisions section.
+- **Reflection:** the review's framing was correct — the backend already supported `ownerId`
+  filtering and arbitrary eligible-owner assignment, so the work was completing the UI contracts
+  and proving them with executable tests rather than redesigning anything. The one genuine
+  contract gap was the eligible-owner source, and resolving it required an explicit, auditable
+  documentation trail rather than a silent endpoint.

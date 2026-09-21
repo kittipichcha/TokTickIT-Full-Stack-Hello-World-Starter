@@ -99,7 +99,10 @@ require `aria-label` and a tooltip.
 ### 5.6 IT Staff Ticket Queue
 - Accessible to IT Staff and Administrator (per the authorization matrix). The Queue is the
   staff Ticket list; an Administrator may open it and use it in the same way as IT Staff.
-- Toolbar: search input, status filter, priority filter, owner filter, Clear Filters.
+- Toolbar: search input, status filter, priority filter, owner filter, Clear Filters. The owner
+  filter lists the eligible-owner set (active IT Staff/Administrators, `api-spec.md` §17a) and
+  combines with the other filters using AND semantics; Clear Filters resets it along with the
+  rest.
 - Desktop: table. The following required information must be available for each Ticket: Ticket
   No., Created Date, Summary, Category, Requested Priority, IT Priority, Current Status, Ticket
   Owner, Last Updated, and an Open Detail action. The desktop table may display the core columns
@@ -119,7 +122,11 @@ require `aria-label` and a tooltip.
 - Accessible to IT Staff and Administrator (per the authorization matrix). An Administrator may
   open any Ticket Detail and use the staff operations in the same way as IT Staff.
 - Ticket information clearly grouped; only permitted operational fields editable.
-- Ownership: claim/assign/reassign control.
+- Ownership: claim/assign/reassign control. The control offers an owner selector populated from
+  the eligible-owner set (active IT Staff/Administrators, `api-spec.md` §17a) plus an
+  Assign/Reassign action, so a Ticket can be assigned to any eligible owner — not only to the
+  current user. A "Claim / Reassign to me" convenience action may be retained alongside it. The
+  selector is a UX affordance only; the ownership endpoint remains the authorization boundary.
 - IT Priority: editable by IT Staff/Administrator.
 - Status: permitted status changes per the Status Transition Matrix. Status changes to
   Resolved, Closed, or Cancelled (per the Status Transition Matrix's "Confirmation" column)

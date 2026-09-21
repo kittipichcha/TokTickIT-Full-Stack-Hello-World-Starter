@@ -70,13 +70,21 @@ assertions inside `auth.api.test.ts`.
   - **Owner error split (Revision 7; Rev 9 §17 resolution).** Ticket 404 → `ownerId` shape 400 →
     User lookup 409 (nonexistent User is not an active IT Staff/Administrator, per §17) →
     eligibility 409 → plain last-write-wins UPDATE. No unassign operation.
-  - **Rows implemented and executed:** API-QUE-01/02, API-STAFF-01..10, API-REQ-03/04,
+  - **Rows implemented and executed:** API-QUE-01/02, API-STAFF-01..10, API-OWN-01, API-REQ-03/04,
     SEC-AUTHZ-02/08, UNIT-COMMENT-01, UI-QUE-01/02, UI-STAFF-01/02 — all moved to `Passed` only
     after their executed runs.
-  - **Results:** server suite **475 passed, 0 skipped** across 35 files, plus the #35-owned
-    `migration.integration.test.ts` (**19 passed**) and `seed.integration.test.ts`
-    (**11 passed**); client suite **141 passed, 0 skipped** across 14 files. Server and client
-    builds both succeed.
+  - **Review-driven completion (Issue #38 follow-up).** Three gaps found in review were closed:
+    the Queue owner filter (`ui-spec.md` §5.6), the Queue's Category and Last Updated
+    information (§5.6), and the Detail assign/reassign control (§5.7, FR-16). The Queue response
+    gained `categoryName`; the new `GET /api/staff/owners` (§17a) supplies the eligible-owner
+    set, recorded as `specification.md` §13 decision 20 under the closed-contract edge-case
+    policy. Supplementary UI coverage was added to the two frozen UI files (owner filter,
+    combined filters, Clear Filters, required information on both the desktop table and the
+    mobile card, assign/reassign, ineligible-owner failure) and to
+    `staff-queue.api.test.ts` (`API-OWN-01` plus the `categoryName` assertion). No frozen Test-ID
+    meaning was changed; `API-OWN-01` is a new row.
+  - **Results:** server suite **516 passed, 0 skipped** across 38 files; client suite
+    **153 passed, 0 skipped** across 14 files. Server and client builds both succeed.
   - **Lab 2 regression note:** `AttachmentSection.test.tsx`'s "read-only ticket fields"
     assertion scoped its no-editable-inputs check to the whole `.ticket-detail` block; the new
     Public Comments compose box is an intentional addition, so the assertion was narrowed to the
@@ -569,6 +577,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-QUE-01 | API | IT Staff queue retrieval | Search/filter/sort/pagination works | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-17 | AC-10 | Passed |
 | API-QUE-02 | API | Queue invalid query params | Safe defaults applied | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-31 | AC-10 | Passed |
 | API-STAFF-01 | API | Claim/reassign ownership | Owner updated to active IT Staff/Admin | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-16 | BR-14 | AC-11 | Passed |
+| API-OWN-01 | API | Eligible Ticket-owner lookup | `GET /api/staff/owners` returns only active IT Staff/Administrators as `{id,name,role}`; Requesters and inactive users excluded; no credential field; Requester caller `403`; unauthenticated `401` | `server/tests/lab-03/staff-queue.api.test.ts` | FR-16 | BR-14 | AC-11 | Passed |
 | API-STAFF-02 | API | Set IT Priority | IT Priority updated; Requested Priority unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-15, BR-16 | AC-12 | Passed |
 | API-STAFF-03 | API | Permitted status change | Status changes per matrix | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Passed |
 | API-STAFF-04 | API | Forbidden status transition | 409 CONFLICT; no change | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18, BR-20 | AC-13 | Passed |
@@ -630,9 +639,9 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-AUTHGATE-01 | UI | Logout failure preserves the authenticated shell | When `logout()` rejects, the authenticated shell (and `App`) stays mounted, state does not move to Login, and an inline `role="alert"` error is shown near the Logout button | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
 | UI-AUTHGATE-02 | UI | Successful logout transitions to Login | When `logout()` resolves, the gate transitions to the Login screen, `App` unmounts, and no error alert is shown | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09 | AC-06 | Passed |
 | UI-AUTHGATE-03 | UI | Mount-time session-check failure is distinct from unauthenticated | A `401` from `fetchMe()` renders Login; a `500` or status-less network failure renders a distinct session-error screen with a Retry button (neither Login nor the authenticated shell); clicking Retry after a `500` transitions to authenticated | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
-| UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
+| UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; owner filter (eligible owners only, combined with search/status/priority, cleared by Clear Filters); required information (Category, Last Updated) on desktop table and mobile card; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
 | UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Passed |
-| UI-STAFF-01 | UI | Staff Ticket Detail | Ownership/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Passed |
+| UI-STAFF-01 | UI | Staff Ticket Detail | Ownership (claim + assign/reassign to any eligible owner)/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Passed |
 | UI-STAFF-02 | UI | Status change to Resolved/Closed/Cancelled | Confirm modal shown before request is sent; cancel aborts, confirm proceeds | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
 | UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Planned |
@@ -657,7 +666,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
 - AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01, UI-QUE-02, VISUAL-02
-- AC-11 → API-STAFF-01, API-STAFF-09, UI-STAFF-01, E2E-02
+- AC-11 → API-STAFF-01, API-STAFF-09, API-OWN-01, UI-STAFF-01, E2E-02
 - AC-12 → API-STAFF-02, API-STAFF-06, UI-STAFF-01, E2E-02
 - AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, E2E-02
 - AC-14 → API-STAFF-05, API-STAFF-10, UI-STAFF-01, E2E-02

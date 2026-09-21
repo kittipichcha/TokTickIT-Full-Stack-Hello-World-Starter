@@ -511,3 +511,33 @@ inactive IT Staff, and 1 active Administrator. Example: `ada@example.com` /
 
 Downstream issues (#37/#38/#41) consume the shared client transport `client/src/api-client.ts`
 and the fresh-User session authority rule delivered here.
+
+## 12. Lab 3 — IT Staff Ticket Operations (Issue #38)
+
+IT Staff and Administrators operate the Ticket Queue and Ticket Detail. All routes below require
+an authenticated session and the password-change gate; state-changing routes additionally require
+CSRF.
+
+| Method | Endpoint | Auth | Notes |
+|---|---|---|---|
+| GET | `/api/staff/queue` | IT Staff / Administrator | Search, status/priority/owner filters, sort, pagination. Invalid query values fall back to safe defaults and never return `400`. |
+| GET | `/api/staff/owners` | IT Staff / Administrator | Eligible Ticket-owner set: active IT Staff/Administrators as `{id, name, role}`. Read-only; no credential field. |
+| GET | `/api/staff/tickets/:ticketNumber` | IT Staff / Administrator | Staff Ticket Detail, including Public Comments and Internal Notes. |
+| POST | `/api/staff/tickets/:ticketNumber/owner` | IT Staff / Administrator + CSRF | Claim/assign/reassign. `ownerId` must reference an active IT Staff/Administrator. Last-write-wins; no unassign. |
+| PATCH | `/api/staff/tickets/:ticketNumber/priority` | IT Staff / Administrator + CSRF | Sets IT Priority only; Requested Priority is never touched. |
+| PATCH | `/api/staff/tickets/:ticketNumber/status` | IT Staff / Administrator + CSRF | Permitted transitions only; the Ticket must be owned first. |
+| POST/GET | `/api/tickets/:ticketNumber/comments` | owner Requester or IT Staff/Administrator | Public Comments. |
+| POST/GET | `/api/staff/tickets/:ticketNumber/notes` | IT Staff / Administrator | Internal Notes; never reach a Requester payload. |
+| POST | `/api/tickets/:ticketNumber/appears-resolved` | owner Requester + CSRF | Boolean indicator; never changes the formal status. |
+
+**Eligible-owner lookup (`GET /api/staff/owners`).** Added by Issue #38 under the closed-contract
+edge-case policy (`specification.md` §13 decision 20, `api-spec.md` §17a). The frozen contract
+exposed no staff-accessible user list — `GET /api/admin/users` is Administrator-only and
+`GET /api/app/context` returns only the caller's own identity — so the Queue owner filter and the
+Detail ownership control could not otherwise offer owners who own no Tickets. The endpoint is a
+**UX affordance only**: `POST /api/staff/tickets/:ticketNumber/owner` remains the final
+authorization boundary and independently rejects ineligible targets with `409 CONFLICT`.
+
+**Queue required information (ui-spec §5.6).** Each queue row carries `categoryName` and
+`updatedAt` alongside the ticket number, summary, status, requested priority, IT priority, and
+owner, so the desktop table and the mobile card can both present every required field.

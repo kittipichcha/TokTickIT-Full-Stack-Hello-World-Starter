@@ -473,6 +473,12 @@ renamed from the Lab 2 `removedByRequesterId` by #35's DM-17 step (authorized re
 { "data": [ /* tickets with ownership/status/priority */ ], "pagination": { "page": 1, "pageSize": 10, "totalItems": 42, "totalPages": 5, "unfilteredTotalItems": 57 } }
 ```
 
+Each element of `data` carries the information `ui-spec.md` §5.6 requires the Queue to make
+available: `id`, `ticketNumber`, `summary`, `categoryName`, `currentStatus`,
+`requestedPriority`, `itPriority`, `ticketOwnerId`, `requesterId`, `createdAt`, and
+`updatedAt`. `categoryName` is the joined `Category.name`; `updatedAt` is the Last Updated
+value.
+
 **Error cases**
 - `403 FORBIDDEN` — not IT Staff/Administrator.
 
@@ -520,6 +526,40 @@ recorded as the final `ticketOwnerId`. No conflict error is surfaced to the "los
 - `403 FORBIDDEN` — not IT Staff/Administrator.
 - `404 NOT_FOUND` — Ticket not found.
 - `409 CONFLICT` — owner not active IT Staff/Administrator.
+
+---
+
+## 17a. GET /api/staff/owners
+
+**Auth:** IT Staff or Administrator.
+
+**Purpose:** the eligible Ticket-owner set, used by the Staff Queue owner filter
+(`ui-spec.md` §5.6) and the Staff Ticket Detail ownership control (§5.7). Added under the
+closed-contract edge-case policy (`specification.md` §3, §13 decision 17): the frozen contract
+previously exposed no staff-accessible user list — `GET /api/admin/users` (§24) is
+Administrator-only, so IT Staff cannot call it, and `GET /api/app/context` returns only the
+caller's own identity.
+
+**Query parameters:** none.
+
+**Response 200**
+```json
+{ "data": [ { "id": 5, "name": "Alice", "role": "IT_STAFF" } ] }
+```
+
+**Semantics (frozen):**
+- Returns every **active** user whose role is `IT_STAFF` or `ADMINISTRATOR`.
+- Requesters and inactive IT Staff/Administrators are excluded.
+- Ordered by `name` ascending, then `id` ascending (stable).
+- The projection is exactly `{ id, name, role }`. Credential fields (`passwordHash`,
+  `mustChangePassword`) and `email` are never returned.
+
+**Security note:** this list is a **UX affordance only**. It does not authorize anything;
+`POST /api/staff/tickets/:ticketNumber/owner` (§17) remains the final authorization boundary
+and independently rejects ineligible targets with `409 CONFLICT`.
+
+**Error cases**
+- `403 FORBIDDEN` — not IT Staff/Administrator.
 
 ---
 

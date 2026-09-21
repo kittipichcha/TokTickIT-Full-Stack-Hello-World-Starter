@@ -688,3 +688,16 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
     tests for no gain. Each element carries only `id` and `name`; the active-only filter
     (`isActive = true`) is applied server-side and `isActive` is not part of the response object.
     See `docs/lab-03/api-spec.md` §5.
+20. **Eligible Ticket-owner lookup endpoint (Issue #38 — added under the closed-contract
+    edge-case policy):** `GET /api/staff/owners` returns the eligible Ticket-owner set —
+    every **active** IT Staff/Administrator as `{ id, name, role }` — for IT Staff and
+    Administrators. It was added because the frozen contract exposed no staff-accessible user
+    list: `GET /api/admin/users` (§24) is Administrator-only, so IT Staff cannot call it, and
+    `GET /api/app/context` returns only the caller's own identity. Without it, the Queue owner
+    filter (`ui-spec.md` §5.6) and the Detail ownership control (§5.7) could not offer owners
+    who own no Tickets, which would leave FR-16's "claim, **assign**, or reassign" only
+    partially satisfied. The endpoint is deliberately minimal and read-only: it returns no
+    credential field, no `email`, no Requester, and no inactive user. It is a **UX affordance
+    only** — `POST /api/staff/tickets/:ticketNumber/owner` (§17) remains the final
+    authorization boundary and independently rejects ineligible targets with `409 CONFLICT`.
+    See `docs/lab-03/api-spec.md` §17a and `tests.md` `API-OWN-01`.
