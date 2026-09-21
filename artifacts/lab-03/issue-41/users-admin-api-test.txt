@@ -1,0 +1,10 @@
+◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+ RUN  v4.1.10 [worktree]/server
+
+
+ Test Files  1 passed (1)
+      Tests  36 passed (36)
+   Start at  17:27:33
+   Duration  16.95s (transform 810ms, setup 0ms, import 10.74s, tests 5.19s, environment 0ms)
+

@@ -1,0 +1,56 @@
+◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+ RUN  v4.1.10 [worktree]/server
+
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+MigrationCollisionError: 1 collision(s) block the migration.
+  - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
+Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+psql:[tmp]/migrate-lab3-injected-31440-1789977422941.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[user]@localhost:5432/tocktick_lab3_mig05_28892" --single-transaction -v ON_ERROR_STOP=1 -f "[tmp]\migrate-lab3-injected-31440-1789977422941.sql"
+psql:[tmp]/migrate-lab3-injected-31440-1789977422941.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+psql:[tmp]/migrate-lab3-injected-38564-1789977674014.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[user]@localhost:5432/tocktick_lab3_mig05_28892" --single-transaction -v ON_ERROR_STOP=1 -f "[tmp]\migrate-lab3-injected-38564-1789977674014.sql"
+psql:[tmp]/migrate-lab3-injected-38564-1789977674014.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+psql:[tmp]/migrate-lab3-injected-37988-1789977710938.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[user]@localhost:5432/tocktick_lab3_mig05_28892" --single-transaction -v ON_ERROR_STOP=1 -f "[tmp]\migrate-lab3-injected-37988-1789977710938.sql"
+psql:[tmp]/migrate-lab3-injected-37988-1789977710938.sql:43: ERROR:  division by zero
+
+Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 1. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+psql:[tmp]/migrate-lab3-injected-37168-1789977747224.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[user]@localhost:5432/tocktick_lab3_mig05_28892" --single-transaction -v ON_ERROR_STOP=1 -f "[tmp]\migrate-lab3-injected-37168-1789977747224.sql"
+psql:[tmp]/migrate-lab3-injected-37168-1789977747224.sql:43: ERROR:  division by zero
+
+Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 2. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+psql:[tmp]/migrate-lab3-injected-38472-1789977782257.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[user]@localhost:5432/tocktick_lab3_mig05_28892" --single-transaction -v ON_ERROR_STOP=1 -f "[tmp]\migrate-lab3-injected-38472-1789977782257.sql"
+psql:[tmp]/migrate-lab3-injected-38472-1789977782257.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+[test-only] simulated crash right after backfill commit.
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_28892" does not exist, skipping
+
+ Test Files  35 passed (35)
+      Tests  467 passed (467)
+   Start at  14:54:04
+   Duration  792.73s (transform 1.37s, setup 0ms, import 18.17s, tests 764.05s, environment 5ms)
+
+EXIT=0

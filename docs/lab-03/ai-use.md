@@ -306,3 +306,62 @@
   `Passed` on tests that only exercised `status=NEW` and the four legacy sort keys, so the gap was
   invisible to the suite — a reminder that a `Passed` row is only as strong as the values its
   assertions actually exercise.
+
+## Issue #41 — Administrator User Management
+
+- **LLM used:** GitHub Copilot (DeepSeek V4.1 Flash) in VS Code agent mode.
+- **Prompts (paraphrased):** "Pull `lab3-staging`, create a worktree and branch for issue 41,
+  read the issue-41 plan and follow it strictly; you may commit and push once you have
+  double-checked and finished everything in the plan."
+- **What the agent did:**
+  - Verified the #35/#37 dependency gate against **landed branch content** (not
+    issue/Kanban state): `auth-service.ts` (`hashPassword`/`validatePasswordPolicy`),
+    `session.ts` (`requireAuth` fresh-User per-request DB re-read; inactive → session
+    destroyed + `401`; `requirePasswordChanged`; `requireCsrf`), `authorization.ts`
+    (`requireRole` → `403`), and the `User` model with `email @unique` / scalar `role Role`.
+  - Recorded the **F-41-5** check: the landed `requireAuth` rejects an inactive user on
+    every protected request, so the Amendment's live-session consequence holds. #41 builds
+    no session-invalidation mechanism.
+  - Created `server/src/admin-service.ts` and `server/src/admin-controller.ts`, wired the
+    four routes in `server/src/module.ts`, and built `client/src/AdminUserManagement.tsx`
+    (view gated on the Administrator role in `client/src/App.tsx`).
+  - Created the two frozen test files at their exact frozen paths and executed the
+    #41-owned rows; ran the full server and client suites for regression.
+  - Verified the UI live in the browser (login → User Management → create/edit/reset) and
+    captured screenshots under `artifacts/lab-03/screenshots/user-management/`.
+- **Human decisions consumed (not re-decided):** the four endpoint contracts and error
+  codes; the 10 safety rules; AC-15..AC-20 meanings; the frozen Test-ID meanings and file
+  paths; `passwordHash`-ignored-on-PATCH; operation-specific DTOs; the Serializable
+  retry scope; `actingUserId` from `res.locals.userId` only.
+- **Notable engineering judgment:**
+  - **The concurrency test was made genuinely sensitive, not merely green.** The first
+    version of `API-ADM-07`'s two-concurrent-demotions case passed even after the isolation
+    level was temporarily lowered to `ReadCommitted`, because the two requests serialized
+    naturally and never met in the race window. Rather than accept a vacuously passing test,
+    the agent added a test-only `testSeams.beforeLastAdminWrite` barrier so both
+    transactions read the pre-write count before either writes. The test then **failed**
+    (`[200, 200]`, final active count 0) under `ReadCommitted` and passed under
+    `Serializable` — proving it actually exercises the guard. The isolation level was
+    restored immediately after the check.
+  - **A cross-suite mutation was found and fixed.** The last-active-Administrator tests
+    deactivate/demote Administrators, mutating shared seed data. After the first full-suite
+    run, two Lab 2 `my-tickets-real-db` tests failed with `401` because the seeded
+    Administrator had been left inactive. The suite now snapshots and restores the
+    pre-existing Administrator rows in `afterAll` — the fix was to stop mutating shared
+    state, not to relax the Lab 2 assertions.
+  - **F-41-3 (empty/no-op PATCH) was resolved against the frozen spec, not invented.**
+    `api-spec.md` §26 is silent on omitted/empty bodies; `specification.md`'s
+    closed-contract policy requires the agent to resolve the choice and document it. The
+    resolution is partial-update semantics: omitted fields are unchanged, an empty/no-op
+    body is a valid no-op returning `200`, and unknown properties (including `passwordHash`)
+    are ignored exactly. No validation rule beyond the frozen error table was added.
+  - **Deactivation/role changes that fall short of the invariant use a normal write**, and
+    only the paths that can *reduce* the active-Administrator count enter the Serializable
+    transaction — so the guard is applied where it is needed without serializing every edit.
+- **Reflection:** Two lessons dominated this issue. The first is that a concurrency test can
+  pass for the wrong reason: a test that cannot fail is worthless as evidence, so the guard's
+  sensitivity had to be demonstrated by temporarily breaking it. The second is that
+  "passing suite" is not the same as "correct suite" when the suite mutates shared fixtures —
+  the pre-existing test failures were a fixture bug in the new suite, not a regression in the
+  code it was testing, and the honest fix was to restore the state rather than to make the
+  downstream assertion more tolerant.
