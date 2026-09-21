@@ -172,3 +172,137 @@
   already-broken databases are repaired too. The mutation check (removing the sync call) confirmed
   DB-MIG-11 fails without it, and the new `postChecks` guard made that failure loud rather than
   silent.
+
+## Issue #37 — Authorization + Requester Migration / Regression
+
+- **LLM used:** GitHub Copilot (DeepSeek V4.1 Flash) in VS Code agent mode.
+- **Prompts (paraphrased):** "Create a worktree and branch from `lab3-staging` (pull first),
+  then implement the issue-37 plan step by step"; "double-check the work using review-pr,
+  then commit, push, and open the PR."
+- **What the agent did:**
+  - Verified the #35 dependency gate against actual branch content (not issue/Kanban state):
+    `requireAuth`/`requirePasswordChanged`/`requireCsrf`, the `User`/`Role` model, the
+    renamed `uploaderUserId`/`removedByUserId` columns, the preserved `isRemoved` column,
+    and the DM-17 compatibility set with its integration-gate and grep-gate evidence.
+  - Created `server/src/authorization.ts` with `requireRole`,
+    `requireTicketReadAccess`, and
+    `authorizeAttachmentReadByRoleOrRequesterOwnership`.
+  - Retrofitted `module.ts`, `controller.ts`, and `service.ts` to authenticated identity,
+    including the service-layer `{userId, role}` access-context refactor.
+  - Removed the Dev-Requester mechanism (server + client) and deleted
+    `server/src/requester-context.ts`.
+  - Created the two frozen test files at their exact frozen paths and executed the
+    #37-owned rows.
+  - Performed the RR-04 Lab 2 regression audit and applied the mapping.
+- **Human decisions consumed (not re-decided):** the frozen `res.locals.userId/role/
+  mustChangePassword` convention; the fresh-User session-authority rule; Option A for the
+  DM-17 handoff; the landed 5–120 / 10–2,000 validation limits; the frozen test-file paths.
+- **Notable engineering judgment:**
+  - The Lab 2 suites injected identity with a header and never exercised the session path.
+    Rather than rewrite ~200 tests around real logins, the agent added a `testSeams`
+    identity fixture (mirroring the repository's existing `testSeams` pattern) for the
+    mocked suites, and real logins for the real-DB integration suites. The real
+    authentication boundary is covered by #35's auth suite and by #37's frozen
+    authorization/requester API tests, which use real logins.
+  - The real-DB fixture (`registerSession`) snapshots and restores the `User` rows it
+    mutates, because Lab 2 integration suites reuse the seeded requesters and the
+    migration suite asserts on their original state. An earlier version was destructive
+    and caused two migration-test failures; the fix was to make the fixture
+    non-destructive rather than to relax the migration assertions.
+  - Class (b) retirements were replaced with authenticated-identity assertions rather than
+    deleted outright, and every change is recorded in
+    `artifacts/lab-03/regression/lab2-test-audit.md`.
+- **Reflection:** The largest risk in this issue was not the authorization logic but the
+  regression surface: 205 Lab 2 server tests and 93 client tests failed at the cutover.
+  Classifying each one before touching it (RR-04) was what kept the change honest — it
+  forced a distinction between "this test asserts behavior we deliberately removed" and
+  "this test caught a real break", and it prevented the tempting shortcut of deleting
+  failing tests to reach green. The second lesson was that a test fixture which mutates
+  shared seed data is a latent cross-suite bug; snapshotting and restoring the row is the
+  correct fix, not weakening the downstream assertion.
+
+## Issue #37 — Remediation Round (agent review follow-up)
+
+- **LLM used:** GitHub Copilot (DeepSeek V4.1 Flash) in VS Code agent mode.
+- **Prompts (paraphrased):** "Apply this remediation plan (B-1, B-2, N-1..N-6) on the same
+  branch, then commit, push, and update the related docs and issue; the review came from an
+  agent, so do not log it in `reviewer.md`."
+- **What the agent did:**
+  - **B-2:** aligned `docs/lab-03/api-spec.md` §11 with the landed bare-array attachment-list
+    shape (decision D-18 / RR-02) and documented `removedByUserId` in §11/§14.
+  - **B-1:** migrated the whole `e2e/lab-02/` Playwright suite from the removed Dev-Requester
+    selector/header to real authenticated login, added a Playwright `globalSetup` that seeds
+    two E2E Requester accounts (`mustChangePassword = false`), and extended the RR-04 audit
+    with an E2E section and an extended grep gate.
+  - **N-3:** gated the `testSeams.sessionIdentity` reads on `NODE_ENV === "test"` and added
+    `UNIT-AUTHZ-02` proving the seam is inert in production.
+  - **N-2:** reworded the `SEC-AUTHZ-07` claim to match the executed assertions.
+  - **N-1:** captured raw server/client/E2E run output into `artifacts/lab-03/regression/`
+    and wired the pointers into `cutover-gate.md` and `tests.md`.
+  - **N-4/N-6:** corrected the stale README statements and removed the dead `.requester-select`
+    CSS rule.
+- **Notable engineering judgment:**
+  - Migrating the E2E suite to a real login surfaced a genuine class (c) regression that no
+    mocked test caught: `fetchCategories` read `payload.data` from an endpoint that returns a
+    bare array, so the shell crashed as soon as it rendered for an authenticated user. Per the
+    plan's rule ("a genuine regression means you fix the code, never the test"), the code was
+    fixed and the client test mock was aligned to the same shape.
+  - The direct-API ownership checks in `ownership.spec.ts` needed two identities authenticated
+    at once; a single shared Playwright request context clobbers the first cookie on the second
+    login, so each Requester gets its own isolated `request` context (separate cookie jar).
+- **Reflection:** The remediation confirmed the same theme as the original issue — the
+  dangerous surface is the one that is not exercised by mocked tests. The `fetchCategories`
+  bug lived behind a login and only appeared once an authenticated session actually rendered
+  the shell; the E2E migration was the first thing to drive that path. It also reinforced that
+  a "test seam" that bypasses production gates is a liability unless it is provably inert
+  outside the test environment, which is exactly what the N-3 guard adds.
+
+## Issue #37 Review Follow-up Entry (Round 2 — My Tickets status/sort contract alignment)
+
+- Prompt summary: Read the P2 finding that My Tickets diverges from the frozen Lab 3 filtering
+  and sorting contract, fix the accepted status set and sort keys in the backend and frontend,
+  add a clarifying note for the mismatched-`requesterId` behavior, extend `API-REQ-02`, update
+  all related documentation, verify with the review-pr skill, then commit and push.
+- What was done with output:
+  - **P2 — status filter and sort keys (real defect, fixed in the code).**
+    `server/src/controller.ts` now validates `status` against the full frozen `TicketStatus`
+    enum instead of only `NEW`, and accepts the documented sort keys
+    (`createdAt`/`ticketNumber`/`summary`/`status`/`priority`), keeping `requestedPriority` as a
+    Lab 2 compatibility alias for `priority`. `server/src/service.ts` orders `status` by the
+    logical workflow sequence and `priority` by `LOW < MEDIUM < HIGH` rather than
+    alphabetically. `client/src/MyTickets.tsx` offers all eight statuses in the filter dropdown
+    and makes the Requested Priority and Current Status columns sortable with the documented
+    keys; `client/src/App.css` gained badge styles for the seven previously unstyled statuses.
+  - **Scope decision — invalid-value behavior left unchanged.** The finding also proposed
+    applying safe-default fallback to *all* invalid query values. That would contradict the
+    frozen Lab 2 contract (`docs/lab-02/api-spec.md`; `tests.md` `API-MY-06`/`API-MY-07`), which
+    classifies an out-of-enum `status`/`requestedPriority` and a malformed `categoryId` as
+    `400 VALIDATION_ERROR` (nonexistent/inactive `categoryId` → `409 INACTIVE_REFERENCE`), and
+    #37's plan locks "existing `getMyTickets` search/filter/sort/pagination behavior is
+    preserved". The two classes are now documented explicitly in `api-spec.md` §8.
+  - **`requesterId` clarification (documentation only).** Issue #37's checklist says a mismatched
+    client-supplied `requesterId` must be "rejected"; the implementation **ignores** it and
+    assigns ownership to the authenticated user — the frozen convention (unknown JSON properties
+    are ignored; BR-03) and what `SEC-AUTHZ-01` asserts. `api-spec.md` §0 now states this
+    explicitly and records that the implementation must not be changed without reconciling §0.
+  - **Tests.** Extended the frozen `API-REQ-02` row with non-`NEW` status filtering, the five
+    documented sort keys in both directions, logical-order assertions for `sort=status` and
+    `sort=priority`, the retained `requestedPriority` alias, invalid-`sort` fallback, and the
+    preserved `400` behavior for out-of-enum filter values. Added supplementary `UI-MY-08` for
+    the frontend status dropdown and sort keys.
+  - **Documentation:** updated `docs/lab-03/api-spec.md` (§0 requesterId clarification, §8 query
+    semantics and invalid-value classes), `ui-spec.md` §5.4 (status filter and sortable columns),
+    `tests.md` (`API-REQ-02` row + Results Log), and `reviewer.md` (Issue #37 review record).
+- **Notable engineering judgment:**
+  - The finding bundled a genuine contract mismatch (status set, sort keys) with a proposal that
+    would have broken a frozen contract (safe defaults for filter enums). The two were separated:
+    the mismatch was fixed in the code, and the proposal was declined with the Lab 2 authority
+    cited and the distinction documented rather than silently applied.
+  - `requestedPriority` was kept as an accepted sort alias rather than removed. The Lab 2
+    contract and its real-DB tests sort by `requestedPriority`, so dropping it would have been a
+    regression; the Lab 3 key `priority` was added alongside it.
+- **Reflection:** The defect existed because the Lab 2 handler was carried forward verbatim while
+  the Lab 3 contract widened the enum and the sort vocabulary. The `API-REQ-02` row was marked
+  `Passed` on tests that only exercised `status=NEW` and the four legacy sort keys, so the gap was
+  invisible to the suite — a reminder that a `Passed` row is only as strong as the values its
+  assertions actually exercise.

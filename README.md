@@ -19,23 +19,31 @@ In summary, Lab 2 requires:
 - Responsive Zen Green UI and keyboard-accessible flows
 
 ## 2. Current Implementation Status (as of 2026-08-30)
+
+> **Superseded in Lab 3 (Issues #35 / #37).** The Development Requester selector,
+> the `X-Dev-Requester-Id` header, and `GET /api/dev-requesters` /
+> `GET /api/requester-context` were removed in Lab 3. Identity is now established by a
+> real session (login → httpOnly cookie + CSRF token), and reference-data and Ticket
+> routes require an authenticated session. A full README rewrite is owned by #42;
+> until then, the statements below describe the Lab 2 baseline.
+
 Implemented in code right now:
-- `GET /api/categories` (active-only)
-- `GET /api/dev-requesters` (active-only, `{ "data": [...] }` envelope)
-- `GET /api/related-systems` (active-only, `{ "data": [...] }` envelope)
-- `GET /api/requester-context` (requires `X-Dev-Requester-Id`, returns `422` if missing/unknown/inactive)
-- `POST /api/tickets` (create ticket with integer lexical validation, trim-then-validate normalization, category/related-system reference checks, JSON request-parsing contract enforcement, single-transaction atomic allocation)
-- `GET /api/tickets/:ticketNumber` (detail with requester ownership enforcement, attachment removal metadata)
-- `GET /api/tickets` (My Tickets list with search, filter, sort, pagination, ownership enforcement, `unfilteredTotalItems`)
-- Prisma models: `Category`, `DevRequester`, `RelatedSystem` (all with `isActive`), `Ticket`, `Attachment`, `TicketSequence`
+- `GET /api/categories` (active-only; **requires an authenticated session** in Lab 3)
+- ~~`GET /api/dev-requesters`~~ (removed in Lab 3)
+- `GET /api/related-systems` (active-only; **requires an authenticated session** in Lab 3)
+- ~~`GET /api/requester-context`~~ (removed in Lab 3)
+- `POST /api/tickets` (create ticket with integer lexical validation, trim-then-validate normalization, category/related-system reference checks, JSON request-parsing contract enforcement, single-transaction atomic allocation; **requires an authenticated session**)
+- `GET /api/tickets/:ticketNumber` (detail with requester ownership enforcement, attachment removal metadata; **requires an authenticated session**)
+- `GET /api/tickets` (My Tickets list with search, filter, sort, pagination, ownership enforcement, `unfilteredTotalItems`; **requires an authenticated session**)
+- Prisma models: `Category`, `User`, `RelatedSystem` (all with `isActive`), `Ticket`, `Attachment`, `TicketSequence`
 - Atomic ticket number generation: `TKT-<UTC-year>-<6-digit seq>` via `INSERT ... ON CONFLICT ... RETURNING` inside a single database transaction with one authoritative timestamp
 - Ticket indexes: `@@index([requesterId])`, `@@index([currentStatus])`, `@@index([createdAt])`
-- Attachment model: `storedFilename @unique`, `@@index([ticketId])`, `uploaderRequester` and `removedByRequester` relations to `DevRequester`
-- Seed data: 4 categories, 4 active + 1 inactive development requesters, related systems (idempotent upserts)
-- Frontend: Development Requester Selection screen + application shell (requester identity, Change Requester) + Create Ticket form + Ticket Detail view + My Tickets screen
-- Requester context is persisted in `sessionStorage` and sent via the `X-Dev-Requester-Id` header on requester-scoped calls
+- Attachment model: `storedFilename @unique`, `@@index([ticketId])`, `uploaderUser` and `removedByUser` relations to `User`
+- Seed data: 4 categories, 4 active + 1 inactive Requesters, 3 active + 1 inactive IT Staff, 1 Administrator, related systems (idempotent upserts)
+- Frontend: Login screen + authenticated application shell (identity + Logout) + Create Ticket form + Ticket Detail view + My Tickets screen
+- Identity is carried by the session cookie (set by the server) and the CSRF token is echoed on state-changing calls
 - View Ticket action navigates to Ticket Detail with loading/error/not-found states
-- My Tickets frontend screen with sortable table, mobile cards, loading/empty/no-results/error states, pagination footer, and requester-switch data reset
+- My Tickets frontend screen with sortable table, mobile cards, loading/empty/no-results/error states, and pagination footer
 
 **New in this release (Issue #15 — Attachment Lifecycle & Ticket Detail — Post-Review Fixes):**
 - `POST /api/tickets/:ticketNumber/attachments` — Upload attachment (multipart, single file) with type/size/content-signature validation, 5-active limit, sequential processing
@@ -130,6 +138,7 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |- e2e/
 |  |- lab-02/
 |  |  |- attachment-lifecycle.spec.ts
+|  |  |- global-setup.ts     # ensures two E2E Requester accounts (mustChangePassword = false)
 |  |  |- helpers.ts
 |  |  |- keyboard-access.spec.ts
 |  |  |- ownership.spec.ts
@@ -157,7 +166,6 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |- migrate-lab3.ts
 |  |  |- module.ts
 |  |  |- prisma.ts
-|  |  |- requester-context.ts
 |  |  |- service.ts
 |  |  |- session.ts
 |  |  |- test-seams.ts
@@ -297,8 +305,14 @@ Important:
 
 ## 8. API Implemented Today
 
+> **Superseded in Lab 3 (Issues #35 / #37).** The `X-Dev-Requester-Id` header and the
+> `GET /api/dev-requesters` / `GET /api/requester-context` endpoints were removed.
+> `GET /api/categories`, `GET /api/related-systems`, and all Ticket/Attachment routes
+> now require an authenticated session (login → session cookie + CSRF token). See
+> §11 for the Lab 3 authentication surface. A full README rewrite is owned by #42.
+
 ### `GET /api/categories`
-Returns active categories only. Response example:
+Returns active categories only. **Requires an authenticated session** (Lab 3). Response example:
 
 ```json
 [
@@ -309,29 +323,14 @@ Returns active categories only. Response example:
 ]
 ```
 
-### `GET /api/dev-requesters`
-Returns active development requesters only (no requester header required). Response example:
+### ~~`GET /api/dev-requesters`~~
+Removed in Lab 3 (#37). The Development Requester selector and its endpoints no longer exist.
 
-```json
-{
-  "data": [
-    { "id": 1, "name": "Ada Lovelace", "email": "ada@example.com" }
-  ]
-}
-```
-
-### `GET /api/requester-context`
-Requires the `X-Dev-Requester-Id` header. Validates the requester is active. Response example:
-
-```json
-{ "data": { "requesterId": 1 } }
-```
-
-Missing, malformed, unknown, or inactive requester headers return
-`422` with `{ "error": { "code": "REQUESTER_CONTEXT_INVALID", "message": "A valid active requester is required." } }`.
+### ~~`GET /api/requester-context`~~
+Removed in Lab 3 (#37). Identity now comes from the authenticated session.
 
 ### `GET /api/related-systems`
-Returns active related systems only (no requester header required). Response example:
+Returns active related systems only. **Requires an authenticated session** (Lab 3). Response example:
 
 ```json
 {
@@ -343,7 +342,8 @@ Returns active related systems only (no requester header required). Response exa
 ```
 
 ### `POST /api/tickets`
-Creates a ticket for the active requester (requires `X-Dev-Requester-Id`).
+Creates a ticket for the authenticated Requester (Lab 3: session required; any body-supplied
+`requesterId` is ignored).
 Request body:
 
 ```json
@@ -362,24 +362,24 @@ before validation and persisted trimmed. Referencing a nonexistent or inactive
 `categoryId`/`relatedSystemId` returns `409 INACTIVE_REFERENCE`.
 
 ### `GET /api/tickets/:ticketNumber`
-Returns ticket detail for the active requester (requires `X-Dev-Requester-Id`).
+Returns ticket detail for the authenticated Requester (Lab 3: session required).
 Enforces ownership: a ticket owned by another requester returns `404 NOT_FOUND`.
 Malformed `ticketNumber` path parameters return `404 NOT_FOUND`.
 
 ### `GET /api/tickets`
-Returns the active requester's paginated ticket list (requires `X-Dev-Requester-Id`).
+Returns the authenticated Requester's paginated ticket list (Lab 3: session required).
 Supports search (`?search=`), filter (`?categoryId=`, `?requestedPriority=`, `?status=`),
 sort (`?sort=createdAt|ticketNumber|summary|requestedPriority`, `?order=asc|desc`),
 and pagination (`?page=`, `?pageSize=`). Returns `{ data: [...], pagination: { page, pageSize, totalItems, totalPages, unfilteredTotalItems } }`.
 
 ### `POST /api/tickets/:ticketNumber/attachments`
-Uploads a single attachment (multipart) for the active requester's ticket (requires
-`X-Dev-Requester-Id`). Validates type/size/content-signature, enforces a 5-active
+Uploads a single attachment (multipart) for the authenticated Requester's ticket (Lab 3:
+session required). Validates type/size/content-signature, enforces a 5-active
 limit (concurrency-safe via a row lock on the parent ticket), and stores the file
 under a UUID + validated extension. Returns `201` with the attachment metadata.
 
 ### `GET /api/tickets/:ticketNumber/attachments`
-Lists the ticket's attachments (active + removed) for the active requester, in
+Lists the ticket's attachments (active + removed) for the authenticated Requester, in
 deterministic `uploadedAt ASC, id ASC` order.
 
 ### `GET /api/attachments/:attachmentId/download`
@@ -397,8 +397,8 @@ omitted/blank, 1–200 chars after trim). A removed attachment returns `409 CONF
 
 ## 9. Lab 2 Implementation Order (Recommended)
 1. ~~Requirement baseline + docs alignment~~ ✅
-2. ~~Requester identity mechanism (`X-Dev-Requester-Id`) and selector flow~~ ✅
-3. ~~`DevRequester` model~~ ✅ / ~~remaining data models (`RelatedSystem`, `Ticket`, `Attachment`)~~ ✅
+2. ~~Requester identity mechanism (`X-Dev-Requester-Id`) and selector flow~~ ✅ (removed in Lab 3)
+3. ~~`DevRequester` model~~ ✅ (migrated to `User` in Lab 3) / ~~remaining data models (`RelatedSystem`, `Ticket`, `Attachment`)~~ ✅
 4. ~~Ticket creation API + UI + validation~~ ✅
 5. ~~Ticket number generation (`ticket-number.ts`)~~ ✅
 6. ~~Ticket detail API~~ ✅

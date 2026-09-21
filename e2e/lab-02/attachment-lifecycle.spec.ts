@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
-  selectRequester,
+  loginAsRequesterById,
   openCreateTicket,
   createTicket,
   openMyTickets,
@@ -23,7 +23,7 @@ test.describe("E2E-03: Full attachment lifecycle", () => {
     const description = "Testing the complete attachment lifecycle end-to-end.";
 
     // 1. Create a ticket.
-    await selectRequester(page, "1");
+    await loginAsRequesterById(page, "1");
     await openCreateTicket(page);
     const ticketNumber = await createTicket(page, summary, description);
 

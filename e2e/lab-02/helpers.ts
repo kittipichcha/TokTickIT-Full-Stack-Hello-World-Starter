@@ -6,15 +6,90 @@ import { expect, type Page } from "@playwright/test";
  * These helpers drive the REAL client + REAL API + REAL database (no route
  * interception). They centralize the stable DOM selectors so the integration
  * specs stay consistent and auditable against the actual UI.
+ *
+ * Issue #37 removed the Dev-Requester selector (`X-Dev-Requester-Id`). Identity is
+ * now established by logging in through the real Login screen, so the former
+ * `selectRequester` helper is replaced by `loginAsRequester`.
  */
 
-/** Select a development requester on the selector screen and continue. */
-export async function selectRequester(page: Page, requesterId: string): Promise<void> {
+/**
+ * Test-only E2E Requester accounts (no real secrets).
+ *
+ * `global-setup.ts` upserts these accounts with `mustChangePassword = false` so the
+ * suite can reach the application shell. The password is a test-only constant.
+ */
+export const E2E_REQUESTER_A = {
+  email: "e2e-requester-a@example.com",
+  password: "E2eTestPass123!xyz",
+  name: "E2E Requester A",
+} as const;
+
+export const E2E_REQUESTER_B = {
+  email: "e2e-requester-b@example.com",
+  password: "E2eTestPass123!xyz",
+  name: "E2E Requester B",
+} as const;
+
+/**
+ * Maps the legacy selector ids ("1" / "2") used by the Lab 2 specs onto the two
+ * seeded E2E Requester accounts, so callers change minimally.
+ */
+export function requesterAccount(id: "1" | "2"): typeof E2E_REQUESTER_A {
+  return id === "1" ? E2E_REQUESTER_A : E2E_REQUESTER_B;
+}
+
+/**
+ * Log in through the real Login screen and wait for the authenticated shell.
+ *
+ * Replaces the removed `selectRequester` helper: it fills the real email/password
+ * inputs, submits, and waits for `.app-shell` (AuthGate renders it only once the
+ * session is established).
+ */
+export async function loginAsRequester(page: Page, email: string, password: string): Promise<void> {
   await page.goto("/");
-  await page.waitForSelector("#requester-select", { timeout: 10000 });
-  await page.selectOption("#requester-select", requesterId);
-  await page.click("button:has-text('Continue')");
-  await page.waitForSelector(".app-shell", { timeout: 10000 });
+  await page.waitForSelector("#login-email", { timeout: 10000 });
+  await page.fill("#login-email", email);
+  await page.fill("#login-password", password);
+  await page.click("button:has-text('Login')");
+  await page.waitForSelector(".app-shell", { timeout: 15000 });
+}
+
+/** Convenience: log in as one of the two seeded E2E Requesters by legacy id. */
+export async function loginAsRequesterById(page: Page, id: "1" | "2"): Promise<void> {
+  const account = requesterAccount(id);
+  await loginAsRequester(page, account.email, account.password);
+}
+
+/** An authenticated API session (cookie + CSRF token) for direct request-context calls. */
+export interface ApiSession {
+  cookie: string;
+  csrfToken: string;
+}
+
+/**
+ * Creates an ISOLATED authenticated API request context for one Requester.
+ *
+ * Each context has its own cookie jar, so two Requesters can be authenticated
+ * simultaneously for direct cross-identity ownership checks. Callers must
+ * `dispose()` the returned context.
+ *
+ * Replaces the removed `X-Dev-Requester-Id` header: direct API ownership checks now
+ * authenticate with a real session.
+ */
+export async function createApiSession(
+  playwright: import("@playwright/test").Playwright,
+  id: "1" | "2",
+): Promise<import("@playwright/test").APIRequestContext> {
+  const context = await playwright.request.newContext();
+  const account = requesterAccount(id);
+  const response = await context.post("http://localhost:3000/api/auth/login", {
+    data: { email: account.email, password: account.password },
+  });
+  if (!response.ok()) {
+    await context.dispose();
+    throw new Error(`API login failed for ${account.email}: ${response.status()}`);
+  }
+  return context;
 }
 
 /** Navigate to the Create Ticket screen from the app shell. */

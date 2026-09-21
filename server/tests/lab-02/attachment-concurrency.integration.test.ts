@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import { registerSession, sess, clearSessions } from "../lab-03/helpers/auth.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -54,6 +55,8 @@ beforeAll(async () => {
     });
   }
   otherRequesterId = otherRequester.id;
+  await registerSession(testRequesterId);
+  await registerSession(otherRequesterId);
 
   let cat = await prisma.category.findFirst({ where: { isActive: true } });
   if (!cat) {
@@ -108,6 +111,7 @@ afterAll(async () => {
       await prisma.ticket.delete({ where: { id: ticket.id } });
     }
   }
+  await clearSessions();
   await disconnectPrisma();
 });
 
@@ -121,7 +125,8 @@ describe("API-ATT-14: Concurrent attachment limit enforcement", () => {
       for (let i = 0; i < 4; i++) {
         const res = await request(app)
           .post(`/api/tickets/${testTicketNumber}/attachments`)
-          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
           .attach("file", jpegBuffer, `photo-${i}.jpg`);
         expect(res.status).toBe(201);
       }
@@ -134,11 +139,13 @@ describe("API-ATT-14: Concurrent attachment limit enforcement", () => {
       const [res1, res2] = await Promise.all([
         request(app)
           .post(`/api/tickets/${testTicketNumber}/attachments`)
-          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
           .attach("file", jpegBuffer, "concurrent-a.jpg"),
         request(app)
           .post(`/api/tickets/${testTicketNumber}/attachments`)
-          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
           .attach("file", jpegBuffer, "concurrent-b.jpg"),
       ]);
 
@@ -177,27 +184,31 @@ describe("API-ATT-OWN-INT: Ownership isolation before multipart validation (real
           name: "valid file",
           req: request(app)
             .post(`/api/tickets/${testTicketNumber}/attachments`)
-            .set("X-Dev-Requester-Id", String(otherRequesterId))
+            .set("Cookie", sess(otherRequesterId).cookie)
+        .set("X-CSRF-Token", sess(otherRequesterId).csrfToken)
             .attach("file", jpegBuffer, "owned.jpg"),
         },
         {
           name: "missing file",
           req: request(app)
             .post(`/api/tickets/${testTicketNumber}/attachments`)
-            .set("X-Dev-Requester-Id", String(otherRequesterId)),
+            .set("Cookie", sess(otherRequesterId).cookie)
+        .set("X-CSRF-Token", sess(otherRequesterId).csrfToken),
         },
         {
           name: "oversized file",
           req: request(app)
             .post(`/api/tickets/${testTicketNumber}/attachments`)
-            .set("X-Dev-Requester-Id", String(otherRequesterId))
+            .set("Cookie", sess(otherRequesterId).cookie)
+        .set("X-CSRF-Token", sess(otherRequesterId).csrfToken)
             .attach("file", oversizedBuffer, "oversized.jpg"),
         },
         {
           name: "invalid media type",
           req: request(app)
             .post(`/api/tickets/${testTicketNumber}/attachments`)
-            .set("X-Dev-Requester-Id", String(otherRequesterId))
+            .set("Cookie", sess(otherRequesterId).cookie)
+        .set("X-CSRF-Token", sess(otherRequesterId).csrfToken)
             .attach("file", Buffer.from("not an image"), "bad.txt"),
         },
       ];
@@ -252,7 +263,8 @@ describe("API-ATT-REM-CONC: Concurrent soft removal — exactly one 200, one 409
 
       const uploadRes = await request(app)
         .post(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(testRequesterId))
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
         .attach("file", jpegBuffer, "remove-me.jpg");
       expect(uploadRes.status).toBe(201);
       const attachmentId = uploadRes.body.data.id;
@@ -260,11 +272,13 @@ describe("API-ATT-REM-CONC: Concurrent soft removal — exactly one 200, one 409
       const [res1, res2] = await Promise.all([
         request(app)
           .delete(`/api/attachments/${attachmentId}`)
-          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
           .send({ removalReason: "concurrent removal" }),
         request(app)
           .delete(`/api/attachments/${attachmentId}`)
-          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
           .send({ removalReason: "concurrent removal" }),
       ]);
 
@@ -325,7 +339,8 @@ describe("API-ATT-14-PDF: PDF preview returns first page as image/png (real DB)"
     // Upload the PDF
     const uploadRes = await request(app)
       .post(`/api/tickets/${pdfTicketNumber}/attachments`)
-      .set("X-Dev-Requester-Id", String(testRequesterId))
+      .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
       .attach("file", pdfBuffer, "multi-page-preview.pdf");
 
     expect(uploadRes.status).toBe(201);
@@ -336,7 +351,8 @@ describe("API-ATT-14-PDF: PDF preview returns first page as image/png (real DB)"
     // never return the original PDF, and never be a 500.
     const previewRes = await request(app)
       .get(`/api/attachments/${attachmentId}/preview`)
-      .set("X-Dev-Requester-Id", String(testRequesterId));
+      .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken);
 
     expect(previewRes.status).toBe(200);
     expect(previewRes.headers["content-type"]).toBe("image/png");
@@ -359,7 +375,8 @@ describe("API-ATT-14-PDF: PDF preview returns first page as image/png (real DB)"
 
     const uploadRes = await request(app)
       .post(`/api/tickets/${pdfTicketNumber}/attachments`)
-      .set("X-Dev-Requester-Id", String(testRequesterId))
+      .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
       .attach("file", corruptPdfBuffer, "empty-pages.pdf");
 
     expect(uploadRes.status).toBe(201);
@@ -369,7 +386,8 @@ describe("API-ATT-14-PDF: PDF preview returns first page as image/png (real DB)"
     // and it must NEVER return the original PDF.
     const previewRes = await request(app)
       .get(`/api/attachments/${attachmentId}/preview`)
-      .set("X-Dev-Requester-Id", String(testRequesterId));
+      .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken);
 
     expect(previewRes.status).toBe(500);
     expect(previewRes.headers["content-type"]).not.toBe("application/pdf");

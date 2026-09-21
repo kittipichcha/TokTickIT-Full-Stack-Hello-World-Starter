@@ -149,3 +149,65 @@ export async function changePassword(currentPassword: string, newPassword: strin
     throw await parseApiError(response, "Password change failed.");
   }
 }
+
+/**
+ * Shared credentialed transport for downstream feature APIs (#37/#38/#41).
+ *
+ * Every call sends `credentials: "include"` so the session cookie travels with
+ * the request, and captures any `X-CSRF-Token` response header. State-changing
+ * calls pass `includeCsrf: true` to echo the stored token.
+ *
+ * This is the ONLY token store in the client — feature modules must not build
+ * their own.
+ */
+export async function apiRequest(
+  path: string,
+  options: {
+    method?: string;
+    body?: unknown;
+    includeCsrf?: boolean;
+    /** When true, `body` is sent as-is (e.g. FormData) instead of JSON-encoded. */
+    rawBody?: boolean;
+    headers?: HeadersInit;
+  } = {},
+): Promise<Response> {
+  const { method = "GET", body, includeCsrf = false, rawBody = false, headers } = options;
+
+  const finalHeaders = new Headers(headers);
+  if (!rawBody) finalHeaders.set("Content-Type", "application/json");
+  if (includeCsrf) {
+    const token = getCsrfToken();
+    if (token) finalHeaders.set("X-CSRF-Token", token);
+  }
+
+  const init: RequestInit = {
+    method,
+    credentials: "include",
+    headers: finalHeaders,
+  };
+  if (body !== undefined) {
+    init.body = rawBody ? (body as BodyInit) : JSON.stringify(body);
+  }
+
+  const response = await fetch(new URL(path, API_BASE_URL), init);
+  captureCsrfToken(response);
+  return response;
+}
+
+/** Credentialed JSON request that throws a canonical `ApiError` on failure. */
+export async function apiJson<T>(
+  path: string,
+  options: {
+    method?: string;
+    body?: unknown;
+    includeCsrf?: boolean;
+    fallbackError?: string;
+  } = {},
+): Promise<T> {
+  const { fallbackError = "Request failed." } = options;
+  const response = await apiRequest(path, options);
+  if (!response.ok) {
+    throw await parseApiError(response, fallbackError);
+  }
+  return (await response.json()) as T;
+}

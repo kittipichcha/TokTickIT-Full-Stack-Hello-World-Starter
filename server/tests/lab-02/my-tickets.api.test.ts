@@ -1,15 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
+import { setSeamIdentity, clearSeamIdentity } from "./helpers/identity.js";
 
 vi.mock("../../src/service.js", async () => {
   const actual = await vi.importActual<typeof import("../../src/service.js")>("../../src/service.js");
   return {
     ...actual,
-    isActiveDevRequester: vi.fn(),
     createTicket: vi.fn(),
     getCategories: vi.fn(),
-    getActiveDevRequesters: vi.fn(),
     getActiveRelatedSystems: vi.fn(),
     getTicketByNumber: vi.fn(),
     getMyTickets: vi.fn(),
@@ -75,7 +74,7 @@ function makeResult(
 describe("API-MY-01: My Tickets ownership isolation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   it("returns only current requester's own tickets", async () => {
@@ -85,7 +84,6 @@ describe("API-MY-01: My Tickets ownership isolation", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(2);
@@ -100,7 +98,6 @@ describe("API-MY-01: My Tickets ownership isolation", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual([]);
@@ -111,7 +108,7 @@ describe("API-MY-01: My Tickets ownership isolation", () => {
 describe("API-MY-02: Search by ticket number/summary substring", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   it("passes search term to service", async () => {
@@ -121,7 +118,6 @@ describe("API-MY-02: Search by ticket number/summary substring", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ search: "battery" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]?.[1]?.search).toBe("battery");
@@ -132,7 +128,6 @@ describe("API-MY-02: Search by ticket number/summary substring", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ search: "   " });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]?.[1]?.search).toBeUndefined();
@@ -142,7 +137,7 @@ describe("API-MY-02: Search by ticket number/summary substring", () => {
 describe("API-MY-03: Category/Priority/Status filters are conjunctive", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
     vi.mocked(service.categoryExists).mockResolvedValue(true);
     vi.mocked(service.isActiveCategory).mockResolvedValue(true);
   });
@@ -152,7 +147,6 @@ describe("API-MY-03: Category/Priority/Status filters are conjunctive", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ categoryId: "2" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]?.[1]?.categoryId).toBe(2);
@@ -163,7 +157,6 @@ describe("API-MY-03: Category/Priority/Status filters are conjunctive", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ requestedPriority: "HIGH" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]?.[1]?.requestedPriority).toBe("HIGH");
@@ -174,7 +167,6 @@ describe("API-MY-03: Category/Priority/Status filters are conjunctive", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ status: "NEW" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]?.[1]?.status).toBe("NEW");
@@ -184,7 +176,7 @@ describe("API-MY-03: Category/Priority/Status filters are conjunctive", () => {
 describe("API-MY-04: Deterministic sort with tie-breakers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   it("passes sort and order params to service", async () => {
@@ -192,7 +184,6 @@ describe("API-MY-04: Deterministic sort with tie-breakers", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ sort: "ticketNumber", order: "asc" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]?.[1]?.sort).toBe("ticketNumber");
@@ -203,7 +194,7 @@ describe("API-MY-04: Deterministic sort with tie-breakers", () => {
 describe("API-MY-05: Pagination metadata accurate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   it("returns correct pagination metadata", async () => {
@@ -216,7 +207,6 @@ describe("API-MY-05: Pagination metadata accurate", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(200);
     expect(res.body.pagination).toEqual({
@@ -232,14 +222,13 @@ describe("API-MY-05: Pagination metadata accurate", () => {
 describe("API-MY-06: Default pagination/sort values and invalid-value fallback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
     vi.mocked(service.getMyTickets).mockResolvedValue(makeResult([]));
   });
 
   it("uses defaults when no params provided", async () => {
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1");
 
     const args = vi.mocked(service.getMyTickets).mock.calls[0]![1];
     expect(args.sort).toBe("createdAt");
@@ -251,7 +240,6 @@ describe("API-MY-06: Default pagination/sort values and invalid-value fallback",
   it("falls back to defaults for invalid sort", async () => {
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ sort: "invalidField" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].sort).toBe("createdAt");
@@ -260,7 +248,6 @@ describe("API-MY-06: Default pagination/sort values and invalid-value fallback",
   it("falls back to defaults for invalid order", async () => {
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ order: "invalid" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].order).toBe("desc");
@@ -269,7 +256,6 @@ describe("API-MY-06: Default pagination/sort values and invalid-value fallback",
   it("falls back to 1 for missing page", async () => {
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
   });
@@ -277,7 +263,6 @@ describe("API-MY-06: Default pagination/sort values and invalid-value fallback",
   it("falls back to 10 for pageSize=0", async () => {
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ pageSize: "0" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].pageSize).toBe(10);
@@ -286,7 +271,6 @@ describe("API-MY-06: Default pagination/sort values and invalid-value fallback",
   it("falls back to 10 for pageSize=51", async () => {
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ pageSize: "51" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].pageSize).toBe(10);
@@ -296,13 +280,12 @@ describe("API-MY-06: Default pagination/sort values and invalid-value fallback",
 describe("API-MY-07: Invalid filter parameter values and pagination", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   it("returns 400 for malformed categoryId", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ categoryId: "abc" });
 
     expect(res.status).toBe(400);
@@ -312,7 +295,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
   it("returns 400 for invalid requestedPriority enum", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ requestedPriority: "URGENT" });
 
     expect(res.status).toBe(400);
@@ -320,13 +302,30 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
   });
 
   it("returns 400 for invalid status enum", async () => {
+    // Class (b) superseded assertion (Issue #37, RR-04 audit): Lab 2 had only the
+    // `NEW` status, so `CLOSED` was out-of-enum. Lab 3's frozen contract
+    // (api-spec §8) filters on the full eight-value TicketStatus enum, so `CLOSED`
+    // is now a VALID filter value. The rule under test — an out-of-enum status is a
+    // validation error, not a fallback default — is unchanged; only the probe value
+    // had to move to a value that is genuinely outside the enum.
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
-      .query({ status: "CLOSED" });
+      .query({ status: "NOT_A_STATUS" });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("accepts a non-NEW status that is in the frozen Lab 3 enum", async () => {
+    // Class (b) replacement for the Lab 2 `status=CLOSED → 400` assertion.
+    vi.mocked(service.getMyTickets).mockResolvedValue(makeResult([]));
+
+    const res = await request(app)
+      .get("/api/tickets")
+      .query({ status: "CLOSED" });
+
+    expect(res.status).toBe(200);
+    expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].status).toBe("CLOSED");
   });
 
   it("returns 409 for nonexistent categoryId", async () => {
@@ -334,7 +333,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ categoryId: "999" });
 
     expect(res.status).toBe(409);
@@ -347,7 +345,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ categoryId: "2" });
 
     expect(res.status).toBe(409);
@@ -357,7 +354,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
   it("returns 400 for categoryId=0", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ categoryId: "0" });
 
     expect(res.status).toBe(400);
@@ -367,7 +363,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
   it("returns 400 for categoryId=-1", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ categoryId: "-1" });
 
     expect(res.status).toBe(400);
@@ -377,7 +372,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
   it("returns 400 for categoryId=0.5", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ categoryId: "0.5" });
 
     expect(res.status).toBe(400);
@@ -387,7 +381,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
   it("returns 400 for categoryId=1e2", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ categoryId: "1e2" });
 
     expect(res.status).toBe(400);
@@ -397,7 +390,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
   it("returns 409 for enormous positive integer categoryId", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ categoryId: "9999999999" });
 
     expect(res.status).toBe(409);
@@ -409,7 +401,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ page: "abc" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
@@ -420,7 +411,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ page: "0" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
@@ -433,7 +423,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ page: "999" });
 
     expect(res.status).toBe(200);
@@ -451,7 +440,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ page: enormousPage });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
@@ -463,7 +451,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
     // MAX_SAFE_INTEGER = 9007199254740991; +1 = 9007199254740992, which is not safe
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ page: "9007199254740992" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
@@ -476,7 +463,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
     // The service will detect this is out of range and return empty data with correct metadata
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ page: "9007199254740991" });
 
     // The controller should accept this as a valid page value
@@ -490,7 +476,6 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
     // 99999999999999999999999999999 is finite but not safe
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ page: "99999999999999999999999999999" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].page).toBe(1);
@@ -500,7 +485,7 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
 describe("API-MY-08: Search normalization and metadata values", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   it("returns unfilteredTotalItems=0 for requester with no tickets", async () => {
@@ -510,7 +495,6 @@ describe("API-MY-08: Search normalization and metadata values", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.body.pagination.unfilteredTotalItems).toBe(0);
     expect(res.body.pagination.totalItems).toBe(0);
@@ -523,7 +507,6 @@ describe("API-MY-08: Search normalization and metadata values", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ search: "nonexistent" });
 
     expect(res.body.pagination.unfilteredTotalItems).toBe(5);
@@ -535,7 +518,6 @@ describe("API-MY-08: Search normalization and metadata values", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ search: "" });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].search).toBeUndefined();
@@ -546,9 +528,12 @@ describe("API-MY-08: Search normalization and metadata values", () => {
 
     await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .query({ search: "   " });
 
     expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].search).toBeUndefined();
   });
+});
+
+afterEach(() => {
+  clearSeamIdentity();
 });

@@ -1,71 +1,76 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿/**
+ * RR-04 class (b) — superseded Dev-Requester behavior, retired and replaced.
+ *
+ * Lab 2's `GET /api/dev-requesters` was the Development Requester selector's data
+ * source, and `GET /api/requester-context` validated the selected requester. Lab 3
+ * §8.2 removes the selector and both endpoints entirely, so the former assertions
+ * about their payload shape and header parsing are obsolete behavior — not
+ * regressions.
+ *
+ * Replacement assertions: the legacy endpoints are gone, the legacy header no
+ * longer authorizes anything, and the authenticated reference-data surface is
+ * what remains.
+ */
+
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
-import * as service from "../../src/service.js";
+import { disconnectPrisma } from "../../src/prisma.js";
+import { ensureAndLogin, withSession, type TestSession } from "../lab-03/helpers/auth.js";
 
-vi.mock("../../src/service.js");
+const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
-describe("API-REQ-01: GET /api/dev-requesters", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+process.env.SESSION_SECRET = "test-only-session-secret-not-for-production";
+process.env.NODE_ENV = "test";
+
+const EMAIL = "dev-requesters-retired@example.com";
+
+let session: TestSession;
+
+beforeAll(async () => {
+  if (!process.env.DATABASE_URL) return;
+  session = await ensureAndLogin({ email: EMAIL, name: "Retired Selector", role: "REQUESTER" });
+});
+
+afterAll(async () => {
+  if (!process.env.DATABASE_URL) return;
+  await disconnectPrisma();
+});
+
+describe("RR-01: the Development Requester selector surface is removed", () => {
+  itIfDb("GET /api/dev-requesters is no longer a registered route", async () => {
+    const res = await withSession(request(app).get("/api/dev-requesters"), session);
+    // The route is gone: Express falls through to the terminal 404 handler.
+    expect(res.status).toBe(404);
   });
 
-  it("returns active requesters in the documented envelope without a requester header", async () => {
-    const activeRequesters = [
-      { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
-      { id: 2, name: "Grace Hopper", email: "grace@example.com" },
-    ];
-    vi.mocked(service.getActiveDevRequesters).mockResolvedValue(activeRequesters);
-
-    const response = await request(app).get("/api/dev-requesters");
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({ data: activeRequesters });
-    expect(service.getActiveDevRequesters).toHaveBeenCalledOnce();
+  itIfDb("GET /api/requester-context is no longer a registered route", async () => {
+    const res = await withSession(request(app).get("/api/requester-context"), session);
+    expect(res.status).toBe(404);
   });
 
-  it("excludes inactive requesters from the selector payload", async () => {
-    // The service layer filters by isActive: true, so only active requesters are returned.
-    const onlyActive = [
-      { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
-    ];
-    vi.mocked(service.getActiveDevRequesters).mockResolvedValue(onlyActive);
-
-    const response = await request(app).get("/api/dev-requesters");
-
-    expect(response.status).toBe(200);
-    expect(response.body.data).toHaveLength(1);
-    expect(response.body.data[0].id).toBe(1);
+  itIfDb("the legacy header no longer grants access to any protected route", async () => {
+    // A request carrying only the removed header (no session) must be rejected.
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("X-Dev-Requester-Id", "1");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHENTICATED");
   });
 
-  it("returns empty data array when no active requesters exist", async () => {
-    vi.mocked(service.getActiveDevRequesters).mockResolvedValue([]);
-
-    const response = await request(app).get("/api/dev-requesters");
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({ data: [] });
+  itIfDb("the legacy header cannot substitute for a session on a shared read", async () => {
+    const res = await request(app)
+      .get("/api/tickets/TKT-2026-000001")
+      .set("X-Dev-Requester-Id", "1");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHENTICATED");
   });
 
-  it("does not require X-Dev-Requester-Id header (bootstrap exemption)", async () => {
-    vi.mocked(service.getActiveDevRequesters).mockResolvedValue([
-      { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
-    ]);
+  itIfDb("authenticated reference data is served instead", async () => {
+    const categories = await withSession(request(app).get("/api/categories"), session);
+    expect(categories.status).toBe(200);
 
-    const response = await request(app).get("/api/dev-requesters");
-
-    expect(response.status).toBe(200);
-    // No requester header was set, and the endpoint still succeeded
-  });
-
-  it("returns safe canonical 500 when service throws", async () => {
-    vi.mocked(service.getActiveDevRequesters).mockRejectedValue(new Error("db error"));
-
-    const response = await request(app).get("/api/dev-requesters");
-
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({
-      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
-    });
+    const systems = await withSession(request(app).get("/api/related-systems"), session);
+    expect(systems.status).toBe(200);
   });
 });

@@ -8,7 +8,6 @@ import {
   isWithinSizeLimit,
   type Category,
   type RelatedSystem,
-  type DevRequester,
 } from "./api";
 import { formatUtcDate, formatFileSize } from "./format";
 
@@ -28,7 +27,8 @@ interface UploadResult {
 }
 
 interface CreateTicketProps {
-  requester: DevRequester;
+  /** Display name of the authenticated Requester (from the session). */
+  requesterName: string;
   onViewTicket: (ticketNumber: string, failedFiles?: Array<{ file: File; fileName: string; id: string; error: string }>) => void;
   onCreateAnother: () => void;
 }
@@ -39,7 +39,7 @@ function nextFileId(): string {
   return `file-${fileIdCounter}-${Date.now()}`;
 }
 
-export default function CreateTicket({ requester, onViewTicket, onCreateAnother }: CreateTicketProps) {
+export default function CreateTicket({ requesterName, onViewTicket, onCreateAnother }: CreateTicketProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [relatedSystems, setRelatedSystems] = useState<RelatedSystem[]>([]);
   const [loadingRefs, setLoadingRefs] = useState(true);
@@ -180,7 +180,7 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
 
     try {
       // Step 1: Create the ticket (Case A — if this fails, preserve form values)
-      const ticket = await createTicket(requester.id, {
+      const ticket = await createTicket({
         categoryId: categoryId!,
         relatedSystemId: relatedSystemId!,
         summary: summary.trim(),
@@ -208,7 +208,7 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
         setUploadResults([...results]);
 
         try {
-          await uploadAttachment(requester.id, ticket.ticketNumber, sf.file);
+          await uploadAttachment(ticket.ticketNumber, sf.file);
           result.status = "success";
         } catch (err) {
           result.status = "failed";
@@ -395,7 +395,7 @@ export default function CreateTicket({ requester, onViewTicket, onCreateAnother 
           </div>
           <div className="form-field">
             <label>Requester</label>
-            <div className="readonly-value">{requester.name}</div>
+            <div className="readonly-value">{requesterName}</div>
           </div>
         </div>
 

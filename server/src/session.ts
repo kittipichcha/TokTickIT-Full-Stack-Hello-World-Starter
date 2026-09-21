@@ -22,6 +22,7 @@ import pg from "pg";
 import { randomBytes } from "node:crypto";
 import { getPrisma } from "./prisma.js";
 import { getSessionSecret } from "./config/env.js";
+import { testSeams } from "./test-seams.js";
 
 const SESSION_TTL_SECONDS = 30 * 60; // 30-minute rolling idle expiry (frozen)
 const SESSION_COOKIE_MAX_AGE_MS = 30 * 60 * 1000;
@@ -86,8 +87,31 @@ export function issueCsrfToken(req: Request, res: Response): string {
 /**
  * requireAuth — fresh-User authority.
  * Re-reads the current User row per protected request; missing/inactive -> destroy session + 401.
+ *
+ * Issue #37: when `testSeams.sessionIdentity` is set (Lab 2 regression fixture only),
+ * the identity is taken from the seam instead of the session + DB read. The seam is
+ * honored ONLY when `NODE_ENV === "test"` (N-3 guard), so it is inert in production.
+ * The real authentication boundary is covered by #35's auth suite and by #37's frozen
+ * authorization/requester API tests, which use real logins.
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const seam = process.env.NODE_ENV === "test" ? testSeams.sessionIdentity : null;
+  if (seam) {
+    res.locals.userId = seam.userId;
+    res.locals.role = seam.role;
+    res.locals.mustChangePassword = seam.mustChangePassword;
+    res.locals.user = {
+      id: seam.userId,
+      name: seam.name,
+      email: seam.email,
+      role: seam.role,
+      mustChangePassword: seam.mustChangePassword,
+      isActive: true,
+    };
+    next();
+    return;
+  }
+
   const userId = req.session.userId as number | undefined;
   if (userId === undefined) {
     res.status(401).json({ error: { code: "UNAUTHENTICATED", message: "Authentication required." } });
@@ -133,8 +157,19 @@ export function requirePasswordChanged(_req: Request, res: Response, next: NextF
 /**
  * requireCsrf — validates the session-bound synchronizer token on state-changing requests.
  * Missing/invalid -> 403 FORBIDDEN (no state change).
+ *
+ * Issue #37: when `testSeams.sessionIdentity` is set (Lab 2 regression fixture only),
+ * CSRF is satisfied by the fixture. The seam is honored ONLY when `NODE_ENV === "test"`
+ * (N-3 guard), so it is inert in production. Lab 2 had no CSRF mechanism, so those
+ * suites exercise business logic only; the CSRF boundary itself is covered by the
+ * frozen SEC-AUTHZ-07 row in `authorization.api.test.ts`, which uses real logins.
  */
 export function requireCsrf(req: Request, res: Response, next: NextFunction): void {
+  if (process.env.NODE_ENV === "test" && testSeams.sessionIdentity) {
+    next();
+    return;
+  }
+
   const expected = req.session.csrfToken as string | undefined;
   const provided = req.headers["x-csrf-token"];
   const headerValue = Array.isArray(provided) ? provided[0] : provided;

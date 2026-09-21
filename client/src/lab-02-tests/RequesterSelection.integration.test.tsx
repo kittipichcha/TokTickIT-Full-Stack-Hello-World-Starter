@@ -1,53 +1,45 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import App from "../App";
-import { REQUESTER_STORAGE_KEY } from "../api";
+/**
+ * RR-04 class (b) — superseded Dev-Requester behavior, retired and replaced.
+ *
+ * Lab 2's requester-selection integration suite intercepted `fetch` to assert the
+ * selector flow, the `X-Dev-Requester-Id` header on the requester-context request,
+ * and the `toktickit.requesterId` sessionStorage key. Lab 3 §8.2 removes all three.
+ *
+ * Replacement assertions: the application shell renders for the authenticated user
+ * and every request it makes is credentialed (session cookie) rather than
+ * header-identified.
+ */
 
-// Integration test for Requester Selection UI + sessionStorage + real api.ts exports (unmocked api helper methods)
-describe("Requester Selection Integration Test - UI & Storage Persistence", () => {
-  let capturedRequesterContextHeaders: Headers | null = null;
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import App from "../App";
+import { TEST_USER } from "./helpers/user";
+
+describe("Authenticated transport replaces header-identified requests", () => {
+  let capturedRequests: Array<{ url: string; init?: RequestInit }> = [];
 
   beforeEach(() => {
-    sessionStorage.clear();
-    capturedRequesterContextHeaders = null;
-    // Intercept global fetch so UI can test component flow deterministically without external backend running on port 3000
+    capturedRequests = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const urlString = typeof input === "string" ? input : input.toString();
-
-      if (urlString.includes("/api/dev-requesters")) {
-        return new Response(
-          JSON.stringify({
-            data: [
-              { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
-              { id: 2, name: "Grace Hopper", email: "grace@example.com" },
-            ],
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      if (urlString.includes("/api/requester-context")) {
-        capturedRequesterContextHeaders = new Headers(init?.headers);
-        return new Response(
-          JSON.stringify({ data: { requesterId: 1 } }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
-      }
+      capturedRequests.push({ url: urlString, init });
 
       if (urlString.includes("/api/categories")) {
-        return new Response(
-          JSON.stringify([]),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
+        // GET /api/categories returns a BARE ARRAY (preserved from Lab 2).
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
       }
-
       if (urlString.includes("/api/tickets")) {
         return new Response(
-          JSON.stringify({ data: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 } }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          JSON.stringify({
+            data: [],
+            pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
-
       return new Response("Not Found", { status: 404 });
     });
   });
@@ -57,43 +49,34 @@ describe("Requester Selection Integration Test - UI & Storage Persistence", () =
     vi.restoreAllMocks();
   });
 
-  it("verifies REQUESTER_STORAGE_KEY constant is defined as 'toktickit.requesterId'", () => {
-    expect(REQUESTER_STORAGE_KEY).toBe("toktickit.requesterId");
+  it("renders the shell and issues credentialed requests without the legacy header", async () => {
+    render(<App user={TEST_USER} />);
+
+    expect(await screen.findByText("TokTickIT")).toBeDefined();
+
+    await waitFor(() => {
+      expect(capturedRequests.length).toBeGreaterThan(0);
+    });
+
+    for (const request of capturedRequests) {
+      // Every request is credentialed (session cookie travels with it).
+      expect(request.init?.credentials).toBe("include");
+      // No request carries the removed identity header.
+      const headers = new Headers(request.init?.headers);
+      expect(headers.get("X-Dev-Requester-Id")).toBeNull();
+    }
   });
 
-  it("integrates UI requester selection with actual sessionStorage using REQUESTER_STORAGE_KEY", async () => {
-    render(<App />);
+  it("never requests the removed requester endpoints", async () => {
+    render(<App user={TEST_USER} />);
 
-    // 1. Selector loads active requesters as a native dropdown
-    const dropdown = (await screen.findByRole("combobox", { name: /development requester/i })) as HTMLSelectElement;
-    expect(dropdown).toBeTruthy();
+    await screen.findByText("TokTickIT");
+    await waitFor(() => {
+      expect(capturedRequests.length).toBeGreaterThan(0);
+    });
 
-    const continueBtn = screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement;
-    // No requester is pre-selected, so Continue is disabled until a selection
-    // is made (ui-spec §5.2).
-    expect(continueBtn.disabled).toBe(true);
-
-    // 2. Select Ada Lovelace (id=1) via the native dropdown.
-    fireEvent.change(dropdown, { target: { value: "1" } });
-    expect(continueBtn.disabled).toBe(false);
-
-    // 3. Click Continue -> validates context and saves to sessionStorage
-    fireEvent.click(continueBtn);
-
-    // 4. Verify Active Requester is rendered in shell header
-    expect(await screen.findByText("Ada Lovelace")).toBeTruthy();
-
-    // 4b. Verify the requester-context request carried the X-Dev-Requester-Id header
-    expect(capturedRequesterContextHeaders?.get("X-Dev-Requester-Id")).toBe("1");
-
-    // 5. Verify actual sessionStorage entry matches REQUESTER_STORAGE_KEY
-    expect(sessionStorage.getItem(REQUESTER_STORAGE_KEY)).toBe("1");
-
-    // 6. Click 'Change Requester' button -> clears sessionStorage and returns to selector
-    const changeBtn = screen.getByRole("button", { name: "Change Requester" });
-    fireEvent.click(changeBtn);
-
-    expect(await screen.findByRole("combobox", { name: /development requester/i })).toBeTruthy();
-    expect(sessionStorage.getItem(REQUESTER_STORAGE_KEY)).toBeNull();
+    const urls = capturedRequests.map((r) => r.url);
+    expect(urls.some((u) => u.includes("/api/dev-requesters"))).toBe(false);
+    expect(urls.some((u) => u.includes("/api/requester-context"))).toBe(false);
   });
 });

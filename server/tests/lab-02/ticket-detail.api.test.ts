@@ -1,14 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import * as service from "../../src/service.js";
+import { setSeamIdentity, clearSeamIdentity } from "./helpers/identity.js";
 
 vi.mock("../../src/service.js");
 
 describe("API-TKT-03: Ticket detail ownership enforcement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
   const mockTicket = {
@@ -39,7 +41,7 @@ describe("API-TKT-03: Ticket detail ownership enforcement", () => {
         isRemoved: false,
         removedAt: null,
         removalReason: null,
-        removedByRequesterId: null,
+        removedByUserId: null,
       },
       {
         id: 2,
@@ -50,7 +52,7 @@ describe("API-TKT-03: Ticket detail ownership enforcement", () => {
         isRemoved: true,
         removedAt: new Date("2026-08-21T10:00:00.000Z"),
         removalReason: "Wrong file uploaded",
-        removedByRequesterId: 1,
+        removedByUserId: 1,
       },
     ],
   };
@@ -78,7 +80,7 @@ describe("API-TKT-03: Ticket detail ownership enforcement", () => {
         isRemoved: false,
         removedAt: null,
         removalReason: null,
-        removedByRequesterId: null,
+        removedByUserId: null,
       },
       {
         id: 2,
@@ -89,7 +91,7 @@ describe("API-TKT-03: Ticket detail ownership enforcement", () => {
         isRemoved: true,
         removedAt: "2026-08-21T10:00:00.000Z",
         removalReason: "Wrong file uploaded",
-        removedByRequesterId: 1,
+        removedByUserId: 1,
       },
     ]);
   });
@@ -125,10 +127,15 @@ describe("API-TKT-03: Ticket detail ownership enforcement", () => {
     expect(res.body.error.code).toBe("NOT_FOUND");
   });
 
-  it("returns 422 for missing requester header", async () => {
+  it("returns 401 for an unauthenticated request (legacy header removed)", async () => {
+    clearSeamIdentity();
     const res = await request(app).get("/api/tickets/TKT-2026-000123");
 
-    expect(res.status).toBe(422);
-    expect(res.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHENTICATED");
   });
+});
+
+afterEach(() => {
+  clearSeamIdentity();
 });

@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import { registerSession, sess, clearSessions } from "../lab-03/helpers/auth.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
@@ -48,6 +49,8 @@ beforeAll(async () => {
     });
   }
   requesterBId = requesterB.id;
+  await registerSession(requesterAId);
+  await registerSession(requesterBId);
 
   let cat = await prisma.category.findFirst({ where: { isActive: true } });
   if (!cat) {
@@ -76,6 +79,7 @@ afterAll(async () => {
       await prisma.ticket.delete({ where: { id: ticket.id } });
     }
   }
+  await clearSessions();
   await disconnectPrisma();
 });
 
@@ -116,7 +120,8 @@ describe("API-ATT-OWN-MATRIX: Cross-requester ownership for list/download/previe
       const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
       const uploadRes = await request(app)
         .post(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(requesterAId))
+        .set("Cookie", sess(requesterAId).cookie)
+        .set("X-CSRF-Token", sess(requesterAId).csrfToken)
         .attach("file", jpegBuffer, "owned.jpg");
 
       expect(uploadRes.status).toBe(201);
@@ -126,7 +131,8 @@ describe("API-ATT-OWN-MATRIX: Cross-requester ownership for list/download/previe
       // 1. LIST — Requester B must receive the contractually required safe 404.
       const listRes = await request(app)
         .get(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(requesterBId));
+        .set("Cookie", sess(requesterBId).cookie)
+        .set("X-CSRF-Token", sess(requesterBId).csrfToken);
       expect(listRes.status).toBe(404);
       expect(listRes.body.error.code).toBe("NOT_FOUND");
       expect(listRes.body.error.message).toBe("Ticket not found.");
@@ -134,7 +140,8 @@ describe("API-ATT-OWN-MATRIX: Cross-requester ownership for list/download/previe
       // 2. DOWNLOAD — Requester B must receive the same safe 404 shape, no bytes.
       const downloadRes = await request(app)
         .get(`/api/attachments/${attachmentId}/download`)
-        .set("X-Dev-Requester-Id", String(requesterBId));
+        .set("Cookie", sess(requesterBId).cookie)
+        .set("X-CSRF-Token", sess(requesterBId).csrfToken);
       expect(downloadRes.status).toBe(404);
       expect(downloadRes.body.error.code).toBe("NOT_FOUND");
       expect(downloadRes.body.error.message).toBe("Attachment not found.");
@@ -144,7 +151,8 @@ describe("API-ATT-OWN-MATRIX: Cross-requester ownership for list/download/previe
       // 3. PREVIEW — Requester B must receive the same safe 404 shape, no bytes.
       const previewRes = await request(app)
         .get(`/api/attachments/${attachmentId}/preview`)
-        .set("X-Dev-Requester-Id", String(requesterBId));
+        .set("Cookie", sess(requesterBId).cookie)
+        .set("X-CSRF-Token", sess(requesterBId).csrfToken);
       expect(previewRes.status).toBe(404);
       expect(previewRes.body.error.code).toBe("NOT_FOUND");
       expect(previewRes.body.error.message).toBe("Attachment not found.");
@@ -153,7 +161,8 @@ describe("API-ATT-OWN-MATRIX: Cross-requester ownership for list/download/previe
       // 4. DELETE — Requester B must not be able to remove A's attachment.
       const deleteRes = await request(app)
         .delete(`/api/attachments/${attachmentId}`)
-        .set("X-Dev-Requester-Id", String(requesterBId));
+        .set("Cookie", sess(requesterBId).cookie)
+        .set("X-CSRF-Token", sess(requesterBId).csrfToken);
       expect(deleteRes.status).toBe(404);
       expect(deleteRes.body.error.code).toBe("NOT_FOUND");
       expect(deleteRes.body.error.message).toBe("Attachment not found.");
@@ -168,7 +177,8 @@ describe("API-ATT-OWN-MATRIX: Cross-requester ownership for list/download/previe
       // Sanity: Requester A can still download the attachment (ownership intact).
       const ownerDownload = await request(app)
         .get(`/api/attachments/${attachmentId}/download`)
-        .set("X-Dev-Requester-Id", String(requesterAId));
+        .set("Cookie", sess(requesterAId).cookie)
+        .set("X-CSRF-Token", sess(requesterAId).csrfToken);
       expect(ownerDownload.status).toBe(200);
       expect(ownerDownload.headers["content-type"]).toBe("image/jpeg");
     },

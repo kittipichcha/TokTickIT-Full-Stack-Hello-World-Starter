@@ -1,18 +1,9 @@
 import { parseContentDispositionFilename } from "./format";
+import { apiJson, apiRequest, parseApiError, type ApiError } from "./api-client";
 
 export interface Category {
   id: number;
   name: string;
-}
-
-export interface DevRequester {
-  id: number;
-  name: string;
-  email: string;
-}
-
-export interface DevRequesterResponse {
-  data: DevRequester[];
 }
 
 export interface RelatedSystem {
@@ -105,35 +96,33 @@ export interface TicketDetailResponse {
       isRemoved: boolean;
       removedAt: string | null;
       removalReason: string | null;
-      removedByRequesterId: number | null;
+      removedByUserId: number | null;
     }>;
   };
 }
 
+/**
+ * Fetches a Ticket's detail.
+ *
+ * Identity comes from the authenticated session (httpOnly cookie) — there is no
+ * client-supplied requester id. Shared read: the owning Requester or IT
+ * Staff/Administrator.
+ */
 export async function fetchTicketDetail(
-  requesterId: number,
   ticketNumber: string,
 ): Promise<TicketDetailResponse["data"]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}`, apiBaseUrl), {
-    headers: requesterHeaders(requesterId),
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(body?.error?.message || `Failed to fetch ticket: ${response.status}`) as Error & { code?: string };
-    err.code = body?.error?.code;
-    throw err;
-  }
-  const result = (await response.json()) as TicketDetailResponse;
+  const result = await apiJson<TicketDetailResponse>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}`,
+    { fallbackError: "Failed to fetch ticket." },
+  );
   return result.data;
 }
 
+/** Fetches the authenticated Requester's own Tickets (My Tickets). */
 export async function fetchMyTickets(
-  requesterId: number,
   params: MyTicketsParams = {},
 ): Promise<MyTicketsResponse> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const url = new URL("/api/tickets", apiBaseUrl);
+  const url = new URL("/api/tickets", "http://placeholder.invalid");
 
   if (params.search) url.searchParams.set("search", params.search);
   if (params.categoryId !== undefined) url.searchParams.set("categoryId", String(params.categoryId));
@@ -144,67 +133,26 @@ export async function fetchMyTickets(
   if (params.page !== undefined) url.searchParams.set("page", String(params.page));
   if (params.pageSize !== undefined) url.searchParams.set("pageSize", String(params.pageSize));
 
-  const response = await fetch(url, {
-    headers: requesterHeaders(requesterId),
+  return apiJson<MyTicketsResponse>(`${url.pathname}${url.search}`, {
+    fallbackError: "Failed to fetch tickets.",
   });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(body?.error?.message || `Failed to fetch tickets: ${response.status}`) as Error & { code?: string };
-    err.code = body?.error?.code;
-    throw err;
-  }
-  return (await response.json()) as MyTicketsResponse;
 }
 
-export const REQUESTER_STORAGE_KEY = "toktickit.requesterId";
-
+/** Fetches active Categories (authenticated session required). */
 export async function fetchCategories(): Promise<Category[]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/categories", apiBaseUrl));
-  if (!response.ok) throw new Error(`Failed to fetch categories: ${response.status} ${response.statusText}`);
-  return response.json();
-}
-
-export async function fetchDevRequesters(): Promise<DevRequester[]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/dev-requesters", apiBaseUrl));
-  if (!response.ok) throw new Error(`Failed to fetch requesters: ${response.status} ${response.statusText}`);
-  const payload = (await response.json()) as DevRequesterResponse;
-  return payload.data;
-}
-
-export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/related-systems", apiBaseUrl));
-  if (!response.ok) throw new Error(`Failed to fetch related systems: ${response.status} ${response.statusText}`);
-  const payload = (await response.json()) as RelatedSystemResponse;
-  return payload.data;
-}
-
-export function getStoredRequesterId(): number | null {
-  const stored = sessionStorage.getItem(REQUESTER_STORAGE_KEY);
-  return stored && /^[1-9][0-9]*$/.test(stored) ? Number(stored) : null;
-}
-
-export function setStoredRequesterId(id: number): void {
-  sessionStorage.setItem(REQUESTER_STORAGE_KEY, String(id));
-}
-
-export function clearStoredRequesterId(): void {
-  sessionStorage.removeItem(REQUESTER_STORAGE_KEY);
-}
-
-export function requesterHeaders(id: number): HeadersInit {
-  return { "X-Dev-Requester-Id": String(id) };
-}
-
-export async function fetchRequesterContext(id: number): Promise<{ requesterId: number }> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/requester-context", apiBaseUrl), {
-    headers: requesterHeaders(id),
+  // GET /api/categories returns a BARE ARRAY (preserved from Lab 2; see
+  // docs/lab-03/api-spec.md §5 and specification.md D-19). It is not wrapped
+  // in `{ data }`.
+  return apiJson<Category[]>("/api/categories", {
+    fallbackError: "Failed to fetch categories.",
   });
-  if (!response.ok) throw new Error(`Failed to validate requester context: ${response.status} ${response.statusText}`);
-  const payload = (await response.json()) as { data: { requesterId: number } };
+}
+
+/** Fetches active Related Systems (authenticated session required). */
+export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
+  const payload = await apiJson<{ data: RelatedSystem[] }>("/api/related-systems", {
+    fallbackError: "Failed to fetch related systems.",
+  });
   return payload.data;
 }
 
@@ -216,27 +164,21 @@ export interface CreateTicketPayload {
   requestedPriority: string;
 }
 
+/**
+ * Creates a Ticket for the authenticated Requester.
+ *
+ * State-changing: sends the session cookie and the CSRF token from the shared
+ * transport. Any `requesterId` in the payload is ignored server-side.
+ */
 export async function createTicket(
-  requesterId: number,
   payload: CreateTicketPayload,
 ): Promise<TicketResponse["data"]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/tickets", apiBaseUrl), {
+  const result = await apiJson<TicketResponse>("/api/tickets", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...requesterHeaders(requesterId),
-    },
-    body: JSON.stringify(payload),
+    body: payload,
+    includeCsrf: true,
+    fallbackError: "Failed to create ticket.",
   });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(body?.error?.message || `Failed to create ticket: ${response.status}`) as Error & { code?: string; fields?: Record<string, string> };
-    err.code = body?.error?.code;
-    err.fields = body?.error?.fields;
-    throw err;
-  }
-  const result = (await response.json()) as TicketResponse;
   return result.data;
 }
 
@@ -251,7 +193,7 @@ export interface AttachmentItem {
   isRemoved: boolean;
   removedAt: string | null;
   removalReason: string | null;
-  removedByRequesterId: number | null;
+  removedByUserId: number | null;
 }
 
 export interface AttachmentUploadResult {
@@ -290,101 +232,56 @@ export function isWithinSizeLimit(sizeBytes: number): boolean {
   return sizeBytes <= 5_000_000;
 }
 
+/**
+ * Uploads an Attachment to an owned Ticket.
+ * State-changing: session cookie + CSRF token; multipart body sent as-is.
+ */
 export async function uploadAttachment(
-  requesterId: number,
   ticketNumber: string,
   file: File,
 ): Promise<AttachmentUploadResult["data"]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(
-    new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`, apiBaseUrl),
+  const response = await apiRequest(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`,
     {
       method: "POST",
-      headers: requesterHeaders(requesterId),
       body: formData,
+      rawBody: true,
+      includeCsrf: true,
     },
   );
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(
-      body?.error?.message || `Failed to upload attachment: ${response.status}`,
-    ) as AttachmentError;
-    err.code = body?.error?.code;
-    err.fields = body?.error?.fields;
-    throw err;
+    throw await parseApiError(response, "Failed to upload attachment.");
   }
 
   const result = (await response.json()) as AttachmentUploadResult;
   return result.data;
 }
 
-export async function fetchAttachments(
-  requesterId: number,
-  ticketNumber: string,
-): Promise<AttachmentItem[]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(
-    new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`, apiBaseUrl),
-    {
-      headers: requesterHeaders(requesterId),
-    },
+/** Lists a Ticket's Attachments (shared read: owner Requester or Staff/Admin). */
+export async function fetchAttachments(ticketNumber: string): Promise<AttachmentItem[]> {
+  const response = await apiRequest(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`,
   );
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(
-      body?.error?.message || `Failed to fetch attachments: ${response.status}`,
-    ) as AttachmentError;
-    err.code = body?.error?.code;
-    throw err;
+    throw await parseApiError(response, "Failed to fetch attachments.");
   }
 
   return (await response.json()) as AttachmentItem[];
 }
 
-export function getAttachmentDownloadUrl(
-  attachmentId: number,
-  requesterId: number,
-): string {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const url = new URL(`/api/attachments/${attachmentId}/download`, apiBaseUrl);
-  // Add requester ID as query parameter for download via new window
-  url.searchParams.set("requesterId", String(requesterId));
-  return url.toString();
-}
-
-export function getAttachmentPreviewUrl(
-  attachmentId: number,
-  requesterId: number,
-): string {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const url = new URL(`/api/attachments/${attachmentId}/preview`, apiBaseUrl);
-  url.searchParams.set("requesterId", String(requesterId));
-  return url.toString();
-}
-
+/** Downloads an Attachment file (shared read). */
 export async function downloadAttachmentFile(
-  requesterId: number,
   attachmentId: number,
 ): Promise<{ blob: Blob; filename: string }> {
-  // NOTE: First param is requesterId, second is attachmentId
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(
-    new URL(`/api/attachments/${attachmentId}/download`, apiBaseUrl),
-    { headers: requesterHeaders(requesterId) },
-  );
+  const response = await apiRequest(`/api/attachments/${attachmentId}/download`);
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(
-      body?.error?.message || `Failed to download attachment: ${response.status}`,
-    ) as AttachmentError;
-    err.code = body?.error?.code;
-    throw err;
+    throw await parseApiError(response, "Failed to download attachment.");
   }
 
   const disposition = response.headers.get("content-disposition") || "";
@@ -394,23 +291,14 @@ export async function downloadAttachmentFile(
   return { blob, filename };
 }
 
+/** Previews an Attachment (shared read). */
 export async function previewAttachmentFile(
-  requesterId: number,
   attachmentId: number,
 ): Promise<{ blob: Blob; mimeType: string }> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(
-    new URL(`/api/attachments/${attachmentId}/preview`, apiBaseUrl),
-    { headers: requesterHeaders(requesterId) },
-  );
+  const response = await apiRequest(`/api/attachments/${attachmentId}/preview`);
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(
-      body?.error?.message || `Failed to preview attachment: ${response.status}`,
-    ) as AttachmentError;
-    err.code = body?.error?.code;
-    throw err;
+    throw await parseApiError(response, "Failed to preview attachment.");
   }
 
   const mimeType = response.headers.get("content-type") || "application/octet-stream";
@@ -418,35 +306,28 @@ export async function previewAttachmentFile(
   return { blob, mimeType };
 }
 
+/**
+ * Soft-removes an Attachment (Requester-owner-only mutation).
+ * State-changing: session cookie + CSRF token.
+ */
 export async function removeAttachment(
-  requesterId: number,
   attachmentId: number,
   removalReason?: string,
 ): Promise<AttachmentItem> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const body = removalReason !== undefined ? { removalReason } : undefined;
 
-  const response = await fetch(
-    new URL(`/api/attachments/${attachmentId}`, apiBaseUrl),
-    {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        ...requesterHeaders(requesterId),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    },
-  );
+  const response = await apiRequest(`/api/attachments/${attachmentId}`, {
+    method: "DELETE",
+    body,
+    includeCsrf: true,
+  });
 
   if (!response.ok) {
-    const bodyJson = await response.json().catch(() => ({}));
-    const err = new Error(
-      bodyJson?.error?.message || `Failed to remove attachment: ${response.status}`,
-    ) as AttachmentError;
-    err.code = bodyJson?.error?.code;
-    throw err;
+    throw await parseApiError(response, "Failed to remove attachment.");
   }
 
   const result = (await response.json()) as AttachmentRemoveResult;
   return result.data;
 }
+
+export type { ApiError };

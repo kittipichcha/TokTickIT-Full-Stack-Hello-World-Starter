@@ -26,10 +26,18 @@ foundation and executed its frozen test rows. Statuses are evidence-driven. The 
 updated to `Passed` by #35 are: DB-MIG-01..10, SEC-MIG-01, SEED-01, API-AUTH-01..12,
 API-AUTH-05b, SEC-AUTHZ-06, SEC-AUTHZ-11, SEC-AUTHZ-12, UNIT-AUTH-01, UNIT-API-ERROR-01..03,
 CSRF-ME-01, TKT-PRIO-01..03, UI-LOGIN-01,
-UI-CHPWD-01/02, UI-AUTHGATE-01/02/03. Rows owned by other issues remain `Planned`.
+UI-CHPWD-01/02, UI-AUTHGATE-01/02/03.
+
+Issue #37 (Authorization + Requester Migration / Regression) retrofitted the Lab 2
+Requester routes to authenticated identity and executed its frozen rows. The rows updated
+to `Passed` by #37 are: SEC-AUTHZ-01, SEC-AUTHZ-04, SEC-AUTHZ-05, SEC-AUTHZ-07,
+SEC-AUTHZ-10, API-REQ-01, API-REQ-02. Rows owned by other issues remain `Planned`.
 
 Every `Passed` row above is backed by an executed run recorded in
-`artifacts/lab-03/issue-35/` (see that bundle's `README.md`). No row is marked `Passed`
+`artifacts/lab-03/issue-35/` (see that bundle's `README.md`) and, for #37's rows, by the
+runs recorded in `artifacts/lab-03/regression/cutover-gate.md`. The raw server/client/E2E
+run outputs are saved at `artifacts/lab-03/regression/server-vitest.txt`,
+`client-vitest.txt`, and `lab2-e2e-run.txt` (**0 skipped**). No row is marked `Passed`
 on the strength of the plan, a test name, or an unexecuted file.
 
 **Ownership note (frozen rows owned by other issues):** `E2E-01..04` are frozen Test-DD rows
@@ -42,6 +50,154 @@ owned by **#37** (`authorization.api.test.ts`); #35 contributes only supplementa
 assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
+
+- **2026-09-20 — Issue #37 review follow-up (My Tickets status/sort contract alignment)**
+  - **P2 — My Tickets diverged from the frozen Lab 3 filtering and sorting contract (real defect).**
+    `getMyTicketsHandler` accepted only `status=NEW` (any other valid status returned
+    `400 VALIDATION_ERROR`), and its accepted `sort` set was
+    `createdAt/ticketNumber/summary/requestedPriority` — not the frozen
+    `createdAt/ticketNumber/summary/status/priority` of `api-spec.md` §8. The frontend mirrored
+    both gaps (`MyTickets.tsx` offered only **New** in the status dropdown and the same four sort
+    keys). Fixed in the code, not the test:
+    - `server/src/controller.ts`: the `status` filter now validates against the full frozen
+      `TicketStatus` enum (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`,
+      `CLOSED`, `REOPENED`, `CANCELLED`); the accepted `sort` set is now
+      `createdAt/ticketNumber/summary/status/priority`, with `requestedPriority` retained as a
+      Lab 2 compatibility alias for `priority`.
+    - `server/src/service.ts`: `ORDER BY` now handles `status` (logical workflow order, not
+      alphabetical) and `priority` (logical `LOW < MEDIUM < HIGH`).
+    - `client/src/MyTickets.tsx`: the status dropdown offers all eight statuses; the Requested
+      Priority and Current Status columns are now sortable using the documented `priority` and
+      `status` keys.
+    - `client/src/App.css`: added badge styles for the seven previously unstyled statuses.
+  - **Invalid-value behavior deliberately unchanged (scope decision).** The finding also proposed
+    applying safe-default fallback to *all* invalid query values. That would contradict the frozen
+    Lab 2 contract (`docs/lab-02/api-spec.md`; `tests.md` `API-MY-06`/`API-MY-07`), which
+    classifies an out-of-enum `status`/`requestedPriority` and a malformed `categoryId` as
+    `400 VALIDATION_ERROR` (and a nonexistent/inactive `categoryId` as `409 INACTIVE_REFERENCE`),
+    and #37's plan locks "existing `getMyTickets` search/filter/sort/pagination behavior is
+    preserved". The two classes are now documented explicitly in `api-spec.md` §8: safe-default
+    fallback applies to `sort`/`order`/`page`/`pageSize`; validation errors apply to the filter
+    enums and `categoryId`. Lab 3 widens the accepted status set and sort keys only.
+  - **`requesterId` clarification (documentation only, no behavior change).** Issue #37's checklist
+    says a mismatched client-supplied `requesterId` must be "rejected"; the implementation
+    **ignores** it and assigns ownership to the authenticated user. This is the frozen convention
+    (unknown JSON properties are ignored; BR-03) and is what `SEC-AUTHZ-01` asserts. `api-spec.md`
+    §0 now states this explicitly, including a note that the checklist wording is satisfied in
+    substance (the mismatched identity is never honored) but the literal HTTP behavior is *ignore*,
+    not *reject* — and that the implementation must not be changed without reconciling §0 first.
+  - **Tests extended (frozen `API-REQ-02` row, `server/tests/lab-03/requester.api.test.ts`).**
+    Added: filtering by each of the seven non-`NEW` statuses; the five documented sort keys in both
+    directions; `sort=status` logical-order assertion (`NEW < OPEN < CLOSED`, which alphabetical
+    would invert); `sort=priority` logical-order assertion (`LOW < MEDIUM < HIGH`); the retained
+    `requestedPriority` alias; invalid `sort` falling back to `createdAt desc` (compared against the
+    explicit default); and the preserved `400 VALIDATION_ERROR` behavior for out-of-enum
+    `status`/`requestedPriority`. Added `UI-MY-08` in `client/src/lab-02-tests/MyTickets.test.tsx`
+    (supplementary, never a new frozen row): the status dropdown offers exactly the eight frozen
+    statuses, a non-`NEW` selection is sent to the API, and the `status`/`priority` sort keys are
+    sent when those headers are activated.
+  - Commands: `cd server && npx vitest run`; `cd client && npx vitest run`;
+    `npx playwright test e2e/lab-02 --project=desktop --project=tablet --project=mobile`;
+    `npx tsc --noEmit` (server and client).
+  - **One Lab 2 assertion superseded by the widened enum.** `API-MY-07`'s
+    `status=CLOSED → 400` case failed once `CLOSED` became a valid Lab 3 status. Per the
+    RR-04 rule it is classified **class (b)**: the probe value moved to `NOT_A_STATUS`
+    (the rule under test — out-of-enum status is a validation error, not a fallback
+    default — is unchanged), and a replacement case asserts `status=CLOSED` is accepted
+    and forwarded to the service. Recorded in `lab2-test-audit.md` and the Lab 2
+    `tests.md` `API-MY-07` row.
+  - Results: server suite **431 passed, 0 skipped** (424 + 6 new `API-REQ-02` assertions
+    + 1 replacement Lab 2 case); client suite **120 passed, 0 skipped** (117 + 3 new
+    `UI-MY-08` tests); Lab 2 E2E **156 passed** across 3 projects (desktop/tablet/mobile),
+    matching the recorded baseline; server and client type-checks exit 0. Raw outputs in
+    `artifacts/lab-03/regression/`.
+  - Note: an initial E2E run reported 13 `[mobile]` failures, all
+    `page.goto: net::ERR_CONNECTION_REFUSED` — an **environment failure** (the dev
+    servers had been stopped), not an implementation defect. The re-run with the servers
+    up was fully green (156 passed).
+  - Follow-up: none.
+
+- **2026-09-20 — Issue #37 remediation round (E2E migration, api-spec alignment, test-seam guard)**
+  - **B-2 — api-spec §11 aligned with the landed code.** `GET /api/tickets/:ticketNumber/attachments`
+    returns a bare array (preserved from Lab 2, decision D-18 / RR-02); the spec example no longer
+    shows a `{ "data": [...] }` envelope, and `removedByUserId` is documented in §11 and §14. The
+    frozen `authorization.api.test.ts` attachment-list assertion is unchanged and green.
+  - **B-1 — Lab 2 E2E suite migrated to authenticated login.** Every `e2e/lab-02/` spec now logs in
+    through the real Login screen (`loginAsRequester`) instead of the removed Dev-Requester selector.
+    `ownership.spec.ts` uses isolated Playwright request contexts (one cookie jar per Requester) for
+    the direct API ownership checks; `responsive-visual.spec.ts` stubs `/api/auth/me` instead of the
+    removed selector/context endpoints and replaces the "Requester Selection" screenshot blocks with
+    "Login" blocks. A Playwright `globalSetup` (`e2e/lab-02/global-setup.ts`) ensures two E2E Requester
+    accounts with `mustChangePassword = false`. Every layout, overflow, touch-target, ownership, and
+    partial-success assertion is retained. The retired selector/header assertions each have an
+    authenticated-identity replacement recorded in `artifacts/lab-03/regression/lab2-test-audit.md`
+    (new "E2E — `e2e/lab-02/`" section).
+  - **Class (c) regression found and fixed.** Migrating the E2E suite surfaced a real client bug:
+    commit `1bfd8c0` made `fetchCategories` read `payload.data` from `GET /api/categories`, which
+    returns a bare array, crashing `MyTickets` (`categories.map is not a function`) as soon as an
+    authenticated shell rendered. Fixed in `client/src/api.ts` (return the bare array); the client
+    test mock was aligned to the same shape.
+  - **N-3 — test seam guarded.** `requireAuth` and `requireCsrf` now honor `testSeams.sessionIdentity`
+    ONLY when `NODE_ENV === "test"`, so the seam is inert in production. Added supplementary
+    `UNIT-AUTHZ-02` in `authorization.api.test.ts`: with `NODE_ENV=production` and the seam set, a
+    session-less request still gets `401 UNAUTHENTICATED`; with `NODE_ENV=test` the seam is honored.
+  - **N-2 — SEC-AUTHZ-07 claim tightened.** The `tests.md` wording now states `403 FORBIDDEN` on
+    every then-protected mutation route plus explicit no-state-change checks for create and logout
+    (matching the executed assertions).
+  - **N-1 — raw evidence.** Full server and client runs are saved at
+    `artifacts/lab-03/regression/server-vitest.txt` and `client-vitest.txt`; the Lab 2 E2E run is at
+    `artifacts/lab-03/regression/lab2-e2e-run.txt`. `cutover-gate.md` §5 records "0 skipped" with
+    pointers to those files, and §4a-ii records the extended grep gate.
+  - **N-4 — README.** §1/§2/§8 now state that the selector, `X-Dev-Requester-Id`,
+    `GET /api/dev-requesters`, and `GET /api/requester-context` were removed in Lab 3 and that
+    reference data and Ticket routes require a session; `requester-context.ts` removed from the §3
+    file tree; the E2E `global-setup.ts` added to the tree.
+  - **N-6 — dead CSS.** The unused `.requester-select` rule was removed from `client/src/App.css`.
+  - Commands: `npx playwright test e2e/lab-02 --project=desktop --project=tablet --project=mobile`;
+    `cd server && npm test`; `cd client && npx vitest run`.
+  - Results: Lab 2 E2E **156 passed** across 3 projects; server suite **424 passed, 0 skipped**
+    (422 + 2 new `UNIT-AUTHZ-02` seam-guard tests); client suite **117 passed, 0 skipped**.
+    Raw outputs in `artifacts/lab-03/regression/`.
+  - Follow-up: none.
+
+- **2026-09-19 — Issue #37 (authorization + Requester migration / regression)**
+  - **Cutover.** The Lab 2 Requester routes were retrofitted from the Dev-Requester header
+    mechanism to authenticated identity: `requireAuth → requirePasswordChanged →
+    [requireCsrf on mutations] → requireRole(["REQUESTER"])` on `POST/GET /api/tickets`
+    and the attachment mutations; `requireTicketReadAccess` on Ticket Detail; and
+    `authorizeAttachmentReadByRoleOrRequesterOwnership` on the three shared attachment
+    reads. `GET /api/categories` and `GET /api/related-systems` now require a session.
+  - **Service-layer shared reads.** `getTicketByNumber`, `listAttachments`,
+    `getAttachmentById`, `downloadAttachment`, and `previewAttachment` now take an explicit
+    `{userId, role}` access context, so a Staff/Admin request that passes the route gate is
+    not then rejected by a Requester-only filter inside the service. Upload and soft-remove
+    remain Requester-owner-only at both layers.
+  - **Legacy surface removed.** `server/src/requester-context.ts` deleted (including #35's
+    DM-17 compatibility adaptation); `GET /api/dev-requesters` and
+    `GET /api/requester-context` unregistered; client header/sessionStorage helpers,
+    `activeRequester` state, and the Change Requester action removed. The grep gate returns
+    no live references.
+  - **Frozen rows executed.** `SEC-AUTHZ-01/04/05/07/10` in
+    `server/tests/lab-03/authorization.api.test.ts` and `API-REQ-01/02` in
+    `server/tests/lab-03/requester.api.test.ts` — all created at their exact frozen paths
+    and marked `Passed` only after their runs. `SEC-AUTHZ-07` asserts `403 FORBIDDEN` on
+    every then-protected mutation route (including #35's two auth mutations), plus
+    explicit no-state-change checks for create (no ticket is left behind) and logout
+    (the session remains valid).
+  - **RR-03 verified.** The soft-remove path preserves `isRemoved = true` + `removedAt` +
+    `removalReason` and the atomic `WHERE isRemoved = false` guard; the remover-identity
+    write targets `removedByUserId` (landed by #35's DM-17 step). The supplementary
+    invariant assertion confirms the forbidden state (`removedAt` set with
+    `isRemoved = false`) never occurs.
+  - **RR-04 audit + RR-02 re-run.** Every existing Lab 2 test was classified (a)/(b)/(c)
+    before modification; the before/after mapping is recorded at
+    `artifacts/lab-03/regression/lab2-test-audit.md`. Class (a) suites keep every functional
+    assertion and only swap the identity fixture; class (b) suites asserting removed
+    Dev-Requester behavior were retired and replaced with authenticated-identity
+    assertions; no class (c) regression was found. Full server and client suites are green.
+  - **Cutover gate.** Recorded at `artifacts/lab-03/regression/cutover-gate.md`:
+    clean-checkout `prisma generate` → server `tsc` → client build → authenticated
+    Requester smoke → old-header death proof → green Lab 2 regression.
 
 - **2026-09-19 — Issue #35 PR #46 review follow-up, round 7 (`User.id` sequence sync)**
   - **B-7 — `User.id` sequence not repaired after a post-backfill-commit crash (real defect).**
@@ -356,18 +512,18 @@ security/authorization, migration/regression, and end-to-end coverage.
 | TKT-PRIO-01 | API | IT Priority initialized on creation | For each requested priority (`LOW`/`MEDIUM`/`HIGH`), the persisted `Ticket.itPriority` equals the submitted `requestedPriority` (frozen §9.3) | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
 | TKT-PRIO-02 | API | Client-supplied `itPriority` ignored | A request body containing a different `itPriority` is ignored; the stored value still equals the validated `requestedPriority` | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
 | TKT-PRIO-03 | API | Create response shape unchanged | The Lab 2 create response envelope and key set are unchanged; `itPriority` now reflects the frozen initialization rule and `ticketOwnerId` remains null | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
-| SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Planned |
+| SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Passed |
 | SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Planned |
 | SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Planned |
-| SEC-AUTHZ-04 | API | Unauthenticated protected endpoint | 401 UNAUTHENTICATED | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
-| SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Planned |
+| SEC-AUTHZ-04 | API | Unauthenticated protected endpoint | 401 UNAUTHENTICATED | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Passed |
+| SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Passed |
 | SEC-AUTHZ-06 | API | Session idle timeout expiration | An actually expired session is rejected by a protected endpoint with `401 UNAUTHENTICATED`; a valid session works before expiry; the 30-minute rolling configuration is asserted as supplementary evidence | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-06 | Passed |
-| SEC-AUTHZ-07 | API | CSRF on state-changing endpoint | Missing/invalid CSRF token rejected (403 FORBIDDEN); mutation not applied | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Planned |
+| SEC-AUTHZ-07 | API | CSRF on state-changing endpoint | Missing/invalid CSRF token rejected (403 FORBIDDEN); mutation not applied | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Passed |
 | SEC-AUTHZ-08 | API | Requester posts/reads comments on a not-owned ticket | `404 NOT_FOUND`; no data leaked | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-12, BR-32 | AC-03 | Planned |
 | SEC-AUTHZ-09 | API | Non-Administrator calls create-user / edit-user | `403 FORBIDDEN` | `server/tests/lab-03/users-admin.api.test.ts` | FR-24, FR-25 | — | AC-20 | Planned |
-| SEC-AUTHZ-10 | API | IT Staff/Administrator attempts attachment upload or delete | `403 FORBIDDEN` (view-only; cannot mutate Attachments) | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12 | AC-07 | Planned |
-| API-REQ-01 | API | Requester creates Ticket | Ticket owned by authenticated identity | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-11 | AC-07 | Planned |
-| API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Planned |
+| SEC-AUTHZ-10 | API | IT Staff/Administrator attempts attachment upload or delete | `403 FORBIDDEN` (view-only; cannot mutate Attachments) | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
+| API-REQ-01 | API | Requester creates Ticket | Ticket owned by authenticated identity | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-11 | AC-07 | Passed |
+| API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned; search/filter/sort/pagination preserved. Filters on the full frozen `TicketStatus` enum (not only `NEW`); accepts the documented sort keys `createdAt`/`ticketNumber`/`summary`/`status`/`priority` (plus the Lab 2 `requestedPriority` alias); `sort=status` and `sort=priority` use logical workflow/priority order, not alphabetical; invalid `sort`/`order`/`page`/`pageSize` fall back to safe defaults while out-of-enum `status`/`requestedPriority` remain `400 VALIDATION_ERROR` (preserved Lab 2 contract) | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
 | API-REQ-03 | API | Requester posts Public Comment | Comment saved with author/timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-22, BR-23 | AC-08 | Planned |
 | API-REQ-04 | API | Requester indicates appears resolved | Flag saved; status unchanged | `server/tests/lab-03/requester.api.test.ts` | FR-13 | BR-05, BR-19 | AC-09 | Planned |
 | API-QUE-01 | API | IT Staff queue retrieval | Search/filter/sort/pagination works | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-17 | AC-10 | Planned |

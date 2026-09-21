@@ -81,6 +81,12 @@ require `aria-label` and a tooltip.
 - Same as Lab 2 Requester screens, but the current Requester comes from the authenticated
   account. The Development Requester selector and Change Requester action are removed.
 - My Tickets: search, filters, sorting, pagination, empty/no-results states.
+- My Tickets toolbar: search input, category filter, requested-priority filter, status filter,
+  Clear Filters. The status filter offers the full frozen Ticket status set (New, Open,
+  In Progress, Waiting for Requester, Resolved, Closed, Reopened, Cancelled) — not only New.
+- My Tickets sortable columns: Ticket No. (`ticketNumber`), Created Date (`createdAt`),
+  Summary (`summary`), Requested Priority (`priority`), Current Status (`status`) — matching
+  `api-spec.md` §8.
 - Create Ticket: category, related system, summary, description, requested priority, attachments.
 
 ### 5.5 Requester Ticket Detail

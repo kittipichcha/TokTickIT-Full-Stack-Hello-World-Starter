@@ -7,6 +7,9 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: "list",
+  // Ensures the two E2E Requester accounts exist with mustChangePassword = false
+  // (Issue #37 — the Lab 2 suite now logs in through the real Login screen).
+  globalSetup: "./e2e/lab-02/global-setup.ts",
   use: {
     baseURL: "http://localhost:5173",
     trace: "on-first-retry",

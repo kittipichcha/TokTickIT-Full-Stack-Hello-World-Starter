@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import { registerSession, sess } from "./helpers/auth.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
@@ -74,6 +75,7 @@ describe("TKT-PRIO: IT Priority is initialized from Requested Priority on creati
     expect(category).toBeTruthy();
     expect(system).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
     activeCategoryId = category!.id;
     activeSystemId = system!.id;
   });
@@ -86,7 +88,8 @@ describe("TKT-PRIO: IT Priority is initialized from Requested Priority on creati
       for (const priority of ["LOW", "MEDIUM", "HIGH"] as const) {
         const res = await request(app)
           .post("/api/tickets")
-          .set("X-Dev-Requester-Id", String(requesterId))
+          .set("Cookie", sess(requesterId).cookie)
+          .set("X-CSRF-Token", sess(requesterId).csrfToken)
           .send({
             categoryId: activeCategoryId,
             relatedSystemId: activeSystemId,
@@ -115,7 +118,8 @@ describe("TKT-PRIO: IT Priority is initialized from Requested Priority on creati
 
       const res = await request(app)
         .post("/api/tickets")
-        .set("X-Dev-Requester-Id", String(requesterId))
+        .set("Cookie", sess(requesterId).cookie)
+          .set("X-CSRF-Token", sess(requesterId).csrfToken)
         .send({
           categoryId: activeCategoryId,
           relatedSystemId: activeSystemId,
@@ -142,7 +146,8 @@ describe("TKT-PRIO: IT Priority is initialized from Requested Priority on creati
     async () => {
       const res = await request(app)
         .post("/api/tickets")
-        .set("X-Dev-Requester-Id", String(requesterId))
+        .set("Cookie", sess(requesterId).cookie)
+          .set("X-CSRF-Token", sess(requesterId).csrfToken)
         .send({
           categoryId: activeCategoryId,
           relatedSystemId: activeSystemId,

@@ -1,13 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import * as service from "../../src/service.js";
+import { setSeamIdentity, clearSeamIdentity } from "./helpers/identity.js";
 
 vi.mock("../../src/service.js");
 
 describe("API-REF-01: GET /api/categories", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setSeamIdentity({ userId: 1 });
   });
 
   it("returns only active categories with raw array shape (no data envelope)", async () => {
@@ -25,7 +27,7 @@ describe("API-REF-01: GET /api/categories", () => {
     expect(response.body).not.toHaveProperty("data");
   });
 
-  it("does not require X-Dev-Requester-Id header", async () => {
+  it("requires an authenticated session (no longer public)", async () => {
     vi.mocked(service.getCategories).mockResolvedValue([{ id: 1, name: "Hardware" }]);
 
     const response = await request(app).get("/api/categories");
@@ -48,6 +50,7 @@ describe("API-REF-01: GET /api/categories", () => {
 describe("API-REF-02: GET /api/related-systems", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setSeamIdentity({ userId: 1 });
   });
 
   it("returns only active related systems with { data: [...] } envelope", async () => {
@@ -63,7 +66,7 @@ describe("API-REF-02: GET /api/related-systems", () => {
     expect(response.body).toEqual({ data: activeSystems });
   });
 
-  it("does not require X-Dev-Requester-Id header (bootstrap exemption)", async () => {
+  it("requires an authenticated session (no longer public)", async () => {
     vi.mocked(service.getActiveRelatedSystems).mockResolvedValue([
       { id: 1, name: "Corporate Laptop" },
     ]);
@@ -92,4 +95,8 @@ describe("API-REF-02: GET /api/related-systems", () => {
       error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
     });
   });
+});
+
+afterEach(() => {
+  clearSeamIdentity();
 });

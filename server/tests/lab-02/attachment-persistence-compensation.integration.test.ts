@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import { registerSession, sess, clearSessions } from "../lab-03/helpers/auth.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { testSeams } from "../../src/test-seams.js";
@@ -35,6 +36,7 @@ beforeAll(async () => {
     });
   }
   testRequesterId = requester.id;
+  await registerSession(testRequesterId);
 
   let cat = await prisma.category.findFirst({ where: { isActive: true } });
   if (!cat) {
@@ -63,6 +65,7 @@ afterAll(async () => {
       await prisma.ticket.delete({ where: { id: ticket.id } });
     }
   }
+  await clearSessions();
   await disconnectPrisma();
 });
 
@@ -103,7 +106,8 @@ describe("ATT-PERSIST-01: Successful attachment metadata persistence", () => {
 
       const successRes = await request(app)
         .post(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(testRequesterId))
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
         .attach("file", jpegBuffer, "photo.jpg");
 
       expect(successRes.status).toBe(201);
@@ -155,7 +159,8 @@ describe("ATT-PERSIST-02: Metadata persistence failure compensates physical stor
       try {
         failRes = await request(app)
           .post(`/api/tickets/${ticketNumber}/attachments`)
-          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
           .attach("file", jpegBuffer, "photo.jpg");
       } finally {
         // Reset the test seam — critical even if assertions fail
@@ -179,7 +184,8 @@ describe("ATT-PERSIST-02: Metadata persistence failure compensates physical stor
 // Assert API exposure: list attachments returns empty
       const listRes = await request(app)
         .get(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(testRequesterId));
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken);
       expect(listRes.status).toBe(200);
       expect(Array.isArray(listRes.body)).toBe(true);
       expect(listRes.body.length).toBe(0);
@@ -214,7 +220,8 @@ describe("ATT-PERSIST-03: Transaction-wide compensation — failure AFTER metada
       try {
         failRes = await request(app)
           .post(`/api/tickets/${ticketNumber}/attachments`)
-          .set("X-Dev-Requester-Id", String(testRequesterId))
+          .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
           .attach("file", jpegBuffer, "photo.jpg");
       } finally {
         // Reset the test seam — critical even if assertions fail
@@ -235,7 +242,8 @@ describe("ATT-PERSIST-03: Transaction-wide compensation — failure AFTER metada
       // Assert API exposure: list attachments returns empty
       const listRes = await request(app)
         .get(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(testRequesterId));
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken);
       expect(listRes.status).toBe(200);
       expect(Array.isArray(listRes.body)).toBe(true);
       expect(listRes.body.length).toBe(0);
@@ -254,7 +262,8 @@ describe("ATT-PERSIST-04: UUID stored filename and metadata persistence (real DB
 
       const uploadRes = await request(app)
         .post(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(testRequesterId))
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
         .attach("file", jpegBuffer, "original-name.jpg");
       expect(uploadRes.status).toBe(201);
 
@@ -281,7 +290,8 @@ describe("ATT-PERSIST-04: UUID stored filename and metadata persistence (real DB
       // The list endpoint does not expose storedFilename either.
       const listRes = await request(app)
         .get(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(testRequesterId));
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken);
       expect(listRes.status).toBe(200);
       expect(Array.isArray(listRes.body)).toBe(true);
       expect(listRes.body[0].storedFilename).toBeUndefined();
@@ -300,40 +310,45 @@ describe("ATT-PERSIST-05: Removed attachment access (real DB)", () => {
 
       const uploadRes = await request(app)
         .post(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(testRequesterId))
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
         .attach("file", jpegBuffer, "remove-access.jpg");
       expect(uploadRes.status).toBe(201);
       const attachmentId = uploadRes.body.data.id;
 
       const removeRes = await request(app)
         .delete(`/api/attachments/${attachmentId}`)
-        .set("X-Dev-Requester-Id", String(testRequesterId))
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken)
         .send({ removalReason: "no longer needed" });
       expect(removeRes.status).toBe(200);
 
       // Download → 410 ATTACHMENT_REMOVED
       const dlRes = await request(app)
         .get(`/api/attachments/${attachmentId}/download`)
-        .set("X-Dev-Requester-Id", String(testRequesterId));
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken);
       expect(dlRes.status).toBe(410);
       expect(dlRes.body.error.code).toBe("ATTACHMENT_REMOVED");
 
       // Preview → 410 ATTACHMENT_REMOVED
       const prevRes = await request(app)
         .get(`/api/attachments/${attachmentId}/preview`)
-        .set("X-Dev-Requester-Id", String(testRequesterId));
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken);
       expect(prevRes.status).toBe(410);
       expect(prevRes.body.error.code).toBe("ATTACHMENT_REMOVED");
 
       // List still shows the removed attachment with its metadata.
       const listRes = await request(app)
         .get(`/api/tickets/${ticketNumber}/attachments`)
-        .set("X-Dev-Requester-Id", String(testRequesterId));
+        .set("Cookie", sess(testRequesterId).cookie)
+        .set("X-CSRF-Token", sess(testRequesterId).csrfToken);
       expect(listRes.status).toBe(200);
       expect(listRes.body.length).toBe(1);
       expect(listRes.body[0].isRemoved).toBe(true);
       expect(listRes.body[0].removalReason).toBe("no longer needed");
-      expect(listRes.body[0].removedByRequesterId).toBe(testRequesterId);
+      expect(listRes.body[0].removedByUserId).toBe(testRequesterId);
     },
   );
 });

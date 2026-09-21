@@ -2,9 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import {
   getCategoriesHandler,
-  getDevRequestersHandler,
   getRelatedSystemsHandler,
-  getRequesterContextHandler,
   createTicketHandler,
   getMyTicketsHandler,
   getTicketDetailHandler,
@@ -15,8 +13,17 @@ import {
   removeAttachmentHandler,
   requireTicketOwnership,
 } from "./controller.js";
-import { requireDevRequesterContext } from "./requester-context.js";
-import { requireAuth, requireAuthAndCsrf, requirePasswordChanged } from "./session.js";
+import {
+  requireRole,
+  requireTicketReadAccess,
+  authorizeAttachmentReadByRoleOrRequesterOwnership,
+} from "./authorization.js";
+import {
+  requireAuth,
+  requireAuthAndCsrf,
+  requireCsrf,
+  requirePasswordChanged,
+} from "./session.js";
 import {
   login,
   logout,
@@ -37,11 +44,7 @@ router.post("/auth/change-password", requireAuthAndCsrf, changePasswordHandler);
 
 // ---- Lab 3 normal-application entry (Issue #35) ----
 // The minimal protected endpoint that enforces the mandatory-password-change gate
-// (BR-02 / AC-02): requireAuth -> requirePasswordChanged -> handler. A user with
-// mustChangePassword = true receives 401 PASSWORD_CHANGE_REQUIRED here; after a
-// successful change-password the same session reaches this endpoint. This is the
-// #35-owned protected surface; downstream #37/#38/#41 feature routes are not
-// implemented here.
+// (BR-02 / AC-02): requireAuth -> requirePasswordChanged -> handler.
 router.get("/app/context", requireAuth, requirePasswordChanged, appContext);
 
 const upload = multer({
@@ -52,24 +55,49 @@ const upload = multer({
   limits: { fileSize: 5_000_001 },
 });
 
-// Categories endpoint
-router.get("/categories", getCategoriesHandler);
+// ---- Reference data (Issue #37) ----
+// Authenticated session required (api-spec §5, §6); no role restriction.
+router.get("/categories", requireAuth, requirePasswordChanged, getCategoriesHandler);
+router.get("/related-systems", requireAuth, requirePasswordChanged, getRelatedSystemsHandler);
 
-router.get("/dev-requesters", getDevRequestersHandler);
+// ---- Requester Ticket routes (Issue #37 retrofit) ----
+// My Tickets: authenticated Requester only. The role gate is distinct from the
+// ownership-scoped query — Staff/Admin receive 403 FORBIDDEN, never an empty list.
+router.get(
+  "/tickets",
+  requireAuth,
+  requirePasswordChanged,
+  requireRole(["REQUESTER"]),
+  getMyTicketsHandler,
+);
 
-router.get("/related-systems", getRelatedSystemsHandler);
+// Create Ticket: authenticated Requester; state-changing -> CSRF required.
+router.post(
+  "/tickets",
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["REQUESTER"]),
+  createTicketHandler,
+);
 
-router.get("/requester-context", requireDevRequesterContext, getRequesterContextHandler);
+// Ticket Detail: shared read — owner Requester or IT Staff/Administrator.
+router.get(
+  "/tickets/:ticketNumber",
+  requireAuth,
+  requirePasswordChanged,
+  requireTicketReadAccess,
+  getTicketDetailHandler,
+);
 
-// Ticket endpoints
-router.get("/tickets", requireDevRequesterContext, getMyTicketsHandler);
-router.post("/tickets", requireDevRequesterContext, createTicketHandler);
-router.get("/tickets/:ticketNumber", requireDevRequesterContext, getTicketDetailHandler);
-
-// Attachment endpoints
+// ---- Attachment routes (Issue #37 retrofit) ----
+// Upload: Requester-owner-only mutation (BR-12); Staff/Admin are view-only (403).
 router.post(
   "/tickets/:ticketNumber/attachments",
-  requireDevRequesterContext,
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["REQUESTER"]),
   requireTicketOwnership,
   (req, res, next) => {
     upload.single("file")(req, res, (err) => {
@@ -103,23 +131,36 @@ router.post(
   },
   uploadAttachmentHandler,
 );
+
+// Shared attachment reads: owner Requester or IT Staff/Administrator.
 router.get(
   "/tickets/:ticketNumber/attachments",
-  requireDevRequesterContext,
+  requireAuth,
+  requirePasswordChanged,
+  authorizeAttachmentReadByRoleOrRequesterOwnership,
   listAttachmentsHandler,
 );
 router.get(
   "/attachments/:attachmentId/download",
-  requireDevRequesterContext,
+  requireAuth,
+  requirePasswordChanged,
+  authorizeAttachmentReadByRoleOrRequesterOwnership,
   downloadAttachmentHandler,
 );
 router.get(
   "/attachments/:attachmentId/preview",
-  requireDevRequesterContext,
+  requireAuth,
+  requirePasswordChanged,
+  authorizeAttachmentReadByRoleOrRequesterOwnership,
   previewAttachmentHandler,
 );
+
+// Soft-remove: Requester-owner-only mutation (BR-12); Staff/Admin are view-only (403).
 router.delete(
   "/attachments/:attachmentId",
-  requireDevRequesterContext,
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["REQUESTER"]),
   removeAttachmentHandler,
 );

@@ -674,3 +674,17 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
     Staff/Administrator account). It must not silently overwrite, skip, or merge such a record;
     resolving the collision is a manual data-cleanup step before re-running the migration. See
     Section 9.2.
+18. **Attachment list response shape (D-18, kept by Issue #37 — RR-02):** `GET
+    /api/tickets/:ticketNumber/attachments` returns a **bare array** of attachment objects, not
+    a `{ "data": [...] }` envelope. This is the landed Lab 2 response shape; the client consumes
+    it and the frozen `authorization.api.test.ts` asserts it. Issue #37 preserves it for Lab 2
+    continuity rather than changing the code, the client, and several tests for no gain. The
+    attachment object carries `removedByUserId` (integer or null), renamed from the Lab 2
+    `removedByRequesterId` by #35's DM-17 step. See `docs/lab-03/api-spec.md` §11 and §14.
+19. **Categories list response shape (D-19, kept by Issue #37):** `GET /api/categories` returns a
+    **bare array** of Category objects, not a `{ "data": [...] }` envelope. This is the landed
+    Lab 2 response shape; the client consumes it and the integration tests assert it. Issue #37
+    preserves it for Lab 2 continuity rather than changing the code, the client, and several
+    tests for no gain. Each element carries only `id` and `name`; the active-only filter
+    (`isActive = true`) is applied server-side and `isActive` is not part of the response object.
+    See `docs/lab-03/api-spec.md` §5.
