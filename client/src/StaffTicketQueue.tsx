@@ -7,7 +7,13 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { fetchStaffQueue, type StaffQueueItem, type StaffQueueResponse } from "./api";
+import {
+  fetchStaffQueue,
+  fetchAssignableOwners,
+  type StaffQueueItem,
+  type StaffQueueResponse,
+  type AssignableOwner,
+} from "./api";
 import { formatUtcDate } from "./format";
 
 type LoadState = "loading" | "loaded" | "error" | "empty" | "no-results";
@@ -35,6 +41,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string | undefined>();
   const [priority, setPriority] = useState<string | undefined>();
+  const [ownerId, setOwnerId] = useState<number | undefined>();
   const [sort, setSort] = useState<SortField>("createdAt");
   const [order, setOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(1);
@@ -44,8 +51,27 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
   const [tickets, setTickets] = useState<StaffQueueItem[]>([]);
   const [pagination, setPagination] = useState<StaffQueueResponse["pagination"] | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [owners, setOwners] = useState<AssignableOwner[]>([]);
 
   const requestSeqRef = useRef(0);
+
+  // Eligible owners (active IT Staff / Administrators) for the owner filter.
+  // A failure here must not break the queue itself — the filter simply stays
+  // limited to "All Owners".
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await fetchAssignableOwners();
+        if (!cancelled) setOwners(result);
+      } catch {
+        if (!cancelled) setOwners([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const loadQueue = useCallback(async () => {
     const seqId = ++requestSeqRef.current;
@@ -58,6 +84,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
         search: trimmedSearch || undefined,
         status,
         priority,
+        ownerId,
         sort,
         order,
         page,
@@ -88,7 +115,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
         setErrorMessage(err instanceof Error ? err.message : "Failed to load the queue.");
       }
     }
-  }, [search, status, priority, sort, order, page, pageSize]);
+  }, [search, status, priority, ownerId, sort, order, page, pageSize]);
 
   useEffect(() => {
     void loadQueue();
@@ -108,10 +135,11 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
     setSearch("");
     setStatus(undefined);
     setPriority(undefined);
+    setOwnerId(undefined);
     setPage(1);
   };
 
-  const hasActiveFilters = search.trim() || status || priority;
+  const hasActiveFilters = search.trim() || status || priority || ownerId !== undefined;
 
   const startItem = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
   const endItem = pagination
@@ -187,6 +215,21 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
             <option value="MEDIUM">Medium</option>
             <option value="HIGH">High</option>
           </select>
+          <select
+            value={ownerId === undefined ? "" : String(ownerId)}
+            onChange={(e) => {
+              setOwnerId(e.target.value ? Number(e.target.value) : undefined);
+              setPage(1);
+            }}
+            aria-label="Filter by owner"
+          >
+            <option value="">All Owners</option>
+            {owners.map((owner) => (
+              <option key={owner.id} value={String(owner.id)}>
+                {owner.name} — {owner.role === "ADMINISTRATOR" ? "Administrator" : "IT Staff"}
+              </option>
+            ))}
+          </select>
           {hasActiveFilters && (
             <button className="tertiary-button" onClick={handleClearFilters}>
               Clear Filters
@@ -254,11 +297,13 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                 <tr>
                   {renderSortableHeader("Ticket No.", "ticketNumber")}
                   {renderSortableHeader("Summary", "summary")}
+                  <th>Category</th>
                   {renderSortableHeader("Status", "status")}
                   <th>Requested Priority</th>
                   {renderSortableHeader("IT Priority", "priority")}
                   <th>Owner</th>
                   {renderSortableHeader("Created", "createdAt")}
+                  <th>Last Updated</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -277,6 +322,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                       </a>
                     </td>
                     <td>{ticket.summary}</td>
+                    <td>{ticket.categoryName}</td>
                     <td>
                       <span className={`status-badge status-${ticket.currentStatus.toLowerCase()}`}>
                         {ticket.currentStatus}
@@ -306,6 +352,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                       )}
                     </td>
                     <td>{formatUtcDate(ticket.createdAt)}</td>
+                    <td>{formatUtcDate(ticket.updatedAt)}</td>
                     <td>
                       <button
                         className="secondary-button"
@@ -339,6 +386,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                 </div>
                 <div className="ticket-card-summary">{ticket.summary}</div>
                 <div className="ticket-card-details">
+                  <span>Category: {ticket.categoryName}</span>
                   <span>
                     Requested:{" "}
                     <span
@@ -361,7 +409,8 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                     Owner:{" "}
                     {ticket.ticketOwnerId === null ? "Unassigned" : `User #${ticket.ticketOwnerId}`}
                   </span>
-                  <span>{formatUtcDate(ticket.createdAt)}</span>
+                  <span>Created: {formatUtcDate(ticket.createdAt)}</span>
+                  <span>Last Updated: {formatUtcDate(ticket.updatedAt)}</span>
                 </div>
                 <button className="secondary-button" onClick={() => onOpenDetail(ticket.ticketNumber)}>
                   Open Detail

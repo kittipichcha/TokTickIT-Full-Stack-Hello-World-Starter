@@ -351,6 +351,8 @@ export interface StaffQueueItem {
   id: number;
   ticketNumber: string;
   summary: string;
+  /** Category name (ui-spec §5.6 required queue information). */
+  categoryName: string;
   currentStatus: string;
   requestedPriority: string;
   itPriority: string | null;
@@ -406,6 +408,29 @@ export interface CommentItem {
   content: string;
   authorId: number;
   createdAt: string;
+}
+
+/** An eligible Ticket owner (active IT Staff / Administrator). */
+export interface AssignableOwner {
+  id: number;
+  name: string;
+  role: string;
+}
+
+/**
+ * Fetches the eligible Ticket-owner set (api-spec §17a).
+ *
+ * Read-only; IT Staff / Administrator only. Used by the Queue owner filter and
+ * the Staff Detail ownership control. The server returns only `{id, name, role}`
+ * for active IT Staff/Administrators — never credentials, Requesters, or
+ * inactive users. This list is a UX affordance; the ownership endpoint remains
+ * the final authorization boundary.
+ */
+export async function fetchAssignableOwners(): Promise<AssignableOwner[]> {
+  const result = await apiJson<{ data: AssignableOwner[] }>("/api/staff/owners", {
+    fallbackError: "Failed to fetch eligible owners.",
+  });
+  return result.data;
 }
 
 export interface StaffTicketDetail {
