@@ -51,6 +51,46 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-21 — Issue #38 (IT Staff Ticket Operations)**
+  - **Scope:** the IT Staff ticket-operations workflow — the responsive Ticket Queue
+    (`GET /api/staff/queue`), the Staff Ticket Detail (`GET /api/staff/tickets/:n`), ownership
+    claim/reassign, IT Priority, the frozen status-transition matrix, Public Comments, Internal
+    Notes, and the Requester "Problem Appears Resolved" indication (including the Requester
+    Ticket Detail retrofit required by handout §8.2).
+  - **Single shared transition module (frozen Revision 7 Option B).** The transition matrix is
+    authored exactly once at `server/src/ticket-status.ts`; the client consumes the same source
+    via the absolute `@shared/ticket-status` Vite alias + `server.fs.allow` + a narrow tsconfig
+    `paths` mapping. Both smoke gates were run before feature code consumed the module: the
+    server build emitted `dist/src/ticket-status.js` with the layout unchanged and booted; the
+    client built, the dev server served the module with no `/@fs/` 403, and the runtime matrix
+    behaved as frozen.
+  - **Atomic status transitions (Revision 10).** `applyStatusTransition` pre-validates for
+    precise errors, then writes with a conditional `updateMany` guarded on the persisted
+    from-state; `count === 0` re-reads and classifies 404 / 409 (unowned) / 409 (raced).
+  - **Owner error split (Revision 7; Rev 9 §17 resolution).** Ticket 404 → `ownerId` shape 400 →
+    User lookup 409 (nonexistent User is not an active IT Staff/Administrator, per §17) →
+    eligibility 409 → plain last-write-wins UPDATE. No unassign operation.
+  - **Rows implemented and executed:** API-QUE-01/02, API-STAFF-01..10, API-REQ-03/04,
+    SEC-AUTHZ-02/08, UNIT-COMMENT-01, UI-QUE-01/02, UI-STAFF-01/02 — all moved to `Passed` only
+    after their executed runs.
+  - **Results:** server suite **475 passed, 0 skipped** across 35 files, plus the #35-owned
+    `migration.integration.test.ts` (**19 passed**) and `seed.integration.test.ts`
+    (**11 passed**); client suite **141 passed, 0 skipped** across 14 files. Server and client
+    builds both succeed.
+  - **Lab 2 regression note:** `AttachmentSection.test.tsx`'s "read-only ticket fields"
+    assertion scoped its no-editable-inputs check to the whole `.ticket-detail` block; the new
+    Public Comments compose box is an intentional addition, so the assertion was narrowed to the
+    `.ticket-info` region — preserving the test's intent without weakening it. The Lab 2
+    `ticket-detail.api.test.ts` fixture gained the two additive detail fields
+    (`appearsResolved`, `publicComments`).
+  - **F-38-4 reading (recorded):** the frozen spec is silent on any state restriction for the
+    appears-resolved indicator, so the endpoint sets the boolean on any existing owned ticket
+    with no status mutation — no restriction was invented.
+  - **F-38-3 verification:** the frozen `specification.md` §6 authorization matrix was read
+    row-for-row before wiring; the implemented chains match it exactly (Staff/Admin may post
+    Public Comments on any Ticket; notes are Staff/Admin only; appears-resolved is
+    Requester-owner only).
+
 - **2026-09-20 — Issue #37 review follow-up (My Tickets status/sort contract alignment)**
   - **P2 — My Tickets diverged from the frozen Lab 3 filtering and sorting contract (real defect).**
     `getMyTicketsHandler` accepted only `status=NEW` (any other valid status returned
@@ -513,31 +553,31 @@ security/authorization, migration/regression, and end-to-end coverage.
 | TKT-PRIO-02 | API | Client-supplied `itPriority` ignored | A request body containing a different `itPriority` is ignored; the stored value still equals the validated `requestedPriority` | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
 | TKT-PRIO-03 | API | Create response shape unchanged | The Lab 2 create response envelope and key set are unchanged; `itPriority` now reflects the frozen initialization rule and `ticketOwnerId` remains null | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
 | SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Passed |
-| SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Planned |
+| SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Passed |
 | SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Planned |
 | SEC-AUTHZ-04 | API | Unauthenticated protected endpoint | 401 UNAUTHENTICATED | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Passed |
 | SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Passed |
 | SEC-AUTHZ-06 | API | Session idle timeout expiration | An actually expired session is rejected by a protected endpoint with `401 UNAUTHENTICATED`; a valid session works before expiry; the 30-minute rolling configuration is asserted as supplementary evidence | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-06 | Passed |
 | SEC-AUTHZ-07 | API | CSRF on state-changing endpoint | Missing/invalid CSRF token rejected (403 FORBIDDEN); mutation not applied | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Passed |
-| SEC-AUTHZ-08 | API | Requester posts/reads comments on a not-owned ticket | `404 NOT_FOUND`; no data leaked | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-12, BR-32 | AC-03 | Planned |
+| SEC-AUTHZ-08 | API | Requester posts/reads comments on a not-owned ticket | `404 NOT_FOUND`; no data leaked | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-12, BR-32 | AC-03 | Passed |
 | SEC-AUTHZ-09 | API | Non-Administrator calls create-user / edit-user | `403 FORBIDDEN` | `server/tests/lab-03/users-admin.api.test.ts` | FR-24, FR-25 | — | AC-20 | Planned |
 | SEC-AUTHZ-10 | API | IT Staff/Administrator attempts attachment upload or delete | `403 FORBIDDEN` (view-only; cannot mutate Attachments) | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
 | API-REQ-01 | API | Requester creates Ticket | Ticket owned by authenticated identity | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-11 | AC-07 | Passed |
 | API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned; search/filter/sort/pagination preserved. Filters on the full frozen `TicketStatus` enum (not only `NEW`); accepts the documented sort keys `createdAt`/`ticketNumber`/`summary`/`status`/`priority` (plus the Lab 2 `requestedPriority` alias); `sort=status` and `sort=priority` use logical workflow/priority order, not alphabetical; invalid `sort`/`order`/`page`/`pageSize` fall back to safe defaults while out-of-enum `status`/`requestedPriority` remain `400 VALIDATION_ERROR` (preserved Lab 2 contract) | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
-| API-REQ-03 | API | Requester posts Public Comment | Comment saved with author/timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-22, BR-23 | AC-08 | Planned |
-| API-REQ-04 | API | Requester indicates appears resolved | Flag saved; status unchanged | `server/tests/lab-03/requester.api.test.ts` | FR-13 | BR-05, BR-19 | AC-09 | Planned |
-| API-QUE-01 | API | IT Staff queue retrieval | Search/filter/sort/pagination works | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-17 | AC-10 | Planned |
-| API-QUE-02 | API | Queue invalid query params | Safe defaults applied | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-31 | AC-10 | Planned |
-| API-STAFF-01 | API | Claim/reassign ownership | Owner updated to active IT Staff/Admin | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-16 | BR-14 | AC-11 | Planned |
-| API-STAFF-02 | API | Set IT Priority | IT Priority updated; Requested Priority unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-15, BR-16 | AC-12 | Planned |
-| API-STAFF-03 | API | Permitted status change | Status changes per matrix | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Planned |
-| API-STAFF-04 | API | Forbidden status transition | 409 CONFLICT; no change | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18, BR-20 | AC-13 | Planned |
-| API-STAFF-05 | API | Create Internal Note | Note saved; visible only to IT Staff/Admin | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-21, BR-24 | AC-14 | Planned |
-| API-STAFF-06 | API | Set IT Priority on nonexistent/forbidden ticket | `403 FORBIDDEN` (not IT Staff/Admin) or `404 NOT_FOUND` (ticket not found) per BR-31 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-31 | AC-12 | Planned |
-| API-STAFF-07 | API | Status change on nonexistent/forbidden ticket | `403 FORBIDDEN` (not IT Staff/Admin) or `404 NOT_FOUND` (ticket not found) per BR-31 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-31 | AC-13 | Planned |
-| API-STAFF-08 | API | Status change on unowned ticket | `409 CONFLICT` — ticket must be claimed before a status change; no auto-claim (Section 13, decision 14) | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Planned |
-| API-STAFF-09 | API | Two concurrent claims of the same ticket | Both succeed; final owner is deterministic per last-write-wins (Section 13, decision 15); no conflict error surfaced | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-16 | BR-14 | AC-11 | Planned |
-| API-STAFF-10 | API | IT Staff/Administrator posts/reads notes on a nonexistent ticket | `404 NOT_FOUND` — ticket not found | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-31 | AC-14 | Planned |
+| API-REQ-03 | API | Requester posts Public Comment | Comment saved with author/timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-22, BR-23 | AC-08 | Passed |
+| API-REQ-04 | API | Requester indicates appears resolved | Flag saved; status unchanged | `server/tests/lab-03/requester.api.test.ts` | FR-13 | BR-05, BR-19 | AC-09 | Passed |
+| API-QUE-01 | API | IT Staff queue retrieval | Search/filter/sort/pagination works | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-17 | AC-10 | Passed |
+| API-QUE-02 | API | Queue invalid query params | Safe defaults applied | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-31 | AC-10 | Passed |
+| API-STAFF-01 | API | Claim/reassign ownership | Owner updated to active IT Staff/Admin | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-16 | BR-14 | AC-11 | Passed |
+| API-STAFF-02 | API | Set IT Priority | IT Priority updated; Requested Priority unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-15, BR-16 | AC-12 | Passed |
+| API-STAFF-03 | API | Permitted status change | Status changes per matrix | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Passed |
+| API-STAFF-04 | API | Forbidden status transition | 409 CONFLICT; no change | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18, BR-20 | AC-13 | Passed |
+| API-STAFF-05 | API | Create Internal Note | Note saved; visible only to IT Staff/Admin | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-21, BR-24 | AC-14 | Passed |
+| API-STAFF-06 | API | Set IT Priority on nonexistent/forbidden ticket | `403 FORBIDDEN` (not IT Staff/Admin) or `404 NOT_FOUND` (ticket not found) per BR-31 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-31 | AC-12 | Passed |
+| API-STAFF-07 | API | Status change on nonexistent/forbidden ticket | `403 FORBIDDEN` (not IT Staff/Admin) or `404 NOT_FOUND` (ticket not found) per BR-31 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-31 | AC-13 | Passed |
+| API-STAFF-08 | API | Status change on unowned ticket | `409 CONFLICT` — ticket must be claimed before a status change; no auto-claim (Section 13, decision 14) | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Passed |
+| API-STAFF-09 | API | Two concurrent claims of the same ticket | Both succeed; final owner is deterministic per last-write-wins (Section 13, decision 15); no conflict error surfaced | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-16 | BR-14 | AC-11 | Passed |
+| API-STAFF-10 | API | IT Staff/Administrator posts/reads notes on a nonexistent ticket | `404 NOT_FOUND` — ticket not found | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-31 | AC-14 | Passed |
 | API-ADM-01 | API | User list | Name/Email/Role/Status returned | `server/tests/lab-03/users-admin.api.test.ts` | FR-21 | — | AC-15 | Planned |
 | API-ADM-02 | API | User search/filter | Name/email search; optional role filter | `server/tests/lab-03/users-admin.api.test.ts` | FR-22, FR-23 | — | AC-15 | Planned |
 | API-ADM-03 | API | Create user | User created; must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-24 | BR-25, BR-30 | AC-16 | Planned |
@@ -550,7 +590,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-ADM-09 | API | Edit / set-initial-password on nonexistent userId | `404 NOT_FOUND` — user does not exist | `server/tests/lab-03/users-admin.api.test.ts` | FR-25, FR-26 | BR-31 | AC-17, AC-16 | Planned |
 | API-ADM-10 | API | Non-last Administrator changes own role away from Administrator | Succeeds; rejected only if it is the last active Administrator (BR-28 path) | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-34, BR-28 | AC-19 | Planned |
 | UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Passed |
-| UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Planned |
+| UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Passed |
 | DB-MIG-01 | DB | DevRequester → User migration | Every legacy Requester becomes exactly one User with the same `id`, `name`, `email`, and `isActive`, role `REQUESTER`, and `mustChangePassword=true` | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
 | DB-MIG-02 | DB | Existing data preserved | Categories/RelatedSystems/Tickets/Attachments valid; the exact frozen §9.3 timestamp set is `timestamptz(3)` | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | — | AC-25 | Passed |
 | DB-MIG-03 | DB | Migrated requester initial password | Migrated user's initial password equals the password produced by the frozen derivation (Section 13, decision 13: `Lab3-` + first 20 hex chars of SHA-256(lowercase(trim(email)) + ":" + trim(name))), authenticates successfully, and `mustChangePassword` is enforced; two independent fresh migrations produce the same derived password | `server/tests/lab-03/migration.integration.test.ts` | FR-05 | BR-02, BR-10 | AC-26 | Passed |
@@ -590,10 +630,10 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-AUTHGATE-01 | UI | Logout failure preserves the authenticated shell | When `logout()` rejects, the authenticated shell (and `App`) stays mounted, state does not move to Login, and an inline `role="alert"` error is shown near the Logout button | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
 | UI-AUTHGATE-02 | UI | Successful logout transitions to Login | When `logout()` resolves, the gate transitions to the Login screen, `App` unmounts, and no error alert is shown | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09 | AC-06 | Passed |
 | UI-AUTHGATE-03 | UI | Mount-time session-check failure is distinct from unauthenticated | A `401` from `fetchMe()` renders Login; a `500` or status-less network failure renders a distinct session-error screen with a Retry button (neither Login nor the authenticated shell); clicking Retry after a `500` transitions to authenticated | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
-| UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Planned |
-| UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Planned |
-| UI-STAFF-01 | UI | Staff Ticket Detail | Ownership/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Planned |
-| UI-STAFF-02 | UI | Status change to Resolved/Closed/Cancelled | Confirm modal shown before request is sent; cancel aborts, confirm proceeds | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Planned |
+| UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
+| UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Passed |
+| UI-STAFF-01 | UI | Staff Ticket Detail | Ownership/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Passed |
+| UI-STAFF-02 | UI | Status change to Resolved/Closed/Cancelled | Confirm modal shown before request is sent; cancel aborts, confirm proceeds | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
 | UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Planned |
 | UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Planned |

@@ -306,3 +306,60 @@
   `Passed` on tests that only exercised `status=NEW` and the four legacy sort keys, so the gap was
   invisible to the suite — a reminder that a `Passed` row is only as strong as the values its
   assertions actually exercise.
+
+## Issue #38 — IT Staff Ticket Operations
+
+- **Scope implemented:** the IT Staff ticket-operations workflow end to end — the responsive
+  Ticket Queue (`GET /api/staff/queue`), the Staff Ticket Detail (`GET /api/staff/tickets/:n`),
+  ownership claim/reassign, IT Priority, the frozen status-transition matrix, Public Comments,
+  Internal Notes, and the Requester "Problem Appears Resolved" indication (including the
+  Requester Ticket Detail retrofit required by handout §8.2).
+- **Single shared transition module (frozen Revision 7 Option B).** The transition matrix is
+  authored exactly once at `server/src/ticket-status.ts` (pure, dependency-free). The server
+  imports it normally; the client imports the *same source* through the absolute
+  `@shared/ticket-status` Vite alias plus `server.fs.allow` and a narrow tsconfig `paths`
+  mapping. There is no second hand-authored copy and no sync test. Both smoke gates were run
+  before any feature code consumed the module: the server build emitted `dist/src/ticket-status.js`
+  with the layout unchanged and booted; the client built, the dev server served the module with
+  no `/@fs/` 403, and the runtime matrix behaved as frozen.
+- **Atomic status transitions (Revision 10).** `applyStatusTransition` pre-validates for precise
+  errors, then writes with a conditional `updateMany` guarded on the persisted from-state
+  (`ticketNumber`, `ticketOwnerId`, `currentStatus`). A `count === 0` re-reads and classifies
+  404 / 409 (unowned) / 409 (raced), so the frozen matrix holds under concurrency rather than
+  only against a previously-read snapshot.
+- **Owner error split (Revision 7; Rev 9 §17 resolution).** `setTicketOwner` follows the frozen
+  order — ticket 404 → `ownerId` shape 400 → User lookup 409 (a nonexistent User is not an active
+  IT Staff/Administrator, per `api-spec.md` §17) → eligibility 409 → plain last-write-wins UPDATE.
+  No unassign operation exists.
+- **Queue (M-38-3).** `getStaffQueue` mirrors `getMyTickets`'s raw-SQL style but binds `status`
+  as `$n::"TicketStatus"` and `priority` (IT Priority) as `$n::"Priority"`; `sort`/`order` come
+  only from the frozen allow-list. `parseQueueQuery` never throws — invalid values fall back to
+  defaults and never return `400`.
+- **Comments/Notes/appears-resolved.** One shared `validateCommentContent` (trim, whitespace-only
+  rejected, 1–2,000 after trim) backs both. Author and timestamp are always server-derived;
+  a client-supplied `authorId` is ignored. `setAppearsResolved` is a dedicated single-column
+  update that can never touch `currentStatus`. Internal Notes never reach a Requester payload.
+- **Requester Ticket Detail retrofit (M-38-1).** The Lab 2 Requester detail is the inline
+  `view === "ticket-detail"` block of `client/src/App.tsx` (there is no separate component file).
+  The shared `<CommentThread/>` and the "Problem Appears Resolved" control were inserted after the
+  attachments section; the attachment upload/remove/preview logic and dialog focus handling were
+  left untouched. The requester detail fetch was extended additively with `appearsResolved` and
+  `publicComments` (optional in the client type so Lab 2 fixtures remain valid).
+- **Tests.** New frozen files: `staff-queue.api.test.ts` (API-QUE-01/02),
+  `comments-notes.api.test.ts` (API-STAFF-05/10, API-REQ-03, SEC-AUTHZ-02/08),
+  `comments-notes.unit.test.ts` (UNIT-COMMENT-01), `staff-ticket-detail.api.test.ts`
+  (API-STAFF-01..09), `StaffTicketQueue.test.tsx` (UI-QUE-01/02), and
+  `StaffTicketDetail.test.tsx` (UI-STAFF-01/02). `requester.api.test.ts` was appended with
+  API-REQ-04 (file created by #37; never renamed). Migrated Lab-2-shaped data assertions were
+  added inside the existing frozen files (M-38-5).
+- **Notable engineering judgment:**
+  - The Lab 2 `AttachmentSection.test.tsx` "read-only ticket fields" assertion scoped its
+    no-editable-inputs check to the whole `.ticket-detail` block. The new Public Comments compose
+    box is an intentional addition, so the assertion was narrowed to the `.ticket-info` region —
+    preserving the test's intent (ticket fields are read-only) without weakening it.
+  - The requester detail response was extended additively rather than by adding a second fetch,
+    keeping one round-trip and one source of truth for the detail screen.
+- **Reflection:** the shared-module wiring was the highest-risk item because the repo has no
+  `workspaces` field and the server tsconfig has no explicit `rootDir`. Running both smoke gates
+  before writing feature code turned an empirical build risk into a verified fact, and the
+  Option-B placement kept the server's emitted layout unchanged by construction.
