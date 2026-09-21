@@ -7,8 +7,7 @@
  *
  * Supplementary (never a tests.md row): RR-03 soft-remove invariant assertion.
  *
- * API-REQ-04 is owned by #38 and is deliberately NOT implemented here — #38 appends
- * to this file later.
+ * API-REQ-04 is owned by #38 and is appended at the end of this file.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -503,5 +502,105 @@ describe("Supplementary — RR-03: attachment soft-remove invariant", () => {
     expect(forbidden).toBe(0);
 
     await prisma.attachment.deleteMany({ where: { ticketId: ticket!.id } });
+  });
+});
+// ---------------------------------------------------------------------------
+// Issue #38 — API-REQ-04 (appended; file created by #37, never renamed)
+// ---------------------------------------------------------------------------
+
+describe("API-REQ-04 — Requester indicates appears resolved (AC-09)", () => {
+  itIfDb("owner Requester sets appearsResolved=true -> 200, currentStatus unchanged", async () => {
+    const prisma = getPrisma();
+    const ticketNumber = await seedTicket(requesterA.userId, {
+      summary: "Appears-resolved ticket",
+      currentStatus: "IN_PROGRESS",
+    });
+    const before = await prisma.ticket.findUnique({ where: { ticketNumber } });
+
+    const res = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/appears-resolved`),
+      requesterA,
+      { csrf: true },
+    ).send({ appearsResolved: true });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.appearsResolved).toBe(true);
+    expect(res.body.data.currentStatus).toBe(before!.currentStatus);
+
+    const after = await prisma.ticket.findUnique({ where: { ticketNumber } });
+    expect(after!.appearsResolved).toBe(true);
+    expect(after!.currentStatus).toBe(before!.currentStatus);
+  });
+
+  itIfDb("owner Requester can clear the flag -> 200, currentStatus unchanged", async () => {
+    const prisma = getPrisma();
+    const ticketNumber = await seedTicket(requesterA.userId, {
+      summary: "Appears-resolved clear ticket",
+      currentStatus: "OPEN",
+    });
+
+    const set = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/appears-resolved`),
+      requesterA,
+      { csrf: true },
+    ).send({ appearsResolved: true });
+    expect(set.status).toBe(200);
+
+    const clear = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/appears-resolved`),
+      requesterA,
+      { csrf: true },
+    ).send({ appearsResolved: false });
+    expect(clear.status).toBe(200);
+    expect(clear.body.data.appearsResolved).toBe(false);
+
+    const after = await prisma.ticket.findUnique({ where: { ticketNumber } });
+    expect(after!.appearsResolved).toBe(false);
+    expect(after!.currentStatus).toBe("OPEN");
+  });
+
+  itIfDb("non-boolean appearsResolved -> 400 VALIDATION_ERROR", async () => {
+    const ticketNumber = await seedTicket(requesterA.userId, { summary: "Appears-resolved invalid" });
+    const res = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/appears-resolved`),
+      requesterA,
+      { csrf: true },
+    ).send({ appearsResolved: "yes" });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  itIfDb("non-owner Requester -> 404 NOT_FOUND, no existence leak", async () => {
+    const ticketNumber = await seedTicket(requesterA.userId, { summary: "Appears-resolved not owned" });
+    const res = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/appears-resolved`),
+      requesterB,
+      { csrf: true },
+    ).send({ appearsResolved: true });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe("NOT_FOUND");
+  });
+
+  itIfDb("Staff/Admin -> 403 FORBIDDEN (Requester-only action)", async () => {
+    const ticketNumber = await seedTicket(requesterA.userId, { summary: "Appears-resolved staff" });
+    const res = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/appears-resolved`),
+      staff,
+      { csrf: true },
+    ).send({ appearsResolved: true });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+
+  itIfDb("missing CSRF token -> 403, flag unchanged", async () => {
+    const prisma = getPrisma();
+    const ticketNumber = await seedTicket(requesterA.userId, { summary: "Appears-resolved csrf" });
+    const res = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/appears-resolved`),
+      requesterA,
+    ).send({ appearsResolved: true });
+    expect(res.status).toBe(403);
+    const after = await prisma.ticket.findUnique({ where: { ticketNumber } });
+    expect(after!.appearsResolved).toBe(false);
   });
 });

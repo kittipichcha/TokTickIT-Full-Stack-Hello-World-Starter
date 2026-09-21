@@ -31,6 +31,9 @@ describe("API-TKT-03: Ticket detail ownership enforcement", () => {
     currentStatus: "NEW",
     createdAt: new Date("2026-08-21T09:14:00.000Z"),
     updatedAt: new Date("2026-08-21T09:14:00.000Z"),
+    // Issue #38 — additive detail fields (BR-19 / BR-04).
+    appearsResolved: false,
+    publicComments: [],
     attachments: [
       {
         id: 1,
