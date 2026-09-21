@@ -13,10 +13,14 @@ import {
 } from "./api";
 import CreateTicket from "./CreateTicket";
 import MyTickets from "./MyTickets";
+import StaffTicketQueue from "./StaffTicketQueue";
+import StaffTicketDetail from "./StaffTicketDetail";
+import CommentThread from "./CommentThread";
+import { postTicketComment, postAppearsResolved } from "./api";
 import { formatUtcDate, formatFileSize } from "./format";
 import type { AuthUser } from "./api-client";
 
-type AppView = "home" | "create-ticket" | "ticket-detail";
+type AppView = "home" | "create-ticket" | "ticket-detail" | "staff-queue" | "staff-ticket-detail";
 
 interface FailedAttachment {
   id: string;
@@ -41,6 +45,13 @@ export default function App({ user }: AppProps) {
   const [detailRetryCounter, setDetailRetryCounter] = useState(0);
   const [myTicketsResetKey, setMyTicketsResetKey] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Issue #38 — staff views
+  const [staffDetailTicketNumber, setStaffDetailTicketNumber] = useState<string | null>(null);
+  const [appearsResolvedError, setAppearsResolvedError] = useState<string | null>(null);
+  const [isUpdatingAppearsResolved, setIsUpdatingAppearsResolved] = useState(false);
+
+  const isStaff = user.role === "IT_STAFF" || user.role === "ADMINISTRATOR";
 
   // Attachment dialog state
   const [removeDialogAttachment, setRemoveDialogAttachment] = useState<AttachmentItem | null>(null);
@@ -202,20 +213,33 @@ export default function App({ user }: AppProps) {
           <span className="hamburger-bar" />
         </button>
         <nav id="primary-navigation" aria-label="Primary" className={mobileMenuOpen ? "mobile-menu-open" : ""}>
-          <a
-            href="#my-tickets"
-            className={view === "home" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
-          >
-            My Tickets
-          </a>
-          <a
-            href="#create-ticket"
-            className={view === "create-ticket" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
-          >
-            Create Ticket
-          </a>
+          {!isStaff && (
+            <>
+              <a
+                href="#my-tickets"
+                className={view === "home" ? "nav-active" : ""}
+                onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
+              >
+                My Tickets
+              </a>
+              <a
+                href="#create-ticket"
+                className={view === "create-ticket" ? "nav-active" : ""}
+                onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
+              >
+                Create Ticket
+              </a>
+            </>
+          )}
+          {isStaff && (
+            <a
+              href="#staff-queue"
+              className={view === "staff-queue" || view === "staff-ticket-detail" ? "nav-active" : ""}
+              onClick={(e) => { e.preventDefault(); setView("staff-queue"); setMobileMenuOpen(false); }}
+            >
+              Ticket Queue
+            </a>
+          )}
         </nav>
       </header>
       {message && <p className="notice" role="status">{message}</p>}
@@ -231,6 +255,21 @@ export default function App({ user }: AppProps) {
           requesterName={user.name}
           onViewTicket={handleViewTicket}
           onCreateAnother={handleCreateAnother}
+        />
+      )}
+      {view === "staff-queue" && (
+        <StaffTicketQueue
+          onOpenDetail={(ticketNumber) => {
+            setStaffDetailTicketNumber(ticketNumber);
+            setView("staff-ticket-detail");
+          }}
+        />
+      )}
+      {view === "staff-ticket-detail" && staffDetailTicketNumber && (
+        <StaffTicketDetail
+          ticketNumber={staffDetailTicketNumber}
+          currentUserId={user.id}
+          onBack={() => setView("staff-queue")}
         />
       )}
       {view === "ticket-detail" && (
@@ -599,6 +638,55 @@ export default function App({ user }: AppProps) {
                 <button className="secondary-button" onClick={() => setView("home")}>← Back to My Tickets</button>
                 <button className="primary-button" onClick={() => setView("create-ticket")}>Create Another</button>
               </div>
+
+              {/* Issue #38 — Public Comments (BR-04: notes never appear here) */}
+              <CommentThread
+                comments={ticketDetail.publicComments ?? []}
+                onPost={async (content) => {
+                  await postTicketComment(ticketDetail.ticketNumber, content);
+                  const data = await fetchTicketDetail(ticketDetail.ticketNumber);
+                  setTicketDetail(data);
+                }}
+              />
+
+              {/* Issue #38 — "Problem Appears Resolved" (BR-19: boolean only, no status change) */}
+              <section className="appears-resolved-section" aria-label="Problem Appears Resolved">
+                <h2>Problem Appears Resolved</h2>
+                <p className="appears-resolved-state">
+                  {ticketDetail.appearsResolved
+                    ? "You have indicated the problem appears resolved."
+                    : "You have not indicated the problem appears resolved."}
+                </p>
+                <button
+                  className="secondary-button"
+                  disabled={isUpdatingAppearsResolved}
+                  onClick={async () => {
+                    setIsUpdatingAppearsResolved(true);
+                    setAppearsResolvedError(null);
+                    try {
+                      await postAppearsResolved(
+                        ticketDetail.ticketNumber,
+                        !ticketDetail.appearsResolved,
+                      );
+                      const data = await fetchTicketDetail(ticketDetail.ticketNumber);
+                      setTicketDetail(data);
+                    } catch (err) {
+                      setAppearsResolvedError(
+                        err instanceof Error ? err.message : "Failed to update the indicator.",
+                      );
+                    } finally {
+                      setIsUpdatingAppearsResolved(false);
+                    }
+                  }}
+                >
+                  {ticketDetail.appearsResolved
+                    ? "Clear indication"
+                    : "Indicate problem appears resolved"}
+                </button>
+                {appearsResolvedError && (
+                  <p className="field-error" role="alert">{appearsResolvedError}</p>
+                )}
+              </section>
             </div>
           )}
 

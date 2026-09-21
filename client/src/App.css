@@ -319,3 +319,50 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .preview-content { max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center; }
 .preview-content img { max-width: 100%; max-height: 80vh; object-fit: contain; }
 .preview-close { margin-top: 12px; padding: 8px 24px; background: var(--color-surface); border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+
+/* ---------------------------------------------------------------------------
+   Issue #38 — IT Staff ticket operations
+   --------------------------------------------------------------------------- */
+
+/* Comment / Internal Note threads */
+.comment-thread, .note-thread { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border-light); }
+.note-thread { background: var(--color-pale-green); border-radius: 4px; padding: 20px; border-top: none; }
+.note-visibility-hint { color: var(--text-secondary); font-size: 13px; margin-top: -8px; }
+.comment-empty { color: var(--text-secondary); font-style: italic; }
+.comment-list { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-direction: column; gap: 12px; }
+.comment-item, .note-item { padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 4px; background: var(--color-surface); }
+.comment-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.comment-author { font-weight: 600; }
+.comment-content { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment-form { display: flex; flex-direction: column; gap: 6px; }
+.comment-label { font-size: 14px; font-weight: 600; }
+.comment-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; font: inherit; resize: vertical; }
+.comment-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.comment-counter { font-size: 13px; color: var(--text-secondary); }
+
+/* Staff Ticket Detail actions */
+.staff-actions { margin-top: 24px; padding: 16px; border: 1px solid var(--border-light); border-radius: 4px; background: var(--color-surface); }
+.action-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.action-group:last-child { margin-bottom: 0; }
+.action-label { font-size: 14px; font-weight: 600; }
+.transition-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.muted { color: var(--text-secondary); }
+
+/* Staff Ticket Detail confirmation modal (reuses the modal-dialog pattern) */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+.modal-dialog { background: var(--color-surface); border-radius: 8px; padding: 24px; max-width: 480px; width: 100%; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.modal-dialog h2 { margin: 0 0 12px; }
+.modal-dialog p { margin: 0 0 16px; }
+
+/* Requester "Problem Appears Resolved" */
+.appears-resolved-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border-light); }
+.appears-resolved-state { color: var(--text-secondary); }
+
+/* Staff queue card action */
+.ticket-card .secondary-button { margin-top: 12px; }
+
+@media (max-width: 767px) {
+  .comment-form-footer { flex-direction: column; align-items: stretch; }
+  .transition-buttons { flex-direction: column; }
+  .transition-buttons button { width: 100%; }
+}
