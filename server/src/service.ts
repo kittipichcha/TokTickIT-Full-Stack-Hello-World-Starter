@@ -570,6 +570,8 @@ export interface StaffQueueItem {
   id: number;
   ticketNumber: string;
   summary: string;
+  /** Category name (ui-spec §5.6 required queue information). */
+  categoryName: string;
   currentStatus: string;
   requestedPriority: string;
   itPriority: string | null;
@@ -789,6 +791,7 @@ export async function getStaffQueue(params: StaffQueueParams): Promise<StaffQueu
       id: number;
       ticketNumber: string;
       summary: string;
+      categoryName: string;
       currentStatus: string;
       requestedPriority: string;
       itPriority: string | null;
@@ -798,10 +801,12 @@ export async function getStaffQueue(params: StaffQueueParams): Promise<StaffQueu
       updatedAt: Date;
     }>
   >(
-    `SELECT t."id", t."ticketNumber", t."summary", t."currentStatus",
+    `SELECT t."id", t."ticketNumber", t."summary",
+            c."name" AS "categoryName", t."currentStatus",
             t."requestedPriority", t."itPriority", t."ticketOwnerId",
             t."requesterId", t."createdAt", t."updatedAt"
      FROM "Ticket" t
+     JOIN "Category" c ON c."id" = t."categoryId"
      ${whereClause}
      ORDER BY ${orderClause}
      LIMIT ${params.pageSize} OFFSET ${offset}`,
@@ -813,6 +818,7 @@ export async function getStaffQueue(params: StaffQueueParams): Promise<StaffQueu
       id: row.id,
       ticketNumber: row.ticketNumber,
       summary: row.summary,
+      categoryName: row.categoryName,
       currentStatus: row.currentStatus,
       requestedPriority: row.requestedPriority,
       itPriority: row.itPriority,
@@ -1765,6 +1771,43 @@ export async function setTicketOwner(
     select: { ticketOwnerId: true },
   });
   return { ticketOwnerId: updated.ticketOwnerId as number };
+}
+
+export interface AssignableOwner {
+  id: number;
+  name: string;
+  role: string;
+}
+
+/**
+ * `listAssignableOwners` — the eligible Ticket-owner set (Issue #38, FR-16).
+ *
+ * Returns every **active** IT Staff / Administrator as `{ id, name, role }`.
+ *
+ * This is the read-only source for the Queue owner filter and the Staff Detail
+ * ownership control. It exists because the frozen contract exposes no
+ * staff-accessible user list: `GET /api/admin/users` (§24) is
+ * Administrator-only, so IT Staff cannot call it, and `GET /api/app/context`
+ * returns only the caller's own identity. The addition is recorded in
+ * `specification.md` §13 and `api-spec.md` §17a per the closed-contract
+ * edge-case policy.
+ *
+ * Security: the projection is deliberately minimal — `passwordHash` and every
+ * other credential field are never selected. Requesters and inactive users are
+ * excluded. This list is a **UX affordance only**; `setTicketOwner` remains the
+ * final authorization boundary and independently rejects ineligible targets.
+ */
+export async function listAssignableOwners(): Promise<AssignableOwner[]> {
+  const prisma = getPrisma();
+  const users = await prisma.user.findMany({
+    where: {
+      isActive: true,
+      role: { in: ["IT_STAFF", "ADMINISTRATOR"] },
+    },
+    select: { id: true, name: true, role: true },
+    orderBy: [{ name: "asc" }, { id: "asc" }],
+  });
+  return users.map((u) => ({ id: u.id, name: u.name, role: u.role }));
 }
 
 export interface SetItPriorityResult {

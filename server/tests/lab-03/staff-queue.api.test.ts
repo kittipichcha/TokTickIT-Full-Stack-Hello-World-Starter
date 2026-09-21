@@ -328,3 +328,102 @@ describe("Migrated Lab-2-shaped data (supplementary — M-38-5)", () => {
     expect(unownedRow.ticketOwnerId).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// API-OWN-01 — eligible Ticket-owner lookup (api-spec §17a, FR-16)
+// ---------------------------------------------------------------------------
+
+describe("API-OWN-01 — eligible Ticket-owner lookup (AC-11)", () => {
+  itIfDb("IT Staff receives 200 with only active IT Staff/Administrators", async () => {
+    const res = await withSession(request(app).get("/api/staff/owners"), staff);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+
+    const ids = res.body.data.map((o: { id: number }) => o.id);
+    expect(ids).toContain(staff.userId);
+    expect(ids).toContain(admin.userId);
+
+    // Every returned entry is an active IT Staff/Administrator.
+    for (const owner of res.body.data) {
+      expect(["IT_STAFF", "ADMINISTRATOR"]).toContain(owner.role);
+      expect(typeof owner.name).toBe("string");
+    }
+  });
+
+  itIfDb("Administrator receives the same eligible set", async () => {
+    const res = await withSession(request(app).get("/api/staff/owners"), admin);
+    expect(res.status).toBe(200);
+    const ids = res.body.data.map((o: { id: number }) => o.id);
+    expect(ids).toContain(staff.userId);
+    expect(ids).toContain(admin.userId);
+  });
+
+  itIfDb("excludes Requesters and inactive IT Staff/Administrators", async () => {
+    const prisma = getPrisma();
+    const inactiveStaffId = await ensureTestUser({
+      email: "queue-inactive-staff@example.com",
+      name: "Queue Inactive Staff",
+      role: "IT_STAFF",
+      isActive: false,
+    });
+
+    const res = await withSession(request(app).get("/api/staff/owners"), staff);
+    expect(res.status).toBe(200);
+    const ids = res.body.data.map((o: { id: number }) => o.id);
+
+    // Requester caller's own id must never appear.
+    expect(ids).not.toContain(requester.userId);
+    // Inactive IT Staff must never appear.
+    expect(ids).not.toContain(inactiveStaffId);
+
+    // Defence-in-depth: confirm the excluded rows really are ineligible.
+    const inactive = await prisma.user.findUnique({ where: { id: inactiveStaffId } });
+    expect(inactive!.isActive).toBe(false);
+  });
+
+  itIfDb("never returns passwordHash or other credential fields", async () => {
+    const res = await withSession(request(app).get("/api/staff/owners"), staff);
+    expect(res.status).toBe(200);
+    for (const owner of res.body.data) {
+      expect(Object.keys(owner).sort()).toEqual(["id", "name", "role"]);
+      expect(owner).not.toHaveProperty("passwordHash");
+      expect(owner).not.toHaveProperty("mustChangePassword");
+      expect(owner).not.toHaveProperty("email");
+    }
+  });
+
+  itIfDb("Requester caller is rejected with 403 FORBIDDEN", async () => {
+    const res = await withSession(request(app).get("/api/staff/owners"), requester);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+
+  itIfDb("unauthenticated request is rejected with 401", async () => {
+    const res = await request(app).get("/api/staff/owners");
+    expect(res.status).toBe(401);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Supplementary — queue response carries the Category name (ui-spec §5.6)
+// ---------------------------------------------------------------------------
+
+describe("Queue required information (supplementary — ui-spec §5.6)", () => {
+  itIfDb("each queue row exposes categoryName and updatedAt", async () => {
+    const marker = `Cat-${Date.now()}`;
+    await createTicket({ requesterId: requester.userId, summary: `${marker} category` });
+
+    const res = await withSession(
+      request(app).get("/api/staff/queue").query({ search: marker }),
+      staff,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+
+    const row = res.body.data[0];
+    expect(typeof row.categoryName).toBe("string");
+    expect(row.categoryName.length).toBeGreaterThan(0);
+    expect(row.updatedAt).toBeTruthy();
+    expect(row.createdAt).toBeTruthy();
+  });
+});

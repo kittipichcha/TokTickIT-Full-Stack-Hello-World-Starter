@@ -35,6 +35,7 @@ import {
   staffQueueHandler,
   getStaffTicketDetailHandler,
   setOwnerHandler,
+  listAssignableOwnersHandler,
   setItPriorityHandler,
   applyStatusTransitionHandler,
   createCommentHandler,
@@ -194,6 +195,16 @@ router.get(
   requirePasswordChanged,
   requireRole(["IT_STAFF", "ADMINISTRATOR"]),
   getStaffTicketDetailHandler,
+);
+
+// Eligible Ticket owners: IT Staff / Administrator only (api-spec §17a). Read -> no CSRF.
+// Read-only source for the Queue owner filter and the Staff Detail ownership control.
+router.get(
+  "/staff/owners",
+  requireAuth,
+  requirePasswordChanged,
+  requireRole(["IT_STAFF", "ADMINISTRATOR"]),
+  listAssignableOwnersHandler,
 );
 
 // Ownership claim/reassign: IT Staff / Administrator only; state-changing -> CSRF (api-spec §17).

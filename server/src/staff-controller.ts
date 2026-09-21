@@ -17,6 +17,7 @@ import {
   parseQueueQuery,
   getStaffTicketDetail,
   setTicketOwner,
+  listAssignableOwners,
   setItPriority,
   applyStatusTransition,
   createComment,
@@ -93,6 +94,16 @@ export async function getStaffTicketDetailHandler(req: Request, res: Response): 
       return;
     }
     res.status(200).json({ data: ticket });
+  } catch {
+    res.status(500).json(INTERNAL_ERROR_BODY);
+  }
+}
+
+/** `GET /api/staff/owners` (api-spec §17a). IT Staff / Administrator only. */
+export async function listAssignableOwnersHandler(_req: Request, res: Response): Promise<void> {
+  try {
+    const owners = await listAssignableOwners();
+    res.status(200).json({ data: owners });
   } catch {
     res.status(500).json(INTERNAL_ERROR_BODY);
   }
