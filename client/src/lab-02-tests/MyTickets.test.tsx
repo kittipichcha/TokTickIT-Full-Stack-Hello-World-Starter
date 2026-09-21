@@ -511,3 +511,75 @@ describe("UI-MY-07: Stale-response protection — older request must not overwri
     expect(screen.getAllByText("NEW result from new search").length).toBeGreaterThan(0);
   });
 });
+
+describe("UI-MY-08: Status filter offers the frozen Ticket status set and sort keys match api-spec §8", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(api.fetchCategories).mockImplementation(async () => [{ id: 1, name: "Hardware" }]);
+    vi.mocked(api.fetchMyTickets).mockImplementation(async () =>
+      makeResult([makeTicket(1, { summary: "Status filter probe" })], { unfilteredTotalItems: 1 }),
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("offers every frozen Ticket status in the status filter", async () => {
+    await setupAuthenticatedApp();
+    await screen.findAllByText("Status filter probe");
+
+    const statusSelect = screen.getAllByLabelText("Filter by status")[0];
+    const optionValues = Array.from(statusSelect.querySelectorAll("option")).map(
+      (o) => (o as HTMLOptionElement).value,
+    );
+
+    // "" is the "All Statuses" sentinel; the rest are the frozen enum values.
+    expect(optionValues).toEqual([
+      "",
+      "NEW",
+      "OPEN",
+      "IN_PROGRESS",
+      "WAITING_FOR_REQUESTER",
+      "RESOLVED",
+      "CLOSED",
+      "REOPENED",
+      "CANCELLED",
+    ]);
+  });
+
+  it("sends a non-NEW status to the API when selected", async () => {
+    await setupAuthenticatedApp();
+    await screen.findAllByText("Status filter probe");
+
+    const statusSelect = screen.getAllByLabelText("Filter by status")[0];
+    fireEvent.change(statusSelect, { target: { value: "IN_PROGRESS" } });
+
+    await waitFor(() => {
+      const calls = vi.mocked(api.fetchMyTickets).mock.calls;
+      expect(calls.some((c) => c[0]?.status === "IN_PROGRESS")).toBe(true);
+    });
+  });
+
+  it("sends the documented `status` and `priority` sort keys when those headers are activated", async () => {
+    await setupAuthenticatedApp();
+    await screen.findAllByText("Status filter probe");
+
+    const statusHeader = screen.getAllByRole("columnheader", { name: /Current Status/ })[0];
+    fireEvent.click(statusHeader);
+
+    await waitFor(() => {
+      const calls = vi.mocked(api.fetchMyTickets).mock.calls;
+      expect(calls.some((c) => c[0]?.sort === "status")).toBe(true);
+    });
+
+    const priorityHeader = screen.getAllByRole("columnheader", { name: /Requested Priority/ })[0];
+    fireEvent.click(priorityHeader);
+
+    await waitFor(() => {
+      const calls = vi.mocked(api.fetchMyTickets).mock.calls;
+      expect(calls.some((c) => c[0]?.sort === "priority")).toBe(true);
+    });
+  });
+});

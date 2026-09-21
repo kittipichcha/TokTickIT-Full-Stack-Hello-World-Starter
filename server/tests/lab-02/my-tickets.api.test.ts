@@ -302,12 +302,30 @@ describe("API-MY-07: Invalid filter parameter values and pagination", () => {
   });
 
   it("returns 400 for invalid status enum", async () => {
+    // Class (b) superseded assertion (Issue #37, RR-04 audit): Lab 2 had only the
+    // `NEW` status, so `CLOSED` was out-of-enum. Lab 3's frozen contract
+    // (api-spec §8) filters on the full eight-value TicketStatus enum, so `CLOSED`
+    // is now a VALID filter value. The rule under test — an out-of-enum status is a
+    // validation error, not a fallback default — is unchanged; only the probe value
+    // had to move to a value that is genuinely outside the enum.
+    const res = await request(app)
+      .get("/api/tickets")
+      .query({ status: "NOT_A_STATUS" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("accepts a non-NEW status that is in the frozen Lab 3 enum", async () => {
+    // Class (b) replacement for the Lab 2 `status=CLOSED → 400` assertion.
+    vi.mocked(service.getMyTickets).mockResolvedValue(makeResult([]));
+
     const res = await request(app)
       .get("/api/tickets")
       .query({ status: "CLOSED" });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    expect(res.status).toBe(200);
+    expect(vi.mocked(service.getMyTickets).mock.calls[0]![1].status).toBe("CLOSED");
   });
 
   it("returns 409 for nonexistent categoryId", async () => {

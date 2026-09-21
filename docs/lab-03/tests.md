@@ -51,6 +51,72 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-20 — Issue #37 review follow-up (My Tickets status/sort contract alignment)**
+  - **P2 — My Tickets diverged from the frozen Lab 3 filtering and sorting contract (real defect).**
+    `getMyTicketsHandler` accepted only `status=NEW` (any other valid status returned
+    `400 VALIDATION_ERROR`), and its accepted `sort` set was
+    `createdAt/ticketNumber/summary/requestedPriority` — not the frozen
+    `createdAt/ticketNumber/summary/status/priority` of `api-spec.md` §8. The frontend mirrored
+    both gaps (`MyTickets.tsx` offered only **New** in the status dropdown and the same four sort
+    keys). Fixed in the code, not the test:
+    - `server/src/controller.ts`: the `status` filter now validates against the full frozen
+      `TicketStatus` enum (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`,
+      `CLOSED`, `REOPENED`, `CANCELLED`); the accepted `sort` set is now
+      `createdAt/ticketNumber/summary/status/priority`, with `requestedPriority` retained as a
+      Lab 2 compatibility alias for `priority`.
+    - `server/src/service.ts`: `ORDER BY` now handles `status` (logical workflow order, not
+      alphabetical) and `priority` (logical `LOW < MEDIUM < HIGH`).
+    - `client/src/MyTickets.tsx`: the status dropdown offers all eight statuses; the Requested
+      Priority and Current Status columns are now sortable using the documented `priority` and
+      `status` keys.
+    - `client/src/App.css`: added badge styles for the seven previously unstyled statuses.
+  - **Invalid-value behavior deliberately unchanged (scope decision).** The finding also proposed
+    applying safe-default fallback to *all* invalid query values. That would contradict the frozen
+    Lab 2 contract (`docs/lab-02/api-spec.md`; `tests.md` `API-MY-06`/`API-MY-07`), which
+    classifies an out-of-enum `status`/`requestedPriority` and a malformed `categoryId` as
+    `400 VALIDATION_ERROR` (and a nonexistent/inactive `categoryId` as `409 INACTIVE_REFERENCE`),
+    and #37's plan locks "existing `getMyTickets` search/filter/sort/pagination behavior is
+    preserved". The two classes are now documented explicitly in `api-spec.md` §8: safe-default
+    fallback applies to `sort`/`order`/`page`/`pageSize`; validation errors apply to the filter
+    enums and `categoryId`. Lab 3 widens the accepted status set and sort keys only.
+  - **`requesterId` clarification (documentation only, no behavior change).** Issue #37's checklist
+    says a mismatched client-supplied `requesterId` must be "rejected"; the implementation
+    **ignores** it and assigns ownership to the authenticated user. This is the frozen convention
+    (unknown JSON properties are ignored; BR-03) and is what `SEC-AUTHZ-01` asserts. `api-spec.md`
+    §0 now states this explicitly, including a note that the checklist wording is satisfied in
+    substance (the mismatched identity is never honored) but the literal HTTP behavior is *ignore*,
+    not *reject* — and that the implementation must not be changed without reconciling §0 first.
+  - **Tests extended (frozen `API-REQ-02` row, `server/tests/lab-03/requester.api.test.ts`).**
+    Added: filtering by each of the seven non-`NEW` statuses; the five documented sort keys in both
+    directions; `sort=status` logical-order assertion (`NEW < OPEN < CLOSED`, which alphabetical
+    would invert); `sort=priority` logical-order assertion (`LOW < MEDIUM < HIGH`); the retained
+    `requestedPriority` alias; invalid `sort` falling back to `createdAt desc` (compared against the
+    explicit default); and the preserved `400 VALIDATION_ERROR` behavior for out-of-enum
+    `status`/`requestedPriority`. Added `UI-MY-08` in `client/src/lab-02-tests/MyTickets.test.tsx`
+    (supplementary, never a new frozen row): the status dropdown offers exactly the eight frozen
+    statuses, a non-`NEW` selection is sent to the API, and the `status`/`priority` sort keys are
+    sent when those headers are activated.
+  - Commands: `cd server && npx vitest run`; `cd client && npx vitest run`;
+    `npx playwright test e2e/lab-02 --project=desktop --project=tablet --project=mobile`;
+    `npx tsc --noEmit` (server and client).
+  - **One Lab 2 assertion superseded by the widened enum.** `API-MY-07`'s
+    `status=CLOSED → 400` case failed once `CLOSED` became a valid Lab 3 status. Per the
+    RR-04 rule it is classified **class (b)**: the probe value moved to `NOT_A_STATUS`
+    (the rule under test — out-of-enum status is a validation error, not a fallback
+    default — is unchanged), and a replacement case asserts `status=CLOSED` is accepted
+    and forwarded to the service. Recorded in `lab2-test-audit.md` and the Lab 2
+    `tests.md` `API-MY-07` row.
+  - Results: server suite **431 passed, 0 skipped** (424 + 6 new `API-REQ-02` assertions
+    + 1 replacement Lab 2 case); client suite **120 passed, 0 skipped** (117 + 3 new
+    `UI-MY-08` tests); Lab 2 E2E **156 passed** across 3 projects (desktop/tablet/mobile),
+    matching the recorded baseline; server and client type-checks exit 0. Raw outputs in
+    `artifacts/lab-03/regression/`.
+  - Note: an initial E2E run reported 13 `[mobile]` failures, all
+    `page.goto: net::ERR_CONNECTION_REFUSED` — an **environment failure** (the dev
+    servers had been stopped), not an implementation defect. The re-run with the servers
+    up was fully green (156 passed).
+  - Follow-up: none.
+
 - **2026-09-20 — Issue #37 remediation round (E2E migration, api-spec alignment, test-seam guard)**
   - **B-2 — api-spec §11 aligned with the landed code.** `GET /api/tickets/:ticketNumber/attachments`
     returns a bare array (preserved from Lab 2, decision D-18 / RR-02); the spec example no longer
@@ -457,7 +523,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | SEC-AUTHZ-09 | API | Non-Administrator calls create-user / edit-user | `403 FORBIDDEN` | `server/tests/lab-03/users-admin.api.test.ts` | FR-24, FR-25 | — | AC-20 | Planned |
 | SEC-AUTHZ-10 | API | IT Staff/Administrator attempts attachment upload or delete | `403 FORBIDDEN` (view-only; cannot mutate Attachments) | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
 | API-REQ-01 | API | Requester creates Ticket | Ticket owned by authenticated identity | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-11 | AC-07 | Passed |
-| API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
+| API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned; search/filter/sort/pagination preserved. Filters on the full frozen `TicketStatus` enum (not only `NEW`); accepts the documented sort keys `createdAt`/`ticketNumber`/`summary`/`status`/`priority` (plus the Lab 2 `requestedPriority` alias); `sort=status` and `sort=priority` use logical workflow/priority order, not alphabetical; invalid `sort`/`order`/`page`/`pageSize` fall back to safe defaults while out-of-enum `status`/`requestedPriority` remain `400 VALIDATION_ERROR` (preserved Lab 2 contract) | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
 | API-REQ-03 | API | Requester posts Public Comment | Comment saved with author/timestamp | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-22, BR-23 | AC-08 | Planned |
 | API-REQ-04 | API | Requester indicates appears resolved | Flag saved; status unchanged | `server/tests/lab-03/requester.api.test.ts` | FR-13 | BR-05, BR-19 | AC-09 | Planned |
 | API-QUE-01 | API | IT Staff queue retrieval | Search/filter/sort/pagination works | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-17 | AC-10 | Planned |

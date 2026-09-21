@@ -123,8 +123,8 @@ Full suites re-run under authenticated identity, per
 
 | Suite | Result | Raw evidence |
 |---|---|---|
-| Server (`cd server && npm test`) | 34 files passed, 424 tests passed, **0 skipped** | `artifacts/lab-03/regression/server-vitest.txt` |
-| Client (`cd client && npx vitest run`) | 12 files passed, 117 tests passed, 0 skipped | `artifacts/lab-03/regression/client-vitest.txt` |
+| Server (`cd server && npm test`) | 34 files passed, 431 tests passed, **0 skipped** | `artifacts/lab-03/regression/server-vitest.txt` |
+| Client (`cd client && npx vitest run`) | 12 files passed, 120 tests passed, 0 skipped | `artifacts/lab-03/regression/client-vitest.txt` |
 | Lab 2 E2E (`npx playwright test e2e/lab-02 --project=desktop --project=tablet --project=mobile`) | 156 passed across 3 projects (desktop/tablet/mobile) | `artifacts/lab-03/regression/lab2-e2e-run.txt` |
 
 Class (a) suites keep every functional assertion and only swap the identity fixture;
@@ -133,6 +133,16 @@ with authenticated-identity assertions; no class (c) regression was found in the
 server/client suites. The E2E migration surfaced one class (c) client regression
 (`fetchCategories` response shape), which was fixed in the code — see the audit's
 "Class (c) regressions found and fixed" section.
+
+**Follow-up (2026-09-20) — My Tickets status/sort contract alignment.** The P2 review
+finding was fixed in the code (full `TicketStatus` filter set; documented sort keys
+`createdAt`/`ticketNumber`/`summary`/`status`/`priority` with `requestedPriority` retained
+as a Lab 2 alias; logical-order `status`/`priority` sorting; frontend dropdown and sortable
+columns aligned). One Lab 2 assertion was **superseded** by the widened enum: `API-MY-07`'s
+`status=CLOSED → 400` probe, since `CLOSED` is a valid Lab 3 status. The probe moved to
+`NOT_A_STATUS` (rule unchanged) with a replacement case asserting `CLOSED` is accepted; the
+mapping is recorded in `lab2-test-audit.md`. Server **431 passed / 0 skipped**, client
+**120 passed / 0 skipped**.
 
 ## 6. Gate result
 

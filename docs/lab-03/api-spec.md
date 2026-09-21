@@ -59,6 +59,18 @@ Unknown JSON properties are ignored unless this contract lists them as stored da
 values accept only the decimal grammar `0|[1-9][0-9]*` with no sign, decimal point, whitespace,
 or exponent.
 
+**Client-supplied requester identity (frozen clarification):** A `requesterId` (or any other
+client-supplied ownership field) in a request body is an **unknown property** and is therefore
+**ignored**, not rejected. Ownership is always taken from the authenticated session identity
+(BR-03). A request whose body carries a `requesterId` that does not match the authenticated user
+is **not** an error: the Ticket is created normally and owned by the authenticated user, and the
+mismatched value has no effect. This is the behavior asserted by `tests.md` `SEC-AUTHZ-01`.
+
+> Note: Issue #37's checklist wording ("mismatched requester identity is rejected") is satisfied
+> in substance — the mismatched identity is never honored — but the literal HTTP behavior is
+> *ignore*, not *reject*. The frozen contract above is authoritative; the implementation must not
+> be changed to return an error for this case without reconciling this section first.
+
 **Standard pagination metadata (list endpoints):**
 ```json
 {
@@ -273,8 +285,8 @@ server-side.
 |---|---|---|---|
 | `search` | string | — | substring match on `ticketNumber` and `summary` |
 | `categoryId` | int | — | filter |
-| `requestedPriority` | enum | — | filter |
-| `status` | enum | — | filter |
+| `requestedPriority` | enum | — | filter; `LOW`/`MEDIUM`/`HIGH` |
+| `status` | enum | — | filter; one of the eight Ticket statuses |
 | `sort` | string | `createdAt` | one of `createdAt`, `ticketNumber`, `summary`, `status`, `priority` |
 | `order` | string | `desc` | `asc`/`desc` |
 | `page` | int | `1` | page |
@@ -283,8 +295,24 @@ server-side.
 **Query semantics (frozen):** `search` is a case-insensitive substring match against
 `ticketNumber` and `summary`; filters combine with AND; `sort` accepts only `createdAt`,
 `ticketNumber`, `summary`, `status`, and `priority`; default is `createdAt desc`; `pageSize`
-defaults to `10` and accepts `1`–`50`. Invalid query values fall back to safe defaults (never
-`400`), matching `tests.md` `API-QUE-02`.
+defaults to `10` and accepts `1`–`50`.
+
+`status` filters on the full frozen `TicketStatus` enum (`NEW`, `OPEN`, `IN_PROGRESS`,
+`WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`) — not only `NEW`.
+`sort=status` orders by the logical workflow sequence above, not alphabetically;
+`sort=priority` orders by the logical `LOW < MEDIUM < HIGH` sequence. `requestedPriority`
+remains accepted as a Lab 2 compatibility alias for `priority`.
+
+**Invalid-value behavior (frozen; two distinct classes):**
+- **Safe-default fallback (never `400`):** `sort`, `order`, `page`, and `pageSize`. An unknown
+  `sort` falls back to `createdAt desc`; an unknown `order` falls back to `desc`; a malformed or
+  non-positive `page` falls back to `1`; an out-of-range `pageSize` falls back to `10`. This
+  matches `tests.md` `API-QUE-02`.
+- **Validation error (`400 VALIDATION_ERROR`):** an out-of-enum `status` or `requestedPriority`
+  value, and a malformed `categoryId`. A well-formed but nonexistent/inactive `categoryId`
+  returns `409 INACTIVE_REFERENCE`. This is the preserved Lab 2 contract
+  (`docs/lab-02/api-spec.md`; `tests.md` `API-MY-06`/`API-MY-07`) and is **not** changed by
+  Lab 3 — Lab 3 only widens the accepted `status` set and the accepted `sort` keys.
 
 **Response 200**
 ```json

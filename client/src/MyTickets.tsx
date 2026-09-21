@@ -16,9 +16,24 @@ interface MyTicketsProps {
   resetKey: number;
 }
 
-const VALID_SORTS = ["createdAt", "ticketNumber", "summary", "requestedPriority"] as const;
+const VALID_SORTS = ["createdAt", "ticketNumber", "summary", "status", "priority"] as const;
 type SortField = (typeof VALID_SORTS)[number];
 type SortOrder = "asc" | "desc";
+
+/**
+ * The frozen Ticket status set (specification.md §9.3 / api-spec §8).
+ * The filter offers every status the backend accepts.
+ */
+const TICKET_STATUSES = [
+  { value: "NEW", label: "New" },
+  { value: "OPEN", label: "Open" },
+  { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "WAITING_FOR_REQUESTER", label: "Waiting for Requester" },
+  { value: "RESOLVED", label: "Resolved" },
+  { value: "CLOSED", label: "Closed" },
+  { value: "REOPENED", label: "Reopened" },
+  { value: "CANCELLED", label: "Cancelled" },
+] as const;
 
 export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: MyTicketsProps) {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -260,7 +275,9 @@ export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: My
             aria-label="Filter by status"
           >
             <option value="">All Statuses</option>
-            <option value="NEW">New</option>
+            {TICKET_STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
           </select>
           {hasActiveFilters && (
             <button className="tertiary-button" onClick={handleClearFilters}>
@@ -357,8 +374,8 @@ export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: My
                   {renderSortableHeader("Created Date", "createdAt")}
                   {renderSortableHeader("Summary", "summary")}
                   <th>Category</th>
-                  {renderSortableHeader("Requested Priority", "requestedPriority")}
-                  <th>Current Status</th>
+                  {renderSortableHeader("Requested Priority", "priority")}
+                  {renderSortableHeader("Current Status", "status")}
                   <th>Last Updated</th>
                 </tr>
               </thead>

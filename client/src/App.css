@@ -107,6 +107,13 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 /* Status badge */
 .status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
 .status-new { background: var(--color-pale-green); color: var(--color-primary); border: 1px solid var(--color-primary); }
+.status-open { background: #e0f2fe; color: #075985; border: 1px solid #075985; }
+.status-in_progress { background: #fef3c7; color: #92400e; border: 1px solid #92400e; }
+.status-waiting_for_requester { background: #ede9fe; color: #5b21b6; border: 1px solid #5b21b6; }
+.status-resolved { background: var(--color-pale-green); color: var(--color-secondary); border: 1px solid var(--color-secondary); }
+.status-closed { background: #e5e7eb; color: #374151; border: 1px solid #374151; }
+.status-reopened { background: #ffedd5; color: #9a3412; border: 1px solid #9a3412; }
+.status-cancelled { background: #fee2e2; color: #991b1b; border: 1px solid #991b1b; }
 
 /* Priority badges */
 .priority-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }

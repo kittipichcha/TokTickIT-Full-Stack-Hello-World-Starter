@@ -8,6 +8,7 @@
 |----|--------|------------------|
 | [#44 — Add Sprint 3 engineering contract (Issue #34)](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/44) | `feature/issue-34-sprint-3-contract` | Changes Requested (2026-09-10) |
 | [#46 — feat(lab-03): Issue #35 — Identity, Database Migration & Authentication](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/46) | `feature/issue-35-identity-db-migration-auth` → `lab3-staging` | Changes Requested (2026-09-17) — remediation in progress; **human review PENDING** |
+| [#47 — feat(lab-03): Issue #37 — Authorization + Requester Migration / Regression](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/47) | `feature/issue-37-authorization-requester-migration` → `lab3-staging` | Agent review (2026-09-20) — 2 blocking + 6 non-blocking findings, all remediated; **human review PENDING** |
 
 **Issue #34**
 Reviewer comment I received: **Request Changes** — 5 blocking issues before the contract could be considered frozen:
@@ -301,6 +302,88 @@ spec §9.3 defines it as nullable with a default of `requestedPriority`.
   still hold the old commits, so a Support purge may still be worthwhile. Attachment ownership: the
   guard is present, NULL-safe, and runs before Phase C on every path. `itPriority`: now set on
   create. Async auth crash: re-ran the repro; it returns HTTP 500 and the server stays up.
+
+**Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
+is claimed, and no false sign-off is recorded.
+
+### Issue #37 — Authorization + Requester Migration / Regression (PR #47)
+
+**Reviewer comment I received (2026-09-20): Changes Requested.** The review was performed by an
+agent against the frozen Lab 3 contract (`docs/lab-03/specification.md`, `api-spec.md`,
+`ui-spec.md`, `tests.md`) and the Lab 2 regression baseline. It raised **2 blocking** and
+**6 non-blocking** findings.
+
+**Blocking**
+
+- **B-1 — the Lab 2 E2E suite still used the removed Dev-Requester mechanism.** Every
+  `e2e/lab-02/` spec drove the selector/header that #37 deletes, so the regression suite could not
+  run against the migrated app. Remediated: all specs now log in through the real Login screen
+  (`loginAsRequester`), `ownership.spec.ts` uses isolated Playwright request contexts (one cookie
+  jar per Requester), `responsive-visual.spec.ts` stubs `/api/auth/me` instead of the removed
+  endpoints, and a `globalSetup` seeds two E2E Requester accounts. Every layout, overflow,
+  touch-target, ownership, and partial-success assertion is retained; the retired selector/header
+  assertions each have an authenticated-identity replacement recorded in
+  `artifacts/lab-03/regression/lab2-test-audit.md`.
+- **B-2 — `api-spec.md` §11 contradicted the landed code.** The spec showed a `{ "data": [...] }`
+  envelope for the attachment list, but the endpoint returns a bare array (preserved from Lab 2,
+  decision D-18 / RR-02). Remediated: §11 now documents the bare array and `removedByUserId` is
+  documented in §11/§14; the decision is recorded in `specification.md`.
+
+**Non-blocking**
+
+- **N-1 — raw evidence missing.** Full server/client/E2E run outputs are now saved under
+  `artifacts/lab-03/regression/`.
+- **N-2 — `SEC-AUTHZ-07` wording.** Tightened to state `403 FORBIDDEN` on every then-protected
+  mutation route plus explicit no-state-change checks.
+- **N-3 — test seam not environment-guarded.** `requireAuth`/`requireCsrf` now honor
+  `testSeams.sessionIdentity` only when `NODE_ENV === "test"`; added `UNIT-AUTHZ-02` proving the
+  seam is inert under `NODE_ENV=production`.
+- **N-4 — README stale.** §1/§2/§8 now state the removed surface; the file tree was corrected.
+- **N-5 — idle-session UX.** Deferred to #42 (out of #37's scope).
+- **N-6 — dead CSS.** The unused `.requester-select` rule was removed.
+
+**Extra — class (c) regression found and fixed.** Migrating the E2E suite surfaced a real client
+bug: `fetchCategories` read `payload.data` from `GET /api/categories`, which returns a bare array,
+crashing `MyTickets` as soon as an authenticated shell rendered. Fixed in the code
+(`client/src/api.ts`), not the test.
+
+**Follow-up review round (2026-09-20) — P2: My Tickets diverged from the frozen Lab 3 filtering
+and sorting contract.** A second agent review found that `GET /api/tickets` accepted only
+`status=NEW` (any other valid status returned `400 VALIDATION_ERROR`) and recognized
+`sort=requestedPriority` but not the documented `sort=status`/`sort=priority`; the frontend
+mirrored both gaps. The `API-REQ-02` tests did not cover the mismatches.
+
+**How I responded — per finding:**
+
+- **P2 (accepted, fixed in the code).** `server/src/controller.ts` now validates `status` against
+  the full frozen `TicketStatus` enum and accepts the documented sort keys
+  (`createdAt`/`ticketNumber`/`summary`/`status`/`priority`), retaining `requestedPriority` as a
+  Lab 2 compatibility alias for `priority`. `server/src/service.ts` orders `status` by the logical
+  workflow sequence and `priority` by `LOW < MEDIUM < HIGH` (not alphabetically).
+  `client/src/MyTickets.tsx` offers all eight statuses in the filter and makes the Requested
+  Priority and Current Status columns sortable with the documented keys; `client/src/App.css`
+  gained badge styles for the seven previously unstyled statuses.
+- **P2 item 3 (safe defaults for *all* invalid query values) — deliberately not applied; scope
+  decision recorded.** Applying it would contradict the frozen Lab 2 contract
+  (`docs/lab-02/api-spec.md`; `tests.md` `API-MY-06`/`API-MY-07`), which classifies an out-of-enum
+  `status`/`requestedPriority` and a malformed `categoryId` as `400 VALIDATION_ERROR` (and a
+  nonexistent/inactive `categoryId` as `409 INACTIVE_REFERENCE`), and #37's plan locks "existing
+  `getMyTickets` search/filter/sort/pagination behavior is preserved". The two classes are now
+  documented explicitly in `api-spec.md` §8: safe-default fallback applies to
+  `sort`/`order`/`page`/`pageSize`; validation errors apply to the filter enums and `categoryId`.
+  Lab 3 widens the accepted status set and sort keys only.
+- **`requesterId` clarification (documentation only, no behavior change).** Issue #37's checklist
+  says a mismatched client-supplied `requesterId` must be "rejected"; the implementation
+  **ignores** it and assigns ownership to the authenticated user. This is the frozen convention
+  (unknown JSON properties are ignored; BR-03) and is what `SEC-AUTHZ-01` asserts. `api-spec.md` §0
+  now states this explicitly, including a note that the checklist wording is satisfied in substance
+  (the mismatched identity is never honored) but the literal HTTP behavior is *ignore*, not
+  *reject* — and that the implementation must not be changed without reconciling §0 first.
+- **Tests.** Extended the frozen `API-REQ-02` row with non-`NEW` status filtering, the five
+  documented sort keys in both directions, logical-order assertions for `sort=status` and
+  `sort=priority`, the retained `requestedPriority` alias, invalid-`sort` fallback, and the
+  preserved `400` behavior for out-of-enum filter values. Added supplementary `UI-MY-08` for the
+  frontend status dropdown and sort keys.
 
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.

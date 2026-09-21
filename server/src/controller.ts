@@ -29,6 +29,36 @@ import { MAX_DATABASE_ID } from "./id-domain.js";
 import type { Role } from "@prisma/client";
 
 /**
+ * The frozen Ticket status set (specification.md §9.3 / api-spec §8).
+ * Mirrors the Prisma `TicketStatus` enum; kept as a literal list so the query
+ * filter can be validated without a database round-trip.
+ */
+const TICKET_STATUSES = [
+  "NEW",
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_FOR_REQUESTER",
+  "RESOLVED",
+  "CLOSED",
+  "REOPENED",
+  "CANCELLED",
+] as const;
+
+/**
+ * Accepted `sort` keys for My Tickets (api-spec §8): `createdAt`,
+ * `ticketNumber`, `summary`, `status`, `priority`. `requestedPriority` is
+ * retained as a Lab 2 compatibility alias for `priority`.
+ */
+const VALID_SORTS = [
+  "createdAt",
+  "ticketNumber",
+  "summary",
+  "status",
+  "priority",
+  "requestedPriority",
+] as const;
+
+/**
  * Builds the explicit access context for shared Ticket/Attachment reads from the
  * authenticated identity populated by #35's `requireAuth` (current DB values).
  */
@@ -295,12 +325,19 @@ export async function getMyTicketsHandler(req: Request, res: Response): Promise<
     }
 
     // status: invalid enum → 400
+    // The frozen Lab 3 contract (api-spec §8) filters on the full TicketStatus
+    // enum, not just NEW. The Lab 2 contract's "invalid enum → 400" rule is
+    // preserved: a value outside the enum is still a validation error.
     let status: string | undefined;
     const rawStatus = firstQueryParam(req.query.status);
     if (rawStatus !== undefined) {
-      if (rawStatus !== "NEW") {
+      if (!(TICKET_STATUSES as readonly string[]).includes(rawStatus)) {
         res.status(400).json({
-          error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields: { status: "status must be NEW." } },
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Validation failed.",
+            fields: { status: `status must be one of ${TICKET_STATUSES.join(", ")}.` },
+          },
         });
         return;
       }
@@ -308,9 +345,12 @@ export async function getMyTicketsHandler(req: Request, res: Response): Promise<
     }
 
     // sort: invalid → fall back to createdAt (not an error)
-    const validSorts = ["createdAt", "ticketNumber", "summary", "requestedPriority"];
+    // Frozen Lab 3 api-spec §8 accepts `createdAt`, `ticketNumber`, `summary`,
+    // `status`, and `priority`. `requestedPriority` is retained as an accepted
+    // alias for `priority` so the Lab 2 sort contract (api-spec §8 of Lab 2)
+    // keeps working — both order by the logical LOW < MEDIUM < HIGH sequence.
     const rawSort = firstQueryParam(req.query.sort) ?? "";
-    const sort = validSorts.includes(rawSort) ? rawSort : "createdAt";
+    const sort = (VALID_SORTS as readonly string[]).includes(rawSort) ? rawSort : "createdAt";
 
     // order: invalid → fall back to desc (not an error)
     const rawOrder = firstQueryParam(req.query.order) ?? "";

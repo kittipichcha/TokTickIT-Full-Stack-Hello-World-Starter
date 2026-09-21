@@ -438,6 +438,8 @@ export async function getMyTickets(
   const totalItems = Number(countRows[0]!.count);
 
   // Build ORDER BY
+  // Frozen api-spec §8 sort keys: createdAt, ticketNumber, summary, status,
+  // priority. `requestedPriority` is a Lab 2 compatibility alias for `priority`.
   const orderDir = params.order === "asc" ? "ASC" : "DESC";
   let primaryOrder: string;
   switch (params.sort) {
@@ -447,8 +449,13 @@ export async function getMyTickets(
     case "summary":
       primaryOrder = `t."summary" ${orderDir}`;
       break;
+    case "priority":
     case "requestedPriority":
       primaryOrder = `CASE t."requestedPriority" WHEN 'LOW' THEN 1 WHEN 'MEDIUM' THEN 2 WHEN 'HIGH' THEN 3 END ${orderDir}`;
+      break;
+    case "status":
+      // Logical workflow order, not alphabetical (api-spec §8).
+      primaryOrder = `CASE t."currentStatus" WHEN 'NEW' THEN 1 WHEN 'OPEN' THEN 2 WHEN 'IN_PROGRESS' THEN 3 WHEN 'WAITING_FOR_REQUESTER' THEN 4 WHEN 'RESOLVED' THEN 5 WHEN 'CLOSED' THEN 6 WHEN 'REOPENED' THEN 7 WHEN 'CANCELLED' THEN 8 END ${orderDir}`;
       break;
     default:
       primaryOrder = `t."createdAt" ${orderDir}`;

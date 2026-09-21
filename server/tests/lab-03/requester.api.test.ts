@@ -48,7 +48,15 @@ async function seedTicket(
   overrides: {
     summary?: string;
     requestedPriority?: "LOW" | "MEDIUM" | "HIGH";
-    currentStatus?: "NEW" | "RESOLVED";
+    currentStatus?:
+      | "NEW"
+      | "OPEN"
+      | "IN_PROGRESS"
+      | "WAITING_FOR_REQUESTER"
+      | "RESOLVED"
+      | "CLOSED"
+      | "REOPENED"
+      | "CANCELLED";
     createdAt?: Date;
   } = {},
 ): Promise<string> {
@@ -290,11 +298,41 @@ describe("API-REQ-02: Requester My Tickets", () => {
     expect((byStatus.body.data as Array<{ currentStatus: string }>).every((t) => t.currentStatus === "NEW")).toBe(true);
   });
 
-  itIfDb("supports sort by createdAt/ticketNumber/summary/requestedPriority in both directions", async () => {
+  itIfDb("filters by every non-NEW Ticket status in the frozen enum", async () => {
+    // One seeded Ticket per non-NEW status; each filter must return only that status.
+    const nonNewStatuses = [
+      "OPEN",
+      "IN_PROGRESS",
+      "WAITING_FOR_REQUESTER",
+      "RESOLVED",
+      "CLOSED",
+      "REOPENED",
+      "CANCELLED",
+    ] as const;
+
+    for (const status of nonNewStatuses) {
+      const seeded = await seedTicket(requesterA.userId, {
+        summary: `Status filter probe ${status}`,
+        currentStatus: status,
+      });
+
+      const res = await withSession(
+        request(app).get("/api/tickets").query({ status, pageSize: 50 }),
+        requesterA,
+      );
+
+      expect(res.status).toBe(200);
+      const items = res.body.data as Array<{ ticketNumber: string; currentStatus: string }>;
+      expect(items.every((t) => t.currentStatus === status)).toBe(true);
+      expect(items.map((t) => t.ticketNumber)).toContain(seeded);
+    }
+  });
+
+  itIfDb("supports the documented sort keys createdAt/ticketNumber/summary/status/priority in both directions", async () => {
     await seedTicket(requesterA.userId, { summary: "Sort probe alpha" });
     await seedTicket(requesterA.userId, { summary: "Sort probe beta" });
 
-    for (const sort of ["createdAt", "ticketNumber", "summary", "requestedPriority"]) {
+    for (const sort of ["createdAt", "ticketNumber", "summary", "status", "priority"]) {
       for (const order of ["asc", "desc"]) {
         const res = await withSession(
           request(app).get("/api/tickets").query({ sort, order, pageSize: 50 }),
@@ -304,6 +342,46 @@ describe("API-REQ-02: Requester My Tickets", () => {
         expect(Array.isArray(res.body.data)).toBe(true);
       }
     }
+  });
+
+  itIfDb("sort=status orders by the logical workflow sequence, not alphabetically", async () => {
+    await seedTicket(requesterA.userId, { summary: "Status order probe NEW", currentStatus: "NEW" });
+    await seedTicket(requesterA.userId, { summary: "Status order probe OPEN", currentStatus: "OPEN" });
+    await seedTicket(requesterA.userId, { summary: "Status order probe CLOSED", currentStatus: "CLOSED" });
+
+    const res = await withSession(
+      request(app).get("/api/tickets").query({ sort: "status", order: "asc", search: "Status order probe", pageSize: 50 }),
+      requesterA,
+    );
+    expect(res.status).toBe(200);
+
+    const statuses = (res.body.data as Array<{ currentStatus: string }>).map((t) => t.currentStatus);
+    // NEW (1) < OPEN (2) < CLOSED (6) — alphabetical would give CLOSED < NEW < OPEN.
+    expect(statuses).toEqual(["NEW", "OPEN", "CLOSED"]);
+  });
+
+  itIfDb("sort=priority orders by the logical LOW < MEDIUM < HIGH sequence", async () => {
+    await seedTicket(requesterA.userId, { summary: "Priority order probe low", requestedPriority: "LOW" });
+    await seedTicket(requesterA.userId, { summary: "Priority order probe high", requestedPriority: "HIGH" });
+    await seedTicket(requesterA.userId, { summary: "Priority order probe medium", requestedPriority: "MEDIUM" });
+
+    const res = await withSession(
+      request(app).get("/api/tickets").query({ sort: "priority", order: "asc", search: "Priority order probe", pageSize: 50 }),
+      requesterA,
+    );
+    expect(res.status).toBe(200);
+
+    const priorities = (res.body.data as Array<{ requestedPriority: string }>).map((t) => t.requestedPriority);
+    expect(priorities).toEqual(["LOW", "MEDIUM", "HIGH"]);
+  });
+
+  itIfDb("retains the Lab 2 `requestedPriority` sort alias", async () => {
+    const res = await withSession(
+      request(app).get("/api/tickets").query({ sort: "requestedPriority", order: "asc", pageSize: 50 }),
+      requesterA,
+    );
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
   });
 
   itIfDb("paginates with page/pageSize and reports pagination metadata", async () => {
@@ -328,6 +406,43 @@ describe("API-REQ-02: Requester My Tickets", () => {
     expect(res.status).toBe(200);
     expect(res.body.pagination.page).toBe(1);
     expect(res.body.pagination.pageSize).toBe(10);
+  });
+
+  itIfDb("invalid sort falls back to createdAt desc (never 400)", async () => {
+    const res = await withSession(
+      request(app).get("/api/tickets").query({ sort: "notAField", pageSize: 50 }),
+      requesterA,
+    );
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+
+    // Same result set as the explicit default sort.
+    const explicit = await withSession(
+      request(app).get("/api/tickets").query({ sort: "createdAt", order: "desc", pageSize: 50 }),
+      requesterA,
+    );
+    expect(res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber)).toEqual(
+      explicit.body.data.map((t: { ticketNumber: string }) => t.ticketNumber),
+    );
+  });
+
+  itIfDb("invalid status/requestedPriority enums remain 400 VALIDATION_ERROR (Lab 2 contract preserved)", async () => {
+    // The frozen Lab 2 contract (docs/lab-02/api-spec.md, API-MY-07) classifies an
+    // out-of-enum filter value as a validation error, not a fallback default. Lab 3
+    // widens the accepted status set but does not change that rule.
+    const badStatus = await withSession(
+      request(app).get("/api/tickets").query({ status: "NOT_A_STATUS" }),
+      requesterA,
+    );
+    expect(badStatus.status).toBe(400);
+    expect(badStatus.body.error.code).toBe("VALIDATION_ERROR");
+
+    const badPriority = await withSession(
+      request(app).get("/api/tickets").query({ requestedPriority: "URGENT" }),
+      requesterA,
+    );
+    expect(badPriority.status).toBe(400);
+    expect(badPriority.body.error.code).toBe("VALIDATION_ERROR");
   });
 
   itIfDb("supplementary role gate: IT Staff -> 403 FORBIDDEN (not an empty list)", async () => {

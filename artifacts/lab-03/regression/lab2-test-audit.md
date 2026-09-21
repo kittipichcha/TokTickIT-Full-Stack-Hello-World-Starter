@@ -45,7 +45,7 @@ covered by #35's auth suite and by #37's frozen `authorization.api.test.ts` /
 | `create-ticket.api.test.ts` | (a) | Fixture swapped. `API-TKT-04` renamed from "Ownership assigned from X-Dev-Requester-Id" to "…from the authenticated identity"; the test now also asserts a body-supplied `requesterId` is ignored (strengthened, not weakened). |
 | `create-ticket-normalization.api.test.ts` | (a) | Fixture swapped only. |
 | `integer-validation.api.test.ts` | (a) | Fixture swapped only. |
-| `my-tickets.api.test.ts` | (a) | Fixture swapped only. |
+| `my-tickets.api.test.ts` | (a) + (b) | Fixture swapped only. **Follow-up (2026-09-20):** the `API-MY-07` "returns 400 for invalid status enum" case probed `status=CLOSED`, which was out-of-enum in Lab 2 (only `NEW` existed) but is a **valid** value under Lab 3's frozen eight-value `TicketStatus` enum (api-spec §8). The assertion is **superseded** → the probe value moved to `NOT_A_STATUS` (the rule under test — out-of-enum status is a validation error, not a fallback default — is unchanged), and a replacement case asserts `status=CLOSED` is now accepted and forwarded to the service. |
 | `reference-data.api.test.ts` | (a) | Fixture swapped. The two "does not require X-Dev-Requester-Id header" tests renamed to "requires an authenticated session (no longer public)" — the endpoint is no longer public (api-spec §5/§6). |
 | `ticket-detail.api.test.ts` | (a) + (b) | Fixture swapped; `ticketOwnedByRequester` stubbed for the shared-read middleware; response key renamed. The `returns 422 for missing requester header` case is **superseded** (the header is gone) → replaced with `returns 401 for an unauthenticated request`. |
 | `dev-requesters.api.test.ts` | (b) | Entirely superseded (asserted `GET /api/dev-requesters` payload shape). **Retired and replaced** with assertions that the endpoint is gone, the legacy header authorizes nothing, and authenticated reference data is served. |
@@ -115,6 +115,42 @@ selector screen no longer exists.
 | `ticket-detail.api.test.ts` — missing-header case | Reclassified from `422` to `401` | Same reason: the header no longer exists; an unauthenticated request is `401 UNAUTHENTICATED` per the frozen §0 canonical table. |
 | `reference-data.api.test.ts` — "does not require header" | Renamed to "requires an authenticated session" | The endpoint was public in Lab 2 and is authenticated in Lab 3 (api-spec §5/§6). The assertion direction inverts because the contract changed, not because the test was weakened. |
 | `attachments.api.test.ts` — list response shape | Kept as a bare array | The landed Lab 2 response shape is a bare array (not `{data: [...]}`). #37 preserves it (RR-02); the frozen `authorization.api.test.ts` asserts the same shape. |
+| `my-tickets.api.test.ts` — `API-MY-07` "returns 400 for invalid status enum" | Probe value moved from `CLOSED` to `NOT_A_STATUS` (rule unchanged); replacement case asserts `CLOSED` is now accepted | Lab 2 had only the `NEW` status, so `CLOSED` was out-of-enum. Lab 3's frozen contract (api-spec §8) filters on the full eight-value `TicketStatus` enum, so `CLOSED` is now a **valid** filter value. The rule under test — an out-of-enum status is a validation error, not a fallback default — is preserved; only the probe value had to move to a value genuinely outside the enum. Found by the full server suite during the 2026-09-20 review follow-up. |
+
+## Results Log (newest first)
+
+- **2026-09-20 — Issue #37 review follow-up (My Tickets status/sort contract alignment)**
+  - **P2 — My Tickets diverged from the frozen Lab 3 filtering and sorting contract (real defect,
+    fixed in the code).** `getMyTicketsHandler` accepted only `status=NEW` (any other valid status
+    returned `400 VALIDATION_ERROR`) and did not recognize the documented `sort=status` /
+    `sort=priority`; the frontend mirrored both gaps. `server/src/controller.ts` now validates
+    `status` against the full frozen `TicketStatus` enum and accepts
+    `createdAt/ticketNumber/summary/status/priority` (with `requestedPriority` retained as a Lab 2
+    alias); `server/src/service.ts` orders `status` by the logical workflow sequence and `priority`
+    by `LOW < MEDIUM < HIGH`; `client/src/MyTickets.tsx` offers all eight statuses and makes the
+    Requested Priority / Current Status columns sortable; `client/src/App.css` gained badge styles
+    for the seven previously unstyled statuses.
+  - **Invalid-value behavior deliberately unchanged.** Safe-default fallback applies only to
+    `sort`/`order`/`page`/`pageSize`; out-of-enum `status`/`requestedPriority` and malformed
+    `categoryId` remain `400 VALIDATION_ERROR` (nonexistent/inactive `categoryId` →
+    `409 INACTIVE_REFERENCE`), per the preserved Lab 2 contract. Both classes are now documented
+    explicitly in `api-spec.md` §8.
+  - **`requesterId` clarification (documentation only).** A mismatched client-supplied
+    `requesterId` is **ignored** (frozen convention; BR-03), not rejected; `api-spec.md` §0 now
+    records this explicitly, including that the Issue #37 checklist wording is satisfied in
+    substance but the literal HTTP behavior is *ignore*, not *reject*.
+  - **Tests.** Extended the frozen `API-REQ-02` row (non-`NEW` status filtering; five documented
+    sort keys in both directions; `sort=status` and `sort=priority` logical-order assertions; the
+    retained alias; invalid-`sort` fallback; preserved `400` for out-of-enum filters) and added
+    supplementary `UI-MY-08` for the frontend dropdown and sort keys. One Lab 2 assertion
+    (`API-MY-07`'s `CLOSED` probe) was **superseded** by the widened enum — recorded in the table
+    above.
+  - Results: server **431 passed, 0 skipped**; client **120 passed, 0 skipped**; Lab 2 E2E
+    **156 passed** across 3 projects (desktop/tablet/mobile), matching the recorded baseline.
+  - Note: an initial E2E run reported 13 `[mobile]` failures, all
+    `page.goto: net::ERR_CONNECTION_REFUSED` — an **environment failure** (the dev servers had
+    been stopped), not an implementation defect. The re-run with the servers up was fully green.
+  - Follow-up: none.
 
 ## Class (c) regressions found and fixed (fix the code, never the test)
 

@@ -256,3 +256,53 @@
   the shell; the E2E migration was the first thing to drive that path. It also reinforced that
   a "test seam" that bypasses production gates is a liability unless it is provably inert
   outside the test environment, which is exactly what the N-3 guard adds.
+
+## Issue #37 Review Follow-up Entry (Round 2 — My Tickets status/sort contract alignment)
+
+- Prompt summary: Read the P2 finding that My Tickets diverges from the frozen Lab 3 filtering
+  and sorting contract, fix the accepted status set and sort keys in the backend and frontend,
+  add a clarifying note for the mismatched-`requesterId` behavior, extend `API-REQ-02`, update
+  all related documentation, verify with the review-pr skill, then commit and push.
+- What was done with output:
+  - **P2 — status filter and sort keys (real defect, fixed in the code).**
+    `server/src/controller.ts` now validates `status` against the full frozen `TicketStatus`
+    enum instead of only `NEW`, and accepts the documented sort keys
+    (`createdAt`/`ticketNumber`/`summary`/`status`/`priority`), keeping `requestedPriority` as a
+    Lab 2 compatibility alias for `priority`. `server/src/service.ts` orders `status` by the
+    logical workflow sequence and `priority` by `LOW < MEDIUM < HIGH` rather than
+    alphabetically. `client/src/MyTickets.tsx` offers all eight statuses in the filter dropdown
+    and makes the Requested Priority and Current Status columns sortable with the documented
+    keys; `client/src/App.css` gained badge styles for the seven previously unstyled statuses.
+  - **Scope decision — invalid-value behavior left unchanged.** The finding also proposed
+    applying safe-default fallback to *all* invalid query values. That would contradict the
+    frozen Lab 2 contract (`docs/lab-02/api-spec.md`; `tests.md` `API-MY-06`/`API-MY-07`), which
+    classifies an out-of-enum `status`/`requestedPriority` and a malformed `categoryId` as
+    `400 VALIDATION_ERROR` (nonexistent/inactive `categoryId` → `409 INACTIVE_REFERENCE`), and
+    #37's plan locks "existing `getMyTickets` search/filter/sort/pagination behavior is
+    preserved". The two classes are now documented explicitly in `api-spec.md` §8.
+  - **`requesterId` clarification (documentation only).** Issue #37's checklist says a mismatched
+    client-supplied `requesterId` must be "rejected"; the implementation **ignores** it and
+    assigns ownership to the authenticated user — the frozen convention (unknown JSON properties
+    are ignored; BR-03) and what `SEC-AUTHZ-01` asserts. `api-spec.md` §0 now states this
+    explicitly and records that the implementation must not be changed without reconciling §0.
+  - **Tests.** Extended the frozen `API-REQ-02` row with non-`NEW` status filtering, the five
+    documented sort keys in both directions, logical-order assertions for `sort=status` and
+    `sort=priority`, the retained `requestedPriority` alias, invalid-`sort` fallback, and the
+    preserved `400` behavior for out-of-enum filter values. Added supplementary `UI-MY-08` for
+    the frontend status dropdown and sort keys.
+  - **Documentation:** updated `docs/lab-03/api-spec.md` (§0 requesterId clarification, §8 query
+    semantics and invalid-value classes), `ui-spec.md` §5.4 (status filter and sortable columns),
+    `tests.md` (`API-REQ-02` row + Results Log), and `reviewer.md` (Issue #37 review record).
+- **Notable engineering judgment:**
+  - The finding bundled a genuine contract mismatch (status set, sort keys) with a proposal that
+    would have broken a frozen contract (safe defaults for filter enums). The two were separated:
+    the mismatch was fixed in the code, and the proposal was declined with the Lab 2 authority
+    cited and the distinction documented rather than silently applied.
+  - `requestedPriority` was kept as an accepted sort alias rather than removed. The Lab 2
+    contract and its real-DB tests sort by `requestedPriority`, so dropping it would have been a
+    regression; the Lab 3 key `priority` was added alongside it.
+- **Reflection:** The defect existed because the Lab 2 handler was carried forward verbatim while
+  the Lab 3 contract widened the enum and the sort vocabulary. The `API-REQ-02` row was marked
+  `Passed` on tests that only exercised `status=NEW` and the four legacy sort keys, so the gap was
+  invisible to the suite — a reminder that a `Passed` row is only as strong as the values its
+  assertions actually exercise.
