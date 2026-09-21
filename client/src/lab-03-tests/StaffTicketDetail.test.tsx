@@ -6,7 +6,8 @@
  *   - UI-STAFF-02  Status change to Resolved/Closed/Cancelled confirmation (AC-13)
  *
  * Supplementary (never a tests.md row): safe-render assertion (BR-24) — HTML/
- * script content renders as text, never as markup.
+ * script content renders as text, never as markup — and the ownership
+ * assign/reassign control (FR-16, ui-spec §5.7).
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +17,12 @@ import StaffTicketDetail from "../StaffTicketDetail";
 import * as api from "../api";
 
 vi.mock("../api");
+
+const OWNERS = [
+  { id: 5, name: "Alice", role: "IT_STAFF" },
+  { id: 6, name: "Bob", role: "IT_STAFF" },
+  { id: 9, name: "Carol", role: "ADMINISTRATOR" },
+];
 
 function detail(overrides: Partial<api.StaffTicketDetail> = {}): api.StaffTicketDetail {
   return {
@@ -46,6 +53,7 @@ function detail(overrides: Partial<api.StaffTicketDetail> = {}): api.StaffTicket
 describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue(OWNERS);
   });
   afterEach(() => cleanup());
 
@@ -166,9 +174,92 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Supplementary — ownership assign/reassign control (FR-16, ui-spec §5.7)
+// ---------------------------------------------------------------------------
+
+describe("Ownership assign/reassign (FR-16)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue(OWNERS);
+  });
+  afterEach(() => cleanup());
+
+  it("reassigns an owned ticket to another eligible staff member", async () => {
+    // Ticket owned by Staff A (id 5); current user is Staff B (id 6).
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ ticketOwnerId: 5 }));
+    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 9 });
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={6} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.selectOptions(await screen.findByLabelText("Ticket Owner"), "9");
+    await userEvent.click(screen.getByRole("button", { name: /^Reassign$/i }));
+
+    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 9));
+  });
+
+  it("assigns an unowned ticket to a selected eligible owner", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ ticketOwnerId: null }));
+    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 9 });
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={6} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.selectOptions(await screen.findByLabelText("Ticket Owner"), "9");
+    await userEvent.click(screen.getByRole("button", { name: /^Assign$/i }));
+
+    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 9));
+  });
+
+  it("offers only eligible owners (no Requesters or inactive users)", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail());
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={6} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await waitFor(() => expect(screen.getByRole("option", { name: /Alice — IT Staff/ })).toBeTruthy());
+    expect(screen.getByRole("option", { name: /Bob — IT Staff/ })).toBeTruthy();
+    expect(screen.getByRole("option", { name: /Carol — Administrator/ })).toBeTruthy();
+    // The Requester from the detail payload is never offered as an owner.
+    expect(screen.queryByRole("option", { name: /Ada Lovelace/ })).toBeNull();
+  });
+
+  it("keeps the claim-to-me convenience action available", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ ticketOwnerId: null }));
+    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 6 });
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={6} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.click(screen.getByRole("button", { name: /Claim \/ Reassign to me/i }));
+    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 6));
+  });
+
+  it("surfaces a 409 failure without displaying a false owner", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ ticketOwnerId: 5 }));
+    vi.mocked(api.setTicketOwner).mockRejectedValue(
+      new Error("The specified owner is not an active IT Staff or Administrator user."),
+    );
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={6} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.selectOptions(await screen.findByLabelText("Ticket Owner"), "9");
+    await userEvent.click(screen.getByRole("button", { name: /^Reassign$/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("not an active IT Staff or Administrator");
+
+    // The selector resets and the displayed owner is still the persisted one.
+    await waitFor(() =>
+      expect((screen.getByLabelText("Ticket Owner") as HTMLSelectElement).value).toBe(""),
+    );
+    expect(screen.getByText("User #5")).toBeTruthy();
+    // The user can retry.
+    expect(screen.getByRole("button", { name: /^Reassign$/i })).toBeTruthy();
+  });
+});
+
 describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue(OWNERS);
   });
   afterEach(() => cleanup());
 

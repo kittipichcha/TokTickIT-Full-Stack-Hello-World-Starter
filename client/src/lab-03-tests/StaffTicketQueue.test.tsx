@@ -4,6 +4,10 @@
  * Owned by Issue #38. Frozen rows executed here:
  *   - UI-QUE-01  Staff Ticket Queue (AC-10)
  *   - UI-QUE-02  Staff Queue zero-result search/filter (AC-10)
+ *
+ * Supplementary (never a tests.md row): owner filter, combined filters, and the
+ * ui-spec §5.6 required queue information (Category, Last Updated) on both the
+ * desktop table and the mobile card representation.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,14 +22,20 @@ const TICKET = {
   id: 1,
   ticketNumber: "TKT-2026-000001",
   summary: "Printer not working",
+  categoryName: "Hardware",
   currentStatus: "NEW",
   requestedPriority: "MEDIUM",
   itPriority: "HIGH",
   ticketOwnerId: null,
   requesterId: 7,
   createdAt: "2026-09-10T00:00:00Z",
-  updatedAt: "2026-09-10T00:00:00Z",
+  updatedAt: "2026-09-12T00:00:00Z",
 };
+
+const OWNERS = [
+  { id: 5, name: "Alice", role: "IT_STAFF" },
+  { id: 6, name: "Carol", role: "ADMINISTRATOR" },
+];
 
 function queueResponse(data = [TICKET], unfilteredTotalItems = data.length) {
   return {
@@ -43,6 +53,7 @@ function queueResponse(data = [TICKET], unfilteredTotalItems = data.length) {
 describe("UI-QUE-01 — Staff Ticket Queue (AC-10)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue(OWNERS);
   });
   afterEach(() => cleanup());
 
@@ -115,6 +126,150 @@ describe("UI-QUE-01 — Staff Ticket Queue (AC-10)", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Network error");
     expect(screen.getByRole("button", { name: /Retry/i })).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Supplementary — owner filter (ui-spec §5.6, FR-16)
+// ---------------------------------------------------------------------------
+
+describe("Owner filter (ui-spec §5.6)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue(OWNERS);
+  });
+  afterEach(() => cleanup());
+
+  it("renders the owner filter with only eligible owners", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+
+    const select = await screen.findByLabelText("Filter by owner");
+    expect(select).toBeTruthy();
+    expect(screen.getByRole("option", { name: "All Owners" })).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: /Alice — IT Staff/ })).toBeTruthy(),
+    );
+    expect(screen.getByRole("option", { name: /Carol — Administrator/ })).toBeTruthy();
+  });
+
+  it("passes ownerId to the API and resets to page 1", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+
+    await waitFor(() => expect(api.fetchStaffQueue).toHaveBeenCalled());
+    await userEvent.selectOptions(await screen.findByLabelText("Filter by owner"), "5");
+
+    await waitFor(() =>
+      expect(api.fetchStaffQueue).toHaveBeenLastCalledWith(
+        expect.objectContaining({ ownerId: 5, page: 1 }),
+      ),
+    );
+  });
+
+  it("combines search, status, IT priority, and owner in one request", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+
+    await waitFor(() => expect(api.fetchStaffQueue).toHaveBeenCalled());
+    await userEvent.type(screen.getByLabelText("Search tickets"), "printer");
+    await userEvent.selectOptions(screen.getByLabelText("Filter by status"), "OPEN");
+    await userEvent.selectOptions(screen.getByLabelText("Filter by IT priority"), "HIGH");
+    await userEvent.selectOptions(await screen.findByLabelText("Filter by owner"), "5");
+
+    await waitFor(() =>
+      expect(api.fetchStaffQueue).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          search: "printer",
+          status: "OPEN",
+          priority: "HIGH",
+          ownerId: 5,
+        }),
+      ),
+    );
+  });
+
+  it("Clear Filters removes the owner selection and resets to page 1", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+
+    await waitFor(() => expect(api.fetchStaffQueue).toHaveBeenCalled());
+    await userEvent.selectOptions(await screen.findByLabelText("Filter by owner"), "5");
+    await waitFor(() =>
+      expect(api.fetchStaffQueue).toHaveBeenLastCalledWith(
+        expect.objectContaining({ ownerId: 5 }),
+      ),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Clear Filters/i }));
+
+    await waitFor(() => {
+      const lastCall = vi.mocked(api.fetchStaffQueue).mock.calls.at(-1)![0];
+      expect(lastCall?.ownerId).toBeUndefined();
+      expect(lastCall?.page).toBe(1);
+    });
+    expect((screen.getByLabelText("Filter by owner") as HTMLSelectElement).value).toBe("");
+  });
+
+  it("keeps the queue usable when the eligible-owner lookup fails", async () => {
+    vi.mocked(api.fetchAssignableOwners).mockRejectedValue(new Error("boom"));
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+
+    await waitFor(() =>
+      expect(screen.getAllByText("Printer not working").length).toBeGreaterThan(0),
+    );
+    expect(screen.getByLabelText("Filter by owner")).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Supplementary — required queue information (ui-spec §5.6)
+// ---------------------------------------------------------------------------
+
+describe("Required queue information (ui-spec §5.6)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue(OWNERS);
+  });
+  afterEach(() => cleanup());
+
+  it("exposes every required field for a ticket", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+
+    await waitFor(() => expect(screen.getAllByText("TKT-2026-000001").length).toBeGreaterThan(0));
+
+    // Ticket No., Summary, Category, Requested Priority, IT Priority, Status,
+    // Owner, Created, Last Updated, Open Detail.
+    expect(screen.getAllByText("TKT-2026-000001").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Printer not working").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Hardware").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("MEDIUM").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("HIGH").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("NEW").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Unassigned").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Last Updated/).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Open Detail/i }).length).toBeGreaterThan(0);
+  });
+
+  it("renders the mobile card with the same required information", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    const { container } = render(<StaffTicketQueue onOpenDetail={() => {}} />);
+
+    await waitFor(() => expect(screen.getAllByText("TKT-2026-000001").length).toBeGreaterThan(0));
+
+    const card = container.querySelector(".ticket-card");
+    expect(card).toBeTruthy();
+    const text = card!.textContent ?? "";
+    expect(text).toContain("TKT-2026-000001");
+    expect(text).toContain("Printer not working");
+    expect(text).toContain("Hardware");
+    expect(text).toContain("MEDIUM");
+    expect(text).toContain("HIGH");
+    expect(text).toContain("Unassigned");
+    expect(text).toContain("Last Updated");
+    expect(card!.querySelector("button")?.textContent).toMatch(/Open Detail/i);
   });
 });
 
