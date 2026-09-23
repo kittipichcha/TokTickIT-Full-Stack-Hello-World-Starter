@@ -46,6 +46,7 @@ function detail(overrides: Partial<api.StaffTicketDetail> = {}): api.StaffTicket
     updatedAt: "2026-09-10T00:00:00Z",
     publicComments: [],
     internalNotes: [],
+    attachments: [],
     ...overrides,
   };
 }
@@ -333,5 +334,122 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
     await waitFor(() =>
       expect(vi.mocked(api.fetchStaffTicketDetail).mock.calls.length).toBeGreaterThan(callsBefore),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Issue #38 review fix (49-B2) — Existing Attachments on the Staff Detail
+// (ui-spec §5.7). Read-only: view/preview/download only, never upload/remove.
+// ---------------------------------------------------------------------------
+
+const ATTACHMENTS: api.AttachmentItem[] = [
+  {
+    id: 10,
+    originalFilename: "photo.jpg",
+    mimeType: "image/jpeg",
+    fileSizeBytes: 12345,
+    uploadedAt: "2026-09-10T00:00:00Z",
+    isRemoved: false,
+    removedAt: null,
+    removalReason: null,
+    removedByUserId: null,
+  },
+  {
+    id: 11,
+    originalFilename: "report.pdf",
+    mimeType: "application/pdf",
+    fileSizeBytes: 54321,
+    uploadedAt: "2026-09-11T00:00:00Z",
+    isRemoved: true,
+    removedAt: "2026-09-12T00:00:00Z",
+    removalReason: "Duplicate upload",
+    removedByUserId: 7,
+  },
+];
+
+describe("UI-49-ATT — Staff Detail Existing Attachments (49-B2)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue(OWNERS);
+    // jsdom does not implement these browser APIs; stub them so the
+    // Preview/Download paths can be exercised without noisy errors.
+    vi.spyOn(window, "open").mockImplementation(() => null);
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it("UI-49-ATT-01 — lists the ticket's existing attachments", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ attachments: ATTACHMENTS }));
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    expect(screen.getByText("photo.jpg")).toBeTruthy();
+    expect(screen.getByText("report.pdf")).toBeTruthy();
+  });
+
+  it("UI-49-ATT-02 — exposes Preview and Download for an active attachment", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(
+      detail({ attachments: [ATTACHMENTS[0]] }),
+    );
+    vi.mocked(api.previewAttachmentFile).mockResolvedValue({
+      blob: new Blob(["x"]),
+      mimeType: "image/jpeg",
+    });
+    vi.mocked(api.downloadAttachmentFile).mockResolvedValue({
+      blob: new Blob(["x"]),
+      filename: "photo.jpg",
+    });
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.click(screen.getByRole("button", { name: "Preview" }));
+    await waitFor(() => expect(api.previewAttachmentFile).toHaveBeenCalledWith(10));
+
+    await userEvent.click(screen.getByRole("button", { name: "Download" }));
+    await waitFor(() => expect(api.downloadAttachmentFile).toHaveBeenCalledWith(10));
+  });
+
+  it("UI-49-ATT-03 — represents a removed attachment safely", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(
+      detail({ attachments: [ATTACHMENTS[1]] }),
+    );
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    expect(screen.getByText("Removed")).toBeTruthy();
+    expect(screen.getByText("Duplicate upload")).toBeTruthy();
+    // Preview/Download are disabled for a removed attachment.
+    expect((screen.getByRole("button", { name: "Preview" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Download" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("UI-49-ATT-04 — never exposes Upload or Remove controls", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ attachments: ATTACHMENTS }));
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    expect(screen.queryByRole("button", { name: /upload/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /add attachment/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^remove$/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /delete/i })).toBeNull();
+  });
+
+  it("UI-49-ATT-05 — a failed preview marks the attachment unavailable", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(
+      detail({ attachments: [ATTACHMENTS[0]] }),
+    );
+    vi.mocked(api.previewAttachmentFile).mockRejectedValue(new Error("Attachment is unavailable."));
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.click(screen.getByRole("button", { name: "Preview" }));
+
+    expect(await screen.findByText("Unavailable")).toBeTruthy();
+    expect(screen.getByText("Attachment is unavailable.")).toBeTruthy();
   });
 });

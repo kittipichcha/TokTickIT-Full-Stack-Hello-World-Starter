@@ -454,6 +454,12 @@ export interface StaffTicketDetail {
   updatedAt: string;
   publicComments: CommentItem[];
   internalNotes: CommentItem[];
+  /**
+   * Issue #38 review fix (49-B2) — the Ticket's existing Attachments
+   * (ui-spec §5.7). Read-only on the Staff surface: the Staff screen never
+   * uploads or removes Attachments.
+   */
+  attachments: AttachmentItem[];
 }
 
 /** Fetches the Staff/Admin Ticket Detail (api-spec §16). */

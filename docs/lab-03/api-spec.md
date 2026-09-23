@@ -490,8 +490,14 @@ value.
 
 **Response 200**
 ```json
-{ "data": { "id": 501, "ticketNumber": "TKT-2026-000123", "summary": "Printer not working", "currentStatus": "NEW", "requestedPriority": "MEDIUM", "itPriority": "MEDIUM", "ticketOwnerId": null, "requesterId": 1, "publicComments": [], "internalNotes": [] } }
+{ "data": { "id": 501, "ticketNumber": "TKT-2026-000123", "summary": "Printer not working", "currentStatus": "NEW", "requestedPriority": "MEDIUM", "itPriority": "MEDIUM", "ticketOwnerId": null, "requesterId": 1, "publicComments": [], "internalNotes": [], "attachments": [] } }
 ```
+
+`attachments` is the Ticket's existing Attachment set (ui-spec §5.7 "Existing Attachments"),
+using the same object shape as §11. The Staff surface is **read-only**: it lists, previews, and
+downloads Attachments via the shared §11–§13 routes, but never uploads or removes them
+(specification.md §6). Removed Attachments are included with `isRemoved = true` and their
+removal metadata, matching the §11 shape.
 
 **Error cases**
 - `403 FORBIDDEN` — not IT Staff/Administrator.

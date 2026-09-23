@@ -1659,6 +1659,13 @@ export interface StaffTicketDetailData {
   updatedAt: Date;
   publicComments: CommentData[];
   internalNotes: CommentData[];
+  /**
+   * Issue #38 review fix (49-B2) — the Ticket's existing Attachments
+   * (ui-spec §5.7 "Existing Attachments"). Reuses the established
+   * `AttachmentData` shape; the Staff surface is read-only, so no mutation
+   * information is added.
+   */
+  attachments: AttachmentData[];
 }
 
 /**
@@ -1686,6 +1693,20 @@ export async function getStaffTicketDetail(
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         select: { id: true, content: true, authorId: true, createdAt: true },
       },
+      attachments: {
+        orderBy: [{ uploadedAt: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          originalFilename: true,
+          mimeType: true,
+          fileSizeBytes: true,
+          uploadedAt: true,
+          isRemoved: true,
+          removedAt: true,
+          removalReason: true,
+          removedByUserId: true,
+        },
+      },
     },
   });
   if (!ticket) return null;
@@ -1711,6 +1732,17 @@ export async function getStaffTicketDetail(
     updatedAt: ticket.updatedAt,
     publicComments: ticket.comments,
     internalNotes: ticket.internalNotes,
+    attachments: ticket.attachments.map((a) => ({
+      id: a.id,
+      originalFilename: a.originalFilename,
+      mimeType: a.mimeType,
+      fileSizeBytes: a.fileSizeBytes,
+      uploadedAt: a.uploadedAt,
+      isRemoved: a.isRemoved,
+      removedAt: a.removedAt,
+      removalReason: a.removalReason,
+      removedByUserId: a.removedByUserId,
+    })),
   };
 }
 

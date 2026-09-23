@@ -19,10 +19,12 @@ import {
   applyStatusTransition,
   postTicketComment,
   postInternalNote,
+  previewAttachmentFile,
+  downloadAttachmentFile,
   type StaffTicketDetail as StaffTicketDetailData,
   type AssignableOwner,
 } from "./api";
-import { formatUtcDate } from "./format";
+import { formatUtcDate, formatFileSize } from "./format";
 import CommentThread from "./CommentThread";
 import InternalNoteThread from "./InternalNoteThread";
 import { allowedTransitionsFrom, type TicketStatus } from "@shared/ticket-status";
@@ -61,6 +63,13 @@ export default function StaffTicketDetail({
   const [pendingTransition, setPendingTransition] = useState<TicketStatus | null>(null);
   const [owners, setOwners] = useState<AssignableOwner[]>([]);
   const [selectedOwnerId, setSelectedOwnerId] = useState<number | undefined>();
+
+  // Issue #38 review fix (49-B2) — Preview/Download failures mark the
+  // Attachment unavailable rather than implying the operation succeeded.
+  const [unavailableAttachmentIds, setUnavailableAttachmentIds] = useState<number[]>([]);
+  const [unavailableAttachmentErrors, setUnavailableAttachmentErrors] = useState<
+    Record<number, string>
+  >({});
 
   // Eligible owners (active IT Staff / Administrators) for the ownership control.
   // A failure here must not break the detail screen — the claim-to-me action and
@@ -169,6 +178,47 @@ export default function StaffTicketDetail({
       setPendingTransition(target);
     } else {
       void performTransition(target);
+    }
+  };
+
+  /** Marks an Attachment unavailable after a failed Preview/Download. */
+  const markAttachmentUnavailable = (attachmentId: number, message: string) => {
+    setUnavailableAttachmentIds((prev) =>
+      prev.includes(attachmentId) ? prev : [...prev, attachmentId],
+    );
+    setUnavailableAttachmentErrors((prev) => ({ ...prev, [attachmentId]: message }));
+  };
+
+  const handlePreviewAttachment = async (attachmentId: number) => {
+    try {
+      const { blob } = await previewAttachmentFile(attachmentId);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      markAttachmentUnavailable(
+        attachmentId,
+        err instanceof Error ? err.message : "Preview failed.",
+      );
+    }
+  };
+
+  const handleDownloadAttachment = async (attachmentId: number) => {
+    try {
+      const { blob, filename } = await downloadAttachmentFile(attachmentId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      markAttachmentUnavailable(
+        attachmentId,
+        err instanceof Error ? err.message : "Download failed.",
+      );
     }
   };
 
@@ -388,6 +438,80 @@ export default function StaffTicketDetail({
           await load();
         }}
       />
+
+      {/* Issue #38 review fix (49-B2) — Existing Attachments (ui-spec §5.7).
+          Read-only: Staff/Admin may view, preview, and download, but never
+          upload or remove (specification.md §6). */}
+      <section className="attachments-section" aria-label="Attachments">
+        <h2>Attachments</h2>
+        {detail.attachments.length === 0 ? (
+          <p className="placeholder-text">No attachments.</p>
+        ) : (
+          <ul className="attachment-list">
+            {detail.attachments.map((att) => {
+              const isUnavailable = unavailableAttachmentIds.includes(att.id);
+              return (
+                <li
+                  key={att.id}
+                  className={`attachment-row ${att.isRemoved ? "attachment-removed" : ""} ${
+                    isUnavailable ? "attachment-unavailable" : ""
+                  }`}
+                >
+                  <span className="attachment-icon">
+                    {att.mimeType.startsWith("image/") ? "🖼" : "📄"}
+                  </span>
+                  <span className="attachment-name">{att.originalFilename}</span>
+                  <span className="attachment-size">{formatFileSize(att.fileSizeBytes)}</span>
+                  <span className="attachment-date">{formatUtcDate(att.uploadedAt)}</span>
+                  {att.isRemoved ? (
+                    <>
+                      <span className="removed-badge">Removed</span>
+                      {att.removalReason && (
+                        <span className="removal-reason" title={att.removalReason}>
+                          {att.removalReason}
+                        </span>
+                      )}
+                      <button className="tertiary-button" disabled aria-disabled="true">
+                        Preview
+                      </button>
+                      <button className="tertiary-button" disabled aria-disabled="true">
+                        Download
+                      </button>
+                    </>
+                  ) : isUnavailable ? (
+                    <>
+                      <span className="unavailable-badge">Unavailable</span>
+                      <span className="field-error">{unavailableAttachmentErrors[att.id]}</span>
+                      <button className="tertiary-button" disabled aria-disabled="true">
+                        Preview
+                      </button>
+                      <button className="tertiary-button" disabled aria-disabled="true">
+                        Download
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="attachment-status-active">Active</span>
+                      <button
+                        className="tertiary-button"
+                        onClick={() => void handlePreviewAttachment(att.id)}
+                      >
+                        Preview
+                      </button>
+                      <button
+                        className="tertiary-button"
+                        onClick={() => void handleDownloadAttachment(att.id)}
+                      >
+                        Download
+                      </button>
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       {pendingTransition && (
         <div className="modal-backdrop" role="presentation">

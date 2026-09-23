@@ -667,3 +667,223 @@ describe("Supplementary — Staff Detail GET scoping (AC-11)", () => {
     expect(res.status).toBe(403);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Issue #38 review fix (49-B2) — Existing Attachments on the Staff Detail
+// (ui-spec §5.7). The Staff surface is read-only: it consumes the existing
+// shared attachment read routes and never exposes upload/remove.
+// ---------------------------------------------------------------------------
+
+/** Creates an Attachment row directly for a Ticket. */
+async function createAttachment(options: {
+  ticketNumber: string;
+  uploaderUserId: number;
+  filename: string;
+  mimeType?: string;
+  isRemoved?: boolean;
+  removalReason?: string | null;
+}): Promise<number> {
+  const prisma = getPrisma();
+  const ticket = await prisma.ticket.findUnique({ where: { ticketNumber: options.ticketNumber } });
+  const row = await prisma.attachment.create({
+    data: {
+      ticketId: ticket!.id,
+      originalFilename: options.filename,
+      storedFilename: `test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      mimeType: options.mimeType ?? "image/jpeg",
+      fileSizeBytes: 12345,
+      uploaderUserId: options.uploaderUserId,
+      isRemoved: options.isRemoved ?? false,
+      removedAt: options.isRemoved ? new Date() : null,
+      removalReason: options.isRemoved ? (options.removalReason ?? null) : null,
+      removedByUserId: options.isRemoved ? options.uploaderUserId : null,
+    },
+  });
+  return row.id;
+}
+
+describe("API-49-ATT — Staff Detail Existing Attachments (49-B2)", () => {
+  itIfDb("API-49-01 — IT Staff receives attachment metadata in the detail payload", async () => {
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Staff detail attachments",
+      ownerId: staffA.userId,
+    });
+    await createAttachment({ ticketNumber, uploaderUserId: requester.userId, filename: "photo.jpg" });
+
+    const res = await withSession(request(app).get(`/api/staff/tickets/${ticketNumber}`), staffA);
+    expect(res.status).toBe(200);
+    expect(res.body.data.attachments).toHaveLength(1);
+    const att = res.body.data.attachments[0];
+    expect(att.originalFilename).toBe("photo.jpg");
+    expect(att.mimeType).toBe("image/jpeg");
+    expect(att.fileSizeBytes).toBe(12345);
+    expect(att.isRemoved).toBe(false);
+    expect(typeof att.id).toBe("number");
+    expect(att.uploadedAt).toBeTruthy();
+  });
+
+  itIfDb("API-49-02 — Administrator receives attachment metadata", async () => {
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Admin detail attachments",
+      ownerId: staffA.userId,
+    });
+    await createAttachment({ ticketNumber, uploaderUserId: requester.userId, filename: "admin.pdf" });
+
+    const res = await withSession(request(app).get(`/api/staff/tickets/${ticketNumber}`), admin);
+    expect(res.status).toBe(200);
+    expect(res.body.data.attachments).toHaveLength(1);
+    expect(res.body.data.attachments[0].originalFilename).toBe("admin.pdf");
+  });
+
+  itIfDb("API-49-03 — Requester cannot use the Staff Detail endpoint", async () => {
+    const ticketNumber = await createTicket({ requesterId: requester.userId, summary: "Requester blocked" });
+    const res = await withSession(request(app).get(`/api/staff/tickets/${ticketNumber}`), requester);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+
+  itIfDb("API-49-04 — Attachment preview works for Staff", async () => {
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Staff preview",
+      ownerId: staffA.userId,
+    });
+    // Upload a real file as the owning Requester so the stored bytes exist.
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+    const upload = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/attachments`),
+      requester,
+      { csrf: true },
+    ).attach("file", jpeg, "preview.jpg");
+    expect(upload.status).toBe(201);
+    const attachmentId = upload.body.data.id as number;
+
+    const res = await withSession(
+      request(app).get(`/api/attachments/${attachmentId}/preview`),
+      staffA,
+    );
+    expect(res.status).toBe(200);
+  });
+
+  itIfDb("API-49-05 — Attachment download works for Staff", async () => {
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Staff download",
+      ownerId: staffA.userId,
+    });
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+    const upload = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/attachments`),
+      requester,
+      { csrf: true },
+    ).attach("file", jpeg, "download.jpg");
+    expect(upload.status).toBe(201);
+    const attachmentId = upload.body.data.id as number;
+
+    const res = await withSession(
+      request(app).get(`/api/attachments/${attachmentId}/download`),
+      staffA,
+    );
+    expect(res.status).toBe(200);
+  });
+
+  itIfDb("API-49-06 — a removed attachment is represented correctly", async () => {
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Removed attachment",
+      ownerId: staffA.userId,
+    });
+    await createAttachment({
+      ticketNumber,
+      uploaderUserId: requester.userId,
+      filename: "removed.jpg",
+      isRemoved: true,
+      removalReason: "Duplicate upload",
+    });
+
+    const res = await withSession(request(app).get(`/api/staff/tickets/${ticketNumber}`), staffA);
+    expect(res.status).toBe(200);
+    const att = res.body.data.attachments[0];
+    expect(att.isRemoved).toBe(true);
+    expect(att.removalReason).toBe("Duplicate upload");
+    expect(att.removedAt).not.toBeNull();
+  });
+
+  itIfDb("API-49-07 — a removed attachment cannot be previewed or downloaded", async () => {
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Removed attachment read",
+      ownerId: staffA.userId,
+    });
+    const attachmentId = await createAttachment({
+      ticketNumber,
+      uploaderUserId: requester.userId,
+      filename: "gone.jpg",
+      isRemoved: true,
+    });
+
+    const preview = await withSession(
+      request(app).get(`/api/attachments/${attachmentId}/preview`),
+      staffA,
+    );
+    expect(preview.status).toBe(410);
+    expect(preview.body.error.code).toBe("ATTACHMENT_REMOVED");
+
+    const download = await withSession(
+      request(app).get(`/api/attachments/${attachmentId}/download`),
+      staffA,
+    );
+    expect(download.status).toBe(410);
+    expect(download.body.error.code).toBe("ATTACHMENT_REMOVED");
+  });
+
+  itIfDb("API-49-08 — Staff cannot upload through the attachment surface", async () => {
+    const prisma = getPrisma();
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Staff upload blocked",
+      ownerId: staffA.userId,
+    });
+    const ticket = await prisma.ticket.findUnique({ where: { ticketNumber } });
+    const before = await prisma.attachment.count({ where: { ticketId: ticket!.id } });
+
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+    const res = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/attachments`),
+      staffA,
+      { csrf: true },
+    ).attach("file", jpeg, "staff-upload.jpg");
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+    const after = await prisma.attachment.count({ where: { ticketId: ticket!.id } });
+    expect(after).toBe(before);
+  });
+
+  itIfDb("API-49-09 — Staff cannot remove attachments", async () => {
+    const prisma = getPrisma();
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Staff remove blocked",
+      ownerId: staffA.userId,
+    });
+    const attachmentId = await createAttachment({
+      ticketNumber,
+      uploaderUserId: requester.userId,
+      filename: "keep.jpg",
+    });
+
+    const res = await withSession(
+      request(app).delete(`/api/attachments/${attachmentId}`),
+      staffA,
+      { csrf: true },
+    ).send({ removalReason: "Staff should not be able to do this" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+    const after = await prisma.attachment.findUnique({ where: { id: attachmentId } });
+    expect(after!.isRemoved).toBe(false);
+  });
+});
