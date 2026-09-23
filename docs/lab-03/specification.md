@@ -316,6 +316,15 @@ transitions return `409 CONFLICT` with a safe message and do not change the Tick
 never auto-claims the Ticket. IT Staff/Administrator must call `POST .../owner` to claim the
 Ticket before changing its status (Section 13, decision 14).
 
+**Acting user need not be the specific owner (Issue #38 review clarification):** The matrix's
+validation column reads "Ticket owned" — i.e. `ticketOwnerId` is non-null — not "owned by the
+acting user." Once a Ticket is claimed, **any** active IT Staff or Administrator may perform a
+permitted status change on it; the acting user is not required to be the Ticket's specific
+`ticketOwnerId`. This follows from Section 6, which grants "Perform permitted status changes" to
+the whole IT Staff/Administrator group, and from decision 14, whose stated purpose is only to
+prevent a status change from silently auto-claiming an unowned Ticket. A status change never
+mutates ownership. The route-level role gate is the authorization boundary.
+
 ## 8. UI Specification Summary
 The Lab 3 UI extends the Lab 2 Zen Green design language. Screens: Login, Change Password,
 Requester Shell, Requester Ticket Detail (with Public Comments and "Problem Appears Resolved"),
@@ -656,7 +665,10 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
     the Ticket. IT Staff/Administrator must claim the Ticket via `POST .../owner` before
     changing its status. This keeps each endpoint's effect matching its name (single
     responsibility) and avoids silently mutating ownership as a side effect of a differently
-    named endpoint. See Section 7 and `api-spec.md` §19.
+    named endpoint. The requirement is that the Ticket is owned (`ticketOwnerId` is non-null),
+    **not** that the acting user is the Ticket's specific owner: once claimed, any active
+    IT Staff or Administrator may perform a permitted status change, per the Section 6
+    Authorization Matrix. See Section 7 and `api-spec.md` §19.
 15. **Concurrent claim/reassign (frozen):** Two simultaneous claim/reassign requests for the
     same Ticket are handled as **last-write-wins**. Both requests may succeed; whichever
     transaction commits last is the final `ticketOwnerId`. No conflict error is surfaced to the

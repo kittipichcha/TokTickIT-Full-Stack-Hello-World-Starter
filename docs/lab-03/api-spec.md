@@ -608,6 +608,12 @@ and independently rejects ineligible targets with `409 CONFLICT`.
 `POST /api/staff/tickets/:ticketNumber/owner` before its status can be changed. The status
 endpoint never auto-claims a Ticket (Section 13, decision 14 of `specification.md`).
 
+**Acting user need not be the specific owner (Issue #38 review clarification):** The requirement
+is that the Ticket is owned (`ticketOwnerId` is non-null), not that the caller is the Ticket's
+specific owner. Once a Ticket is claimed, any active IT Staff or Administrator may perform a
+permitted status change on it, per the `specification.md` §6 Authorization Matrix. A status
+change never mutates `ticketOwnerId`.
+
 The three transitions marked "Confirmation" in the Status Transition Matrix (specification.md
 §7) are confirmed client-side before this endpoint is called; the API applies the transition
 unconditionally once called and does not itself require or accept a confirmation parameter.
