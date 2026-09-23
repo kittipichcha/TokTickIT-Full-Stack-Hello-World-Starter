@@ -1857,15 +1857,25 @@ export interface ApplyStatusTransitionResult {
  *   1. Ticket by ticketNumber → missing → `NotFoundError` (404)
  *   2. targetStatus not a valid TicketStatus value → `ValidationError` (400)
  *   3. read currentStatus, ticketOwnerId
- *   4. ticketOwnerId !== actingUserId → `ConflictError` (409 — must claim first)
+ *   4. ticketOwnerId === null → `ConflictError` (409 — must claim first)
  *   5. !isTransitionAllowed(currentStatus, targetStatus) → `ConflictError` (409)
  *   6. atomic `updateMany` guarded on the persisted from-state; `count === 0`
  *      → re-read → classify 404 / 409 (unowned) / 409 (raced)
+ *
+ * Ownership rule (Issue #38 review fix — B-1): the matrix's validation column
+ * reads "Ticket owned", i.e. `ticketOwnerId` is non-null — NOT "owned by the
+ * acting user". specification.md §6 grants "Perform permitted status changes"
+ * to the whole IT Staff/Administrator group, and §13 decision 14 states only
+ * that the Ticket must be claimed first (it never auto-claims). The acting user
+ * is therefore not required to be the Ticket's specific owner; any active
+ * IT Staff/Administrator may progress a claimed Ticket. The route-level role
+ * gate (`requireRole(["IT_STAFF", "ADMINISTRATOR"])`) is the authorization
+ * boundary. The atomic guard below is consequently on the persisted from-state
+ * only — it must not re-introduce the same-actor restriction.
  */
 export async function applyStatusTransition(
   ticketNumber: string,
   rawTargetStatus: unknown,
-  actingUserId: number,
 ): Promise<ApplyStatusTransitionResult> {
   const prisma = getPrisma();
 
@@ -1887,7 +1897,7 @@ export async function applyStatusTransition(
   }
   const targetStatus = rawTargetStatus as TicketStatus;
 
-  if (ticket.ticketOwnerId !== actingUserId) {
+  if (ticket.ticketOwnerId === null) {
     throw new ConflictError("The ticket must be claimed before its status can be changed.");
   }
 
@@ -1899,7 +1909,6 @@ export async function applyStatusTransition(
   const updated = await prisma.ticket.updateMany({
     where: {
       id: ticket.id,
-      ticketOwnerId: actingUserId,
       currentStatus: fromStatus,
     },
     data: { currentStatus: targetStatus },
@@ -1914,7 +1923,7 @@ export async function applyStatusTransition(
     if (!current) {
       throw new NotFoundError("Ticket not found.");
     }
-    if (current.ticketOwnerId !== actingUserId) {
+    if (current.ticketOwnerId === null) {
       throw new ConflictError("The ticket must be claimed before its status can be changed.");
     }
     throw new ConflictError("This status transition is not permitted.");

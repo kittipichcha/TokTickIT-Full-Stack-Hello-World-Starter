@@ -149,9 +149,8 @@ export async function applyStatusTransitionHandler(req: Request, res: Response):
       res.status(404).json(NOT_FOUND_TICKET_BODY);
       return;
     }
-    const actingUserId = res.locals.userId as number;
     const body = (req.body ?? {}) as Record<string, unknown>;
-    const result = await applyStatusTransition(ticketNumber, body.status, actingUserId);
+    const result = await applyStatusTransition(ticketNumber, body.status);
     res.status(200).json({ data: result });
   } catch (err) {
     respondWithError(res, err);

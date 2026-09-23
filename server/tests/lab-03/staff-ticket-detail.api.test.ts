@@ -435,6 +435,58 @@ describe("API-STAFF-03 — Permitted status changes (AC-13)", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.currentStatus).toBe("REOPENED");
   });
+
+  // Issue #38 review fix (B-1): the matrix's validation column reads "Ticket
+  // owned" (non-null), not "owned by the acting user". specification.md §6
+  // grants "Perform permitted status changes" to the whole IT Staff/Administrator
+  // group, so a *different* active staff member must be able to progress a
+  // claimed Ticket. This case is what the original suite never exercised.
+  itIfDb("a different active IT Staff member may change status on a ticket owned by staff A", async () => {
+    const prisma = getPrisma();
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Cross-actor status change (staff B)",
+      status: "NEW",
+      ownerId: staffA.userId,
+    });
+
+    const res = await withSession(
+      request(app).patch(`/api/staff/tickets/${ticketNumber}/status`),
+      staffB,
+      { csrf: true },
+    ).send({ status: "OPEN" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.currentStatus).toBe("OPEN");
+
+    const after = await prisma.ticket.findUnique({ where: { ticketNumber } });
+    expect(after!.currentStatus).toBe("OPEN");
+    // The status change must not silently reassign ownership.
+    expect(after!.ticketOwnerId).toBe(staffA.userId);
+  });
+
+  itIfDb("an Administrator may change status on a ticket owned by staff A", async () => {
+    const prisma = getPrisma();
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Cross-actor status change (admin)",
+      status: "NEW",
+      ownerId: staffA.userId,
+    });
+
+    const res = await withSession(
+      request(app).patch(`/api/staff/tickets/${ticketNumber}/status`),
+      admin,
+      { csrf: true },
+    ).send({ status: "OPEN" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.currentStatus).toBe("OPEN");
+
+    const after = await prisma.ticket.findUnique({ where: { ticketNumber } });
+    expect(after!.currentStatus).toBe("OPEN");
+    expect(after!.ticketOwnerId).toBe(staffA.userId);
+  });
 });
 
 describe("API-STAFF-04 — Forbidden status transitions (AC-13)", () => {
