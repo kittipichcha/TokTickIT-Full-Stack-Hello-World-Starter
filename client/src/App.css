@@ -22,6 +22,7 @@ button, select { font: inherit; }
 button { min-height: 44px; border-radius: 4px; cursor: pointer; }
 button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--color-secondary); outline-offset: 2px; }
 .app-container { max-width: 760px; margin: 0 auto; padding: 48px 24px; }
+.staff-queue { max-width: 1440px; }
 .selector-screen { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
 .eyebrow { color: var(--color-secondary); font-weight: 700; letter-spacing: 0; }
 h1 { font-size: 28px; margin: 8px 0 12px; } h2 { font-size: 19px; }
@@ -129,12 +130,13 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .my-tickets-toolbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .toolbar-filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .toolbar-search input[type="search"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; min-width: 220px; font: inherit; }
+.toolbar-search label, .toolbar-filters > label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .toolbar-filters select { min-height: 40px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--color-field-editable-bg); color: var(--color-text); font: inherit; }
 .tertiary-button { background: none; border: none; color: var(--color-secondary); font-weight: 600; cursor: pointer; padding: 8px 12px; text-decoration: underline; min-height: 40px; }
 .tertiary-button:hover { color: var(--color-primary); }
 
 /* Table */
-.tickets-table-wrapper { overflow-x: auto; }
+.tickets-table-wrapper { overflow-x: hidden; }
 .tickets-table { width: 100%; border-collapse: collapse; }
 .tickets-table th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border-light); font-size: 13px; font-weight: 700; color: var(--text-secondary); cursor: pointer; user-select: none; white-space: nowrap; }
 .tickets-table th:focus-visible { outline: 2px solid var(--color-secondary); outline-offset: 2px; }
@@ -200,6 +202,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 }
 @media (min-width: 768px) and (max-width: 991px) {
   .tickets-table .tablet-secondary { display: none; }
+  .staff-queue .tickets-table th, .staff-queue .tickets-table td { padding: 8px 6px; }
+  .staff-queue .tickets-table th { white-space: normal; }
 }
 
 /* Full-width info rows */

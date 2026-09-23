@@ -179,7 +179,9 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
       <div className="my-tickets-toolbar">
         <div className="toolbar-filters">
           <div className="toolbar-search">
+            <label htmlFor="queue-search">Search tickets</label>
             <input
+              id="queue-search"
               type="search"
               placeholder="Search ticket number or summary..."
               value={search}
@@ -187,16 +189,16 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              aria-label="Search tickets"
             />
           </div>
+          <label htmlFor="queue-status">Filter by status</label>
           <select
+            id="queue-status"
             value={status ?? ""}
             onChange={(e) => {
               setStatus(e.target.value || undefined);
               setPage(1);
             }}
-            aria-label="Filter by status"
           >
             <option value="">All Statuses</option>
             {TICKET_STATUSES.map((s) => (
@@ -205,26 +207,28 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
               </option>
             ))}
           </select>
+          <label htmlFor="queue-priority">Filter by IT priority</label>
           <select
+            id="queue-priority"
             value={priority ?? ""}
             onChange={(e) => {
               setPriority(e.target.value || undefined);
               setPage(1);
             }}
-            aria-label="Filter by IT priority"
           >
             <option value="">All IT Priorities</option>
             <option value="LOW">Low</option>
             <option value="MEDIUM">Medium</option>
             <option value="HIGH">High</option>
           </select>
+          <label htmlFor="queue-owner">Filter by owner</label>
           <select
+            id="queue-owner"
             value={ownerId === undefined ? "" : String(ownerId)}
             onChange={(e) => {
               setOwnerId(e.target.value ? Number(e.target.value) : undefined);
               setPage(1);
             }}
-            aria-label="Filter by owner"
           >
             <option value="">All Owners</option>
             {owners.map((owner) => (

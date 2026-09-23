@@ -20,6 +20,23 @@
 4. Every Acceptance Criterion must map to at least one planned test before implementation begins.
 5. The contract must be reviewed and approved before dependent implementation issues begin.
 
+## Issue #38 PR #49 Remediation Entry (2026-09-24)
+
+- Prompt summary: Fix the six remaining PR #49 blockers from the uploaded review for Issue #38.
+- What was done with output: Separated mutation success from refresh failure for comments and
+  Appears Resolved, distinguished Staff Detail 403/404/unexpected states, completed Queue
+  responsive information access and associated labels, replaced the circular status-matrix
+  expectation with an independent frozen matrix, and added Queue sorting/pagination/loading plus
+  Staff Detail regression coverage.
+- Validation: focused client App/Queue/Staff Detail tests passed 69 tests; focused Staff Detail API
+  tests passed 41 tests; full client suite passed 187 tests; client/server builds and touched-file
+  diagnostics reported no errors; server suite excluding migration passed 514 tests. The migration
+  harness reached its deliberate failure probes without a Vitest summary, and browser execution was
+  blocked by the missing `@playwright/test` dependency. Lab 3 E2E remains #42-owned.
+- Reflection: The existing Queue renders desktop and mobile representations together in jsdom, so
+  the new tests use the established `findAllByText` pattern while browser-level layout remains an
+  E2E evidence concern.
+
 ## Issue #38 Review Remediation Entry (2026-09-23)
 
 - Prompt summary: Implement the five remaining PR #49 review findings for Issue #38, update

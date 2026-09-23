@@ -11,7 +11,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import StaffTicketQueue from "../StaffTicketQueue";
 import * as api from "../api";
@@ -112,6 +112,56 @@ describe("UI-QUE-01 — Staff Ticket Queue (AC-10)", () => {
         expect.objectContaining({ priority: "HIGH" }),
       ),
     );
+  });
+
+  it("associates every Queue filter with an explicit label", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    const { container } = render(<StaffTicketQueue onOpenDetail={() => {}} />);
+    await screen.findAllByText("TKT-2026-000001");
+
+    for (const controlId of ["queue-search", "queue-status", "queue-priority", "queue-owner"]) {
+      const control = container.querySelector(`#${controlId}`);
+      expect(control).toBeTruthy();
+      expect(container.querySelector(`label[for="${controlId}"]`)).toBeTruthy();
+    }
+  });
+
+  it("loads the next page when pagination is used", async () => {
+    vi.mocked(api.fetchStaffQueue)
+      .mockResolvedValueOnce({ ...queueResponse(), pagination: { ...queueResponse().pagination, totalPages: 2 } })
+      .mockResolvedValue({
+        ...queueResponse(),
+        pagination: { ...queueResponse().pagination, page: 2, totalPages: 2 },
+      });
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+    await screen.findAllByText("TKT-2026-000001");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    await waitFor(() => expect(api.fetchStaffQueue).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 })));
+  });
+
+  it("changes sort order and resets pagination", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+    await screen.findAllByText("TKT-2026-000001");
+
+    await userEvent.click(within(screen.getByRole("columnheader", { name: /Summary/ })).getByText(/Summary/));
+    await waitFor(() =>
+      expect(api.fetchStaffQueue).toHaveBeenLastCalledWith(
+        expect.objectContaining({ sort: "summary", order: "desc", page: 1 }),
+      ),
+    );
+  });
+
+  it("shows the loading state while the Queue request is pending", async () => {
+    let resolveQueue: ((value: ReturnType<typeof queueResponse>) => void) | undefined;
+    vi.mocked(api.fetchStaffQueue).mockImplementation(
+      () => new Promise((resolve) => { resolveQueue = resolve; }),
+    );
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+    expect(screen.getByRole("status", { name: "Loading queue" })).toBeTruthy();
+    resolveQueue?.(queueResponse());
+    await screen.findAllByText("TKT-2026-000001");
   });
 
   it("shows the empty state when there are no tickets at all", async () => {

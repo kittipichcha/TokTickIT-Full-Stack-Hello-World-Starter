@@ -185,6 +185,41 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Not found");
   });
+
+  it.each([
+    [403, "Forbidden", /do not have permission/i, false],
+    [404, "Missing ticket", /ticket not found/i, false],
+    [500, "Server exploded", /server exploded/i, true],
+  ])("renders a distinct state for HTTP %s", async (status, message, expected, hasRetry) => {
+    const error = new Error(message) as api.ApiError;
+    error.status = status;
+    vi.mocked(api.fetchStaffTicketDetail).mockRejectedValue(error);
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    expect(await screen.findByText(expected)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Retry/i }) !== null).toBe(hasRetry);
+  });
+
+  it("keeps a successful comment after refresh failure without asking for a retry", async () => {
+    vi.mocked(api.fetchStaffTicketDetail)
+      .mockResolvedValueOnce(detail())
+      .mockRejectedValueOnce(new Error("Refresh failed"));
+    vi.mocked(api.postTicketComment).mockResolvedValue({
+      id: 2,
+      content: "Posted successfully.",
+      authorId: 5,
+      createdAt: "2026-09-10T00:00:00Z",
+    });
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.type(screen.getByLabelText("Add a comment"), "Posted successfully.");
+    await userEvent.click(screen.getByRole("button", { name: /Post Comment/i }));
+
+    await waitFor(() => expect(screen.getByText("Posted successfully.")).toBeTruthy());
+    expect(api.postTicketComment).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("alert").textContent).toContain("Comment posted");
+  });
 });
 
 // ---------------------------------------------------------------------------

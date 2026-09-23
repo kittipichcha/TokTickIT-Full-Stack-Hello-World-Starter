@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import App from "./App";
 import * as api from "./api";
 import { TEST_USER, TEST_STAFF_USER } from "./lab-02-tests/helpers/user";
@@ -136,5 +137,61 @@ describe("UI-49-01..05 — role-specific initial navigation (FR-08)", () => {
     expect(screen.getAllByText("My Tickets").length).toBeGreaterThan(0);
     expect(screen.queryByRole("link", { name: /^Ticket Queue$/i })).toBeNull();
     expect(api.fetchStaffQueue).not.toHaveBeenCalled();
+  });
+
+  it("keeps Appears Resolved successful when the follow-up refresh fails", async () => {
+    vi.mocked(api.fetchMyTickets).mockResolvedValue({
+      data: [{
+        id: 1,
+        ticketNumber: "TKT-2026-000001",
+        categoryId: 1,
+        categoryName: "Hardware",
+        summary: "Printer not working",
+        requestedPriority: "MEDIUM",
+        itPriority: "MEDIUM",
+        currentStatus: "OPEN",
+        createdAt: "2026-09-10T00:00:00Z",
+        updatedAt: "2026-09-10T00:00:00Z",
+      }],
+      pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 },
+    });
+    vi.mocked(api.fetchTicketDetail)
+      .mockResolvedValueOnce({
+        id: 1,
+        ticketNumber: "TKT-2026-000001",
+        requesterId: TEST_USER.id,
+        requesterName: TEST_USER.name,
+        requesterIsActive: true,
+        categoryId: 1,
+        categoryName: "Hardware",
+        relatedSystemId: 1,
+        relatedSystemName: "Office",
+        summary: "Printer not working",
+        description: "The printer is offline.",
+        requestedPriority: "MEDIUM",
+        itPriority: "MEDIUM",
+        ticketOwnerId: null,
+        currentStatus: "OPEN",
+        createdAt: "2026-09-10T00:00:00Z",
+        updatedAt: "2026-09-10T00:00:00Z",
+        appearsResolved: false,
+        publicComments: [],
+        attachments: [],
+      })
+      .mockRejectedValueOnce(new Error("Refresh failed"));
+    vi.mocked(api.postAppearsResolved).mockResolvedValue({
+      ticketNumber: "TKT-2026-000001",
+      appearsResolved: true,
+      currentStatus: "OPEN",
+    });
+
+    render(<App user={TEST_USER} />);
+    await userEvent.click((await screen.findAllByRole("link", { name: "TKT-2026-000001" }))[0]!);
+    await screen.findByRole("button", { name: /indicate problem appears resolved/i });
+    await userEvent.click(screen.getByRole("button", { name: /indicate problem appears resolved/i }));
+
+    await waitFor(() => expect(screen.getByText(/you have indicated the problem appears resolved/i)).toBeTruthy());
+    expect(api.postAppearsResolved).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("alert").textContent).toContain("Indicator updated");
   });
 });

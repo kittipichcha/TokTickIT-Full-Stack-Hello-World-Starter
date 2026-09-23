@@ -51,6 +51,33 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-24 — Issue #38 (PR #49 six-blocker remediation) — B1–B6**
+  - **B1:** Staff Queue now uses a wide queue container without horizontal-scroll presentation,
+    preserves required tablet information through condensed columns and Staff Detail, and exposes
+    Last Updated on Staff Detail.
+  - **B2:** Comment and Appears Resolved mutations now commit local success before refresh;
+    refresh failure cannot turn an append-only mutation into a retryable failure. Staff Comment
+    coverage includes POST success plus refresh failure.
+  - **B3:** Staff Detail distinguishes 403 Forbidden, 404 Not Found, and unexpected failures;
+    focused tests assert each visible state.
+  - **B4:** API-STAFF-11 now compares the full 8x8 API behavior against a literal frozen matrix
+    in the test, independent of `isTransitionAllowed`.
+  - **B5:** Queue search, status, IT priority, and owner controls have explicit associated
+    labels; focused tests verify each `label[for]`/control `id` pair.
+  - **B6:** UI-QUE-01 now executes sorting, pagination, loading, filter, owner, and required
+    information behavior; the Queue focused suite passed **21 tests**, and Staff Detail passed
+    **39 tests**. The focused Staff Detail API suite passed **41 tests**.
+  - **Commands:** `npx vitest run src/lab-03-tests/StaffTicketQueue.test.tsx
+    src/lab-03-tests/StaffTicketDetail.test.tsx`; `npx vitest run
+    tests/lab-03/staff-ticket-detail.api.test.ts`.
+  - **Results:** full client suite passed **187 tests across 14 files**; server suite excluding
+    the migration harness passed **514 tests across 37 files**; client and server builds passed;
+    `git diff --check` passed. The migration harness reached its deliberate collision and injected
+    SQL-failure probes but emitted no Vitest summary, so it remains environment-limited rather
+    than Passed. Existing browser responsive execution was attempted across desktop/tablet/mobile
+    but is blocked because this worktree has no installed `@playwright/test` package. Lab 3 E2E
+    rows remain owned by #42 and are not claimed here.
+
 - **2026-09-23 — Issue #38 (PR #49 remaining UI/API findings)**
   - **UI-Q-01/UI-Q-02:** Staff Queue now hides secondary table columns at tablet widths and
     renders a distinct forbidden state for HTTP 403 without a misleading Retry action.
@@ -686,9 +713,9 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-AUTHGATE-01 | UI | Logout failure preserves the authenticated shell | When `logout()` rejects, the authenticated shell (and `App`) stays mounted, state does not move to Login, and an inline `role="alert"` error is shown near the Logout button | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
 | UI-AUTHGATE-02 | UI | Successful logout transitions to Login | When `logout()` resolves, the gate transitions to the Login screen, `App` unmounts, and no error alert is shown | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09 | AC-06 | Passed |
 | UI-AUTHGATE-03 | UI | Mount-time session-check failure is distinct from unauthenticated | A `401` from `fetchMe()` renders Login; a `500` or status-less network failure renders a distinct session-error screen with a Retry button (neither Login nor the authenticated shell); clicking Retry after a `500` transitions to authenticated | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
-| UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; owner filter (eligible owners only, combined with search/status/priority, cleared by Clear Filters); required information (Category, Last Updated) on desktop table and mobile card; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
+| UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination/loading; owner filter (eligible owners only, combined with search/status/priority, cleared by Clear Filters); required information (Category, Last Updated) on desktop table and mobile card; explicit filter labels; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
 | UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Passed |
-| UI-QUE-03 | UI | Staff Queue tablet condensation | Test verifies the intended secondary columns are marked consistently in both the table header and ticket rows for the 768–991px condensed layout; core ticket information and Detail action remain available | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
+| UI-QUE-03 | UI | Staff Queue tablet condensation | Test verifies secondary columns are marked consistently in both table header and ticket rows for the 768–991px condensed layout; required information remains available through condensed Queue/Detail representation and the Detail action remains available | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
 | UI-QUE-04 | UI | Staff Queue forbidden state | HTTP 403 renders distinct access-denied feedback without Retry | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Passed |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership (claim + assign/reassign to any eligible owner)/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Passed |
 | UI-STAFF-02 | UI | Status change to Resolved/Closed/Cancelled | Confirm modal shown before request is sent; cancel aborts, confirm proceeds | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |

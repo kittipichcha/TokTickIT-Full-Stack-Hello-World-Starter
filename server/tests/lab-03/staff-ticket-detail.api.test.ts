@@ -26,7 +26,7 @@ import {
   withSession,
   type TestSession,
 } from "./helpers/auth.js";
-import { isTransitionAllowed, TICKET_STATUSES } from "../../src/ticket-status.js";
+import { TICKET_STATUSES, type TicketStatus } from "../../src/ticket-status.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
@@ -47,6 +47,21 @@ let requester: TestSession;
 let categoryId: number;
 let systemId: number;
 let inactiveStaffId: number;
+
+const FROZEN_ALLOWED_TRANSITIONS: Record<TicketStatus, readonly TicketStatus[]> = {
+  NEW: ["OPEN", "CANCELLED"],
+  OPEN: ["IN_PROGRESS", "CANCELLED"],
+  IN_PROGRESS: ["WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
+  WAITING_FOR_REQUESTER: ["IN_PROGRESS", "CANCELLED"],
+  RESOLVED: ["CLOSED", "REOPENED", "CANCELLED"],
+  CLOSED: ["REOPENED", "CANCELLED"],
+  REOPENED: ["CANCELLED"],
+  CANCELLED: [],
+};
+
+function expectedTransitionAllowed(from: TicketStatus, to: TicketStatus): boolean {
+  return FROZEN_ALLOWED_TRANSITIONS[from].includes(to);
+}
 
 async function createTicket(options: {
   requesterId: number;
@@ -907,7 +922,7 @@ describe("API-STAFF-11 — Full status transition matrix (AC-13)", () => {
           { csrf: true },
         ).send({ status: targetStatus });
         const after = await prisma.ticket.findUnique({ where: { ticketNumber } });
-        const permitted = isTransitionAllowed(fromStatus, targetStatus);
+        const permitted = expectedTransitionAllowed(fromStatus, targetStatus);
 
         if (permitted) {
           expect(response.status, `${fromStatus} -> ${targetStatus}`).toBe(200);

@@ -672,9 +672,22 @@ export default function App({ user }: AppProps) {
               <CommentThread
                 comments={ticketDetail.publicComments ?? []}
                 onPost={async (content) => {
-                  await postTicketComment(ticketDetail.ticketNumber, content);
-                  const data = await fetchTicketDetail(ticketDetail.ticketNumber);
-                  setTicketDetail(data);
+                  const createdComment = await postTicketComment(ticketDetail.ticketNumber, content);
+                  setTicketDetail((current) =>
+                    current
+                      ? { ...current, publicComments: [...(current.publicComments ?? []), createdComment] }
+                      : current,
+                  );
+                  try {
+                    const data = await fetchTicketDetail(ticketDetail.ticketNumber);
+                    setTicketDetail(data);
+                  } catch (refreshErr) {
+                    setDetailError(
+                      refreshErr instanceof Error
+                        ? `Comment posted, but the ticket could not be refreshed: ${refreshErr.message}`
+                        : "Comment posted, but the ticket could not be refreshed.",
+                    );
+                  }
                 }}
               />
 
@@ -693,12 +706,23 @@ export default function App({ user }: AppProps) {
                     setIsUpdatingAppearsResolved(true);
                     setAppearsResolvedError(null);
                     try {
-                      await postAppearsResolved(
+                      const result = await postAppearsResolved(
                         ticketDetail.ticketNumber,
                         !ticketDetail.appearsResolved,
                       );
-                      const data = await fetchTicketDetail(ticketDetail.ticketNumber);
-                      setTicketDetail(data);
+                      setTicketDetail((current) =>
+                        current ? { ...current, appearsResolved: result.appearsResolved } : current,
+                      );
+                      try {
+                        const data = await fetchTicketDetail(ticketDetail.ticketNumber);
+                        setTicketDetail(data);
+                      } catch (refreshErr) {
+                        setAppearsResolvedError(
+                          refreshErr instanceof Error
+                            ? `Indicator updated, but the ticket could not be refreshed: ${refreshErr.message}`
+                            : "Indicator updated, but the ticket could not be refreshed.",
+                        );
+                      }
                     } catch (err) {
                       setAppearsResolvedError(
                         err instanceof Error ? err.message : "Failed to update the indicator.",

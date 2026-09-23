@@ -28,6 +28,7 @@ import { formatUtcDate, formatFileSize } from "./format";
 import CommentThread from "./CommentThread";
 import InternalNoteThread from "./InternalNoteThread";
 import { allowedTransitionsFrom, type TicketStatus } from "@shared/ticket-status";
+import type { ApiError } from "./api-client";
 
 interface StaffTicketDetailProps {
   ticketNumber: string;
@@ -50,6 +51,8 @@ const STATUS_LABELS: Record<TicketStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
+type DetailLoadError = "forbidden" | "not-found" | "unexpected";
+
 export default function StaffTicketDetail({
   ticketNumber,
   currentUserId,
@@ -57,7 +60,7 @@ export default function StaffTicketDetail({
 }: StaffTicketDetailProps) {
   const [detail, setDetail] = useState<StaffTicketDetailData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ kind: DetailLoadError; message: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isActing, setIsActing] = useState(false);
   const [pendingTransition, setPendingTransition] = useState<TicketStatus | null>(null);
@@ -101,7 +104,16 @@ export default function StaffTicketDetail({
       const data = await fetchStaffTicketDetail(ticketNumber);
       setDetail(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load ticket detail.");
+      const apiError = err as ApiError;
+      const kind: DetailLoadError = apiError.status === 403
+        ? "forbidden"
+        : apiError.status === 404
+          ? "not-found"
+          : "unexpected";
+      setError({
+        kind,
+        message: err instanceof Error ? err.message : "Failed to load ticket detail.",
+      });
     } finally {
       setLoading(false);
     }
@@ -290,15 +302,23 @@ export default function StaffTicketDetail({
   if (error || !detail) {
     return (
       <main className="app-container">
-        <div className="error-box" role="alert">
-          <p>{error ?? "Ticket not found."}</p>
+        <div className={error?.kind === "unexpected" ? "error-box" : "empty-state"} role="alert">
+          <p>
+            {error?.kind === "forbidden"
+              ? "You do not have permission to view this ticket."
+              : error?.kind === "not-found"
+                ? "Ticket not found."
+                : error?.message ?? "Ticket not found."}
+          </p>
           <div className="error-actions">
             <button className="secondary-button" onClick={onBack}>
               ← Back to Queue
             </button>
-            <button className="primary-button" onClick={() => void load()}>
-              Retry
-            </button>
+            {error?.kind === "unexpected" && (
+              <button className="primary-button" onClick={() => void load()}>
+                Retry
+              </button>
+            )}
           </div>
         </div>
       </main>
@@ -394,6 +414,10 @@ export default function StaffTicketDetail({
           <span className="ticket-info-label">Created</span>
           <span className="ticket-info-value">{formatUtcDate(detail.createdAt)}</span>
         </div>
+        <div className="ticket-info-row">
+          <span className="ticket-info-label">Last Updated</span>
+          <span className="ticket-info-value">{formatUtcDate(detail.updatedAt)}</span>
+        </div>
       </div>
 
       <section className="staff-actions" aria-label="Ticket actions">
@@ -483,8 +507,20 @@ export default function StaffTicketDetail({
       <CommentThread
         comments={detail.publicComments}
         onPost={async (content) => {
-          await postTicketComment(ticketNumber, content);
-          await load();
+          const createdComment = await postTicketComment(ticketNumber, content);
+          setDetail((current) =>
+            current ? { ...current, publicComments: [...current.publicComments, createdComment] } : current,
+          );
+          try {
+            const refreshed = await fetchStaffTicketDetail(ticketNumber);
+            setDetail(refreshed);
+          } catch (refreshErr) {
+            setActionError(
+              refreshErr instanceof Error
+                ? `Comment posted, but the ticket could not be refreshed: ${refreshErr.message}`
+                : "Comment posted, but the ticket could not be refreshed.",
+            );
+          }
         }}
       />
 
