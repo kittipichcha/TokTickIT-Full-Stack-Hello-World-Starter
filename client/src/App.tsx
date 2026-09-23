@@ -22,6 +22,18 @@ import type { AuthUser } from "./api-client";
 
 type AppView = "home" | "create-ticket" | "ticket-detail" | "staff-queue" | "staff-ticket-detail";
 
+/**
+ * Issue #38 review fix (49-B1) — role-specific navigation and entry behavior
+ * (FR-08, ui-spec §5.3).
+ *
+ * The Requester screens and the Staff screens are disjoint: a Requester may only
+ * reach `home` / `create-ticket` / `ticket-detail`, and IT Staff / Administrator
+ * may only reach `staff-queue` / `staff-ticket-detail`. The backend authorization
+ * is unchanged — this is the frontend entry/routing behavior only.
+ */
+const REQUESTER_VIEWS: readonly AppView[] = ["home", "create-ticket", "ticket-detail"];
+const STAFF_VIEWS: readonly AppView[] = ["staff-queue", "staff-ticket-detail"];
+
 interface FailedAttachment {
   id: string;
   fileName: string;
@@ -37,7 +49,12 @@ interface AppProps {
 
 export default function App({ user }: AppProps) {
   const [message, setMessage] = useState<string | null>(null);
-  const [view, setView] = useState<AppView>("home");
+
+  const isStaff = user.role === "IT_STAFF" || user.role === "ADMINISTRATOR";
+  const allowedViews = isStaff ? STAFF_VIEWS : REQUESTER_VIEWS;
+  const initialView: AppView = isStaff ? "staff-queue" : "home";
+
+  const [view, setView] = useState<AppView>(initialView);
   const [detailTicketNumber, setDetailTicketNumber] = useState<string | null>(null);
   const [ticketDetail, setTicketDetail] = useState<TicketDetailResponse["data"] | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -51,7 +68,19 @@ export default function App({ user }: AppProps) {
   const [appearsResolvedError, setAppearsResolvedError] = useState<string | null>(null);
   const [isUpdatingAppearsResolved, setIsUpdatingAppearsResolved] = useState(false);
 
-  const isStaff = user.role === "IT_STAFF" || user.role === "ADMINISTRATOR";
+  /**
+   * Issue #38 review fix (49-B1) — a view that is not permitted for the current
+   * role is never rendered. Stale or manipulated state (including a role change
+   * such as #41's Administrator self-demotion) is redirected to the role's
+   * initial view instead of rendering a Requester-only screen for Staff/Admin.
+   */
+  const activeView: AppView = allowedViews.includes(view) ? view : initialView;
+
+  useEffect(() => {
+    if (!allowedViews.includes(view)) {
+      setView(initialView);
+    }
+  }, [allowedViews, initialView, view]);
 
   // Attachment dialog state
   const [removeDialogAttachment, setRemoveDialogAttachment] = useState<AttachmentItem | null>(null);
@@ -120,7 +149,7 @@ export default function App({ user }: AppProps) {
 
   // Load ticket detail when entering the ticket-detail view
   useEffect(() => {
-    if (view !== "ticket-detail" || !detailTicketNumber) return;
+    if (activeView !== "ticket-detail" || !detailTicketNumber) return;
 
     let cancelled = false;
     setDetailLoading(true);
@@ -146,7 +175,7 @@ export default function App({ user }: AppProps) {
       });
 
     return () => { cancelled = true; };
-  }, [view, detailTicketNumber, detailRetryCounter]);
+  }, [activeView, detailTicketNumber, detailRetryCounter]);
 
   const handleCreateAnother = () => {
     setView("create-ticket");
@@ -217,14 +246,14 @@ export default function App({ user }: AppProps) {
             <>
               <a
                 href="#my-tickets"
-                className={view === "home" ? "nav-active" : ""}
+                className={activeView === "home" ? "nav-active" : ""}
                 onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
               >
                 My Tickets
               </a>
               <a
                 href="#create-ticket"
-                className={view === "create-ticket" ? "nav-active" : ""}
+                className={activeView === "create-ticket" ? "nav-active" : ""}
                 onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
               >
                 Create Ticket
@@ -234,7 +263,7 @@ export default function App({ user }: AppProps) {
           {isStaff && (
             <a
               href="#staff-queue"
-              className={view === "staff-queue" || view === "staff-ticket-detail" ? "nav-active" : ""}
+              className={activeView === "staff-queue" || activeView === "staff-ticket-detail" ? "nav-active" : ""}
               onClick={(e) => { e.preventDefault(); setView("staff-queue"); setMobileMenuOpen(false); }}
             >
               Ticket Queue
@@ -243,21 +272,21 @@ export default function App({ user }: AppProps) {
         </nav>
       </header>
       {message && <p className="notice" role="status">{message}</p>}
-      {view === "home" && (
+      {activeView === "home" && (
         <MyTickets
           onViewTicket={handleViewTicket}
           onCreateTicket={() => setView("create-ticket")}
           resetKey={myTicketsResetKey}
         />
       )}
-      {view === "create-ticket" && (
+      {activeView === "create-ticket" && (
         <CreateTicket
           requesterName={user.name}
           onViewTicket={handleViewTicket}
           onCreateAnother={handleCreateAnother}
         />
       )}
-      {view === "staff-queue" && (
+      {activeView === "staff-queue" && (
         <StaffTicketQueue
           onOpenDetail={(ticketNumber) => {
             setStaffDetailTicketNumber(ticketNumber);
@@ -265,14 +294,14 @@ export default function App({ user }: AppProps) {
           }}
         />
       )}
-      {view === "staff-ticket-detail" && staffDetailTicketNumber && (
+      {activeView === "staff-ticket-detail" && staffDetailTicketNumber && (
         <StaffTicketDetail
           ticketNumber={staffDetailTicketNumber}
           currentUserId={user.id}
           onBack={() => setView("staff-queue")}
         />
       )}
-      {view === "ticket-detail" && (
+      {activeView === "ticket-detail" && (
         <main className="app-container">
           {detailLoading && (
             <div role="status" aria-label="Loading ticket detail">
