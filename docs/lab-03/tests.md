@@ -51,6 +51,36 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-22 — Issue #38 (PR #49 review follow-up — 49-B1..B4, 49-D1)**
+  - **Scope:** the four actionable blockers from the PR #49 review plus the status-ownership
+    contract decision.
+  - **49-D1 (contract decision — resolved).** The Status Transition Matrix's validation column
+    reads "Ticket owned" (`ticketOwnerId` non-null), not "owned by the acting user." The
+    implementation already matched this (the earlier review-driven fix removed the
+    `ticketOwnerId === actingUserId` restriction); the decision is recorded in
+    `specification.md` §7 and §13 decision 14 and in `api-spec.md` §19, and is proven by the
+    cross-actor cases in `API-STAFF-03`.
+  - **49-B1 (role-specific initial navigation).** `App.tsx` now derives the initial view from
+    the authenticated role (Requester → `home`; IT Staff/Administrator → `staff-queue`) and
+    renders only role-permitted views, redirecting stale/manipulated state to the role's
+    initial view. Server-side authorization is unchanged. New rows UI-49-01..05 in
+    `client/src/App.test.tsx`; verified to fail against the pre-fix behavior.
+  - **49-B2 (Existing Attachments on Staff Detail).** `getStaffTicketDetail` now returns the
+    Ticket's Attachments (reusing the established `AttachmentData` shape); `StaffTicketDetail`
+    renders a read-only Attachments section with Preview/Download and no upload/remove
+    controls. New rows API-49-ATT-01..09 and UI-49-ATT-01..05.
+  - **49-B3 (`pageSize` clamp).** `parseQueueQuery` now clamps a well-formed integer to the
+    frozen 1–50 range (`0` → `1`, `51`/`999` → `50`) while malformed input keeps the safe
+    default of `10`. New boundary cases in `staff-queue.api.test.ts`.
+  - **49-B4 (modal focus behavior).** The status confirmation modal now captures the invoking
+    control, moves focus inside on open, traps Tab/Shift+Tab, closes on Escape without calling
+    the API, and restores focus on close. New rows UI-49-MODAL-01..10.
+  - **Results:** server suite **531 passed, 0 skipped** across 38 files; client suite
+    **174 passed, 0 skipped** across 14 files. Server and client builds both succeed.
+  - **Contract note:** `api-spec.md` §16 now documents the `attachments` field on the Staff
+    Detail response; no new endpoint was added (the shared §11–§13 read routes are consumed
+    as-is).
+
 - **2026-09-21 — Issue #38 (IT Staff Ticket Operations)**
   - **Scope:** the IT Staff ticket-operations workflow — the responsive Ticket Queue
     (`GET /api/staff/queue`), the Staff Ticket Detail (`GET /api/staff/tickets/:n`), ownership
@@ -579,7 +609,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-STAFF-01 | API | Claim/reassign ownership | Owner updated to active IT Staff/Admin | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-16 | BR-14 | AC-11 | Passed |
 | API-OWN-01 | API | Eligible Ticket-owner lookup | `GET /api/staff/owners` returns only active IT Staff/Administrators as `{id,name,role}`; Requesters and inactive users excluded; no credential field; Requester caller `403`; unauthenticated `401` | `server/tests/lab-03/staff-queue.api.test.ts` | FR-16 | BR-14 | AC-11 | Passed |
 | API-STAFF-02 | API | Set IT Priority | IT Priority updated; Requested Priority unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-15, BR-16 | AC-12 | Passed |
-| API-STAFF-03 | API | Permitted status change | Status changes per matrix | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Passed |
+| API-STAFF-03 | API | Permitted status change | Status changes per matrix; a different active IT Staff member and an Administrator may each change status on a Ticket owned by another staff member, without mutating ownership (Section 7 clarification) | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Passed |
 | API-STAFF-04 | API | Forbidden status transition | 409 CONFLICT; no change | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18, BR-20 | AC-13 | Passed |
 | API-STAFF-05 | API | Create Internal Note | Note saved; visible only to IT Staff/Admin | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-21, BR-24 | AC-14 | Passed |
 | API-STAFF-06 | API | Set IT Priority on nonexistent/forbidden ticket | `403 FORBIDDEN` (not IT Staff/Admin) or `404 NOT_FOUND` (ticket not found) per BR-31 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-31 | AC-12 | Passed |
@@ -643,6 +673,35 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Passed |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership (claim + assign/reassign to any eligible owner)/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Passed |
 | UI-STAFF-02 | UI | Status change to Resolved/Closed/Cancelled | Confirm modal shown before request is sent; cancel aborts, confirm proceeds | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
+| UI-49-01 | UI | IT Staff initial navigation | IT Staff starts on the Ticket Queue; My Tickets/Create Ticket are absent and the Requester list is never fetched | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
+| UI-49-02 | UI | Administrator initial navigation | Administrator starts on the Ticket Queue, not My Tickets | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
+| UI-49-03 | UI | IT Staff navigation destinations | Only staff-authorized destinations are exposed | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
+| UI-49-04 | UI | Administrator navigation destinations | Requester-only destinations are absent | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
+| UI-49-05 | UI | Requester-only view attempted by Staff/Admin | The Requester-only view is never rendered | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
+| API-49-ATT-01 | API | Staff Detail attachment metadata (IT Staff) | Existing Attachments returned with filename/size/uploadedAt/isRemoved/id/mimeType | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-15 | BR-12 | AC-11 | Passed |
+| API-49-ATT-02 | API | Staff Detail attachment metadata (Administrator) | Administrator receives the same attachment metadata | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-15 | BR-12 | AC-11 | Passed |
+| API-49-ATT-03 | API | Requester cannot use the Staff Detail endpoint | `403 FORBIDDEN` | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-09 | BR-31 | AC-20 | Passed |
+| API-49-ATT-04 | API | Attachment preview for Staff | Staff preview succeeds via the shared read route | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-15 | BR-12 | AC-11 | Passed |
+| API-49-ATT-05 | API | Attachment download for Staff | Staff download succeeds via the shared read route | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-15 | BR-12 | AC-11 | Passed |
+| API-49-ATT-06 | API | Removed attachment representation | `isRemoved`/`removalReason`/`removedAt` represented correctly | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-15 | BR-12 | AC-11 | Passed |
+| API-49-ATT-07 | API | Removed attachment read failure | Preview/download of a removed Attachment returns `410 ATTACHMENT_REMOVED` | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-15 | BR-31 | AC-11 | Passed |
+| API-49-ATT-08 | API | Staff cannot upload Attachments | `403 FORBIDDEN`; no Attachment row created | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-09 | BR-12 | AC-07 | Passed |
+| API-49-ATT-09 | API | Staff cannot remove Attachments | `403 FORBIDDEN`; `isRemoved` unchanged | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-09 | BR-12 | AC-07 | Passed |
+| UI-49-ATT-01 | UI | Staff Detail attachment list | Existing Attachments are listed | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-15 | BR-12 | AC-11 | Passed |
+| UI-49-ATT-02 | UI | Staff Detail Preview/Download controls | Preview and Download call the shared read functions | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-15 | BR-12 | AC-11 | Passed |
+| UI-49-ATT-03 | UI | Removed attachment state | Removed badge/reason shown; Preview/Download disabled | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-15 | BR-12 | AC-11 | Passed |
+| UI-49-ATT-04 | UI | No mutation controls on Staff Detail | Upload/Remove/Delete controls are absent | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-09 | BR-12 | AC-07 | Passed |
+| UI-49-ATT-05 | UI | Attachment failure feedback | A failed preview marks the Attachment unavailable | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-15 | BR-33 | AC-11 | Passed |
+| UI-49-MODAL-01 | UI | Confirmation modal for Resolved | Modal opens | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
+| UI-49-MODAL-02 | UI | Confirmation modal for Closed | Modal opens | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
+| UI-49-MODAL-03 | UI | Confirmation modal for Cancelled | Modal opens | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
+| UI-49-MODAL-04 | UI | Modal initial focus | Focus enters the modal on open | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
+| UI-49-MODAL-05 | UI | Modal Tab trap | Tab cannot escape the modal | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
+| UI-49-MODAL-06 | UI | Modal Shift+Tab trap | Shift+Tab cannot escape the modal | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
+| UI-49-MODAL-07 | UI | Modal Escape | Escape closes without calling the status API | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
+| UI-49-MODAL-08 | UI | Modal Cancel | Cancel closes without calling the status API | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
+| UI-49-MODAL-09 | UI | Modal Confirm | Confirm calls the status API exactly once | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
+| UI-49-MODAL-10 | UI | Modal focus restoration | Focus returns to the invoking control after close | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
 | UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
 | UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Planned |
 | UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Planned |
@@ -665,10 +724,10 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-07 → API-REQ-01, API-REQ-02, SEC-AUTHZ-10, E2E-04
 - AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
-- AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01, UI-QUE-02, VISUAL-02
-- AC-11 → API-STAFF-01, API-STAFF-09, API-OWN-01, UI-STAFF-01, E2E-02
+- AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01, UI-QUE-02, UI-49-01, UI-49-02, UI-49-03, UI-49-04, UI-49-05, VISUAL-02
+- AC-11 → API-STAFF-01, API-STAFF-09, API-OWN-01, API-49-ATT-01, API-49-ATT-02, API-49-ATT-04, API-49-ATT-05, API-49-ATT-06, API-49-ATT-07, UI-STAFF-01, UI-49-ATT-01, UI-49-ATT-02, UI-49-ATT-03, UI-49-ATT-05, E2E-02
 - AC-12 → API-STAFF-02, API-STAFF-06, UI-STAFF-01, E2E-02
-- AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, E2E-02
+- AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, UI-49-MODAL-01, UI-49-MODAL-02, UI-49-MODAL-03, UI-49-MODAL-08, UI-49-MODAL-09, E2E-02
 - AC-14 → API-STAFF-05, API-STAFF-10, UI-STAFF-01, E2E-02
 - AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
 - AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, E2E-03

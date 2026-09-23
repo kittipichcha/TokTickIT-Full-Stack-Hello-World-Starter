@@ -413,3 +413,81 @@
   and proving them with executable tests rather than redesigning anything. The one genuine
   contract gap was the eligible-owner source, and resolving it required an explicit, auditable
   documentation trail rather than a silent endpoint.
+
+## Issue #38 — Review-Driven Fix (B-1: status change required the acting user to be the specific owner)
+
+- **Prompt summary:** a second review of PR #49 found that `applyStatusTransition` required
+  `ticket.ticketOwnerId === actingUserId`, i.e. only the Ticket's *specific* owner could change
+  its status. The frozen contract grants "Perform permitted status changes" to the whole
+  IT Staff/Administrator group (`specification.md` §6) and the Status Transition Matrix's
+  validation column reads "Ticket owned" — non-null — not "owned by the acting user" (§7).
+  Fix the behavior and close the test-coverage gap that hid it.
+- **What was done with output:**
+  - **Behavior fix.** `applyStatusTransition` now rejects only when `ticketOwnerId === null`
+    (the genuine claim-before-status-change rule, §13 decision 14). The acting user is no longer
+    required to be the Ticket's specific owner. The atomic conditional `updateMany` guard was
+    narrowed to the persisted from-state (`id` + `currentStatus`) so it cannot re-introduce the
+    same-actor restriction; the `count === 0` re-read classifies 404 / 409 (unowned) / 409
+    (raced) as before. The now-unused `actingUserId` parameter was removed from the service
+    signature and its controller call site.
+  - **Ownership is never mutated by a status change** — the update still writes only
+    `currentStatus`.
+  - **Tests.** Added two cases to `API-STAFF-03` in `staff-ticket-detail.api.test.ts`: a
+    *different* active IT Staff member, and an Administrator, each changing status on a Ticket
+    owned by staff A — asserting `200`, the new status, and that `ticketOwnerId` is unchanged.
+    These are exactly the cases the original suite never exercised (every prior transition test
+    acted as the ticket's own owner).
+  - **Contract clarification.** Recorded the resolved reading in `specification.md` §7 and §13
+    decision 14, and in `api-spec.md` §19, so the narrower interpretation cannot be
+    re-introduced silently. Updated the `tests.md` `API-STAFF-03` row to describe the added
+    cross-actor coverage.
+  - **Results:** `staff-ticket-detail.api.test.ts` **30 passed**; full server suite **518 passed**
+    across 38 files; `tsc --noEmit` clean.
+- **Notable engineering judgment:** the fix was verified to be a real regression test rather than
+  a tautology — with the old service behavior temporarily restored, the new cross-actor case
+  fails with `409` where `200` is expected. The contract was clarified rather than left
+  ambiguous, because the Decision-free implementation rule requires an ambiguity to be resolved
+  in the frozen documents rather than silently baked into `service.ts`.
+- **Reflection:** the original implementation was defensible as "extra safety," but it narrowed a
+  capability the Authorization Matrix grants to an entire role group, and the test suite's habit
+  of always acting as the ticket's own owner meant no test could ever have caught it. The
+  coverage gap, not the code, was the deeper defect.
+
+## Issue #38 — PR #49 Review Follow-Up (49-B1..B4, 49-D1)
+
+- **Prompt summary:** a review of PR #49 raised four actionable blockers plus one contract
+  decision: (49-B1) Staff/Admin landed on the Requester `My Tickets` screen; (49-B2) the Staff
+  Ticket Detail did not expose the Ticket's existing Attachments; (49-B3) `pageSize` did not
+  implement the documented 1–50 clamp; (49-B4) the status confirmation modal lacked the required
+  keyboard/focus behavior; (49-D1) the status-ownership contract needed an explicit decision.
+- **What was done with output:**
+  - **49-D1 — resolved, not coded around.** The frozen wording ("Ticket owned") and the
+    Authorization Matrix grant status changes to the whole IT Staff/Administrator group, so the
+    acting user need not be the Ticket's specific owner. The implementation already matched this
+    after the earlier review fix; the decision was recorded in `specification.md` §7 and §13
+    decision 14 and in `api-spec.md` §19, and is proven by the cross-actor `API-STAFF-03` cases.
+  - **49-B1 — role-specific entry/routing.** `App.tsx` derives the initial view from the role
+    and renders only role-permitted views, redirecting stale state to the role's initial view.
+    Backend authorization was deliberately left untouched. Five new cases (UI-49-01..05) were
+    added and verified to fail against the pre-fix behavior.
+  - **49-B2 — Staff Detail Attachments.** `getStaffTicketDetail` now returns the Ticket's
+    Attachments using the established `AttachmentData` shape; the Staff screen renders a
+    read-only list with Preview/Download and no upload/remove controls. No new endpoint was
+    created — the shared §11–§13 read routes are consumed as-is.
+  - **49-B3 — `pageSize` clamp.** `parseQueueQuery` now clamps a well-formed integer to 1–50
+    (`0` → `1`, `51`/`999` → `50`) while malformed input keeps the default of `10`. The frozen
+    integer grammar `0|[1-9][0-9]*` was the key detail: `0` is well-formed and must clamp, not
+    fall back.
+  - **49-B4 — modal focus behavior.** The confirmation modal captures the invoking control,
+    focuses inside on open, traps Tab/Shift+Tab, closes on Escape without calling the API, and
+    restores focus on close.
+  - **Results:** server suite **531 passed, 0 skipped** across 38 files; client suite
+    **174 passed, 0 skipped** across 14 files; both builds succeed.
+- **Notable engineering judgment:** for 49-B1 the fix was placed in navigation/rendering rather
+  than by relaxing the Requester-only API authorization — the review explicitly warned against
+  weakening the backend. For 49-B3 the temptation was to change the test to accept `10`; that
+  would have laundered a contract violation, so the parser was fixed instead.
+- **Reflection:** three of the four blockers were "the contract said X and the code did Y" —
+  the recurring failure mode was implementing a plausible behavior instead of re-reading the
+  frozen wording. The `pageSize` case is the clearest example: the code's "out of range → 10"
+  was reasonable but directly contradicted the documented clamp.

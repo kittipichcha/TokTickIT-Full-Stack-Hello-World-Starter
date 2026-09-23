@@ -388,6 +388,44 @@ mirrored both gaps. The `API-REQ-02` tests did not cover the mismatches.
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.
 
+### Issue #38 — IT Staff Ticket Operations (PR #49)
+
+**Reviewer comment I received (PR #49): Changes Requested.** Four actionable blockers plus one
+contract decision:
+- **49-B1** — Staff/Admin initially landed on the Requester `My Tickets` screen.
+- **49-B2** — Staff Ticket Detail did not expose the Ticket's existing Attachments.
+- **49-B3** — `pageSize` did not implement the documented 1–50 clamp.
+- **49-B4** — the status confirmation modal lacked the required keyboard/focus behavior.
+- **49-D1** — ambiguity: who may change status on an assigned ticket?
+
+**How I responded — per finding:**
+
+- **49-D1 (contract decision — resolved).** The Status Transition Matrix's validation column
+  reads "Ticket owned" (`ticketOwnerId` non-null), not "owned by the acting user," and the
+  Authorization Matrix grants "Perform permitted status changes" to the whole
+  IT Staff/Administrator group. Decision: **any** active IT Staff/Administrator may change the
+  status of a claimed Ticket; the acting user need not be the specific owner, and a status change
+  never mutates ownership. Recorded in `specification.md` §7 and §13 decision 14 and in
+  `api-spec.md` §19, and proven by the cross-actor cases in `API-STAFF-03`.
+- **49-B1 (fixed).** `App.tsx` now derives the initial view from the authenticated role
+  (Requester → `home`; IT Staff/Administrator → `staff-queue`) and renders only role-permitted
+  views, redirecting stale/manipulated state to the role's initial view. Backend authorization
+  was deliberately left unchanged. Added UI-49-01..05 and verified they fail against the pre-fix
+  behavior.
+- **49-B2 (fixed).** `getStaffTicketDetail` now returns the Ticket's Attachments (reusing the
+  established `AttachmentData` shape) and `StaffTicketDetail` renders a read-only Attachments
+  section with Preview/Download and no upload/remove controls. No new endpoint was created — the
+  shared §11–§13 read routes are consumed as-is. Added API-49-ATT-01..09 and UI-49-ATT-01..05.
+- **49-B3 (fixed).** `parseQueueQuery` now clamps a well-formed integer to the frozen 1–50 range
+  (`0` → `1`, `51`/`999` → `50`) while malformed input keeps the safe default of `10`. Added
+  boundary cases to `staff-queue.api.test.ts`.
+- **49-B4 (fixed).** The confirmation modal now captures the invoking control, moves focus inside
+  on open, traps Tab/Shift+Tab, closes on Escape without calling the API, and restores focus on
+  close. Added UI-49-MODAL-01..10.
+
+**Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
+is claimed, and no false sign-off is recorded.
+
 ---
 
 ## Pull Requests I reviewed (authored by my partner)
