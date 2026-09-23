@@ -230,13 +230,77 @@ describe("API-QUE-02 — Search/filter/sort/pagination + safe defaulting (AC-10)
         sort: "bogus",
         order: "sideways",
         page: "0",
-        pageSize: "999",
+        pageSize: "abc",
       }),
       staff,
     );
     expect(res.status).toBe(200);
     expect(res.body.pagination.page).toBe(1);
     expect(res.body.pagination.pageSize).toBe(10);
+  });
+
+  // Issue #38 review fix (49-B3): the frozen contract (api-spec §15) says
+  // `pageSize` accepts 1–50 and an out-of-range numeric value is *clamped* to
+  // the nearest bound — it is not silently replaced by the default. The prior
+  // parser returned 10 for 0/51/999, contradicting the contract.
+  itIfDb("pageSize is clamped to the frozen 1–50 range", async () => {
+    const cases: Array<{ query: string; expected: number }> = [
+      { query: "1", expected: 1 },
+      { query: "50", expected: 50 },
+      { query: "0", expected: 1 },
+      { query: "51", expected: 50 },
+      { query: "999", expected: 50 },
+    ];
+
+    for (const { query, expected } of cases) {
+      const res = await withSession(
+        request(app).get("/api/staff/queue").query({ pageSize: query }),
+        staff,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.pagination.pageSize).toBe(expected);
+    }
+  });
+
+  itIfDb("malformed pageSize keeps the safe default of 10", async () => {
+    for (const query of ["abc", "-1", "1.5", " 10", "1e2", ""]) {
+      const res = await withSession(
+        request(app).get("/api/staff/queue").query({ pageSize: query }),
+        staff,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.pagination.pageSize).toBe(10);
+    }
+  });
+
+  itIfDb("missing pageSize defaults to 10", async () => {
+    const res = await withSession(request(app).get("/api/staff/queue"), staff);
+    expect(res.status).toBe(200);
+    expect(res.body.pagination.pageSize).toBe(10);
+  });
+
+  itIfDb("the clamped pageSize drives the effective page size", async () => {
+    const marker = `Clamp-${Date.now()}`;
+    for (let i = 0; i < 3; i++) {
+      await createTicket({ requesterId: requester.userId, summary: `${marker} item ${i}` });
+    }
+
+    const clamped = await withSession(
+      request(app).get("/api/staff/queue").query({ search: marker, pageSize: "999" }),
+      staff,
+    );
+    expect(clamped.status).toBe(200);
+    expect(clamped.body.pagination.pageSize).toBe(50);
+    expect(clamped.body.data).toHaveLength(3);
+
+    const tiny = await withSession(
+      request(app).get("/api/staff/queue").query({ search: marker, pageSize: "0" }),
+      staff,
+    );
+    expect(tiny.status).toBe(200);
+    expect(tiny.body.pagination.pageSize).toBe(1);
+    expect(tiny.body.data).toHaveLength(1);
+    expect(tiny.body.pagination.totalPages).toBe(3);
   });
 
   itIfDb("unrecognized status/priority are treated as absent (no filter)", async () => {

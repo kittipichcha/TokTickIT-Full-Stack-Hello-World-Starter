@@ -625,7 +625,8 @@ function firstQueryValue(val: unknown): string | undefined {
  * - `sort`: allow-list only; unknown → `createdAt`.
  * - `order`: `asc`/`desc` only; unknown → `desc`.
  * - `page`: positive safe integer; otherwise → `1`.
- * - `pageSize`: integer in 1–50; otherwise → `10`.
+ * - `pageSize`: missing/malformed → `10`; a well-formed integer is **clamped**
+ *   to the frozen 1–50 range (`< 1` → `1`, `> 50` → `50`).
  */
 export function parseQueueQuery(query: unknown): StaffQueueParams {
   const q = (query ?? {}) as Record<string, unknown>;
@@ -671,10 +672,16 @@ export function parseQueueQuery(query: unknown): StaffQueueParams {
 
   let pageSize = 10;
   const rawPageSize = firstQueryValue(q.pageSize);
-  if (rawPageSize !== undefined && /^(?:[1-9][0-9]*)$/.test(rawPageSize)) {
+  // The frozen integer grammar is `0|[1-9][0-9]*` (api-spec §0), so `0` is a
+  // well-formed integer and must clamp to the lower bound rather than fall back.
+  if (rawPageSize !== undefined && /^(?:0|[1-9][0-9]*)$/.test(rawPageSize)) {
     const n = Number(rawPageSize);
-    if (n >= 1 && n <= 50) {
-      pageSize = n;
+    if (Number.isSafeInteger(n)) {
+      // Frozen contract (api-spec §15): `pageSize` accepts 1–50 and an
+      // out-of-range numeric value is clamped to the nearest bound. A malformed
+      // value (non-numeric, signed, decimal, whitespace-padded, or beyond the
+      // safe-integer domain) is not a number at all and keeps the default of 10.
+      pageSize = Math.min(50, Math.max(1, n));
     }
   }
 
