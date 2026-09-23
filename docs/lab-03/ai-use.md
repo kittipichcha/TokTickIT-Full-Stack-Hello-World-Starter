@@ -30,9 +30,10 @@
   Staff Detail regression coverage.
 - Validation: focused client App/Queue/Staff Detail tests passed 69 tests; focused Staff Detail API
   tests passed 41 tests; full client suite passed 187 tests; client/server builds and touched-file
-  diagnostics reported no errors; server suite excluding migration passed 514 tests. The migration
-  harness reached its deliberate failure probes without a Vitest summary, and browser execution was
-  blocked by the missing `@playwright/test` dependency. Lab 3 E2E remains #42-owned.
+  diagnostics reported no errors; server suite excluding migration passed 514 tests; responsive
+  Playwright regression passed 129 tests across desktop/tablet/mobile after installing the declared
+  `@playwright/test` dependency and Chromium. The migration harness reached its deliberate failure
+  probes without a Vitest summary. Lab 3 E2E remains #42-owned.
 - Reflection: The existing Queue renders desktop and mobile representations together in jsdom, so
   the new tests use the established `findAllByText` pattern while browser-level layout remains an
   E2E evidence concern.

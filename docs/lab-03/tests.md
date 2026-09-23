@@ -72,11 +72,11 @@ assertions inside `auth.api.test.ts`.
     tests/lab-03/staff-ticket-detail.api.test.ts`.
   - **Results:** full client suite passed **187 tests across 14 files**; server suite excluding
     the migration harness passed **514 tests across 37 files**; client and server builds passed;
-    `git diff --check` passed. The migration harness reached its deliberate collision and injected
-    SQL-failure probes but emitted no Vitest summary, so it remains environment-limited rather
-    than Passed. Existing browser responsive execution was attempted across desktop/tablet/mobile
-    but is blocked because this worktree has no installed `@playwright/test` package. Lab 3 E2E
-    rows remain owned by #42 and are not claimed here.
+    `git diff --check` passed. Existing responsive browser regression passed **129 tests across
+    desktop/tablet/mobile** after installing the already-declared `@playwright/test` dependency
+    and Chromium. The migration harness reached its deliberate collision and injected SQL-failure
+    probes but emitted no Vitest summary, so it remains environment-limited rather than Passed.
+    Lab 3 E2E rows remain owned by #42 and are not claimed here.
 
 - **2026-09-23 — Issue #38 (PR #49 remaining UI/API findings)**
   - **UI-Q-01/UI-Q-02:** Staff Queue now hides secondary table columns at tablet widths and
