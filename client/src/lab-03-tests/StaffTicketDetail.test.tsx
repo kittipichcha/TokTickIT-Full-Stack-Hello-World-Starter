@@ -453,3 +453,97 @@ describe("UI-49-ATT — Staff Detail Existing Attachments (49-B2)", () => {
     expect(screen.getByText("Attachment is unavailable.")).toBeTruthy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Issue #38 review fix (49-B4) — status confirmation modal keyboard/focus
+// behavior (ui-spec §8: modal dialogs trap focus and are closable via Esc).
+// ---------------------------------------------------------------------------
+
+describe("UI-49-MODAL — confirmation modal focus behavior (49-B4)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue(OWNERS);
+  });
+  afterEach(() => cleanup());
+
+  async function openModal(target: "Resolved" | "Closed" | "Cancelled", status: string) {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(
+      detail({ currentStatus: status, ticketOwnerId: 5 }),
+    );
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+    await screen.findByText("TKT-2026-000001");
+    const trigger = screen.getByRole("button", { name: target });
+    await userEvent.click(trigger);
+    await screen.findByRole("dialog");
+    return trigger;
+  }
+
+  it("UI-49-MODAL-01 — opens the modal for Resolved", async () => {
+    await openModal("Resolved", "IN_PROGRESS");
+    expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+
+  it("UI-49-MODAL-02 — opens the modal for Closed", async () => {
+    await openModal("Closed", "RESOLVED");
+    expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+
+  it("UI-49-MODAL-03 — opens the modal for Cancelled", async () => {
+    await openModal("Cancelled", "NEW");
+    expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+
+  it("UI-49-MODAL-04 — initial focus enters the modal", async () => {
+    await openModal("Resolved", "IN_PROGRESS");
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+  });
+
+  it("UI-49-MODAL-05 — Tab cannot escape the modal", async () => {
+    await openModal("Resolved", "IN_PROGRESS");
+    const confirm = screen.getByRole("button", { name: "Confirm" });
+    confirm.focus();
+    await userEvent.tab();
+    // Wraps back to the first focusable control inside the dialog.
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+  });
+
+  it("UI-49-MODAL-06 — Shift+Tab cannot escape the modal", async () => {
+    await openModal("Resolved", "IN_PROGRESS");
+    const cancel = screen.getByRole("button", { name: "Cancel" });
+    cancel.focus();
+    await userEvent.tab({ shift: true });
+    // Wraps to the last focusable control inside the dialog.
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Confirm" }));
+  });
+
+  it("UI-49-MODAL-07 — Escape closes without calling the API", async () => {
+    await openModal("Resolved", "IN_PROGRESS");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(api.applyStatusTransition).not.toHaveBeenCalled();
+  });
+
+  it("UI-49-MODAL-08 — Cancel closes without calling the API", async () => {
+    await openModal("Resolved", "IN_PROGRESS");
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(api.applyStatusTransition).not.toHaveBeenCalled();
+  });
+
+  it("UI-49-MODAL-09 — Confirm calls the API exactly once", async () => {
+    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED" });
+    await openModal("Resolved", "IN_PROGRESS");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    await waitFor(() =>
+      expect(api.applyStatusTransition).toHaveBeenCalledWith("TKT-2026-000001", "RESOLVED"),
+    );
+    expect(vi.mocked(api.applyStatusTransition).mock.calls.length).toBe(1);
+  });
+
+  it("UI-49-MODAL-10 — focus returns to the invoking control after close", async () => {
+    const trigger = await openModal("Resolved", "IN_PROGRESS");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(trigger);
+  });
+});

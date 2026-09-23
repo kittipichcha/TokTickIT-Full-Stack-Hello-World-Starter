@@ -10,7 +10,7 @@
  * the request is sent (ui-spec §5.7).
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchStaffTicketDetail,
   fetchAssignableOwners,
@@ -70,6 +70,11 @@ export default function StaffTicketDetail({
   const [unavailableAttachmentErrors, setUnavailableAttachmentErrors] = useState<
     Record<number, string>
   >({});
+
+  // Issue #38 review fix (49-B4) — modal focus management (ui-spec §8).
+  const modalRef = useRef<HTMLDivElement>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   // Eligible owners (active IT Staff / Administrators) for the ownership control.
   // A failure here must not break the detail screen — the claim-to-me action and
@@ -178,6 +183,51 @@ export default function StaffTicketDetail({
       setPendingTransition(target);
     } else {
       void performTransition(target);
+    }
+  };
+
+  /**
+   * Issue #38 review fix (49-B4) — modal focus management (ui-spec §8).
+   *
+   * On open: remember the invoking control and move focus into the dialog.
+   * On close: restore focus to the invoking control. Opening the modal never
+   * calls the status API; only Confirm does.
+   */
+  useEffect(() => {
+    if (pendingTransition) {
+      lastFocusedRef.current = document.activeElement as HTMLElement | null;
+      cancelButtonRef.current?.focus();
+    } else if (lastFocusedRef.current) {
+      lastFocusedRef.current.focus();
+      lastFocusedRef.current = null;
+    }
+  }, [pendingTransition]);
+
+  /** Traps Tab/Shift+Tab inside the dialog and closes it on Escape. */
+  const handleModalKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setPendingTransition(null);
+      return;
+    }
+    if (e.key !== "Tab") return;
+
+    const dialog = modalRef.current;
+    if (!dialog) return;
+    const focusable = dialog.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else if (document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
     }
   };
 
@@ -520,6 +570,8 @@ export default function StaffTicketDetail({
             role="dialog"
             aria-modal="true"
             aria-labelledby="confirm-transition-title"
+            ref={modalRef}
+            onKeyDown={handleModalKeyDown}
           >
             <h2 id="confirm-transition-title">Confirm status change</h2>
             <p>
@@ -528,6 +580,7 @@ export default function StaffTicketDetail({
             </p>
             <div className="modal-actions">
               <button
+                ref={cancelButtonRef}
                 className="secondary-button"
                 onClick={() => setPendingTransition(null)}
                 disabled={isActing}
