@@ -332,12 +332,12 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                     </td>
                     <td>{ticket.summary}</td>
                     <td className="tablet-secondary">{ticket.categoryName}</td>
-                    <td className="tablet-secondary">
+                    <td>
                       <span className={`status-badge status-${ticket.currentStatus.toLowerCase()}`}>
                         {ticket.currentStatus}
                       </span>
                     </td>
-                    <td>
+                    <td className="tablet-secondary">
                       <span
                         className={`priority-badge priority-${ticket.requestedPriority.toLowerCase()}`}
                       >

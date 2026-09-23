@@ -282,12 +282,30 @@ describe("Required queue information (ui-spec §5.6)", () => {
     expect(card!.querySelector("button")?.textContent).toMatch(/Open Detail/i);
   });
 
-  it("marks secondary table columns for tablet condensation", async () => {
+  it("keeps tablet header and body column visibility aligned", async () => {
     vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
     const { container } = render(<StaffTicketQueue onOpenDetail={() => {}} />);
 
     await waitFor(() => expect(container.querySelector(".tickets-table")).toBeTruthy());
-    expect(container.querySelectorAll(".tickets-table .tablet-secondary").length).toBeGreaterThan(0);
+
+    const table = container.querySelector(".tickets-table")!;
+    const headers = Array.from(table.querySelectorAll("thead th"));
+    const cells = Array.from(table.querySelectorAll("tbody tr:first-child td"));
+    const headerIndex = (label: string) =>
+      headers.findIndex((header) => header.textContent?.trim().startsWith(label));
+
+    const statusIndex = headerIndex("Status");
+    const requestedPriorityIndex = headerIndex("Requested Priority");
+    expect(statusIndex).toBeGreaterThanOrEqual(0);
+    expect(requestedPriorityIndex).toBeGreaterThanOrEqual(0);
+    expect(headers[statusIndex]!.classList.contains("tablet-secondary")).toBe(false);
+    expect(cells[statusIndex]!.classList.contains("tablet-secondary")).toBe(false);
+    expect(headers[requestedPriorityIndex]!.classList.contains("tablet-secondary")).toBe(true);
+    expect(cells[requestedPriorityIndex]!.classList.contains("tablet-secondary")).toBe(true);
+
+    expect(table.querySelectorAll("thead .tablet-secondary").length).toBe(
+      table.querySelectorAll("tbody tr:first-child .tablet-secondary").length,
+    );
   });
 });
 
