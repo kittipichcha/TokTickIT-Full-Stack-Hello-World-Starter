@@ -2,8 +2,8 @@
  * IT Staff Ticket Queue (Issue #38 — ui-spec, api-spec §15).
  *
  * Responsive: a `<table>` on desktop/tablet and a stacked card list on mobile,
- * both driven from one data source. Five distinct states: loading, loaded,
- * empty, no-results, error.
+ * both driven from one data source. Six distinct states: loading, loaded,
+ * empty, no-results, forbidden, error.
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -14,9 +14,10 @@ import {
   type StaffQueueResponse,
   type AssignableOwner,
 } from "./api";
+import type { ApiError } from "./api-client";
 import { formatUtcDate } from "./format";
 
-type LoadState = "loading" | "loaded" | "error" | "empty" | "no-results";
+type LoadState = "loading" | "loaded" | "error" | "forbidden" | "empty" | "no-results";
 
 interface StaffTicketQueueProps {
   onOpenDetail: (ticketNumber: string) => void;
@@ -111,7 +112,8 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
       }
     } catch (err) {
       if (seqId === requestSeqRef.current) {
-        setLoadState("error");
+        const apiError = err as ApiError;
+        setLoadState(apiError.status === 403 ? "forbidden" : "error");
         setErrorMessage(err instanceof Error ? err.message : "Failed to load the queue.");
       }
     }
@@ -151,8 +153,9 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
     return order === "asc" ? " ▲" : " ▼";
   };
 
-  const renderSortableHeader = (label: string, field: SortField) => (
+  const renderSortableHeader = (label: string, field: SortField, className?: string) => (
     <th
+      className={className}
       role="columnheader"
       aria-sort={sort === field ? (order === "asc" ? "ascending" : "descending") : "none"}
       tabIndex={0}
@@ -249,6 +252,12 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
         </div>
       )}
 
+      {loadState === "forbidden" && (
+        <div className="empty-state" role="alert">
+          <p>You do not have permission to view the ticket queue.</p>
+        </div>
+      )}
+
       {loadState === "loading" && (
         <div role="status" aria-label="Loading queue">
           <div className="tickets-table-skeleton desktop-only">
@@ -297,13 +306,13 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                 <tr>
                   {renderSortableHeader("Ticket No.", "ticketNumber")}
                   {renderSortableHeader("Summary", "summary")}
-                  <th>Category</th>
+                  <th className="tablet-secondary">Category</th>
                   {renderSortableHeader("Status", "status")}
-                  <th>Requested Priority</th>
+                  <th className="tablet-secondary">Requested Priority</th>
                   {renderSortableHeader("IT Priority", "priority")}
                   <th>Owner</th>
-                  {renderSortableHeader("Created", "createdAt")}
-                  <th>Last Updated</th>
+                  {renderSortableHeader("Created", "createdAt", "tablet-secondary")}
+                  <th className="tablet-secondary">Last Updated</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -322,8 +331,8 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                       </a>
                     </td>
                     <td>{ticket.summary}</td>
-                    <td>{ticket.categoryName}</td>
-                    <td>
+                    <td className="tablet-secondary">{ticket.categoryName}</td>
+                    <td className="tablet-secondary">
                       <span className={`status-badge status-${ticket.currentStatus.toLowerCase()}`}>
                         {ticket.currentStatus}
                       </span>
@@ -351,8 +360,8 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
                         `User #${ticket.ticketOwnerId}`
                       )}
                     </td>
-                    <td>{formatUtcDate(ticket.createdAt)}</td>
-                    <td>{formatUtcDate(ticket.updatedAt)}</td>
+                    <td className="tablet-secondary">{formatUtcDate(ticket.createdAt)}</td>
+                    <td className="tablet-secondary">{formatUtcDate(ticket.updatedAt)}</td>
                     <td>
                       <button
                         className="secondary-button"

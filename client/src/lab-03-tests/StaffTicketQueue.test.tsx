@@ -127,6 +127,16 @@ describe("UI-QUE-01 — Staff Ticket Queue (AC-10)", () => {
     expect(alert.textContent).toContain("Network error");
     expect(screen.getByRole("button", { name: /Retry/i })).toBeTruthy();
   });
+
+  it("shows a distinct forbidden state without Retry for a 403", async () => {
+    const forbidden = new Error("Forbidden") as api.ApiError;
+    forbidden.status = 403;
+    vi.mocked(api.fetchStaffQueue).mockRejectedValue(forbidden);
+    render(<StaffTicketQueue onOpenDetail={() => {}} />);
+
+    expect(await screen.findByText(/do not have permission to view the ticket queue/i)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Retry/i })).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -270,6 +280,14 @@ describe("Required queue information (ui-spec §5.6)", () => {
     expect(text).toContain("Unassigned");
     expect(text).toContain("Last Updated");
     expect(card!.querySelector("button")?.textContent).toMatch(/Open Detail/i);
+  });
+
+  it("marks secondary table columns for tablet condensation", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
+    const { container } = render(<StaffTicketQueue onOpenDetail={() => {}} />);
+
+    await waitFor(() => expect(container.querySelector(".tickets-table")).toBeTruthy());
+    expect(container.querySelectorAll(".tickets-table .tablet-secondary").length).toBeGreaterThan(0);
   });
 });
 

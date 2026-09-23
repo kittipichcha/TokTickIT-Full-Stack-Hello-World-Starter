@@ -541,3 +541,24 @@ authorization boundary and independently rejects ineligible targets with `409 CO
 **Queue required information (ui-spec §5.6).** Each queue row carries `categoryName` and
 `updatedAt` alongside the ticket number, summary, status, requested priority, IT priority, and
 owner, so the desktop table and the mobile card can both present every required field.
+
+**PR #49 review remediation (2026-09-23).** The remaining Issue #38 review findings are now
+implemented and documented:
+
+- Tablet widths (768–991px) use a condensed table by hiding secondary columns while retaining
+  the core row and Open Detail action; mobile cards continue to expose all required fields.
+- Queue HTTP 403 responses render distinct access-denied feedback without a misleading Retry
+  action; other failures retain the retryable failure state.
+- Status controls are disabled for unassigned Tickets with claim/assign guidance. The server's
+  `409 CONFLICT` claim-before-status rule remains authoritative.
+- Confirmation status refetches preserve a mounted focus target, so focus restoration cannot land
+  on a detached control.
+- `API-STAFF-11` exercises all 64 source/target status pairs plus every target on unowned Tickets
+  against the shared `ticket-status.ts` matrix, asserting persistence or `409` with no mutation.
+
+Focused Issue #38 remediation verification: client **178 passed** across 14 files, including the
+52 Queue/Detail tests; server Staff Detail API **41 passed**. The server suite excluding the
+known migration harness passed **514 tests across 37 files**; client and server TypeScript builds
+also pass. The migration harness remains an environment/test-runner limitation because it stops
+after its deliberate collision probe without emitting a Vitest summary. E2E and final responsive
+evidence remain owned by Issue #42.

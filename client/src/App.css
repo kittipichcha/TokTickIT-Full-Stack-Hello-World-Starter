@@ -198,6 +198,9 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 @media (min-width: 768px) {
   .mobile-only { display: none !important; }
 }
+@media (min-width: 768px) and (max-width: 991px) {
+  .tickets-table .tablet-secondary { display: none; }
+}
 
 /* Full-width info rows */
 .ticket-info-full { flex-direction: column; gap: 4px; }

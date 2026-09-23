@@ -82,6 +82,18 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
     expect(screen.queryByRole("button", { name: "In Progress" })).toBeNull();
   });
 
+  it("disables status transitions until an unassigned ticket is claimed", async () => {
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(
+      detail({ currentStatus: "NEW", ticketOwnerId: null }),
+    );
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    expect(screen.getByRole("button", { name: "Open" })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: "Cancelled" })).toHaveProperty("disabled", true);
+    expect(screen.getByText(/claim or assign this ticket/i)).toBeTruthy();
+  });
+
   it("renders no transition buttons for a terminal CANCELLED ticket", async () => {
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ currentStatus: "CANCELLED" }));
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
@@ -282,6 +294,30 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
     await waitFor(() =>
       expect(api.applyStatusTransition).toHaveBeenCalledWith("TKT-2026-000001", "RESOLVED"),
     );
+  });
+
+  it("restores focus before a confirmed transition refetch unmounts the detail", async () => {
+    let resolveRefetch: ((value: api.StaffTicketDetail) => void) | undefined;
+    vi.mocked(api.fetchStaffTicketDetail)
+      .mockResolvedValueOnce(detail({ currentStatus: "IN_PROGRESS", ticketOwnerId: 5 }))
+      .mockImplementationOnce(
+        () => new Promise((resolve) => {
+          resolveRefetch = resolve;
+        }),
+      );
+    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED" });
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    const trigger = screen.getByRole("button", { name: "Resolved" });
+    await userEvent.click(trigger);
+    await userEvent.click(screen.getByRole("button", { name: /Confirm/i }));
+    await waitFor(() => expect(api.applyStatusTransition).toHaveBeenCalled());
+    expect(document.activeElement).toBe(trigger);
+
+    resolveRefetch?.(detail({ currentStatus: "RESOLVED", ticketOwnerId: 5 }));
+    await waitFor(() => expect(screen.getByText("RESOLVED")).toBeTruthy());
+    expect(document.activeElement?.isConnected).toBe(true);
   });
 
   it("cancelling the modal aborts the request", async () => {

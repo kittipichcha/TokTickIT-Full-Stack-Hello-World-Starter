@@ -51,6 +51,23 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-23 — Issue #38 (PR #49 remaining UI/API findings)**
+  - **UI-Q-01/UI-Q-02:** Staff Queue now hides secondary table columns at tablet widths and
+    renders a distinct forbidden state for HTTP 403 without a misleading Retry action.
+  - **UI-D-01/UI-D-02:** Status controls are disabled until an unassigned Ticket is claimed or
+    assigned, and status-confirm refetches preserve the mounted invoking control for focus
+    restoration.
+  - **API-D-02:** Added table-driven coverage for all 8x8 source/target status pairs plus every
+    target on each unowned source status, asserting success/persistence or 409/no mutation from
+    the shared transition matrix.
+  - **Results:** focused client suite **52 passed, 0 skipped**; focused server suite **41 passed,
+    0 skipped**; server suite excluding the migration harness **514 passed across 37 files**.
+    Client/server builds and touched-file diagnostics also passed. The migration harness stopped
+    after its deliberate collision probe without emitting a Vitest summary; this is recorded as an
+    environment/test-runner limitation and does not touch Issue #38 code. Rows UI-QUE-03,
+    UI-QUE-04, UI-STAFF-03, UI-STAFF-04, and API-STAFF-11 are marked `Passed` below based on the
+    focused executions.
+
 - **2026-09-22 — Issue #38 (PR #49 review follow-up — 49-B1..B4, 49-D1)**
   - **Scope:** the four actionable blockers from the PR #49 review plus the status-ownership
     contract decision.
@@ -671,8 +688,13 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-AUTHGATE-03 | UI | Mount-time session-check failure is distinct from unauthenticated | A `401` from `fetchMe()` renders Login; a `500` or status-less network failure renders a distinct session-error screen with a Retry button (neither Login nor the authenticated shell); clicking Retry after a `500` transitions to authenticated | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03 | BR-09, BR-33 | AC-06 | Passed |
 | UI-QUE-01 | UI | Staff Ticket Queue | Search/filter/sort/pagination; owner filter (eligible owners only, combined with search/status/priority, cleared by Clear Filters); required information (Category, Last Updated) on desktop table and mobile card; empty/no-results | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
 | UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Passed |
+| UI-QUE-03 | UI | Staff Queue tablet condensation | Secondary table columns are marked for the 768–991px condensed layout; core ticket information and Detail action remain available | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
+| UI-QUE-04 | UI | Staff Queue forbidden state | HTTP 403 renders distinct access-denied feedback without Retry | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Passed |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership (claim + assign/reassign to any eligible owner)/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Passed |
 | UI-STAFF-02 | UI | Status change to Resolved/Closed/Cancelled | Confirm modal shown before request is sent; cancel aborts, confirm proceeds | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
+| UI-STAFF-03 | UI | Unassigned Ticket status controls | Permitted status controls are disabled and claim/assign guidance is shown until the Ticket has an owner | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
+| UI-STAFF-04 | UI | Status transition focus restoration | Confirmed status refetch leaves focus on a mounted control | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
+| API-STAFF-11 | API | Full status transition matrix | All 8x8 source/target pairs match the shared matrix; forbidden and unowned requests return 409 with no mutation | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-49-01 | UI | IT Staff initial navigation | IT Staff starts on the Ticket Queue; My Tickets/Create Ticket are absent and the Requester list is never fetched | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
 | UI-49-02 | UI | Administrator initial navigation | Administrator starts on the Ticket Queue, not My Tickets | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
 | UI-49-03 | UI | IT Staff navigation destinations | Only staff-authorized destinations are exposed | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |

@@ -26,6 +26,7 @@ import {
   withSession,
   type TestSession,
 } from "./helpers/auth.js";
+import { isTransitionAllowed, TICKET_STATUSES } from "../../src/ticket-status.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
@@ -885,5 +886,62 @@ describe("API-49-ATT — Staff Detail Existing Attachments (49-B2)", () => {
     expect(res.body.error.code).toBe("FORBIDDEN");
     const after = await prisma.attachment.findUnique({ where: { id: attachmentId } });
     expect(after!.isRemoved).toBe(false);
+  });
+});
+
+describe("API-STAFF-11 — Full status transition matrix (AC-13)", () => {
+  itIfDb("matches the shared matrix for every source and target status", async () => {
+    const prisma = getPrisma();
+
+    for (const fromStatus of TICKET_STATUSES) {
+      for (const targetStatus of TICKET_STATUSES) {
+        const ticketNumber = await createTicket({
+          requesterId: requester.userId,
+          summary: `Matrix ${fromStatus} to ${targetStatus}`,
+          status: fromStatus,
+          ownerId: staffA.userId,
+        });
+        const response = await withSession(
+          request(app).patch(`/api/staff/tickets/${ticketNumber}/status`),
+          staffA,
+          { csrf: true },
+        ).send({ status: targetStatus });
+        const after = await prisma.ticket.findUnique({ where: { ticketNumber } });
+        const permitted = isTransitionAllowed(fromStatus, targetStatus);
+
+        if (permitted) {
+          expect(response.status, `${fromStatus} -> ${targetStatus}`).toBe(200);
+          expect(response.body.data.currentStatus).toBe(targetStatus);
+          expect(after!.currentStatus).toBe(targetStatus);
+        } else {
+          expect(response.status, `${fromStatus} -> ${targetStatus}`).toBe(409);
+          expect(response.body.error.code).toBe("CONFLICT");
+          expect(after!.currentStatus).toBe(fromStatus);
+        }
+      }
+    }
+  });
+
+  itIfDb("rejects every matrix target on an unowned ticket without mutation", async () => {
+    const prisma = getPrisma();
+
+    for (const fromStatus of TICKET_STATUSES) {
+      const ticketNumber = await createTicket({
+        requesterId: requester.userId,
+        summary: `Unowned matrix ${fromStatus}`,
+        status: fromStatus,
+        ownerId: null,
+      });
+      for (const targetStatus of TICKET_STATUSES) {
+        const response = await withSession(
+          request(app).patch(`/api/staff/tickets/${ticketNumber}/status`),
+          staffA,
+          { csrf: true },
+        ).send({ status: targetStatus });
+        expect(response.status, `${fromStatus} -> ${targetStatus}`).toBe(409);
+        const after = await prisma.ticket.findUnique({ where: { ticketNumber } });
+        expect(after!.currentStatus).toBe(fromStatus);
+      }
+    }
   });
 });

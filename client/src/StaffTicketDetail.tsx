@@ -94,8 +94,8 @@ export default function StaffTicketDetail({
     };
   }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (preserveDetail = false) => {
+    if (!preserveDetail) setLoading(true);
     setError(null);
     try {
       const data = await fetchStaffTicketDetail(ticketNumber);
@@ -116,7 +116,7 @@ export default function StaffTicketDetail({
     setActionError(null);
     try {
       await setTicketOwner(ticketNumber, currentUserId);
-      await load();
+      await load(true);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to claim the ticket.");
     } finally {
@@ -164,14 +164,17 @@ export default function StaffTicketDetail({
   const performTransition = async (target: TicketStatus) => {
     setIsActing(true);
     setActionError(null);
+    setPendingTransition(null);
+    lastFocusedRef.current?.focus();
+    lastFocusedRef.current = null;
     try {
       await applyStatusTransition(ticketNumber, target);
-      await load();
+      await load(true);
     } catch (err) {
       // A 409 (stale client state) is handled safely: show the message and
       // re-fetch the current status rather than corrupting local state.
       setActionError(err instanceof Error ? err.message : "Failed to change status.");
-      await load();
+      await load(true);
     } finally {
       setIsActing(false);
       setPendingTransition(null);
@@ -304,6 +307,7 @@ export default function StaffTicketDetail({
 
   const permitted = allowedTransitionsFrom(detail.currentStatus as TicketStatus);
   const isOwnedByMe = detail.ticketOwnerId === currentUserId;
+  const isUnassigned = detail.ticketOwnerId === null;
 
   return (
     <main className="app-container staff-ticket-detail">
@@ -463,12 +467,15 @@ export default function StaffTicketDetail({
                   key={target}
                   className="secondary-button"
                   onClick={() => handleTransitionClick(target)}
-                  disabled={isActing}
+                  disabled={isActing || isUnassigned}
                 >
                   {STATUS_LABELS[target]}
                 </button>
               ))}
             </div>
+          )}
+          {isUnassigned && permitted.length > 0 && (
+            <p className="muted">Claim or assign this ticket before changing its status.</p>
           )}
         </div>
       </section>

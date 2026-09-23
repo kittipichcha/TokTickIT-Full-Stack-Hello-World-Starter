@@ -20,6 +20,21 @@
 4. Every Acceptance Criterion must map to at least one planned test before implementation begins.
 5. The contract must be reviewed and approved before dependent implementation issues begin.
 
+## Issue #38 Review Remediation Entry (2026-09-23)
+
+- Prompt summary: Implement the five remaining PR #49 review findings for Issue #38, update
+  related documentation, double-check blockers, then commit and push.
+- What was done with output: Updated the Staff Queue tablet and forbidden states, disabled status
+  controls for unassigned Tickets, preserved focus across status refetches, added full 8x8 status
+  matrix API coverage, updated `ui-spec.md` and `tests.md`, and verified focused tests and builds.
+- Validation: focused client tests 52 passed; focused server Staff Detail API tests 41 passed;
+  the server suite excluding the migration harness passed 514 tests across 37 files; client and
+  server builds succeeded; touched-file diagnostics reported no errors. The migration harness
+  stopped after its deliberate collision probe without a Vitest summary and was recorded as an
+  environment/test-runner limitation.
+- Reflection: The final review caught and restored the existing Created-column sorting behavior
+  after the tablet class was added, showing why a diff review after green tests still matters.
+
 ## Issue #34 Implementation Entry
 
 - Prompt summary: Create the Sprint 3 engineering contract (Spec DD + Test DD) for Issue #34 from the Lab 3 handout and Lab 2 baseline.
