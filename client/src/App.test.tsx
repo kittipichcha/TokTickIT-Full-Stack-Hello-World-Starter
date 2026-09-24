@@ -68,6 +68,18 @@ describe("UI-48-NAV: integrated Administrator role navigation", () => {
   afterEach(cleanup);
 
   it("starts Administrators on Ticket Queue and exposes User Management only to them", async () => {
+    vi.mocked(api.fetchStaffQueue).mockResolvedValue({
+      data: [{ id: 1, ticketNumber: "TKT-2026-000001", summary: "Printer not working", categoryName: "Hardware", currentStatus: "NEW", requestedPriority: "MEDIUM", itPriority: "MEDIUM", ticketOwnerId: null, requesterId: 7, createdAt: "2026-09-10T00:00:00Z", updatedAt: "2026-09-10T00:00:00Z" }],
+      pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 },
+    });
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue({
+      id: 1, ticketNumber: "TKT-2026-000001", summary: "Printer not working", description: "Offline",
+      currentStatus: "NEW", requestedPriority: "MEDIUM", itPriority: "MEDIUM", ticketOwnerId: null,
+      requesterId: 7, requesterName: "Ada Lovelace", requesterIsActive: true, categoryId: 1,
+      categoryName: "Hardware", relatedSystemId: 1, relatedSystemName: "Office", appearsResolved: false,
+      createdAt: "2026-09-10T00:00:00Z", updatedAt: "2026-09-10T00:00:00Z",
+      publicComments: [], internalNotes: [], attachments: [],
+    });
     render(<App user={TEST_ADMIN_USER} />);
     expect(await screen.findByRole("heading", { name: /ticket queue/i })).toBeTruthy();
     const nav = screen.getByRole("navigation", { name: /primary/i });
@@ -75,8 +87,14 @@ describe("UI-48-NAV: integrated Administrator role navigation", () => {
     expect(nav.textContent).toContain("User Management");
     expect(nav.textContent).not.toContain("My Tickets");
     expect(nav.textContent).not.toContain("Create Ticket");
+    await userEvent.click((await screen.findAllByRole("button", { name: /Open Detail/i }))[0]!);
+    expect(await screen.findByRole("heading", { name: /TKT-2026-000001/ })).toBeTruthy();
+    await userEvent.click(screen.getByRole("link", { name: /Back to Queue/i }));
+    expect(await screen.findByRole("heading", { name: /Ticket Queue/i })).toBeTruthy();
     await userEvent.click(screen.getByRole("link", { name: "User Management" }));
     expect(await screen.findByRole("heading", { name: "User Management" })).toBeTruthy();
+    await userEvent.click(screen.getByRole("link", { name: "Ticket Queue" }));
+    expect(await screen.findByRole("heading", { name: /Ticket Queue/i })).toBeTruthy();
   });
 
   it("keeps User Management and Requester destinations out of IT Staff navigation", async () => {
