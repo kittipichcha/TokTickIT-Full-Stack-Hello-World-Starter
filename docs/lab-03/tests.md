@@ -51,6 +51,29 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-24 — Issue #38 PR #49 remaining verification gaps and refresh ordering**
+  - **B1:** Added real-session Staff and Administrator GET Public Comments authorization
+    coverage; both roles receive only the seeded public comment and no Internal Note data.
+  - **B2:** Added direct CommentThread and InternalNoteThread DOM assertions proving hostile
+    content remains literal text with no injected `img`, `script`, or `b` elements.
+  - **B3:** Added queue, IT Priority, Public Comment, and Internal Note failure-containment
+    cases. Each injects one real Prisma delegate failure, asserts the exact canonical 500 body
+    without the sentinel error, verifies no pre-write record/field mutation, and proves a healthy
+    follow-up succeeds.
+  - **B4:** Staff Detail reads now use mutation generation, read sequence, and ticket identity
+    guards. The regression test proves a newer saved Internal Note remains visible after an older
+    Comment refresh resolves; existing refresh-failure and focus behavior remains covered.
+  - **Focused client:** 3 files, **59 passed**, 0 skipped.
+  - **Focused server:** 3 files, **93 passed**, 0 skipped.
+  - **Full regression:** client **208 passed** across 16 files; server **539 passed** across 38
+    files; client and server builds passed. The server output includes the expected deliberate
+    migration failure-path probes.
+  - **Evidence:** focused/full client, focused server, build, diff-check, SHA, and full-server
+    summary files are in `artifacts/lab-03/issue-38-review-20260924/`. A terminal-interrupted
+    duplicate server capture is retained separately and is not counted as pass evidence.
+  - **Limitations:** Lab 3 browser/E2E/release rows remain owned by Issue #42; human PR re-review
+    remains pending.
+
 - **2026-09-24 — Issue #38 PR #49 evidence hygiene follow-up**
   - Removed the three trailing blank lines reported by `git diff --check` from the committed
     Issue #38 client, server, and migration evidence logs.
@@ -737,6 +760,11 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-STAFF-08 | API | Status change on unowned ticket | `409 CONFLICT` — ticket must be claimed before a status change; no auto-claim (Section 13, decision 14) | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Passed |
 | API-STAFF-09 | API | Two concurrent claims of the same ticket | Both succeed; final owner is deterministic per last-write-wins (Section 13, decision 15); no conflict error surfaced | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-16 | BR-14 | AC-11 | Passed |
 | API-STAFF-10 | API | IT Staff/Administrator posts/reads notes on a nonexistent ticket | `404 NOT_FOUND` — ticket not found | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-31 | AC-14 | Passed |
+| API-49-CREAD-01 | API | Staff/Admin read Public Comments | IT Staff and Administrator each receive the known public comment on an existing Ticket; Internal Notes are absent | `server/tests/lab-03/comments-notes.api.test.ts` | FR-07, FR-09, FR-12, FR-19 | BR-04 | AC-08 | Passed |
+| API-49-FAIL-01 | API | Staff Queue unexpected failure containment | Injected queue count failure returns the exact canonical `500 INTERNAL_ERROR`; a healthy retry returns usable pagination | `server/tests/lab-03/staff-queue.api.test.ts` | FR-14 | BR-31 | AC-10 | Passed |
+| API-49-FAIL-02 | API | IT Priority unexpected failure containment | Injected priority update failure returns the exact canonical `500 INTERNAL_ERROR`; both priority fields remain unchanged and a healthy retry updates IT Priority only | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-31 | AC-12 | Passed |
+| API-49-FAIL-03 | API | Public Comment unexpected failure containment | Injected comment create failure returns the exact canonical `500 INTERNAL_ERROR`; no record is inserted and a healthy retry creates one comment | `server/tests/lab-03/comments-notes.api.test.ts` | FR-19 | BR-21, BR-31 | AC-08, AC-14 | Passed |
+| API-49-FAIL-04 | API | Internal Note unexpected failure containment | Injected note create failure returns the exact canonical `500 INTERNAL_ERROR`; no record is inserted and a healthy retry creates one note | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-21, BR-31 | AC-14 | Passed |
 | API-ADM-01 | API | User list | Name/Email/Role/Status returned | `server/tests/lab-03/users-admin.api.test.ts` | FR-21 | — | AC-15 | Planned |
 | API-ADM-02 | API | User search/filter | Name/email search; optional role filter | `server/tests/lab-03/users-admin.api.test.ts` | FR-22, FR-23 | — | AC-15 | Planned |
 | API-ADM-03 | API | Create user | User created; must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-24 | BR-25, BR-30 | AC-16 | Planned |
@@ -799,6 +827,9 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-STAFF-03 | UI | Unassigned Ticket status controls | Permitted status controls are disabled and claim/assign guidance is shown until the Ticket has an owner | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-STAFF-04 | UI | Status transition focus restoration | Confirmed status success and refetch leave focus on the exact mounted Back to Queue control, including refresh failure | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
 | UI-STAFF-05 | UI | Staff Detail owner lookup error association | Failed eligible-owner lookup associates the error text with the Ticket Owner select via `aria-describedby`; Retry removes the stale reference after recovery | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16 | — | AC-23 | Passed |
+| UI-49-SAFE-01 | UI | Public Comment literal rendering | Hostile markup-like Public Comment content is visible as literal text and creates no injected elements | `client/src/lab-03-tests/CommentThread.test.tsx` | FR-12, FR-19 | BR-24 | AC-08, AC-14 | Passed |
+| UI-49-SAFE-02 | UI | Internal Note literal rendering | Hostile markup-like Internal Note content is visible as literal text and creates no injected elements | `client/src/lab-03-tests/InternalNoteThread.test.tsx` | FR-20 | BR-24 | AC-14 | Passed |
+| UI-49-RACE-01 | UI | Staff Detail delayed refresh ordering | A newer successful Note remains rendered when an older Comment refresh resolves afterward | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-19, FR-20 | BR-21, BR-33 | AC-14 | Passed |
 | API-STAFF-11 | API | Full status transition matrix | All 8x8 source/target pairs match the shared matrix; forbidden and unowned requests return 409 with no mutation | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-49-01 | UI | IT Staff initial navigation | IT Staff starts on the Ticket Queue; My Tickets/Create Ticket are absent and the Requester list is never fetched | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
 | UI-49-02 | UI | Administrator initial navigation | Administrator starts on the Ticket Queue, not My Tickets | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
@@ -849,13 +880,13 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-05 → API-AUTH-02, API-AUTH-03, SEC-AUTHZ-12, E2E-01
 - AC-06 → API-AUTH-04, API-AUTH-05b, API-AUTH-12, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, UI-AUTHGATE-03, E2E-01
 - AC-07 → API-REQ-01, API-REQ-02, SEC-AUTHZ-10, E2E-04
-- AC-08 → API-REQ-03, UNIT-COMMENT-01, E2E-04
+- AC-08 → API-REQ-03, API-49-CREAD-01, API-49-FAIL-03, UNIT-COMMENT-01, UI-49-SAFE-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
-- AC-10 → API-QUE-01, API-QUE-02, UI-QUE-01, UI-QUE-02, UI-49-01, UI-49-02, UI-49-03, UI-49-04, UI-49-05, VISUAL-02
+- AC-10 → API-QUE-01, API-QUE-02, API-49-FAIL-01, UI-QUE-01, UI-QUE-02, UI-49-01, UI-49-02, UI-49-03, UI-49-04, UI-49-05, VISUAL-02
 - AC-11 → API-STAFF-01, API-STAFF-09, API-OWN-01, API-49-ATT-01, API-49-ATT-02, API-49-ATT-04, API-49-ATT-05, API-49-ATT-06, API-49-ATT-07, UI-STAFF-01, UI-49-ATT-01, UI-49-ATT-02, UI-49-ATT-03, UI-49-ATT-05, E2E-02
-- AC-12 → API-STAFF-02, API-STAFF-06, UI-STAFF-01, E2E-02
+- AC-12 → API-STAFF-02, API-STAFF-06, API-49-FAIL-02, UI-STAFF-01, E2E-02
 - AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, UI-49-MODAL-01, UI-49-MODAL-02, UI-49-MODAL-03, UI-49-MODAL-08, UI-49-MODAL-09, E2E-02
-- AC-14 → API-STAFF-05, API-STAFF-10, UI-STAFF-01, E2E-02
+- AC-14 → API-STAFF-05, API-STAFF-10, API-49-FAIL-03, API-49-FAIL-04, UI-STAFF-01, UI-49-SAFE-01, UI-49-SAFE-02, UI-49-RACE-01, E2E-02
 - AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
 - AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, E2E-03
 - AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, E2E-03

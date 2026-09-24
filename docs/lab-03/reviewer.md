@@ -100,6 +100,27 @@ incomplete; **B-6** ground truth unreadable; plus minor session-regeneration and
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.
 
+### Issue #38 — PR #49 remaining verification gaps (2026-09-24)
+
+**Latest human review:** [PR #49 review](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/49#pullrequestreview-5302181325)
+requested direct Staff/Administrator Public Comment authorization tests, direct safe-rendering
+tests, and unexpected backend failure containment/recovery tests. An independent review also
+identified a Staff Detail refresh-ordering defect: an older Comment refresh could replace a newer
+successful Note result.
+
+**Response:** Added `API-49-CREAD-01`, `UI-49-SAFE-01/02`, and `API-49-FAIL-01..04` with real
+sessions, real routes, narrowly injected one-shot Prisma failures, exact canonical error-body
+assertions, no-write checks, and healthy follow-ups. Added `UI-49-RACE-01` and fixed the Staff
+Detail read path with local mutation-generation, read-sequence, and ticket-identity guards.
+Existing safe-rendering, partial-success, focus, and conflict tests remain unchanged.
+
+**Verification:** Focused client tests passed 59/59 across three files; focused server tests
+passed 93/93 across three files, with no required skips. Full client tests passed 208/208 across
+16 files, full server tests passed 539/539 across 38 files, and both builds passed. Issue #42
+still owns browser/E2E/release evidence, and human re-review remains pending.
+
+**Verdict: fix implemented; re-review requested.** No human approval is claimed.
+
 ### Issue #35 — PR #46 second review follow-up (2026-09-18)
 
 **Reviewer comment I received (round 2): Request Changes.** Five substantive blockers remained

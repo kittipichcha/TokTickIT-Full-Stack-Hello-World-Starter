@@ -22,6 +22,21 @@
 
 ## Issue #38 PR #49 Remediation Entry (2026-09-24)
 
+- Prompt summary: Follow the Issue #38 PR #49 review-and-fix plan, closing the three missing
+  verification gaps and the independently identified Staff Detail refresh-ordering defect.
+- What was done with output: Added real-session Staff/Admin Public Comment authorization tests,
+  direct literal-rendering DOM tests for both communication components, canonical backend failure
+  containment and recovery tests for queue/priority/comment/note writes, and a guarded Staff
+  Detail read path that rejects stale responses by mutation generation, read sequence, and ticket.
+  Added a delayed-response regression test for a newer note surviving an older comment refresh.
+- Validation: focused client tests passed **59/59** across 3 files; focused server tests passed
+  **93/93** across 3 files, with no required skips. Full client tests passed **208/208** across
+  16 files; full server tests passed **539/539** across 38 files; both builds passed. Browser/E2E
+  evidence remains Issue #42-owned; human PR re-review remains pending.
+- Reflection: The missing review evidence was best supplied at the same boundaries as the
+  requirements: HTTP authorization/error responses and rendered DOM text. The only production
+  change was the independently reproduced client state-ordering defect.
+
 ## Issue #38 PR #49 Accessibility Follow-up (2026-09-24)
 
 - Prompt summary: Clean the remaining Issue #38 PR #49 evidence hygiene failure and prepare the
