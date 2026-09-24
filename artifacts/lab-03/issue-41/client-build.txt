@@ -1,0 +1,3 @@
+Client TypeScript: npx tsc --noEmit — passed.
+Client production build: npm run build — passed (Vite 6.4.3).
+Source implementation SHA: c8568cc

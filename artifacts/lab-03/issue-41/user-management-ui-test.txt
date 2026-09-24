@@ -1,9 +1,4 @@
-
- RUN  v4.1.10 C:/Users/kitti/CPE334/issue-41-worktree/client
-
-
- Test Files  2 passed (2)
-      Tests  24 passed (24)
-   Start at  09:24:55
-   Duration  10.43s (transform 814ms, setup 0ms, import 1.91s, tests 8.35s, environment 2.38s)
-
+Command: cd client && npx vitest run src/App.test.tsx src/lab-03-tests/UserManagement.test.tsx src/lab-03-tests/AuthGate.test.tsx
+Result: 3 test files passed; 37 tests passed; 0 skipped.
+Covers integrated role navigation, user-management UI, self-edit identity reconciliation, and AuthGate.
+Source implementation SHA: c8568cc

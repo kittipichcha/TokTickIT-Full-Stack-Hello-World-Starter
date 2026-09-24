@@ -1,0 +1,3 @@
+git diff --check — passed.
+Conflict marker scan — no markers found.
+Source implementation SHA: c8568cc

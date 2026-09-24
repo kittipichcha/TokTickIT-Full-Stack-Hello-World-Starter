@@ -13,6 +13,21 @@
 | 6 | Draft `docs/lab-03/ui-spec.md` | Produced the Zen Green UI contract for all Lab 3 screens. |
 | 7 | Draft `docs/lab-03/tests.md` | Produced the test design and traceability matrix in the Lab 2 format, with every AC mapped to a planned test. |
 
+## Issue #41/#38 Integration Follow-up (2026-09-24)
+
+- Prompt summary: Merge the available Staff implementation into the Issue #41 worktree and
+  follow the supplied post-merge integration and verification plan.
+- Repository check: the local `lab3-staging` reference was already an ancestor of Issue #41 and
+  lacked the Staff implementation; network access to refresh it was unavailable. Integrated the
+  matching local `feature/issue-38-staff-ticket-operations` branch instead, preserving its Staff
+  implementation and evidence.
+- Implementation: retained Requester/Staff routing and added Administrator User Management as a
+  third authorized view; reconciled self-edit identity from the successful PATCH response.
+- Verification: focused Admin/Staff tests, full client/server suites, TypeScript checks, builds,
+  and Git whitespace/conflict checks passed. Evidence is recorded in
+  `artifacts/lab-03/issue-41/README.md`; E2E-03 remains owned by Issue #42.
+- Human review/approval remains pending and is not recorded as complete.
+
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
 2. Reusing the established Lab 2 documentation format avoids inventing new conventions and keeps the contract consistent.

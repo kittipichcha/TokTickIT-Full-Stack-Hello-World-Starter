@@ -72,6 +72,12 @@ require `aria-label` and a tooltip.
 - Header: TokTickIT wordmark/icon (left), role-specific nav (center/left-aligned), current user
   name + role + Logout (right).
 - Role-specific navigation without presenting unauthorized destinations.
+- View permissions and initial destination are frozen per role: Requester may use `home`,
+  `create-ticket`, and `ticket-detail`, starting at `home`; IT Staff may use `staff-queue` and
+  `staff-ticket-detail`, starting at `staff-queue`; Administrator may use those two Staff views
+  plus `admin-users`, also starting at `staff-queue`. Administrator navigation presents Ticket
+  Queue and User Management; IT Staff see Ticket Queue only; Requesters see My Tickets and Create
+  Ticket only.
 - Active nav item shown with `--color-secondary` underline/background, not color alone (also
   bold weight).
 - Mobile (<768px): nav collapses to a hamburger menu; user identity remains visible in a compact
