@@ -51,6 +51,30 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-24 — Issue #38 full regression suite after `c7e01f7`**
+  - **Commands:** `npm test` from `client/`, then `npm test` from `server/` (run
+    serially).
+  - **Result:** exit code `0`; client Vitest completed with **14 test files passed** and
+    **187 tests passed**, and server Vitest completed with **38 test files passed** and
+    **533 tests passed**. The output includes the expected jsdom navigation notices and
+    deliberate migration failure-path probes.
+  - **Evidence:** raw output is saved at
+    `artifacts/lab-03/issue-38-full-client-20260924.txt` and
+    `artifacts/lab-03/issue-38-full-server-20260924.txt`.
+  - **Coverage decision:** the full suite was required because `c7e01f7` changed client
+    application behavior, client tests, and a server API test. The full regression run is
+    green at this commit boundary.
+
+- **2026-09-24 — Issue #38 migration-harness clean rerun**
+  - **Command:** `npx vitest run tests/lab-03/migration.integration.test.ts` from `server/`.
+  - **Result:** exit code `0`; Vitest completed with **1 test file passed** and **19 tests
+    passed** in 664.90 seconds. The output includes the expected deliberate collision,
+    injected SQL-failure, invariant, ownership, and post-backfill-crash probes.
+  - **Evidence:** raw output is saved at
+    `artifacts/lab-03/issue-38-migration-rerun-20260924.txt`.
+  - **Follow-up:** the previously noted missing-summary environment limitation is resolved;
+    no migration-harness test-runner limitation remains open.
+
 - **2026-09-24 — Issue #38 (PR #49 six-blocker remediation) — B1–B6**
   - **B1:** Staff Queue now uses a wide queue container without horizontal-scroll presentation,
     preserves required tablet information through condensed columns and Staff Detail, and exposes
