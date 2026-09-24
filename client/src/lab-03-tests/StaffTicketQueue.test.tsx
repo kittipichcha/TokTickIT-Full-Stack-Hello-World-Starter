@@ -272,14 +272,25 @@ describe("Owner filter (ui-spec §5.6)", () => {
   });
 
   it("keeps the queue usable when the eligible-owner lookup fails", async () => {
-    vi.mocked(api.fetchAssignableOwners).mockRejectedValue(new Error("boom"));
+    vi.mocked(api.fetchAssignableOwners)
+      .mockRejectedValueOnce(new Error("boom"))
+      .mockResolvedValueOnce(OWNERS);
     vi.mocked(api.fetchStaffQueue).mockResolvedValue(queueResponse());
     render(<StaffTicketQueue onOpenDetail={() => {}} />);
 
     await waitFor(() =>
       expect(screen.getAllByText("Printer not working").length).toBeGreaterThan(0),
     );
-    expect(screen.getByLabelText("Filter by owner")).toBeTruthy();
+    const ownerFilter = screen.getByLabelText("Filter by owner") as HTMLSelectElement;
+    expect(ownerFilter).toBeTruthy();
+    expect(ownerFilter.disabled).toBe(true);
+    expect(screen.getByText(/owner filtering is unavailable/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Retry$/i })).toBeTruthy();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Retry$/i }));
+    await waitFor(() => expect(screen.getByRole("option", { name: /Alice — IT Staff/ })).toBeTruthy());
+    expect(ownerFilter.disabled).toBe(false);
+    expect(screen.queryByText(/owner filtering is unavailable/i)).toBeNull();
   });
 });
 

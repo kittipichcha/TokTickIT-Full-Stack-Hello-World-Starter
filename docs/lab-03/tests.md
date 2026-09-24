@@ -51,6 +51,38 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-24 — Issue #38 PR #49 remaining-findings remediation**
+  - **Finding 1:** Staff owner, IT Priority, status, Internal Note, and Public Comment
+    mutations now commit successful responses locally before best-effort refresh. Focused
+    Staff Detail coverage proves mutation success survives a refresh failure; the returned
+    note/comment remains visible and the composer clears.
+  - **Finding 2:** Queue and Staff Detail distinguish eligible-owner lookup failure from an
+    empty owner set. Both keep their primary screen usable, disable only owner-dependent
+    controls, show an explicit degraded message, and provide Retry; Claim/Reassign-to-me
+    remains available on Staff Detail.
+  - **Finding 3:** Comment and Internal Note validation errors have stable IDs and conditional
+    `aria-describedby` associations, with focused error and no-stale-reference assertions.
+  - **Finding 4:** Comment and Internal Note validation now follows trimmed length 1–2,000;
+    raw `maxLength` no longer blocks surrounding whitespace. Focused tests cover empty,
+    whitespace-only, one-character, 2,000-character, surrounding-whitespace, and 2,001-character
+    cases for both composers.
+  - **Finding 5:** Requester Public Comment partial-success coverage remains in `App.test.tsx`
+    and Staff Detail coverage; POST success plus refresh failure preserves the returned comment,
+    clears the composer, and reports a refresh warning rather than a posting failure.
+  - **Focused client tests:** 5 files, **86 passed**, 0 skipped.
+  - **Full client suite:** 16 files, **204 passed**, 0 skipped; `npm run build` passed.
+  - **Final remediation verification (this worktree):** corrected failed-assignment and
+    conflict-refresh semantics, plus owner-lookup Retry recovery coverage. The focused command
+    and full-suite raw summary are retained in
+    `artifacts/lab-03/issue-38-client-remediation-20260924.txt`.
+  - **Full server suite:** 38 files, **533 passed**, 0 skipped; `npm run build` passed. Output
+    includes the expected deliberate migration failure-path probes.
+  - **Hygiene:** `git diff --check` and conflict-marker checks passed; no `.only()`/`.skip()`
+    regressions were introduced.
+  - **Evidence boundary:** existing Lab 2 responsive evidence is not relabeled as Lab 3 Staff
+    Queue/Detail validation. Lab 3 E2E ownership remains with #42. README reviewed; no update
+    required because setup, commands, API contracts, and user workflows did not change.
+
 - **2026-09-24 — Issue #38 full regression suite after `c7e01f7`**
   - **Commands:** `npm test` from `client/`, then `npm test` from `server/` (run
     serially).

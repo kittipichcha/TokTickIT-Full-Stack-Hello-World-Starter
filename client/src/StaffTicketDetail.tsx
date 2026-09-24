@@ -52,6 +52,7 @@ const STATUS_LABELS: Record<TicketStatus, string> = {
 };
 
 type DetailLoadError = "forbidden" | "not-found" | "unexpected";
+type OwnerLoadState = "loading" | "loaded" | "error";
 
 export default function StaffTicketDetail({
   ticketNumber,
@@ -65,6 +66,7 @@ export default function StaffTicketDetail({
   const [isActing, setIsActing] = useState(false);
   const [pendingTransition, setPendingTransition] = useState<TicketStatus | null>(null);
   const [owners, setOwners] = useState<AssignableOwner[]>([]);
+  const [ownerLoadState, setOwnerLoadState] = useState<OwnerLoadState>("loading");
   const [selectedOwnerId, setSelectedOwnerId] = useState<number | undefined>();
 
   // Issue #38 review fix (49-B2) — Preview/Download failures mark the
@@ -78,24 +80,31 @@ export default function StaffTicketDetail({
   const modalRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const ownerRequestSeqRef = useRef(0);
 
-  // Eligible owners (active IT Staff / Administrators) for the ownership control.
-  // A failure here must not break the detail screen — the claim-to-me action and
-  // every other operation remain available.
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const result = await fetchAssignableOwners();
-        if (!cancelled) setOwners(result);
-      } catch {
-        if (!cancelled) setOwners([]);
+  const loadOwners = useCallback(async () => {
+    const requestId = ++ownerRequestSeqRef.current;
+    setOwnerLoadState("loading");
+    try {
+      const result = await fetchAssignableOwners();
+      if (requestId === ownerRequestSeqRef.current) {
+        setOwners(result);
+        setOwnerLoadState("loaded");
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    } catch {
+      if (requestId === ownerRequestSeqRef.current) {
+        setOwners([]);
+        setOwnerLoadState("error");
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    void loadOwners();
+    return () => {
+      ownerRequestSeqRef.current += 1;
+    };
+  }, [loadOwners]);
 
   const load = useCallback(async (preserveDetail = false) => {
     if (!preserveDetail) setLoading(true);
@@ -123,12 +132,26 @@ export default function StaffTicketDetail({
     void load();
   }, [load]);
 
+  const refreshAfterMutation = async (successMessage: string) => {
+    try {
+      const refreshed = await fetchStaffTicketDetail(ticketNumber);
+      setDetail(refreshed);
+    } catch (refreshErr) {
+      setActionError(
+        refreshErr instanceof Error
+          ? `${successMessage}, but refresh failed: ${refreshErr.message}`
+          : `${successMessage}, but refresh failed.`,
+      );
+    }
+  };
+
   const handleClaim = async () => {
     setIsActing(true);
     setActionError(null);
     try {
-      await setTicketOwner(ticketNumber, currentUserId);
-      await load(true);
+      const result = await setTicketOwner(ticketNumber, currentUserId);
+      setDetail((current) => current ? { ...current, ticketOwnerId: result.ticketOwnerId } : current);
+      await refreshAfterMutation("Owner updated successfully");
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to claim the ticket.");
     } finally {
@@ -140,21 +163,21 @@ export default function StaffTicketDetail({
    * Assigns/reassigns the Ticket to the owner chosen in the selector.
    *
    * Uses the existing CSRF-protected ownership endpoint (api-spec §17). On
-   * failure the local selection is cleared and the detail is re-fetched so the
-   * UI never displays an owner that was not actually persisted.
+   * failure the selected owner is preserved so the staff member can correct or
+   * retry the request. A failed write must not trigger a recovery GET: that
+   * would obscure the original failure and is unrelated to mutation success.
    */
   const handleAssignOwner = async () => {
     if (selectedOwnerId === undefined) return;
     setIsActing(true);
     setActionError(null);
     try {
-      await setTicketOwner(ticketNumber, selectedOwnerId);
+      const result = await setTicketOwner(ticketNumber, selectedOwnerId);
+      setDetail((current) => current ? { ...current, ticketOwnerId: result.ticketOwnerId } : current);
       setSelectedOwnerId(undefined);
-      await load();
+      await refreshAfterMutation("Owner updated successfully");
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to assign the ticket.");
-      setSelectedOwnerId(undefined);
-      await load();
     } finally {
       setIsActing(false);
     }
@@ -164,8 +187,9 @@ export default function StaffTicketDetail({
     setIsActing(true);
     setActionError(null);
     try {
-      await setItPriority(ticketNumber, value);
-      await load();
+      const result = await setItPriority(ticketNumber, value);
+      setDetail((current) => current ? { ...current, itPriority: result.itPriority } : current);
+      await refreshAfterMutation("IT priority updated successfully");
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to set IT priority.");
     } finally {
@@ -177,16 +201,30 @@ export default function StaffTicketDetail({
     setIsActing(true);
     setActionError(null);
     setPendingTransition(null);
-    lastFocusedRef.current?.focus();
+    const invokingControl = lastFocusedRef.current;
+    invokingControl?.focus();
     lastFocusedRef.current = null;
+    queueMicrotask(() => invokingControl?.focus());
     try {
-      await applyStatusTransition(ticketNumber, target);
-      await load(true);
+      const result = await applyStatusTransition(ticketNumber, target);
+      setDetail((current) => current ? { ...current, currentStatus: result.currentStatus } : current);
+      await refreshAfterMutation("Status updated successfully");
     } catch (err) {
       // A 409 (stale client state) is handled safely: show the message and
-      // re-fetch the current status rather than corrupting local state.
+      // re-fetch the current status rather than corrupting local state. Other
+      // mutation failures preserve the user's screen and do not make an
+      // unrelated read request that could hide their actionable error.
       setActionError(err instanceof Error ? err.message : "Failed to change status.");
-      await load(true);
+      if ((err as ApiError).status === 409) {
+        try {
+          const refreshed = await fetchStaffTicketDetail(ticketNumber);
+          setDetail(refreshed);
+        } catch {
+          setActionError(
+            "The ticket status may have changed, but the latest ticket data could not be refreshed.",
+          );
+        }
+      }
     } finally {
       setIsActing(false);
       setPendingTransition(null);
@@ -433,7 +471,7 @@ export default function StaffTicketDetail({
               id="owner-select"
               value={selectedOwnerId === undefined ? "" : String(selectedOwnerId)}
               onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : undefined)}
-              disabled={isActing}
+              disabled={isActing || ownerLoadState !== "loaded"}
             >
               <option value="">
                 {detail.ticketOwnerId === null ? "Select owner" : "Select a new owner"}
@@ -444,10 +482,18 @@ export default function StaffTicketDetail({
                 </option>
               ))}
             </select>
+            {ownerLoadState === "error" && (
+              <div className="field-error" role="alert">
+                <span>Unable to load eligible owners. Assignment is unavailable.</span>
+                <button className="tertiary-button" onClick={() => void loadOwners()}>
+                  Retry
+                </button>
+              </div>
+            )}
             <button
               className="primary-button"
               onClick={() => void handleAssignOwner()}
-              disabled={isActing || selectedOwnerId === undefined}
+              disabled={isActing || ownerLoadState !== "loaded" || selectedOwnerId === undefined}
             >
               {detail.ticketOwnerId === null ? "Assign" : "Reassign"}
             </button>
@@ -527,8 +573,11 @@ export default function StaffTicketDetail({
       <InternalNoteThread
         notes={detail.internalNotes}
         onPost={async (content) => {
-          await postInternalNote(ticketNumber, content);
-          await load();
+          const createdNote = await postInternalNote(ticketNumber, content);
+          setDetail((current) =>
+            current ? { ...current, internalNotes: [...current.internalNotes, createdNote] } : current,
+          );
+          await refreshAfterMutation("Internal note posted successfully");
         }}
       />
 

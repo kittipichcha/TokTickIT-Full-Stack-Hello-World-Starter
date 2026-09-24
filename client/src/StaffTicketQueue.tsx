@@ -18,6 +18,7 @@ import type { ApiError } from "./api-client";
 import { formatUtcDate } from "./format";
 
 type LoadState = "loading" | "loaded" | "error" | "forbidden" | "empty" | "no-results";
+type OwnerLoadState = "loading" | "loaded" | "error";
 
 interface StaffTicketQueueProps {
   onOpenDetail: (ticketNumber: string) => void;
@@ -53,26 +54,34 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
   const [pagination, setPagination] = useState<StaffQueueResponse["pagination"] | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [owners, setOwners] = useState<AssignableOwner[]>([]);
+  const [ownerLoadState, setOwnerLoadState] = useState<OwnerLoadState>("loading");
 
   const requestSeqRef = useRef(0);
+  const ownerRequestSeqRef = useRef(0);
 
-  // Eligible owners (active IT Staff / Administrators) for the owner filter.
-  // A failure here must not break the queue itself — the filter simply stays
-  // limited to "All Owners".
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const result = await fetchAssignableOwners();
-        if (!cancelled) setOwners(result);
-      } catch {
-        if (!cancelled) setOwners([]);
+  const loadOwners = useCallback(async () => {
+    const requestId = ++ownerRequestSeqRef.current;
+    setOwnerLoadState("loading");
+    try {
+      const result = await fetchAssignableOwners();
+      if (requestId === ownerRequestSeqRef.current) {
+        setOwners(result);
+        setOwnerLoadState("loaded");
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    } catch {
+      if (requestId === ownerRequestSeqRef.current) {
+        setOwners([]);
+        setOwnerLoadState("error");
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    void loadOwners();
+    return () => {
+      ownerRequestSeqRef.current += 1;
+    };
+  }, [loadOwners]);
 
   const loadQueue = useCallback(async () => {
     const seqId = ++requestSeqRef.current;
@@ -225,6 +234,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
           <select
             id="queue-owner"
             value={ownerId === undefined ? "" : String(ownerId)}
+            disabled={ownerLoadState !== "loaded"}
             onChange={(e) => {
               setOwnerId(e.target.value ? Number(e.target.value) : undefined);
               setPage(1);
@@ -237,6 +247,14 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
               </option>
             ))}
           </select>
+          {ownerLoadState === "error" && (
+            <div className="field-error" role="alert">
+              <span>Unable to load eligible owners. Owner filtering is unavailable.</span>
+              <button className="tertiary-button" onClick={() => void loadOwners()}>
+                Retry
+              </button>
+            </div>
+          )}
           {hasActiveFilters && (
             <button className="tertiary-button" onClick={handleClearFilters}>
               Clear Filters

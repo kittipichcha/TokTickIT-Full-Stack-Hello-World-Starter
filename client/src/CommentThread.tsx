@@ -84,9 +84,9 @@ export default function CommentThread({
           className="comment-input"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          maxLength={MAX_COMMENT_LENGTH}
           rows={3}
           aria-invalid={content.length > 0 && !isValid}
+          aria-describedby={error ? "comment-input-error" : undefined}
         />
         <div className="comment-form-footer">
           <span className="comment-counter" aria-live="polite">
@@ -97,7 +97,7 @@ export default function CommentThread({
           </button>
         </div>
         {error && (
-          <p className="field-error" role="alert">
+          <p id="comment-input-error" className="field-error" role="alert">
             {error}
           </p>
         )}

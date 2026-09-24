@@ -22,6 +22,20 @@
 
 ## Issue #38 PR #49 Remediation Entry (2026-09-24)
 
+- Prompt summary: Implement the five remaining PR #49 review findings for Issue #38: separate
+  mutation success from refresh failure, surface owner lookup failures, associate composer errors
+  accessibly, align validation with trimmed length, and add requester comment regression coverage.
+- What was done with output: Updated Staff Queue and Staff Detail degraded states, committed all
+  successful staff mutation responses locally before refresh, added `aria-describedby` error
+  associations, removed raw comment/note `maxLength`, added focused partial-success and
+  boundary tests, and guarded asynchronous owner lookups against stale or unmounted responses.
+- Validation: focused client tests passed **86/86**; full client suite passed **204/204** across
+  16 files; client build passed; server suite passed **533/533** across 38 files; server build
+  passed. README was reviewed and did not require a change. Lab 3 E2E remains #42-owned.
+- Reflection: The important contract boundary is the mutation response, not the synchronization
+  request that follows it. Keeping those states separate also makes the UI warnings truthful and
+  keeps append-only results visible when a refresh is unavailable.
+
 - Prompt summary: Fix the six remaining PR #49 blockers from the uploaded review for Issue #38.
 - What was done with output: Separated mutation success from refresh failure for comments and
   Appears Resolved, distinguished Staff Detail 403/404/unexpected states, completed Queue

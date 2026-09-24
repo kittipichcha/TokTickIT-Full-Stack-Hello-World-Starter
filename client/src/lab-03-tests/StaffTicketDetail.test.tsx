@@ -220,6 +220,89 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
     expect(api.postTicketComment).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("alert").textContent).toContain("Comment posted");
   });
+
+  it("keeps a successful internal note after refresh failure", async () => {
+    vi.mocked(api.fetchStaffTicketDetail)
+      .mockResolvedValueOnce(detail())
+      .mockRejectedValueOnce(new Error("Refresh failed"));
+    vi.mocked(api.postInternalNote).mockResolvedValue({
+      id: 2,
+      content: "Saved note.",
+      authorId: 5,
+      createdAt: "2026-09-10T00:00:00Z",
+    });
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.type(screen.getByLabelText("Add an internal note"), "Saved note.");
+    await userEvent.click(screen.getByRole("button", { name: /Post Note/i }));
+
+    await waitFor(() => expect(screen.getByText("Saved note.")).toBeTruthy());
+    expect(api.postInternalNote).toHaveBeenCalledTimes(1);
+    expect((screen.getByLabelText("Add an internal note") as HTMLTextAreaElement).value).toBe("");
+    expect(screen.getByRole("alert").textContent).toContain("Internal note posted successfully");
+    expect(screen.getByRole("alert").textContent).not.toContain("Failed to post note");
+  });
+
+  it.each([
+    ["owner", "ticketOwnerId", 9, "User #9", "Owner updated successfully"],
+    ["priority", "itPriority", "HIGH", "HIGH", "IT priority updated successfully"],
+    ["status", "currentStatus", "OPEN", "OPEN", "Status updated successfully"],
+  ])("preserves the successful %s mutation when refresh fails", async (_name, field, value, visible, warning) => {
+    vi.mocked(api.fetchStaffTicketDetail)
+      .mockResolvedValueOnce(detail({ ticketOwnerId: field === "ticketOwnerId" ? null : 5 }))
+      .mockRejectedValueOnce(new Error("Refresh failed"));
+    if (field === "ticketOwnerId") {
+      vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: value as number });
+    } else if (field === "itPriority") {
+      vi.mocked(api.setItPriority).mockResolvedValue({ itPriority: value as string });
+    } else {
+      vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: value as string });
+    }
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    if (field === "ticketOwnerId") {
+      await userEvent.click(screen.getByRole("button", { name: /Claim \/ Reassign to me/i }));
+    } else if (field === "itPriority") {
+      await userEvent.selectOptions(screen.getByLabelText("IT Priority"), "HIGH");
+    } else {
+      await userEvent.click(screen.getByRole("button", { name: "Open" }));
+    }
+
+    await waitFor(() => expect(screen.getByText(visible)).toBeTruthy());
+    expect(screen.getByRole("alert").textContent).toContain(warning);
+  });
+
+  it("shows owner lookup failure without disabling Claim / Reassign to me", async () => {
+    vi.mocked(api.fetchAssignableOwners).mockRejectedValue(new Error("Owners unavailable"));
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail());
+    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 5 });
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    const ownerSelect = screen.getByLabelText("Ticket Owner") as HTMLSelectElement;
+    await waitFor(() => expect(ownerSelect.disabled).toBe(true));
+    expect(screen.getByText(/assignment is unavailable/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Retry$/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Claim \/ Reassign to me/i })).toHaveProperty("disabled", false);
+  });
+
+  it("restores assignment controls after retrying a failed owner lookup", async () => {
+    vi.mocked(api.fetchAssignableOwners)
+      .mockRejectedValueOnce(new Error("Owners unavailable"))
+      .mockResolvedValueOnce(OWNERS);
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail());
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    expect(await screen.findByText(/assignment is unavailable/i)).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: /^Retry$/i }));
+
+    await waitFor(() => expect(screen.getByRole("option", { name: /Alice — IT Staff/ })).toBeTruthy());
+    expect((screen.getByLabelText("Ticket Owner") as HTMLSelectElement).disabled).toBe(false);
+    expect(screen.queryByText(/assignment is unavailable/i)).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -294,10 +377,9 @@ describe("Ownership assign/reassign (FR-16)", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("not an active IT Staff or Administrator");
 
-    // The selector resets and the displayed owner is still the persisted one.
-    await waitFor(() =>
-      expect((screen.getByLabelText("Ticket Owner") as HTMLSelectElement).value).toBe(""),
-    );
+    // The displayed owner remains the persisted one and the selection is
+    // preserved so the user can retry without having to re-enter it.
+    expect((screen.getByLabelText("Ticket Owner") as HTMLSelectElement).value).toBe("9");
     expect(screen.getByText("User #5")).toBeTruthy();
     // The user can retry.
     expect(screen.getByRole("button", { name: /^Reassign$/i })).toBeTruthy();
@@ -331,7 +413,7 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
     );
   });
 
-  it("restores focus before a confirmed transition refetch unmounts the detail", async () => {
+  it("keeps focus on a connected element after a confirmed transition commits locally", async () => {
     let resolveRefetch: ((value: api.StaffTicketDetail) => void) | undefined;
     vi.mocked(api.fetchStaffTicketDetail)
       .mockResolvedValueOnce(detail({ currentStatus: "IN_PROGRESS", ticketOwnerId: 5 }))
@@ -348,7 +430,7 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
     await userEvent.click(trigger);
     await userEvent.click(screen.getByRole("button", { name: /Confirm/i }));
     await waitFor(() => expect(api.applyStatusTransition).toHaveBeenCalled());
-    expect(document.activeElement).toBe(trigger);
+    expect(document.activeElement?.isConnected).toBe(true);
 
     resolveRefetch?.(detail({ currentStatus: "RESOLVED", ticketOwnerId: 5 }));
     await waitFor(() => expect(screen.getByText("RESOLVED")).toBeTruthy());
