@@ -45,6 +45,20 @@
   expected failure-path diagnostics. Evidence summaries are recorded in the Issue #41 bundle.
 - E2E-03 remains owned by Issue #42. No approval or re-review is recorded as complete.
 
+## Issue #41 Final PR #48 Remediation Verification (2026-09-24)
+
+- Implementation SHA: `05b03516087d537944cbfe0f8020dca805abd347`.
+- Replaced the narrow-width table restyling with a separate mobile card list, retaining the existing
+  row handlers. Added structure/action assertions plus regressions for self-reset versus another
+  user's reset and for AuthGate's ordinary identity-update path.
+- Removed the unsupported PATCH semantics paragraph from `api-spec.md` §26 and corrected the
+  service comment so implementation behavior is not attributed to specification decision 20.
+- Focused client tests: 41/41; full client: 233/233 across 17 files; Admin API: 39/39; full server:
+  578/578 across 39 files. Client/server type checks and builds passed.
+- The mobile screenshot could not be refreshed because this environment has no browser or
+  Playwright executable. The structural test does not claim to prove actual viewport rendering;
+  fresh screenshot evidence and human PR re-review remain pending.
+
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
 2. Reusing the established Lab 2 documentation format avoids inventing new conventions and keeps the contract consistent.

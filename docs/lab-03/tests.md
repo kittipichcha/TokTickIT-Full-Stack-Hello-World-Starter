@@ -51,6 +51,18 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-24 — Issue #41 PR #48 review remediation verification (final local run)**
+  - Implemented a distinct mobile Administrator user-card list below 768px; the desktop table is
+    retained above that breakpoint. Cards include name, email, role, status, Edit, and Reset Password.
+  - Focused client: **41 passed across 3 files**. Full client: **233 passed across 17 files**.
+    Admin API: **39 passed**; full server: **578 passed across 39 files**. Client/server type checks
+    and builds passed. No suite reported skipped tests.
+  - Responsive structural assertions passed in JSDOM. The existing mobile screenshot has not been
+    regenerated in this environment because no browser or Playwright executable is available;
+    screenshot/E2E evidence remains pending and E2E-03 remains owned by #42.
+  - Code implementation SHA: `05b03516087d537944cbfe0f8020dca805abd347`; docs/evidence changes follow
+    separately. Raw summary files are in `artifacts/lab-03/issue-41/`.
+
 - **2026-09-24 — Issue #41 PR #48 review follow-up**
   - The working branch is based on its locally available `origin/lab3-staging` ref, which includes
     PR #49; the triple-dot diff contains only Issue #41 work. Refreshing the remote ref was blocked
@@ -890,6 +902,10 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-49-MODAL-09 | UI | Modal Confirm | Confirm calls the status API exactly once | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-49-MODAL-10 | UI | Modal focus restoration | Focus returns to the invoking control after close | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
 | UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate; explicit Create/Edit success status; mobile card-style user rows; self-reset publishes `mustChangePassword` and opens Change Password | `client/src/lab-03-tests/UserManagement.test.tsx`, `client/src/lab-03-tests/AuthGate.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Passed |
+| UI-48-SELF-RESET | UI | Self initial-password reset | Successful self-reset publishes `mustChangePassword=true`; resetting another user does not update the current identity | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-26 | BR-30 | AC-16 | Passed |
+| UI-ADM-RESP-01 | UI | Administrator responsive representation | Desktop table and a distinct mobile user-card list expose name, email, role, status, edit and reset actions | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-08, FR-21–26 | — | AC-15–19, AC-22 | Passed |
+| UI-ADM-FEEDBACK-01 | UI | Administrator mutation feedback | Successful create/edit announces success; API failures retain entered values and never announce success | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-23–25 | BR-33 | AC-17–19 | Passed |
+| UI-AUTHGATE-04 | UI | Authenticated identity update gate | `mustChangePassword=true` switches to Change Password; ordinary profile updates remain authenticated | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03, FR-26 | BR-09, BR-30 | AC-06, AC-16 | Passed |
 | UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Passed |
 | UI-48-NAV | UI | Integrated role navigation | Administrator starts at Ticket Queue and can open User Management; IT Staff cannot see User Management or Requester destinations; Requesters retain Requester destinations | `client/src/App.test.tsx` | FR-08, FR-21 | BR-28 | AC-10, AC-15 | Passed |
 | UI-48-SELF-DEMOTION | UI | Self-edit identity reconciliation | Successful self-edit immediately publishes returned name/email/role without `/auth/me`; other-user edit does not change identity | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-25 | BR-34 | AC-19 | Passed |
@@ -909,7 +925,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05, SEC-AUTHZ-08
 - AC-04 → SEC-AUTHZ-02
 - AC-05 → API-AUTH-02, API-AUTH-03, SEC-AUTHZ-12, E2E-01
-- AC-06 → API-AUTH-04, API-AUTH-05b, API-AUTH-12, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, UI-AUTHGATE-03, E2E-01
+- AC-06 → API-AUTH-04, API-AUTH-05b, API-AUTH-12, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, UI-AUTHGATE-03, UI-AUTHGATE-04, E2E-01
 - AC-07 → API-REQ-01, API-REQ-02, SEC-AUTHZ-10, E2E-04
 - AC-08 → API-REQ-03, API-49-CREAD-01, API-49-FAIL-03, UNIT-COMMENT-01, UI-49-SAFE-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
@@ -919,8 +935,8 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, UI-49-MODAL-01, UI-49-MODAL-02, UI-49-MODAL-03, UI-49-MODAL-08, UI-49-MODAL-09, E2E-02
 - AC-14 → API-STAFF-05, API-STAFF-10, API-49-FAIL-03, API-49-FAIL-04, UI-STAFF-01, UI-49-SAFE-01, UI-49-SAFE-02, UI-49-RACE-01, E2E-02
 - AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
-- AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, E2E-03
-- AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, E2E-03
+- AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, UI-48-SELF-RESET, UI-AUTHGATE-04, E2E-03
+- AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, UI-ADM-FEEDBACK-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
 - AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, API-ADM-11, API-ADM-12, UI-ADM-01, UI-48-SELF-DEMOTION
 - AC-20 → SEC-AUTHZ-03, SEC-AUTHZ-09

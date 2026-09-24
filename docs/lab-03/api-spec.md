@@ -796,9 +796,6 @@ in §15); it never returns `400`.
 
 **Auth:** Administrator.
 
-**Partial-update semantics:** Omitted fields are left unchanged. An empty/no-op body returns
-`200 OK` with the current row. Unknown properties, including `passwordHash`, are ignored.
-
 **Request body**
 ```json
 { "name": "Updated", "email": "updated@example.com", "role": "IT_STAFF", "isActive": true }

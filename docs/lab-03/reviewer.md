@@ -35,6 +35,15 @@ Admin API tests passed 39/39; full client passed 231/231 across 17 files; full s
 578/578 across 39 files. Type checks, builds, and `git diff --check` passed with zero skipped
 tests. Fresh human PR re-review remains pending; this entry is evidence, not peer approval.
 
+**Issue #41 final local remediation verification (2026-09-24):** Implementation commit
+`05b03516087d537944cbfe0f8020dca805abd347` adds a separate `<768px` user-card representation
+with the same Edit and Reset Password handlers; it no longer styles the desktop table as cards.
+The focused client set passes 41/41 across three files, the full client passes 233/233 across 17
+files, the Admin API passes 39/39, and the full server passes 578/578 across 39 files. Client and
+server type checks/builds pass. The JSDOM coverage proves both responsive trees and card actions;
+the screenshot artifact still needs a browser capture and is not claimed as refreshed. Human
+review/approval remains pending.
+
 **Issue #34**
 Reviewer comment I received: **Request Changes** — 5 blocking issues before the contract could be considered frozen:
 1. Existing Requester initial-password migration behavior was not explicit (no test proving a migrated Requester receives an initial password, can authenticate, and is forced to change it).

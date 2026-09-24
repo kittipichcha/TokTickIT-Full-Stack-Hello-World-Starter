@@ -63,3 +63,19 @@ check. The triple-dot diff has no Issue #38/Staff paths.
 
 Updated run summaries and source SHA are in `client-vitest.txt`, `server-vitest.txt`, the focused
 test files, build summaries, and `source-sha.txt`.
+
+## Final PR #48 local remediation verification — 2026-09-24
+
+Client implementation SHA: `05b03516087d537944cbfe0f8020dca805abd347`.
+
+- Focused client (App, User Management, AuthGate): **41 passed across 3 files**.
+- Full client: **233 passed across 17 files**, 0 skipped.
+- Admin API: **39 passed**; full server: **578 passed across 39 files**, 0 skipped.
+- Client and server TypeScript checks and production builds passed.
+- The mobile user-management test asserts that desktop table and separate mobile cards exist and
+  that card content/actions map correctly. It is structural JSDOM coverage, not viewport evidence.
+- The prior `admin-user-management-mobile.png` is stale and was not overwritten: no browser or
+  Playwright executable is available in this environment to capture the new cards. Refresh this
+  screenshot before relying on visual evidence. E2E-03 remains owned by Issue #42.
+- API §26's unsupported decision-20 attribution was removed; decision 20 itself was not changed.
+- Fresh human review/approval remains pending.

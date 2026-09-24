@@ -356,11 +356,8 @@ export async function createUser(input: {
 /**
  * Updates a user's name/email/role/activation state.
  *
- * Partial-update semantics (Rev 8 — F-41-3, resolved per specification.md's
- * closed-contract policy): omitted fields are left unchanged; an empty/no-op body is
- * a valid no-op returning the current row. Unknown properties (including
- * `passwordHash`) are ignored exactly — they never trigger a 400 and never reach the
- * stored hash.
+ * PATCH-style implementation behavior: omitted supported fields remain unchanged;
+ * unknown properties never enter the service patch object or reach the stored hash.
  *
  * Safety rules:
  *   - `404 NOT_FOUND` when the target user does not exist.
