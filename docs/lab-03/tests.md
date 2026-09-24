@@ -59,7 +59,7 @@ assertions inside `auth.api.test.ts`.
   - `UI-48-NAV` now asserts the integrated role matrix. `UI-48-SELF-DEMOTION` now covers
     immediate role and profile identity updates. Focused client: **37 passed**; Admin API:
     **38 passed**; Staff client: **68 passed**; Staff server: **93 passed**.
-  - Full client: **229 passed across 17 files**; full server: **577 passed across 39 files**.
+  - Full client: **229 passed across 17 files**; full server: **578 passed across 39 files**.
     Client/server TypeScript checks and builds passed; `git diff --check` passed; 0 skipped.
     `E2E-03` remains Planned and owned by #42. Full suite output summaries are in the Issue 41
     evidence bundle.
@@ -790,6 +790,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-ADM-09 | API | Edit / set-initial-password on nonexistent userId | `404 NOT_FOUND` — user does not exist | `server/tests/lab-03/users-admin.api.test.ts` | FR-25, FR-26 | BR-31 | AC-17, AC-16 | Passed |
 | API-ADM-10 | API | Non-last Administrator changes own role away from Administrator | Succeeds; rejected only if it is the last active Administrator (BR-28 path) | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-34, BR-28 | AC-19 | Passed |
 | API-ADM-11 | API | Demote/deactivate an already-inactive Administrator | Succeeds without changing active Administrator count | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-28 | AC-19 | Passed |
+| API-ADM-12 | API | Inactive→active race during demotion | Transactional target reread and Serializable retry preserve at least one active Administrator | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-28 | AC-19 | Passed |
 | UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Passed |
 | UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Passed |
 | DB-MIG-01 | DB | DevRequester → User migration | Every legacy Requester becomes exactly one User with the same `id`, `name`, `email`, and `isActive`, role `REQUESTER`, and `mustChangePassword=true` | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
@@ -907,7 +908,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, E2E-03
 - AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
-- AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, API-ADM-11, UI-ADM-01, UI-48-SELF-DEMOTION
+- AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, API-ADM-11, API-ADM-12, UI-ADM-01, UI-48-SELF-DEMOTION
 - AC-20 → SEC-AUTHZ-03, SEC-AUTHZ-09
 - AC-21 → UI-STYLE-01
 - AC-22 → VISUAL-01, VISUAL-02

@@ -11,22 +11,19 @@
 | [#47 — feat(lab-03): Issue #37 — Authorization + Requester Migration / Regression](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/47) | `feature/issue-37-authorization-requester-migration` → `lab3-staging` | Agent review (2026-09-20) — 2 blocking + 6 non-blocking findings, all remediated; **human review PENDING** |
 | [#48 — Issue #41 Administrator User Management](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/48) | `feature/issue-41-admin-user-management` → `lab3-staging` | Local #38/#41 integration and automated verification complete (2026-09-24); **live target comparison and fresh human review PENDING** |
 
-**Issue #41/#38 integration follow-up (2026-09-24):** The local `lab3-staging` ref is still
-`c2dede51` and is an ancestor of this branch. A fetch of `origin/lab3-staging` failed because
-GitHub was unreachable, so mergeability against the current remote target has not been
-confirmed. The matching local `feature/issue-38-staff-ticket-operations` implementation was
-merged at `c55142b`; the resulting shell gives Requesters their Requester destinations, IT
-Staff Ticket Queue/Detail, and Administrators Ticket Queue/Detail plus User Management.
-Administrator self-edits now reconcile name, email, and role from the successful PATCH
-response. Regression evidence for implementation SHA `c8568cc` is recorded in
-`artifacts/lab-03/issue-41/README.md`: focused Admin/Staff tests, full client/server suites,
-type checks, builds, and Git hygiene passed. `42afbc5` updates that evidence and the related
-test/design records. A local rerun during this follow-up could not start: the client esbuild
-process was denied access while resolving its config, and the server runner failed in
-`uv_os_get_passwd` with `ENOMEM`; these environment failures do not replace or alter the
-recorded successful run. This entry records implementation and evidence only; it is not peer
-approval. Re-fetch/rebase or merge against the then-current `lab3-staging` and obtain fresh
-human review before treating PR #48 as ready for merge.
+**Issue #41/#38 integration and PR #48 review fix (2026-09-24):** `origin/lab3-staging` at
+`bde221f` was fetched and merged into `feature/issue-41-admin-user-management` at merge commit
+`3337918`, so the PR branch contains the current base. Commit `49c9c1a` closes the remaining
+last-active-Administrator TOCTOU hole by reading the target, deciding whether its requested
+role/activation change reduces the active-Administrator count, checking that count, and
+writing inside the same Serializable transaction. New regression `API-ADM-12` forces the
+inactive→active race on an independent database connection; it was observed failing against
+the pre-fix implementation and passes after the fix. The complete Admin API suite passes
+39/39, the full server suite passes 578/578 with zero skipped, and the server build passes.
+The Windows verification run used a local-only `tsx` temp-directory fallback for the
+environment's `os.userInfo()` `ENOMEM`; details and raw output are in
+`artifacts/lab-03/issue-41/README.md`. This entry records implementation and evidence only;
+fresh human review is still pending and this is not peer approval.
 
 **Issue #34**
 Reviewer comment I received: **Request Changes** — 5 blocking issues before the contract could be considered frozen:
