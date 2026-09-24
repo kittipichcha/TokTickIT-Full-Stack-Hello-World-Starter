@@ -702,7 +702,7 @@ describe("API-ADM-07: last active Administrator deactivation rejected (concurren
         { csrf: true },
       ).send({ role: "IT_STAFF" });
       staleDemotionStatus = staleDemotion.status;
-      staleDemotionCode = staleDemotion.body.error.code;
+      staleDemotionCode = staleDemotion.body.error?.code ?? "";
 
       activeAdminIds = (await prisma.user.findMany({
         where: { role: "ADMINISTRATOR", isActive: true },
