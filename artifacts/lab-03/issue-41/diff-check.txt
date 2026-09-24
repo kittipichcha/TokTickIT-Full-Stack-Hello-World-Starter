@@ -1,3 +1,4 @@
 git diff --check — passed.
 Conflict marker scan — no markers found.
-Source implementation SHA: c8568cc
+Issue #41 branch is 16 commits ahead of and based on the local origin/lab3-staging ref; no Issue #38 paths in triple-dot diff.
+Tested source SHA: 00bbc00

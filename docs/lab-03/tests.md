@@ -51,6 +51,20 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-24 — Issue #41 PR #48 review follow-up**
+  - The working branch is based on its locally available `origin/lab3-staging` ref, which includes
+    PR #49; the triple-dot diff contains only Issue #41 work. Refreshing the remote ref was blocked
+    by unavailable GitHub network access.
+  - Fixed the self-reset UI state handoff, added Create/Edit success status and mobile card-style
+    rows, and removed the unsupported decision-20 PATCH citation. The existing Serializable
+    target reread and `API-ADM-12` stale-classification race regression remain in place.
+  - Focused client: **39 passed across 3 files**. Focused Admin API: **39 passed**. Full client:
+    **231 passed across 17 files**. Full server: **578 passed across 39 files**; expected migration
+    error-path diagnostics were emitted. Type checks, production builds, and `git diff --check`
+    passed; 0 skipped. E2E-03 remains owned by #42.
+  - The tested client source is `00bbc00`; the server concurrency implementation remains at
+    `49c9c1a`. Evidence summaries are in `artifacts/lab-03/issue-41/`.
+
 - **2026-09-24 — Issue #41/#38 integration follow-up (PR #48/#49)**
   - Administrator view access now combines Ticket Queue/Staff Detail with User Management;
     IT Staff keep Queue/Detail only and Requesters keep their own screens.

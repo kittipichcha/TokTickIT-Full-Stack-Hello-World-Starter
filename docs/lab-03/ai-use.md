@@ -39,10 +39,10 @@
   inactive-to-active race regression. Self-reset now publishes `mustChangePassword` to AuthGate;
   Create/Edit show success status; user rows render as labeled cards below 768px; and the unsupported
   decision-20 citation was removed from the PATCH description.
-- Verification so far: Admin API **39 passed**; focused client **39 passed**; full client **231
-  passed across 17 files**; server/client type checks and builds passed. The full server suite is
-  still running and has emitted expected migration error-path diagnostics; its final status will
-  be recorded after completion.
+- Verification: Admin API **39 passed**; focused client **39 passed**; full client **231 passed
+  across 17 files**; full server **578 passed across 39 files**. Server/client type checks and
+  builds passed, as did `git diff --check`; 0 tests skipped. The migration harness emitted its
+  expected failure-path diagnostics. Evidence summaries are recorded in the Issue #41 bundle.
 - E2E-03 remains owned by Issue #42. No approval or re-review is recorded as complete.
 
 ## Reflection

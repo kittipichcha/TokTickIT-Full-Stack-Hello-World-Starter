@@ -1,4 +1,4 @@
 Command: cd client && npx vitest run
-Result: 17 test files passed; 229 tests passed; 0 skipped.
+Result: 17 test files passed; 231 tests passed; 0 skipped.
 Existing JSDOM window.open/navigation diagnostics were emitted; final Vitest result was exit code 0.
-Source implementation SHA: c8568cc
+Source implementation SHA: 00bbc00

@@ -1,4 +1,4 @@
 Command: cd server && npx vitest run
-Result: 39 test files passed; 577 tests passed; 0 skipped.
+Result: 39 test files passed; 578 tests passed; 0 skipped. Duration: 817.08 seconds.
 The suite emitted expected migration failure-path diagnostics; final Vitest result was exit code 0.
-Source implementation SHA: c8568cc
+Tested source tree SHA: 00bbc00 (server implementation includes 49c9c1a).

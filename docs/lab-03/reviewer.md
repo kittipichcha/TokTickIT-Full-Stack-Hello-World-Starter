@@ -25,6 +25,16 @@ environment's `os.userInfo()` `ENOMEM`; details and raw output are in
 `artifacts/lab-03/issue-41/README.md`. This entry records implementation and evidence only;
 fresh human review is still pending and this is not peer approval.
 
+**Issue #41 PR #48 review remediation follow-up (2026-09-24):** The local `origin/lab3-staging`
+ref already included PR #49 and is an ancestor of the feature branch; no Staff files are introduced
+by the Issue #41 diff. The remote could not be refreshed because GitHub was unreachable. Added the
+self-reset `mustChangePassword` state handoff, Create/Edit success status, and responsive card-style
+rows, and removed the incorrect decision-20 PATCH citation. Preserved the Serializable target
+reread and its deterministic `API-ADM-12` regression. Focused client tests passed 39/39; focused
+Admin API tests passed 39/39; full client passed 231/231 across 17 files; full server passed
+578/578 across 39 files. Type checks, builds, and `git diff --check` passed with zero skipped
+tests. Fresh human PR re-review remains pending; this entry is evidence, not peer approval.
+
 **Issue #34**
 Reviewer comment I received: **Request Changes** — 5 blocking issues before the contract could be considered frozen:
 1. Existing Requester initial-password migration behavior was not explicit (no test proving a migrated Requester receives an initial password, can authenticate, and is forced to change it).

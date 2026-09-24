@@ -40,3 +40,26 @@ The full-suite run used a local-only fallback in ignored `node_modules/tsx` temp
 helpers because this Windows Node 24 environment returned `uv_os_get_passwd: ENOMEM` when
 nested migration/seed commands called `os.userInfo()`. The fallback used `USERNAME` only when
 that call failed; no dependency or workaround code is included in the repository commit.
+
+## PR #48 remediation follow-up — 2026-09-24
+
+Tested client source SHA: `00bbc00`. The backend race guard and `API-ADM-12` are at `49c9c1a`.
+The current local `origin/lab3-staging` ref is an ancestor of the feature branch and includes PR
+#49. A fresh `git fetch origin` could not reach GitHub; the saved local ref was used for the scope
+check. The triple-dot diff has no Issue #38/Staff paths.
+
+- Admin API: **39 passed** in `users-admin.api.test.ts` (39/39). The regression forces the stale
+  inactive-to-active target interleaving and verifies the active Administrator invariant.
+- Focused client: **39 passed across 3 files** (User Management, AuthGate, App).
+- Full client: **231 passed across 17 files**, 0 skipped.
+- Full server: **578 passed across 39 files**, 0 skipped (817.08 seconds). Expected migration
+  failure-path diagnostics were emitted; Vitest exited successfully.
+- Client and server TypeScript checks and production builds passed. `git diff --check` passed and
+  the conflict-marker scan found none.
+- The client checks cover self-reset moving AuthGate directly to Change Password, explicit
+  Create/Edit success status, and the responsive labeled-row markup styled as cards below 768px.
+  The incorrect decision-20 citation was removed from `api-spec.md` §26.
+- E2E-03 remains Planned under Issue #42 ownership. Human re-review remains pending.
+
+Updated run summaries and source SHA are in `client-vitest.txt`, `server-vitest.txt`, the focused
+test files, build summaries, and `source-sha.txt`.
