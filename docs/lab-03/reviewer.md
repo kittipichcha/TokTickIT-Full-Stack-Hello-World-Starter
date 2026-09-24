@@ -9,15 +9,24 @@
 | [#44 — Add Sprint 3 engineering contract (Issue #34)](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/44) | `feature/issue-34-sprint-3-contract` | Changes Requested (2026-09-10) |
 | [#46 — feat(lab-03): Issue #35 — Identity, Database Migration & Authentication](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/46) | `feature/issue-35-identity-db-migration-auth` → `lab3-staging` | Changes Requested (2026-09-17) — remediation in progress; **human review PENDING** |
 | [#47 — feat(lab-03): Issue #37 — Authorization + Requester Migration / Regression](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/47) | `feature/issue-37-authorization-requester-migration` → `lab3-staging` | Agent review (2026-09-20) — 2 blocking + 6 non-blocking findings, all remediated; **human review PENDING** |
-| [#48 — Issue #41 Administrator User Management](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/48) | `feature/issue-41-admin-user-management` → `lab3-staging` | Post-#49 integration follow-up in progress (2026-09-24); **fresh human review PENDING** |
+| [#48 — Issue #41 Administrator User Management](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/48) | `feature/issue-41-admin-user-management` → `lab3-staging` | Local #38/#41 integration and automated verification complete (2026-09-24); **live target comparison and fresh human review PENDING** |
 
-**Issue #41 post-#49 integration follow-up (2026-09-24):** The local `lab3-staging`
-reference available in this workspace is an ancestor of Issue #41 and does not contain the
-Staff implementation. GitHub was unreachable during this work. The matching local PR #49
-branch was integrated to exercise the planned combined behavior. The Administrator role is
-being reconciled to expose Ticket Queue and User Management, and self-edit identity fields are
-being sourced from the successful PATCH response. This records implementation status only;
-it is not peer approval. Focused/full execution evidence and a fresh human review remain pending.
+**Issue #41/#38 integration follow-up (2026-09-24):** The local `lab3-staging` ref is still
+`c2dede51` and is an ancestor of this branch. A fetch of `origin/lab3-staging` failed because
+GitHub was unreachable, so mergeability against the current remote target has not been
+confirmed. The matching local `feature/issue-38-staff-ticket-operations` implementation was
+merged at `c55142b`; the resulting shell gives Requesters their Requester destinations, IT
+Staff Ticket Queue/Detail, and Administrators Ticket Queue/Detail plus User Management.
+Administrator self-edits now reconcile name, email, and role from the successful PATCH
+response. Regression evidence for implementation SHA `c8568cc` is recorded in
+`artifacts/lab-03/issue-41/README.md`: focused Admin/Staff tests, full client/server suites,
+type checks, builds, and Git hygiene passed. `42afbc5` updates that evidence and the related
+test/design records. A local rerun during this follow-up could not start: the client esbuild
+process was denied access while resolving its config, and the server runner failed in
+`uv_os_get_passwd` with `ENOMEM`; these environment failures do not replace or alter the
+recorded successful run. This entry records implementation and evidence only; it is not peer
+approval. Re-fetch/rebase or merge against the then-current `lab3-staging` and obtain fresh
+human review before treating PR #48 as ready for merge.
 
 **Issue #34**
 Reviewer comment I received: **Request Changes** — 5 blocking issues before the contract could be considered frozen:
