@@ -14,6 +14,7 @@
  *   - API-ADM-09  Edit/set-initial-password on nonexistent userId -> 404
  *   - API-ADM-10  Non-last Administrator changes own role away from Administrator
  *   - API-ADM-11  Inactive Administrator demotion/deactivation succeeds (review 48-B2)
+ *   - API-ADM-12  Inactive→active race cannot bypass last-Administrator protection
  *   - SEC-AUTHZ-03 Non-Admin requests user management -> 403
  *   - SEC-AUTHZ-09 Non-Administrator calls create-user/edit-user -> 403
  *
@@ -25,6 +26,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import bcrypt from "bcrypt";
+import { PrismaClient } from "@prisma/client";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
 import { testSeams } from "../../src/test-seams.js";
@@ -654,6 +656,75 @@ describe("API-ADM-07: last active Administrator deactivation rejected (concurren
     // Restore both Administrators for the remaining tests.
     await prisma.user.update({ where: { id: admin.userId }, data: { isActive: true, role: "ADMINISTRATOR" } });
     await prisma.user.update({ where: { id: admin2.userId }, data: { isActive: true, role: "ADMINISTRATOR" } });
+  });
+
+  itIfDb("inactive-to-active race cannot bypass the last-Administrator guard", async () => {
+    const prisma = getPrisma();
+    await prisma.user.updateMany({ where: { role: "ADMINISTRATOR" }, data: { isActive: false } });
+    await prisma.user.update({
+      where: { id: admin.userId },
+      data: { role: "ADMINISTRATOR", isActive: true },
+    });
+    await prisma.user.update({
+      where: { id: admin2.userId },
+      data: { role: "ADMINISTRATOR", isActive: false },
+    });
+
+    const concurrentPrisma = new PrismaClient();
+    let paused = false;
+    testSeams.afterAdminTargetRead = async ({ userId, role }) => {
+      if (userId !== admin2.userId || role !== "IT_STAFF" || paused) return;
+      paused = true;
+      // Independent connection simulates two valid concurrent operations after
+      // the pending request read B as inactive: activate B, then demote A while
+      // two active Administrators exist.
+      await concurrentPrisma.user.update({
+        where: { id: admin2.userId },
+        data: { isActive: true },
+      });
+      const activeCount = await concurrentPrisma.user.count({
+        where: { role: "ADMINISTRATOR", isActive: true },
+      });
+      expect(activeCount).toBe(2);
+      await concurrentPrisma.user.update({
+        where: { id: admin.userId },
+        data: { role: "IT_STAFF" },
+      });
+    };
+
+    let staleDemotionStatus = 0;
+    let staleDemotionCode = "";
+    let activeAdminIds: number[] = [];
+    try {
+      const staleDemotion = await withSession(
+        request(app).patch(`/api/admin/users/${admin2.userId}`),
+        admin,
+        { csrf: true },
+      ).send({ role: "IT_STAFF" });
+      staleDemotionStatus = staleDemotion.status;
+      staleDemotionCode = staleDemotion.body.error.code;
+
+      activeAdminIds = (await prisma.user.findMany({
+        where: { role: "ADMINISTRATOR", isActive: true },
+        select: { id: true },
+      })).map(({ id }) => id);
+    } finally {
+      testSeams.afterAdminTargetRead = null;
+      await concurrentPrisma.$disconnect();
+      await prisma.user.update({
+        where: { id: admin.userId },
+        data: { role: "ADMINISTRATOR", isActive: true },
+      });
+      await prisma.user.update({
+        where: { id: admin2.userId },
+        data: { role: "ADMINISTRATOR", isActive: true },
+      });
+    }
+
+    expect(staleDemotionStatus).toBe(409);
+    expect(staleDemotionCode).toBe("CONFLICT");
+    expect(activeAdminIds).toHaveLength(1);
+    expect(activeAdminIds[0]).toBe(admin2.userId);
   });
 });
 

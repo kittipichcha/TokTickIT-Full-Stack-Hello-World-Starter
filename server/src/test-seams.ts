@@ -62,4 +62,13 @@ export const testSeams = {
    * were weakened. Honored ONLY when `NODE_ENV === "test"`.
    */
   beforeLastAdminWrite: null as (() => Promise<void>) | null,
+
+  /**
+   * Issue #41 review — change the target state on an independent connection after
+   * a role/activation edit reads it. This deterministically tests that the
+   * invariant decision and write use the same Serializable snapshot. Test mode only.
+   */
+  afterAdminTargetRead: null as
+    | ((context: { userId: number; role?: string; isActive?: boolean }) => Promise<void>)
+    | null,
 };

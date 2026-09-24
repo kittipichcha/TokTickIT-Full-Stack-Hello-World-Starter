@@ -419,25 +419,6 @@ export async function updateUser(
     throw new ConflictError("You cannot deactivate your own account.");
   }
 
-  // Determine whether this patch can affect the last-active-Administrator invariant.
-  //
-  // The invariant is "the active-Administrator count never becomes zero". Only an edit
-  // that removes Administrator status from a CURRENTLY ACTIVE Administrator can reduce
-  // that count:
-  //   - active Administrator -> inactive          (deactivation)
-  //   - active Administrator -> non-Administrator (demotion)
-  //
-  // An INACTIVE Administrator is already excluded from the count, so demoting or
-  // deactivating them cannot reduce it and must not be blocked by the guard.
-  const deactivatesAdmin =
-    isActive === false && target.isActive === true && target.role === "ADMINISTRATOR";
-  const demotes =
-    role !== undefined &&
-    role !== "ADMINISTRATOR" &&
-    target.role === "ADMINISTRATOR" &&
-    target.isActive === true;
-  const touchesLastAdminInvariant = deactivatesAdmin || demotes;
-
   const data: Prisma.UserUpdateInput = {};
   if (name !== undefined) data.name = name;
   if (email !== undefined) data.email = email;
@@ -457,8 +438,8 @@ export async function updateUser(
     return prisma.user.findUniqueOrThrow({ where: { id: userId }, select: editSelect });
   }
 
-  if (!touchesLastAdminInvariant) {
-    // Normal write — cannot affect the last-admin invariant.
+  if (role === undefined && isActive === undefined) {
+    // Name/email-only changes cannot affect the last-admin invariant.
     try {
       return await prisma.user.update({ where: { id: userId }, data, select: editSelect });
     } catch (err) {
@@ -469,27 +450,52 @@ export async function updateUser(
     }
   }
 
-  // Serializable guard: the count-check and the write run in one Serializable
-  // transaction so two concurrent demotions of the last two Administrators cannot
-  // both commit (BR-28).
+  // Read the target, classify the change, count active Administrators when needed,
+  // and write in one Serializable transaction. In particular, do not decide from
+  // the preflight read above: a role/activation change could make that state stale
+  // before the write and bypass BR-28.
   try {
     return await runSerializableWithRetry(async (tx) => {
-      const activeAdmins = await countActiveAdministrators(tx);
-
-      // Test-only interleaving hook (Issue #41): lets a test force two concurrent
-      // demotions to both read the pre-write count, exercising the race the
-      // Serializable isolation level must reject. Inert outside NODE_ENV=test.
-      if (process.env.NODE_ENV === "test" && testSeams.beforeLastAdminWrite) {
-        await testSeams.beforeLastAdminWrite();
+      const currentTarget = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true, role: true, isActive: true },
+      });
+      if (!currentTarget) {
+        throw new NotFoundError("User not found.");
       }
 
-      if (deactivatesAdmin && activeAdmins <= 1) {
-        throw new ConflictError("The last active Administrator cannot be deactivated.");
+      if (process.env.NODE_ENV === "test" && testSeams.afterAdminTargetRead) {
+        await testSeams.afterAdminTargetRead({ userId, role, isActive });
       }
-      if (demotes && activeAdmins <= 1) {
-        throw new ConflictError(
-          "The last active Administrator's role cannot be changed to a non-Administrator role.",
-        );
+
+      const deactivatesAdmin =
+        isActive === false &&
+        currentTarget.isActive &&
+        currentTarget.role === "ADMINISTRATOR";
+      const demotes =
+        role !== undefined &&
+        role !== "ADMINISTRATOR" &&
+        currentTarget.role === "ADMINISTRATOR" &&
+        currentTarget.isActive;
+
+      if (deactivatesAdmin || demotes) {
+        const activeAdmins = await countActiveAdministrators(tx);
+
+        // Test-only interleaving hook (Issue #41): lets a test force two concurrent
+        // demotions to both read the pre-write count, exercising the race the
+        // Serializable isolation level must reject. Inert outside NODE_ENV=test.
+        if (process.env.NODE_ENV === "test" && testSeams.beforeLastAdminWrite) {
+          await testSeams.beforeLastAdminWrite();
+        }
+
+        if (deactivatesAdmin && activeAdmins <= 1) {
+          throw new ConflictError("The last active Administrator cannot be deactivated.");
+        }
+        if (demotes && activeAdmins <= 1) {
+          throw new ConflictError(
+            "The last active Administrator's role cannot be changed to a non-Administrator role.",
+          );
+        }
       }
 
       return tx.user.update({ where: { id: userId }, data, select: editSelect });
