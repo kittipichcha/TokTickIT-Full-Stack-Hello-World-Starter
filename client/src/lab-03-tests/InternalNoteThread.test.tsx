@@ -9,6 +9,19 @@ const notes: CommentItem[] = [];
 describe("InternalNoteThread validation and accessibility", () => {
   afterEach(() => cleanup());
 
+  it("renders hostile note content as literal text", () => {
+    const payload = '<img src=x onerror="window.__reviewProbe=true"><script>alert(1)</script><b>bold</b>';
+    render(
+      <InternalNoteThread
+        notes={[{ id: 1, content: payload, authorId: 5, createdAt: "2026-09-10T00:00:00Z" }]}
+        onPost={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(payload)).toBeTruthy();
+    expect(document.querySelector("img, script, b")).toBeNull();
+  });
+
   it("associates a posting error with the textarea and removes the reference after success", async () => {
     const onPost = vi.fn().mockRejectedValueOnce(new Error("Could not post"));
     render(<InternalNoteThread notes={notes} onPost={onPost} />);
