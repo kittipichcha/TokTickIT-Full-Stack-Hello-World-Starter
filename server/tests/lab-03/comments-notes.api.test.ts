@@ -13,7 +13,7 @@
  * assertions (BR-22/23), and the migrated-ticket empty-list assertions (M-38-5).
  */
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
@@ -358,5 +358,104 @@ describe("Migrated-ticket empty lists (supplementary — M-38-5)", () => {
     );
     expect(notes.status).toBe(200);
     expect(notes.body.data).toEqual([]);
+  });
+});
+
+describe("API-49-CREAD — Staff/Admin read Public Comments", () => {
+  itIfDb.each([
+    ["IT Staff", () => staff],
+    ["Administrator", () => admin],
+  ])("%s receives comments without Internal Notes", async (_label, session) => {
+    const ticketNumber = await createTicketFor(owner.userId, "Staff comment read authorization");
+    const prisma = getPrisma();
+    const ticket = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber } });
+    const comment = await prisma.comment.create({
+      data: { ticketId: ticket.id, authorId: owner.userId, content: "Known public comment" },
+    });
+    await prisma.internalNote.create({
+      data: { ticketId: ticket.id, authorId: staff.userId, content: "Private internal note" },
+    });
+
+    const res = await withSession(
+      request(app).get(`/api/tickets/${ticketNumber}/comments`),
+      session(),
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([
+      expect.objectContaining({ id: comment.id, content: "Known public comment", authorId: owner.userId }),
+    ]);
+    expect(JSON.stringify(res.body)).not.toContain("Private internal note");
+    expect(res.body).not.toHaveProperty("internalNotes");
+  });
+});
+
+describe("API-49-FAIL — unexpected comments/notes failures", () => {
+  const internalError = {
+    error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+  };
+
+  itIfDb("contains a comment create failure and recovers on the next request", async () => {
+    const ticketNumber = await createTicketFor(owner.userId, "Comment failure containment");
+    const prisma = getPrisma();
+    const before = await prisma.comment.count({ where: { ticket: { ticketNumber } } });
+    const createSpy = vi.spyOn(prisma.comment, "create").mockRejectedValueOnce(
+      new Error("review-test SQL/path sentinel"),
+    );
+
+    try {
+      const failed = await withSession(
+        request(app).post(`/api/tickets/${ticketNumber}/comments`),
+        staff,
+        { csrf: true },
+      ).send({ content: "Failed comment" });
+      expect(createSpy).toHaveBeenCalled();
+      expect(failed.status).toBe(500);
+      expect(failed.body).toEqual(internalError);
+      expect(JSON.stringify(failed.body)).not.toContain("review-test SQL/path sentinel");
+    } finally {
+      createSpy.mockRestore();
+    }
+
+    expect(await prisma.comment.count({ where: { ticket: { ticketNumber } } })).toBe(before);
+    const recovered = await withSession(
+      request(app).post(`/api/tickets/${ticketNumber}/comments`),
+      staff,
+      { csrf: true },
+    ).send({ content: "Recovered comment" });
+    expect(recovered.status).toBe(201);
+    expect(await prisma.comment.count({ where: { ticket: { ticketNumber } } })).toBe(before + 1);
+  });
+
+  itIfDb("contains an internal note create failure and recovers on the next request", async () => {
+    const ticketNumber = await createTicketFor(owner.userId, "Note failure containment");
+    const prisma = getPrisma();
+    const before = await prisma.internalNote.count({ where: { ticket: { ticketNumber } } });
+    const createSpy = vi.spyOn(prisma.internalNote, "create").mockRejectedValueOnce(
+      new Error("review-test SQL/path sentinel"),
+    );
+
+    try {
+      const failed = await withSession(
+        request(app).post(`/api/staff/tickets/${ticketNumber}/notes`),
+        staff,
+        { csrf: true },
+      ).send({ content: "Failed note" });
+      expect(createSpy).toHaveBeenCalled();
+      expect(failed.status).toBe(500);
+      expect(failed.body).toEqual(internalError);
+      expect(JSON.stringify(failed.body)).not.toContain("review-test SQL/path sentinel");
+    } finally {
+      createSpy.mockRestore();
+    }
+
+    expect(await prisma.internalNote.count({ where: { ticket: { ticketNumber } } })).toBe(before);
+    const recovered = await withSession(
+      request(app).post(`/api/staff/tickets/${ticketNumber}/notes`),
+      staff,
+      { csrf: true },
+    ).send({ content: "Recovered note" });
+    expect(recovered.status).toBe(201);
+    expect(await prisma.internalNote.count({ where: { ticket: { ticketNumber } } })).toBe(before + 1);
   });
 });
