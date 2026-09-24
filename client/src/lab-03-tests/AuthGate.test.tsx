@@ -24,6 +24,9 @@ vi.mock("../App", () => ({
       <button type="button" onClick={() => onUserUpdated({ ...AUTHENTICATED_USER, mustChangePassword: true })}>
         Simulate self reset
       </button>
+      <button type="button" onClick={() => onUserUpdated({ ...AUTHENTICATED_USER, name: "Ada Updated" })}>
+        Simulate profile update
+      </button>
     </div>
   ),
 }));
@@ -117,6 +120,13 @@ describe("UI-ADM-SELF-RESET: AuthGate reflects an administrator's own password r
     await userEvent.click(await screen.findByRole("button", { name: "Simulate self reset" }));
     expect(await screen.findByRole("heading", { name: "Change your password" })).toBeTruthy();
     expect(screen.queryByTestId("app-stub")).toBeNull();
+  });
+
+  it("keeps ordinary identity updates in the authenticated shell", async () => {
+    render(<AuthGate />);
+    await userEvent.click(await screen.findByRole("button", { name: "Simulate profile update" }));
+    expect(screen.getByTestId("app-stub")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Change your password" })).toBeNull();
   });
 });
 
