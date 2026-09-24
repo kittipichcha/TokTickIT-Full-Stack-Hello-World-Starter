@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiJson, fetchMe, type ApiError, type AuthUser } from "./api-client";
+import { apiJson, type ApiError, type AuthUser } from "./api-client";
 import Modal from "./Modal";
 
 type Role = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
@@ -216,7 +216,7 @@ export default function AdminUserManagement({
     setEditFieldErrors({});
     setEditBusy(true);
     try {
-      await apiJson<{ data: AdminUser }>(`/api/admin/users/${editTarget.id}`, {
+      const result = await apiJson<{ data: AdminUser }>(`/api/admin/users/${editTarget.id}`, {
         method: "PATCH",
         includeCsrf: true,
         fallbackError: "Failed to update user.",
@@ -228,25 +228,15 @@ export default function AdminUserManagement({
         },
       });
 
-      // Review 48-B3 — self-demotion identity refresh.
-      //
-      // The backend is authoritative and already permitted this edit. If the
-      // edited user is the CURRENT authenticated user and the role changed, the
-      // client's cached identity is now stale: AuthGate would keep rendering
-      // Administrator navigation while the server would reject Administrator
-      // requests. Re-read the authenticated user from the server and publish it
-      // to the shared session state — never mutate a local role copy here.
       const editedSelf = editTarget.id === currentUser.id;
-      const roleChanged = editForm.role !== currentUser.role;
-      if (editedSelf && roleChanged) {
-        try {
-          const refreshed = await fetchMe();
-          onUserUpdated(refreshed);
-        } catch {
-          // The mutation succeeded; a failed identity refresh must not be
-          // reported as a failed edit. The server remains authoritative and
-          // will reject any now-unauthorized request.
-        }
+      if (editedSelf) {
+        onUserUpdated({
+          ...currentUser,
+          id: result.data.id,
+          name: result.data.name,
+          email: result.data.email,
+          role: result.data.role,
+        });
       }
 
       setEditTarget(null);

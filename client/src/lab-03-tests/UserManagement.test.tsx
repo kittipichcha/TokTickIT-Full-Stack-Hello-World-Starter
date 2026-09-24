@@ -576,22 +576,16 @@ describe("UI-48-MODAL-03: Reset Password dialog keyboard behavior", () => {
 });
 
 // ---------------------------------------------------------------------------
-// UI-48-SELF-DEMOTION — authenticated identity refresh after self-demotion
+// UI-48-SELF-DEMOTION — authenticated identity update from the successful PATCH
 // (review 48-B3)
 //
 // The backend permits a non-last Administrator to demote themselves. The client
-// must then re-read `/api/auth/me` and publish the refreshed identity — never
+// must publish the returned identity fields — never
 // keep rendering Administrator navigation from a stale local role.
 // ---------------------------------------------------------------------------
 
 describe("UI-48-SELF-DEMOTION: self-demotion refreshes the authenticated identity", () => {
-  it("refreshes /api/auth/me and publishes the new role when the admin edits self", async () => {
-    const refreshed: apiClient.AuthUser = {
-      ...ADMIN_USER,
-      role: "IT_STAFF",
-    };
-    vi.mocked(apiClient.fetchMe).mockResolvedValue(refreshed);
-
+  it("publishes the successful self-edit response without a follow-up request", async () => {
     vi.mocked(apiClient.apiJson).mockImplementation(async (path, options) => {
       if (options?.method === "PATCH") {
         return { data: { id: 3, name: "Alan Turing", email: "alan@example.com", role: "IT_STAFF", isActive: true } };
@@ -610,16 +604,19 @@ describe("UI-48-SELF-DEMOTION: self-demotion refreshes the authenticated identit
     await userEvent.selectOptions(within(dialog).getByLabelText(/Role/), "IT_STAFF");
     await userEvent.click(within(dialog).getByRole("button", { name: "Save Changes" }));
 
-    // The PATCH succeeds and the authenticated identity is re-read from the server.
+    // The successful PATCH response is authoritative for cached shell fields.
     await waitFor(() => {
-      expect(vi.mocked(apiClient.fetchMe)).toHaveBeenCalled();
+      expect(onUserUpdated).toHaveBeenCalledWith({
+        ...ADMIN_USER,
+        name: "Alan Turing",
+        email: "alan@example.com",
+        role: "IT_STAFF",
+      });
     });
-    await waitFor(() => {
-      expect(onUserUpdated).toHaveBeenCalledWith(refreshed);
-    });
+    expect(vi.mocked(apiClient.fetchMe)).not.toHaveBeenCalled();
   });
 
-  it("does not refresh the identity when editing another user", async () => {
+  it("does not update the authenticated identity when editing another user", async () => {
     vi.mocked(apiClient.apiJson).mockImplementation(async (path, options) => {
       if (options?.method === "PATCH") {
         return { data: { id: 1, name: "Ada Renamed", email: "ada@example.com", role: "REQUESTER", isActive: true } };
@@ -644,5 +641,26 @@ describe("UI-48-SELF-DEMOTION: self-demotion refreshes the authenticated identit
     });
     expect(vi.mocked(apiClient.fetchMe)).not.toHaveBeenCalled();
     expect(onUserUpdated).not.toHaveBeenCalled();
+  });
+
+  it("publishes self name and email changes even when the role is unchanged", async () => {
+    vi.mocked(apiClient.apiJson).mockImplementation(async (path, options) => {
+      if (options?.method === "PATCH") return { data: { id: 3, name: "Alan Updated", email: "alan2@example.com", role: "ADMINISTRATOR", isActive: true } };
+      return { data: USERS };
+    });
+    const onUserUpdated = vi.fn();
+    renderAdmin(ADMIN_USER, onUserUpdated);
+    await waitFor(() => expect(screen.getByText("Alan Turing")).toBeTruthy());
+    const row = screen.getByText("Alan Turing").closest("tr")!;
+    await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit User" });
+    await userEvent.clear(within(dialog).getByLabelText(/Name/));
+    await userEvent.type(within(dialog).getByLabelText(/Name/), "Alan Updated");
+    await userEvent.clear(within(dialog).getByLabelText(/Email/));
+    await userEvent.type(within(dialog).getByLabelText(/Email/), "alan2@example.com");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Save Changes" }));
+    await waitFor(() => expect(onUserUpdated).toHaveBeenCalledWith({
+      ...ADMIN_USER, name: "Alan Updated", email: "alan2@example.com",
+    }));
   });
 });

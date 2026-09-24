@@ -9,6 +9,15 @@
 | [#44 — Add Sprint 3 engineering contract (Issue #34)](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/44) | `feature/issue-34-sprint-3-contract` | Changes Requested (2026-09-10) |
 | [#46 — feat(lab-03): Issue #35 — Identity, Database Migration & Authentication](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/46) | `feature/issue-35-identity-db-migration-auth` → `lab3-staging` | Changes Requested (2026-09-17) — remediation in progress; **human review PENDING** |
 | [#47 — feat(lab-03): Issue #37 — Authorization + Requester Migration / Regression](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/47) | `feature/issue-37-authorization-requester-migration` → `lab3-staging` | Agent review (2026-09-20) — 2 blocking + 6 non-blocking findings, all remediated; **human review PENDING** |
+| [#48 — Issue #41 Administrator User Management](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/48) | `feature/issue-41-admin-user-management` → `lab3-staging` | Post-#49 integration follow-up in progress (2026-09-24); **fresh human review PENDING** |
+
+**Issue #41 post-#49 integration follow-up (2026-09-24):** The local `lab3-staging`
+reference available in this workspace is an ancestor of Issue #41 and does not contain the
+Staff implementation. GitHub was unreachable during this work. The matching local PR #49
+branch was integrated to exercise the planned combined behavior. The Administrator role is
+being reconciled to expose Ticket Queue and User Management, and self-edit identity fields are
+being sourced from the successful PATCH response. This records implementation status only;
+it is not peer approval. Focused/full execution evidence and a fresh human review remain pending.
 
 **Issue #34**
 Reviewer comment I received: **Request Changes** — 5 blocking issues before the contract could be considered frozen:
@@ -99,6 +108,27 @@ incomplete; **B-6** ground truth unreadable; plus minor session-regeneration and
 
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.
+
+### Issue #38 — PR #49 remaining verification gaps (2026-09-24)
+
+**Latest human review:** [PR #49 review](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/49#pullrequestreview-5302181325)
+requested direct Staff/Administrator Public Comment authorization tests, direct safe-rendering
+tests, and unexpected backend failure containment/recovery tests. An independent review also
+identified a Staff Detail refresh-ordering defect: an older Comment refresh could replace a newer
+successful Note result.
+
+**Response:** Added `API-49-CREAD-01`, `UI-49-SAFE-01/02`, and `API-49-FAIL-01..04` with real
+sessions, real routes, narrowly injected one-shot Prisma failures, exact canonical error-body
+assertions, no-write checks, and healthy follow-ups. Added `UI-49-RACE-01` and fixed the Staff
+Detail read path with local mutation-generation, read-sequence, and ticket-identity guards.
+Existing safe-rendering, partial-success, focus, and conflict tests remain unchanged.
+
+**Verification:** Focused client tests passed 59/59 across three files; focused server tests
+passed 93/93 across three files, with no required skips. Full client tests passed 208/208 across
+16 files, full server tests passed 539/539 across 38 files, and both builds passed. Issue #42
+still owns browser/E2E/release evidence, and human re-review remains pending.
+
+**Verdict: fix implemented; re-review requested.** No human approval is claimed.
 
 ### Issue #35 — PR #46 second review follow-up (2026-09-18)
 
@@ -387,6 +417,53 @@ mirrored both gaps. The `API-REQ-02` tests did not cover the mismatches.
 
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.
+
+### Issue #38 — IT Staff Ticket Operations (PR #49)
+
+**Reviewer comment I received (PR #49): Changes Requested.** Four actionable blockers plus one
+contract decision:
+- **49-B1** — Staff/Admin initially landed on the Requester `My Tickets` screen.
+- **49-B2** — Staff Ticket Detail did not expose the Ticket's existing Attachments.
+- **49-B3** — `pageSize` did not implement the documented 1–50 clamp.
+- **49-B4** — the status confirmation modal lacked the required keyboard/focus behavior.
+- **49-D1** — ambiguity: who may change status on an assigned ticket?
+
+**How I responded — per finding:**
+
+- **49-D1 (contract decision — resolved).** The Status Transition Matrix's validation column
+  reads "Ticket owned" (`ticketOwnerId` non-null), not "owned by the acting user," and the
+  Authorization Matrix grants "Perform permitted status changes" to the whole
+  IT Staff/Administrator group. Decision: **any** active IT Staff/Administrator may change the
+  status of a claimed Ticket; the acting user need not be the specific owner, and a status change
+  never mutates ownership. Recorded in `specification.md` §7 and §13 decision 14 and in
+  `api-spec.md` §19, and proven by the cross-actor cases in `API-STAFF-03`.
+- **49-B1 (fixed).** `App.tsx` now derives the initial view from the authenticated role
+  (Requester → `home`; IT Staff/Administrator → `staff-queue`) and renders only role-permitted
+  views, redirecting stale/manipulated state to the role's initial view. Backend authorization
+  was deliberately left unchanged. Added UI-49-01..05 and verified they fail against the pre-fix
+  behavior.
+- **49-B2 (fixed).** `getStaffTicketDetail` now returns the Ticket's Attachments (reusing the
+  established `AttachmentData` shape) and `StaffTicketDetail` renders a read-only Attachments
+  section with Preview/Download and no upload/remove controls. No new endpoint was created — the
+  shared §11–§13 read routes are consumed as-is. Added API-49-ATT-01..09 and UI-49-ATT-01..05.
+- **49-B3 (fixed).** `parseQueueQuery` now clamps a well-formed integer to the frozen 1–50 range
+  (`0` → `1`, `51`/`999` → `50`) while malformed input keeps the safe default of `10`. Added
+  boundary cases to `staff-queue.api.test.ts`.
+- **49-B4 (fixed).** The confirmation modal now captures the invoking control, moves focus inside
+  on open, traps Tab/Shift+Tab, closes on Escape without calling the API, and restores focus on
+  close. Added UI-49-MODAL-01..10.
+
+**Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
+is claimed, and no false sign-off is recorded.
+
+**PR #49 accessibility follow-up (2026-09-24):** The next review identified two remaining
+accessibility blockers: confirmed status transitions could restore focus to a button removed by
+the status update, and eligible-owner lookup errors were not associated with their selects.
+The implementation now focuses the mounted Back to Queue control after successful status rendering,
+preserves invoking-button focus for Escape/Cancel and failures, and associates both owner errors
+with conditional `aria-describedby` references. Focused client tests pass 67/67; the full client
+suite passes 205/205 and the client build passes. Human re-review remains pending; no approval is
+claimed.
 
 ---
 

@@ -1370,12 +1370,15 @@ describe("UI-DETAIL-01: Ticket Detail screen-level state matrix", () => {
     expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Test ticket summary")).toBeTruthy();
     expect(screen.getByText("Test ticket description for detail view.")).toBeTruthy();
-    // No editable text inputs / textareas / selects in the detail view.
-    // (The hidden file input for Add Attachment is not an editable text field.)
-    expect(document.querySelector('.ticket-detail input[type="text"]')).toBeNull();
-    expect(document.querySelector('.ticket-detail input:not([type="file"])')).toBeNull();
-    expect(document.querySelector('.ticket-detail textarea')).toBeNull();
-    expect(document.querySelector('.ticket-detail select')).toBeNull();
+    // No editable text inputs / textareas / selects among the read-only ticket
+    // fields. (The hidden file input for Add Attachment is not an editable text
+    // field.) Issue #38 adds a Public Comments compose box to the detail screen —
+    // that is a new, intentional control, not a ticket field, so the read-only
+    // assertion is scoped to the ticket-info region.
+    expect(document.querySelector('.ticket-info input[type="text"]')).toBeNull();
+    expect(document.querySelector('.ticket-info input:not([type="file"])')).toBeNull();
+    expect(document.querySelector('.ticket-info textarea')).toBeNull();
+    expect(document.querySelector('.ticket-info select')).toBeNull();
   });
 
   it("shows the loading skeleton while the detail request is unresolved", async () => {

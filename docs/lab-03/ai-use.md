@@ -20,17 +20,85 @@
 4. Every Acceptance Criterion must map to at least one planned test before implementation begins.
 5. The contract must be reviewed and approved before dependent implementation issues begin.
 
-## Issue #41 Review Follow-up Regression Entry
+## Issue #38 PR #49 Remediation Entry (2026-09-24)
 
-- Prompt summary: Check whether the Issue #41 follow-up code changes required a full test run,
-  refresh the execution log, and commit the completed work.
-- What was done with output: Reviewed the changed client/server behavior, ran the focused client
-  and admin API tests, then ran the full server suite (**469 passed**) and full client suite
-  (**142 passed**). Refreshed the Issue #41 evidence artifacts and prepended the result to
-  `docs/lab-03/tests.md` before committing the related implementation, tests, and documentation.
-- Reflection: A documentation-only previous commit did not justify a new full run by itself, but
-  the uncommitted follow-up changed shared navigation, identity propagation, modal behavior, and
-  authorization logic, so the full regression was required before commit.
+- Prompt summary: Follow the Issue #38 PR #49 review-and-fix plan, closing the three missing
+  verification gaps and the independently identified Staff Detail refresh-ordering defect.
+- What was done with output: Added real-session Staff/Admin Public Comment authorization tests,
+  direct literal-rendering DOM tests for both communication components, canonical backend failure
+  containment and recovery tests for queue/priority/comment/note writes, and a guarded Staff
+  Detail read path that rejects stale responses by mutation generation, read sequence, and ticket.
+  Added a delayed-response regression test for a newer note surviving an older comment refresh.
+- Validation: focused client tests passed **59/59** across 3 files; focused server tests passed
+  **93/93** across 3 files, with no required skips. Full client tests passed **208/208** across
+  16 files; full server tests passed **539/539** across 38 files; both builds passed. Browser/E2E
+  evidence remains Issue #42-owned; human PR re-review remains pending.
+- Reflection: The missing review evidence was best supplied at the same boundaries as the
+  requirements: HTTP authorization/error responses and rendered DOM text. The only production
+  change was the independently reproduced client state-ordering defect.
+
+## Issue #38 PR #49 Accessibility Follow-up (2026-09-24)
+
+- Prompt summary: Clean the remaining Issue #38 PR #49 evidence hygiene failure and prepare the
+  branch for re-review.
+- What was done with output: Removed only the trailing blank lines from the three committed
+  evidence logs that caused `git diff --check` findings; no application behavior changed.
+- Validation: `git diff --check lab3-staging` and the working-tree check passed; focused Staff
+  Detail and Queue tests passed **67/67**. A separate commit/push approval remains required.
+
+- Prompt summary: Follow the implementation plan for the two remaining PR #49 blockers, verify
+  the result, and update the PR/Issue tracking.
+- What was done with output: confirmed-transition focus now targets the mounted Back to Queue
+  control after the status render; Queue and Staff Detail owner lookup errors now use conditional
+  `aria-describedby` associations; focused and full client tests were expanded and run.
+- Validation: focused client tests passed **67/67**; full client suite passed **205/205** across
+  16 files; client build passed. Final browser-level accessibility and release evidence remains
+  assigned to Issue #42.
+
+- Prompt summary: Implement the five remaining PR #49 review findings for Issue #38: separate
+  mutation success from refresh failure, surface owner lookup failures, associate composer errors
+  accessibly, align validation with trimmed length, and add requester comment regression coverage.
+- What was done with output: Updated Staff Queue and Staff Detail degraded states, committed all
+  successful staff mutation responses locally before refresh, added `aria-describedby` error
+  associations, removed raw comment/note `maxLength`, added focused partial-success and
+  boundary tests, and guarded asynchronous owner lookups against stale or unmounted responses.
+- Validation: focused client tests passed **86/86**; full client suite passed **204/204** across
+  16 files; client build passed; server suite passed **533/533** across 38 files; server build
+  passed. README was reviewed and did not require a change. Lab 3 E2E remains #42-owned.
+- Reflection: The important contract boundary is the mutation response, not the synchronization
+  request that follows it. Keeping those states separate also makes the UI warnings truthful and
+  keeps append-only results visible when a refresh is unavailable.
+
+- Prompt summary: Fix the six remaining PR #49 blockers from the uploaded review for Issue #38.
+- What was done with output: Separated mutation success from refresh failure for comments and
+  Appears Resolved, distinguished Staff Detail 403/404/unexpected states, completed Queue
+  responsive information access and associated labels, replaced the circular status-matrix
+  expectation with an independent frozen matrix, and added Queue sorting/pagination/loading plus
+  Staff Detail regression coverage.
+- Validation: focused client App/Queue/Staff Detail tests passed 69 tests; focused Staff Detail API
+  tests passed 41 tests; full client suite passed 187 tests; client/server builds and touched-file
+  diagnostics reported no errors; server suite excluding migration passed 514 tests; responsive
+  Playwright regression passed 129 tests across desktop/tablet/mobile after installing the declared
+  `@playwright/test` dependency and Chromium. The migration harness reached its deliberate failure
+  probes without a Vitest summary. Lab 3 E2E remains #42-owned.
+- Reflection: The existing Queue renders desktop and mobile representations together in jsdom, so
+  the new tests use the established `findAllByText` pattern while browser-level layout remains an
+  E2E evidence concern.
+
+## Issue #38 Review Remediation Entry (2026-09-23)
+
+- Prompt summary: Implement the five remaining PR #49 review findings for Issue #38, update
+  related documentation, double-check blockers, then commit and push.
+- What was done with output: Updated the Staff Queue tablet and forbidden states, disabled status
+  controls for unassigned Tickets, preserved focus across status refetches, added full 8x8 status
+  matrix API coverage, updated `ui-spec.md` and `tests.md`, and verified focused tests and builds.
+- Validation: focused client tests 52 passed; focused server Staff Detail API tests 41 passed;
+  the server suite excluding the migration harness passed 514 tests across 37 files; client and
+  server builds succeeded; touched-file diagnostics reported no errors. The migration harness
+  stopped after its deliberate collision probe without a Vitest summary and was recorded as an
+  environment/test-runner limitation.
+- Reflection: The final review caught and restored the existing Created-column sorting behavior
+  after the tablet class was added, showing why a diff review after green tests still matters.
 
 ## Issue #34 Implementation Entry
 
@@ -319,62 +387,187 @@
   invisible to the suite — a reminder that a `Passed` row is only as strong as the values its
   assertions actually exercise.
 
-## Issue #41 — Administrator User Management
+## Issue #38 — IT Staff Ticket Operations
 
-- **LLM used:** GitHub Copilot (DeepSeek V4.1 Flash) in VS Code agent mode.
-- **Prompts (paraphrased):** "Pull `lab3-staging`, create a worktree and branch for issue 41,
-  read the issue-41 plan and follow it strictly; you may commit and push once you have
-  double-checked and finished everything in the plan."
-- **What the agent did:**
-  - Verified the #35/#37 dependency gate against **landed branch content** (not
-    issue/Kanban state): `auth-service.ts` (`hashPassword`/`validatePasswordPolicy`),
-    `session.ts` (`requireAuth` fresh-User per-request DB re-read; inactive → session
-    destroyed + `401`; `requirePasswordChanged`; `requireCsrf`), `authorization.ts`
-    (`requireRole` → `403`), and the `User` model with `email @unique` / scalar `role Role`.
-  - Recorded the **F-41-5** check: the landed `requireAuth` rejects an inactive user on
-    every protected request, so the Amendment's live-session consequence holds. #41 builds
-    no session-invalidation mechanism.
-  - Created `server/src/admin-service.ts` and `server/src/admin-controller.ts`, wired the
-    four routes in `server/src/module.ts`, and built `client/src/AdminUserManagement.tsx`
-    (view gated on the Administrator role in `client/src/App.tsx`).
-  - Created the two frozen test files at their exact frozen paths and executed the
-    #41-owned rows; ran the full server and client suites for regression.
-  - Verified the UI live in the browser (login → User Management → create/edit/reset) and
-    captured screenshots under `artifacts/lab-03/screenshots/user-management/`.
-- **Human decisions consumed (not re-decided):** the four endpoint contracts and error
-  codes; the 10 safety rules; AC-15..AC-20 meanings; the frozen Test-ID meanings and file
-  paths; `passwordHash`-ignored-on-PATCH; operation-specific DTOs; the Serializable
-  retry scope; `actingUserId` from `res.locals.userId` only.
+- **Scope implemented:** the IT Staff ticket-operations workflow end to end — the responsive
+  Ticket Queue (`GET /api/staff/queue`), the Staff Ticket Detail (`GET /api/staff/tickets/:n`),
+  ownership claim/reassign, IT Priority, the frozen status-transition matrix, Public Comments,
+  Internal Notes, and the Requester "Problem Appears Resolved" indication (including the
+  Requester Ticket Detail retrofit required by handout §8.2).
+- **Single shared transition module (frozen Revision 7 Option B).** The transition matrix is
+  authored exactly once at `server/src/ticket-status.ts` (pure, dependency-free). The server
+  imports it normally; the client imports the *same source* through the absolute
+  `@shared/ticket-status` Vite alias plus `server.fs.allow` and a narrow tsconfig `paths`
+  mapping. There is no second hand-authored copy and no sync test. Both smoke gates were run
+  before any feature code consumed the module: the server build emitted `dist/src/ticket-status.js`
+  with the layout unchanged and booted; the client built, the dev server served the module with
+  no `/@fs/` 403, and the runtime matrix behaved as frozen.
+- **Atomic status transitions (Revision 10).** `applyStatusTransition` pre-validates for precise
+  errors, then writes with a conditional `updateMany` guarded on the persisted from-state
+  (`ticketNumber`, `ticketOwnerId`, `currentStatus`). A `count === 0` re-reads and classifies
+  404 / 409 (unowned) / 409 (raced), so the frozen matrix holds under concurrency rather than
+  only against a previously-read snapshot.
+- **Owner error split (Revision 7; Rev 9 §17 resolution).** `setTicketOwner` follows the frozen
+  order — ticket 404 → `ownerId` shape 400 → User lookup 409 (a nonexistent User is not an active
+  IT Staff/Administrator, per `api-spec.md` §17) → eligibility 409 → plain last-write-wins UPDATE.
+  No unassign operation exists.
+- **Queue (M-38-3).** `getStaffQueue` mirrors `getMyTickets`'s raw-SQL style but binds `status`
+  as `$n::"TicketStatus"` and `priority` (IT Priority) as `$n::"Priority"`; `sort`/`order` come
+  only from the frozen allow-list. `parseQueueQuery` never throws — invalid values fall back to
+  defaults and never return `400`.
+- **Comments/Notes/appears-resolved.** One shared `validateCommentContent` (trim, whitespace-only
+  rejected, 1–2,000 after trim) backs both. Author and timestamp are always server-derived;
+  a client-supplied `authorId` is ignored. `setAppearsResolved` is a dedicated single-column
+  update that can never touch `currentStatus`. Internal Notes never reach a Requester payload.
+- **Requester Ticket Detail retrofit (M-38-1).** The Lab 2 Requester detail is the inline
+  `view === "ticket-detail"` block of `client/src/App.tsx` (there is no separate component file).
+  The shared `<CommentThread/>` and the "Problem Appears Resolved" control were inserted after the
+  attachments section; the attachment upload/remove/preview logic and dialog focus handling were
+  left untouched. The requester detail fetch was extended additively with `appearsResolved` and
+  `publicComments` (optional in the client type so Lab 2 fixtures remain valid).
+- **Tests.** New frozen files: `staff-queue.api.test.ts` (API-QUE-01/02),
+  `comments-notes.api.test.ts` (API-STAFF-05/10, API-REQ-03, SEC-AUTHZ-02/08),
+  `comments-notes.unit.test.ts` (UNIT-COMMENT-01), `staff-ticket-detail.api.test.ts`
+  (API-STAFF-01..09), `StaffTicketQueue.test.tsx` (UI-QUE-01/02), and
+  `StaffTicketDetail.test.tsx` (UI-STAFF-01/02). `requester.api.test.ts` was appended with
+  API-REQ-04 (file created by #37; never renamed). Migrated Lab-2-shaped data assertions were
+  added inside the existing frozen files (M-38-5).
 - **Notable engineering judgment:**
-  - **The concurrency test was made genuinely sensitive, not merely green.** The first
-    version of `API-ADM-07`'s two-concurrent-demotions case passed even after the isolation
-    level was temporarily lowered to `ReadCommitted`, because the two requests serialized
-    naturally and never met in the race window. Rather than accept a vacuously passing test,
-    the agent added a test-only `testSeams.beforeLastAdminWrite` barrier so both
-    transactions read the pre-write count before either writes. The test then **failed**
-    (`[200, 200]`, final active count 0) under `ReadCommitted` and passed under
-    `Serializable` — proving it actually exercises the guard. The isolation level was
-    restored immediately after the check.
-  - **A cross-suite mutation was found and fixed.** The last-active-Administrator tests
-    deactivate/demote Administrators, mutating shared seed data. After the first full-suite
-    run, two Lab 2 `my-tickets-real-db` tests failed with `401` because the seeded
-    Administrator had been left inactive. The suite now snapshots and restores the
-    pre-existing Administrator rows in `afterAll` — the fix was to stop mutating shared
-    state, not to relax the Lab 2 assertions.
-  - **F-41-3 (empty/no-op PATCH) was resolved against the frozen spec, not invented.**
-    The decision is formally recorded in `specification.md` §13, decision 20 and referenced from
-    `api-spec.md` §26. `api-spec.md` §26 is silent on omitted/empty bodies, but the
-    closed-contract policy requires the agent to resolve the choice and document it. The
-    resolution is partial-update semantics: omitted fields are unchanged, an empty/no-op body is
-    a valid no-op returning `200`, and unknown properties (including `passwordHash`) are ignored
-    exactly. No validation rule beyond the frozen error table was added.
-  - **Deactivation/role changes that fall short of the invariant use a normal write**, and
-    only the paths that can *reduce* the active-Administrator count enter the Serializable
-    transaction — so the guard is applied where it is needed without serializing every edit.
-- **Reflection:** Two lessons dominated this issue. The first is that a concurrency test can
-  pass for the wrong reason: a test that cannot fail is worthless as evidence, so the guard's
-  sensitivity had to be demonstrated by temporarily breaking it. The second is that
-  "passing suite" is not the same as "correct suite" when the suite mutates shared fixtures —
-  the pre-existing test failures were a fixture bug in the new suite, not a regression in the
-  code it was testing, and the honest fix was to restore the state rather than to make the
-  downstream assertion more tolerant.
+  - The Lab 2 `AttachmentSection.test.tsx` "read-only ticket fields" assertion scoped its
+    no-editable-inputs check to the whole `.ticket-detail` block. The new Public Comments compose
+    box is an intentional addition, so the assertion was narrowed to the `.ticket-info` region —
+    preserving the test's intent (ticket fields are read-only) without weakening it.
+  - The requester detail response was extended additively rather than by adding a second fetch,
+    keeping one round-trip and one source of truth for the detail screen.
+- **Reflection:** the shared-module wiring was the highest-risk item because the repo has no
+  `workspaces` field and the server tsconfig has no explicit `rootDir`. Running both smoke gates
+  before writing feature code turned an empirical build risk into a verified fact, and the
+  Option-B placement kept the server's emitted layout unchanged by construction.
+
+## Issue #38 — Review-Driven Completion (Queue owner filter, Queue information, reassignment UI)
+
+- **Prompt summary:** a review of PR #49 found three material gaps against the frozen contract —
+  the Queue had no owner filter (`ui-spec.md` §5.6), the Queue did not expose Category or Last
+  Updated (§5.6), and the Detail ownership control could only claim/reassign to the current user,
+  not to another eligible owner (FR-16, §5.7). Close exactly those three gaps without redesigning
+  the backend.
+- **What was done with output:**
+  - **Owner filter (B-01).** Added `ownerId` state to `StaffTicketQueue.tsx`, rendered a
+    `Filter by owner` select, passed `ownerId` into the existing `fetchStaffQueue()` (the client
+    type and serializer already supported it), reset to page 1 on change, and included it in
+    Clear Filters. Filtering stays server-side so it combines with search/status/priority under
+    the frozen AND semantics.
+  - **Queue information (B-02).** Added `categoryName` to the queue response — the SQL projection
+    now joins `Category` and the row mapping carries the name — and rendered Category and Last
+    Updated on both the desktop table and the mobile card. The desktop table keeps the core
+    columns and adds the two secondary ones, per §5.6's allowance for condensing secondary
+    information.
+  - **Reassignment (B-03).** Added an owner selector plus an Assign/Reassign action to
+    `StaffTicketDetail.tsx`, submitting through the existing CSRF-protected
+    `setTicketOwner()`. The "Claim / Reassign to me" convenience action is retained. On failure
+    the selection is cleared and the detail is re-fetched, so the UI never shows an owner that
+    was not persisted.
+  - **Eligible-owner source (contract addition).** The frozen contract exposed no
+    staff-accessible user list: `GET /api/admin/users` (§24) is Administrator-only and
+    `GET /api/app/context` returns only the caller's own identity. Deriving owners from the queue
+    rows would have made it impossible to assign a Ticket to a staff member who owns none, which
+    would leave FR-16's "claim, **assign**, or reassign" only partially satisfied. A minimal
+    read-only `GET /api/staff/owners` was therefore added, returning only `{id, name, role}` for
+    active IT Staff/Administrators. It is recorded as `specification.md` §13 decision 20 and
+    `api-spec.md` §17a under the closed-contract edge-case policy, and as the new `tests.md` row
+    `API-OWN-01`. No frozen Test-ID meaning was changed.
+  - **Tests.** Added `API-OWN-01` (eligibility, exclusion of Requesters/inactive users, no
+    credential field, `403` for a Requester caller, `401` unauthenticated) and a `categoryName`
+    assertion to `staff-queue.api.test.ts`; added owner-filter, combined-filter, Clear Filters,
+    required-information (desktop + mobile), assign/reassign, and ineligible-owner-failure
+    coverage to the two frozen UI test files.
+  - **Results:** server suite **516 passed** across 38 files; client suite **153 passed** across
+    14 files; both builds succeed.
+- **Notable engineering judgment:** the backend was left as the final authorization boundary. The
+  owner dropdown filters for UX only; `setTicketOwner` still rejects ineligible targets with
+  `409 CONFLICT`, and the new endpoint grants no authority of its own. The contract addition was
+  documented rather than made silently, because the Lab 3 contract is explicitly closed and
+  additions must be recorded in the Assumptions and Decisions section.
+- **Reflection:** the review's framing was correct — the backend already supported `ownerId`
+  filtering and arbitrary eligible-owner assignment, so the work was completing the UI contracts
+  and proving them with executable tests rather than redesigning anything. The one genuine
+  contract gap was the eligible-owner source, and resolving it required an explicit, auditable
+  documentation trail rather than a silent endpoint.
+
+## Issue #38 — Review-Driven Fix (B-1: status change required the acting user to be the specific owner)
+
+- **Prompt summary:** a second review of PR #49 found that `applyStatusTransition` required
+  `ticket.ticketOwnerId === actingUserId`, i.e. only the Ticket's *specific* owner could change
+  its status. The frozen contract grants "Perform permitted status changes" to the whole
+  IT Staff/Administrator group (`specification.md` §6) and the Status Transition Matrix's
+  validation column reads "Ticket owned" — non-null — not "owned by the acting user" (§7).
+  Fix the behavior and close the test-coverage gap that hid it.
+- **What was done with output:**
+  - **Behavior fix.** `applyStatusTransition` now rejects only when `ticketOwnerId === null`
+    (the genuine claim-before-status-change rule, §13 decision 14). The acting user is no longer
+    required to be the Ticket's specific owner. The atomic conditional `updateMany` guard was
+    narrowed to the persisted from-state (`id` + `currentStatus`) so it cannot re-introduce the
+    same-actor restriction; the `count === 0` re-read classifies 404 / 409 (unowned) / 409
+    (raced) as before. The now-unused `actingUserId` parameter was removed from the service
+    signature and its controller call site.
+  - **Ownership is never mutated by a status change** — the update still writes only
+    `currentStatus`.
+  - **Tests.** Added two cases to `API-STAFF-03` in `staff-ticket-detail.api.test.ts`: a
+    *different* active IT Staff member, and an Administrator, each changing status on a Ticket
+    owned by staff A — asserting `200`, the new status, and that `ticketOwnerId` is unchanged.
+    These are exactly the cases the original suite never exercised (every prior transition test
+    acted as the ticket's own owner).
+  - **Contract clarification.** Recorded the resolved reading in `specification.md` §7 and §13
+    decision 14, and in `api-spec.md` §19, so the narrower interpretation cannot be
+    re-introduced silently. Updated the `tests.md` `API-STAFF-03` row to describe the added
+    cross-actor coverage.
+  - **Results:** `staff-ticket-detail.api.test.ts` **30 passed**; full server suite **518 passed**
+    across 38 files; `tsc --noEmit` clean.
+- **Notable engineering judgment:** the fix was verified to be a real regression test rather than
+  a tautology — with the old service behavior temporarily restored, the new cross-actor case
+  fails with `409` where `200` is expected. The contract was clarified rather than left
+  ambiguous, because the Decision-free implementation rule requires an ambiguity to be resolved
+  in the frozen documents rather than silently baked into `service.ts`.
+- **Reflection:** the original implementation was defensible as "extra safety," but it narrowed a
+  capability the Authorization Matrix grants to an entire role group, and the test suite's habit
+  of always acting as the ticket's own owner meant no test could ever have caught it. The
+  coverage gap, not the code, was the deeper defect.
+
+## Issue #38 — PR #49 Review Follow-Up (49-B1..B4, 49-D1)
+
+- **Prompt summary:** a review of PR #49 raised four actionable blockers plus one contract
+  decision: (49-B1) Staff/Admin landed on the Requester `My Tickets` screen; (49-B2) the Staff
+  Ticket Detail did not expose the Ticket's existing Attachments; (49-B3) `pageSize` did not
+  implement the documented 1–50 clamp; (49-B4) the status confirmation modal lacked the required
+  keyboard/focus behavior; (49-D1) the status-ownership contract needed an explicit decision.
+- **What was done with output:**
+  - **49-D1 — resolved, not coded around.** The frozen wording ("Ticket owned") and the
+    Authorization Matrix grant status changes to the whole IT Staff/Administrator group, so the
+    acting user need not be the Ticket's specific owner. The implementation already matched this
+    after the earlier review fix; the decision was recorded in `specification.md` §7 and §13
+    decision 14 and in `api-spec.md` §19, and is proven by the cross-actor `API-STAFF-03` cases.
+  - **49-B1 — role-specific entry/routing.** `App.tsx` derives the initial view from the role
+    and renders only role-permitted views, redirecting stale state to the role's initial view.
+    Backend authorization was deliberately left untouched. Five new cases (UI-49-01..05) were
+    added and verified to fail against the pre-fix behavior.
+  - **49-B2 — Staff Detail Attachments.** `getStaffTicketDetail` now returns the Ticket's
+    Attachments using the established `AttachmentData` shape; the Staff screen renders a
+    read-only list with Preview/Download and no upload/remove controls. No new endpoint was
+    created — the shared §11–§13 read routes are consumed as-is.
+  - **49-B3 — `pageSize` clamp.** `parseQueueQuery` now clamps a well-formed integer to 1–50
+    (`0` → `1`, `51`/`999` → `50`) while malformed input keeps the default of `10`. The frozen
+    integer grammar `0|[1-9][0-9]*` was the key detail: `0` is well-formed and must clamp, not
+    fall back.
+  - **49-B4 — modal focus behavior.** The confirmation modal captures the invoking control,
+    focuses inside on open, traps Tab/Shift+Tab, closes on Escape without calling the API, and
+    restores focus on close.
+  - **Results:** server suite **531 passed, 0 skipped** across 38 files; client suite
+    **174 passed, 0 skipped** across 14 files; both builds succeed.
+- **Notable engineering judgment:** for 49-B1 the fix was placed in navigation/rendering rather
+  than by relaxing the Requester-only API authorization — the review explicitly warned against
+  weakening the backend. For 49-B3 the temptation was to change the test to accept `10`; that
+  would have laundered a contract violation, so the parser was fixed instead.
+- **Reflection:** three of the four blockers were "the contract said X and the code did Y" —
+  the recurring failure mode was implementing a plausible behavior instead of re-reading the
+  frozen wording. The `pageSize` case is the clearest example: the code's "out of range → 10"
+  was reasonable but directly contradicted the documented clamp.
