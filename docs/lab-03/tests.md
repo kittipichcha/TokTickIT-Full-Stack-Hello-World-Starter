@@ -51,6 +51,14 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-24 — Issue #38 PR #49 evidence hygiene follow-up**
+  - Removed the three trailing blank lines reported by `git diff --check` from the committed
+    Issue #38 client, server, and migration evidence logs.
+  - **Focused client tests:** `StaffTicketDetail.test.tsx` and `StaffTicketQueue.test.tsx`,
+    **67 passed**, 0 skipped.
+  - **Hygiene:** `git diff --check lab3-staging` and the working-tree `git diff --check` passed.
+  - No functional behavior, requirement mapping, or test-matrix status changed.
+
 - **2026-09-24 — PR #49 accessibility blocker remediation**
   - Confirmed status transitions now focus the mounted **Back to Queue** control after the
     successful local status render, including when the best-effort refresh fails. Escape and
