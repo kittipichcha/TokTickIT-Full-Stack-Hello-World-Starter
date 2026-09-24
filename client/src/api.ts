@@ -87,6 +87,17 @@ export interface TicketDetailResponse {
     currentStatus: string;
     createdAt: string;
     updatedAt: string;
+    /**
+     * Issue #38 — Requester "Problem Appears Resolved" indicator (BR-19).
+     * Optional so Lab 2 fixtures that predate the field remain valid; the
+     * server always returns it.
+     */
+    appearsResolved?: boolean;
+    /**
+     * Issue #38 — Public Comments only (BR-04: notes never reach a Requester
+     * payload). Optional for Lab 2 fixture compatibility.
+     */
+    publicComments?: CommentItem[];
     attachments: Array<{
       id: number;
       originalFilename: string;
@@ -331,3 +342,227 @@ export async function removeAttachment(
 }
 
 export type { ApiError };
+
+// ---------------------------------------------------------------------------
+// Issue #38 — IT Staff ticket operations
+// ---------------------------------------------------------------------------
+
+export interface StaffQueueItem {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  /** Category name (ui-spec §5.6 required queue information). */
+  categoryName: string;
+  currentStatus: string;
+  requestedPriority: string;
+  itPriority: string | null;
+  ticketOwnerId: number | null;
+  requesterId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffQueueResponse {
+  data: StaffQueueItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    unfilteredTotalItems: number;
+  };
+}
+
+export interface StaffQueueParams {
+  search?: string;
+  status?: string;
+  priority?: string;
+  ownerId?: number;
+  sort?: string;
+  order?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+/** Fetches the IT Staff / Administrator ticket queue (api-spec §15). */
+export async function fetchStaffQueue(
+  params: StaffQueueParams = {},
+): Promise<StaffQueueResponse> {
+  const url = new URL("/api/staff/queue", "http://placeholder.invalid");
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.status) url.searchParams.set("status", params.status);
+  if (params.priority) url.searchParams.set("priority", params.priority);
+  if (params.ownerId !== undefined) url.searchParams.set("ownerId", String(params.ownerId));
+  if (params.sort) url.searchParams.set("sort", params.sort);
+  if (params.order) url.searchParams.set("order", params.order);
+  if (params.page !== undefined) url.searchParams.set("page", String(params.page));
+  if (params.pageSize !== undefined) url.searchParams.set("pageSize", String(params.pageSize));
+
+  return apiJson<StaffQueueResponse>(`${url.pathname}${url.search}`, {
+    fallbackError: "Failed to fetch the staff queue.",
+  });
+}
+
+export interface CommentItem {
+  id: number;
+  content: string;
+  authorId: number;
+  createdAt: string;
+}
+
+/** An eligible Ticket owner (active IT Staff / Administrator). */
+export interface AssignableOwner {
+  id: number;
+  name: string;
+  role: string;
+}
+
+/**
+ * Fetches the eligible Ticket-owner set (api-spec §17a).
+ *
+ * Read-only; IT Staff / Administrator only. Used by the Queue owner filter and
+ * the Staff Detail ownership control. The server returns only `{id, name, role}`
+ * for active IT Staff/Administrators — never credentials, Requesters, or
+ * inactive users. This list is a UX affordance; the ownership endpoint remains
+ * the final authorization boundary.
+ */
+export async function fetchAssignableOwners(): Promise<AssignableOwner[]> {
+  const result = await apiJson<{ data: AssignableOwner[] }>("/api/staff/owners", {
+    fallbackError: "Failed to fetch eligible owners.",
+  });
+  return result.data;
+}
+
+export interface StaffTicketDetail {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  currentStatus: string;
+  requestedPriority: string;
+  itPriority: string | null;
+  ticketOwnerId: number | null;
+  requesterId: number;
+  requesterName: string;
+  requesterIsActive: boolean;
+  categoryId: number;
+  categoryName: string;
+  relatedSystemId: number;
+  relatedSystemName: string;
+  appearsResolved: boolean;
+  createdAt: string;
+  updatedAt: string;
+  publicComments: CommentItem[];
+  internalNotes: CommentItem[];
+  /**
+   * Issue #38 review fix (49-B2) — the Ticket's existing Attachments
+   * (ui-spec §5.7). Read-only on the Staff surface: the Staff screen never
+   * uploads or removes Attachments.
+   */
+  attachments: AttachmentItem[];
+}
+
+/** Fetches the Staff/Admin Ticket Detail (api-spec §16). */
+export async function fetchStaffTicketDetail(
+  ticketNumber: string,
+): Promise<StaffTicketDetail> {
+  const result = await apiJson<{ data: StaffTicketDetail }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}`,
+    { fallbackError: "Failed to fetch ticket detail." },
+  );
+  return result.data;
+}
+
+/** Claims/reassigns a Ticket's owner (api-spec §17). State-changing. */
+export async function setTicketOwner(
+  ticketNumber: string,
+  ownerId: number,
+): Promise<{ ticketOwnerId: number }> {
+  const result = await apiJson<{ data: { ticketOwnerId: number } }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/owner`,
+    { method: "POST", body: { ownerId }, includeCsrf: true, fallbackError: "Failed to set owner." },
+  );
+  return result.data;
+}
+
+/** Sets the IT Priority (api-spec §18). State-changing. */
+export async function setItPriority(
+  ticketNumber: string,
+  itPriority: string,
+): Promise<{ itPriority: string }> {
+  const result = await apiJson<{ data: { itPriority: string } }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/priority`,
+    { method: "PATCH", body: { itPriority }, includeCsrf: true, fallbackError: "Failed to set IT priority." },
+  );
+  return result.data;
+}
+
+/** Applies a status transition (api-spec §19). State-changing. */
+export async function applyStatusTransition(
+  ticketNumber: string,
+  status: string,
+): Promise<{ currentStatus: string }> {
+  const result = await apiJson<{ data: { currentStatus: string } }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/status`,
+    { method: "PATCH", body: { status }, includeCsrf: true, fallbackError: "Failed to change status." },
+  );
+  return result.data;
+}
+
+/** Posts a Public Comment (api-spec §20). State-changing. */
+export async function postTicketComment(
+  ticketNumber: string,
+  content: string,
+): Promise<CommentItem> {
+  const result = await apiJson<{ data: CommentItem }>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/comments`,
+    { method: "POST", body: { content }, includeCsrf: true, fallbackError: "Failed to post comment." },
+  );
+  return result.data;
+}
+
+/** Lists Public Comments (api-spec §21). */
+export async function fetchTicketComments(ticketNumber: string): Promise<CommentItem[]> {
+  const result = await apiJson<{ data: CommentItem[] }>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/comments`,
+    { fallbackError: "Failed to fetch comments." },
+  );
+  return result.data;
+}
+
+/** Posts an Internal Note (api-spec §22). State-changing; Staff/Admin only. */
+export async function postInternalNote(
+  ticketNumber: string,
+  content: string,
+): Promise<CommentItem> {
+  const result = await apiJson<{ data: CommentItem }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/notes`,
+    { method: "POST", body: { content }, includeCsrf: true, fallbackError: "Failed to post note." },
+  );
+  return result.data;
+}
+
+/** Lists Internal Notes (api-spec §23). Staff/Admin only. */
+export async function fetchInternalNotes(ticketNumber: string): Promise<CommentItem[]> {
+  const result = await apiJson<{ data: CommentItem[] }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/notes`,
+    { fallbackError: "Failed to fetch notes." },
+  );
+  return result.data;
+}
+
+/** Sets the Requester "Problem Appears Resolved" indicator (api-spec §20a). State-changing. */
+export async function postAppearsResolved(
+  ticketNumber: string,
+  appearsResolved: boolean,
+): Promise<{ ticketNumber: string; appearsResolved: boolean; currentStatus: string }> {
+  const result = await apiJson<{
+    data: { ticketNumber: string; appearsResolved: boolean; currentStatus: string };
+  }>(`/api/tickets/${encodeURIComponent(ticketNumber)}/appears-resolved`, {
+    method: "POST",
+    body: { appearsResolved },
+    includeCsrf: true,
+    fallbackError: "Failed to update the appears-resolved indicator.",
+  });
+  return result.data;
+}

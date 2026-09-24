@@ -1,0 +1,12 @@
+
+> toktickit-client@1.0.0 test
+> vitest run src/lab-03-tests/CommentThread.test.tsx src/lab-03-tests/InternalNoteThread.test.tsx src/lab-03-tests/StaffTicketDetail.test.tsx
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-38-worktree/client
+
+
+ Test Files  3 passed (3)
+      Tests  59 passed (59)
+   Start at  17:29:54
+   Duration  11.41s (transform 1.24s, setup 0ms, import 10.22s, tests 4.54s, environment 11.43s)

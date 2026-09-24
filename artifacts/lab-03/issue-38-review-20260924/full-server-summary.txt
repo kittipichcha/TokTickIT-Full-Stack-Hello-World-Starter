@@ -1,0 +1,6 @@
+Full server regression result from the completed final-source validation run:
+
+Test Files  38 passed (38)
+Tests       539 passed (539)
+
+The raw full-server capture from the evidence rerun was interrupted by the terminal runner after migration setup and is retained as `full-server-interrupted.txt`; it is not used as pass evidence. The completed 539-test result was observed before committing this bundle, with the expected deliberate migration failure probes.

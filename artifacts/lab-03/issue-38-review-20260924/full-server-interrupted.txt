@@ -1,0 +1,14 @@
+
+> toktickit-server@1.0.0 test
+> vitest run
+
+◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-38-worktree/server
+
+NOTICE:  database "tocktick_lab3_mig05_7848" does not exist, skipping
+MigrationCollisionError: 1 collision(s) block the migration.
+  - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
+Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_7848" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_7848" does not exist, skipping

@@ -316,6 +316,15 @@ transitions return `409 CONFLICT` with a safe message and do not change the Tick
 never auto-claims the Ticket. IT Staff/Administrator must call `POST .../owner` to claim the
 Ticket before changing its status (Section 13, decision 14).
 
+**Acting user need not be the specific owner (Issue #38 review clarification):** The matrix's
+validation column reads "Ticket owned" — i.e. `ticketOwnerId` is non-null — not "owned by the
+acting user." Once a Ticket is claimed, **any** active IT Staff or Administrator may perform a
+permitted status change on it; the acting user is not required to be the Ticket's specific
+`ticketOwnerId`. This follows from Section 6, which grants "Perform permitted status changes" to
+the whole IT Staff/Administrator group, and from decision 14, whose stated purpose is only to
+prevent a status change from silently auto-claiming an unowned Ticket. A status change never
+mutates ownership. The route-level role gate is the authorization boundary.
+
 ## 8. UI Specification Summary
 The Lab 3 UI extends the Lab 2 Zen Green design language. Screens: Login, Change Password,
 Requester Shell, Requester Ticket Detail (with Public Comments and "Problem Appears Resolved"),
@@ -656,7 +665,10 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
     the Ticket. IT Staff/Administrator must claim the Ticket via `POST .../owner` before
     changing its status. This keeps each endpoint's effect matching its name (single
     responsibility) and avoids silently mutating ownership as a side effect of a differently
-    named endpoint. See Section 7 and `api-spec.md` §19.
+    named endpoint. The requirement is that the Ticket is owned (`ticketOwnerId` is non-null),
+    **not** that the acting user is the Ticket's specific owner: once claimed, any active
+    IT Staff or Administrator may perform a permitted status change, per the Section 6
+    Authorization Matrix. See Section 7 and `api-spec.md` §19.
 15. **Concurrent claim/reassign (frozen):** Two simultaneous claim/reassign requests for the
     same Ticket are handled as **last-write-wins**. Both requests may succeed; whichever
     transaction commits last is the final `ticketOwnerId`. No conflict error is surfaced to the
@@ -688,3 +700,16 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
     tests for no gain. Each element carries only `id` and `name`; the active-only filter
     (`isActive = true`) is applied server-side and `isActive` is not part of the response object.
     See `docs/lab-03/api-spec.md` §5.
+20. **Eligible Ticket-owner lookup endpoint (Issue #38 — added under the closed-contract
+    edge-case policy):** `GET /api/staff/owners` returns the eligible Ticket-owner set —
+    every **active** IT Staff/Administrator as `{ id, name, role }` — for IT Staff and
+    Administrators. It was added because the frozen contract exposed no staff-accessible user
+    list: `GET /api/admin/users` (§24) is Administrator-only, so IT Staff cannot call it, and
+    `GET /api/app/context` returns only the caller's own identity. Without it, the Queue owner
+    filter (`ui-spec.md` §5.6) and the Detail ownership control (§5.7) could not offer owners
+    who own no Tickets, which would leave FR-16's "claim, **assign**, or reassign" only
+    partially satisfied. The endpoint is deliberately minimal and read-only: it returns no
+    credential field, no `email`, no Requester, and no inactive user. It is a **UX affordance
+    only** — `POST /api/staff/tickets/:ticketNumber/owner` (§17) remains the final
+    authorization boundary and independently rejects ineligible targets with `409 CONFLICT`.
+    See `docs/lab-03/api-spec.md` §17a and `tests.md` `API-OWN-01`.

@@ -99,7 +99,10 @@ require `aria-label` and a tooltip.
 ### 5.6 IT Staff Ticket Queue
 - Accessible to IT Staff and Administrator (per the authorization matrix). The Queue is the
   staff Ticket list; an Administrator may open it and use it in the same way as IT Staff.
-- Toolbar: search input, status filter, priority filter, owner filter, Clear Filters.
+- Toolbar: search input, status filter, priority filter, owner filter, Clear Filters. The owner
+  filter lists the eligible-owner set (active IT Staff/Administrators, `api-spec.md` §17a) and
+  combines with the other filters using AND semantics; Clear Filters resets it along with the
+  rest.
 - Desktop: table. The following required information must be available for each Ticket: Ticket
   No., Created Date, Summary, Category, Requested Priority, IT Priority, Current Status, Ticket
   Owner, Last Updated, and an Open Detail action. The desktop table may display the core columns
@@ -113,18 +116,26 @@ require `aria-label` and a tooltip.
 - Mobile (<768px): card representation, one Ticket per card, with all required information and
   the Open Detail action.
 - Loading, empty, no-results, forbidden, and failure feedback.
+- A `403 FORBIDDEN` response renders distinct access-denied feedback without a Retry action;
+  other failures retain the failure state and Retry action.
 - Pagination.
 
 ### 5.7 IT Staff Ticket Detail
 - Accessible to IT Staff and Administrator (per the authorization matrix). An Administrator may
   open any Ticket Detail and use the staff operations in the same way as IT Staff.
 - Ticket information clearly grouped; only permitted operational fields editable.
-- Ownership: claim/assign/reassign control.
+- Ownership: claim/assign/reassign control. The control offers an owner selector populated from
+  the eligible-owner set (active IT Staff/Administrators, `api-spec.md` §17a) plus an
+  Assign/Reassign action, so a Ticket can be assigned to any eligible owner — not only to the
+  current user. A "Claim / Reassign to me" convenience action may be retained alongside it. The
+  selector is a UX affordance only; the ownership endpoint remains the authorization boundary.
 - IT Priority: editable by IT Staff/Administrator.
 - Status: permitted status changes per the Status Transition Matrix. Status changes to
   Resolved, Closed, or Cancelled (per the Status Transition Matrix's "Confirmation" column)
   show a confirm modal dialog (per the modal-dialog rule in §8) before the request is sent;
-  other transitions apply immediately.
+  other transitions apply immediately. When a Ticket is unassigned, permitted status controls
+  are disabled and the UI explains that the Ticket must be claimed or assigned first; the API's
+  `409 CONFLICT` ownership check remains authoritative.
 - Public Comments and Internal Notes sections, visually distinct so private information is not
   accidentally posted publicly.
 - Existing Attachments.
@@ -159,7 +170,8 @@ require `aria-label` and a tooltip.
 ## 8. Accessibility
 - All form controls have associated `<label>` elements (not placeholder-only labeling).
 - Error messages are associated to their field via `aria-describedby`.
-- Modal dialogs trap focus and are closable via `Esc`.
+- Modal dialogs trap focus and are closable via `Esc`. After a confirmed status transition and
+  refetch, focus restoration must land on a currently mounted, focusable control.
 - Role-specific navigation is keyboard-operable.
 - Visible focus ring on all interactive controls.
 
