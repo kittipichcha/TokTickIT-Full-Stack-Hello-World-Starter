@@ -30,11 +30,32 @@ interface FailedAttachment {
 interface AppProps {
   /** The authenticated user, supplied by AuthGate from the session. */
   user: AuthUser;
+  /**
+   * Publishes a refreshed authenticated user back to AuthGate (review 48-B3).
+   * Used after a successful self-demotion so the shared identity — not a local
+   * copy — drives role-specific navigation.
+   */
+  onUserUpdated?: (user: AuthUser) => void;
 }
 
-export default function App({ user }: AppProps) {
+/**
+ * The role-specific initial destination (ui-spec.md §5.3, review 48-B1).
+ *
+ * An Administrator must never land on the Requester-only My Tickets screen.
+ * Within #48's available feature set the Administrator entry point is User
+ * Management. Requester and IT Staff keep their existing destinations.
+ *
+ * NOTE: the final Administrator default destination after #49 (Staff Queue)
+ * integration is an explicit integration decision and is intentionally not
+ * decided here.
+ */
+function initialViewForRole(role: string): AppView {
+  return role === "ADMINISTRATOR" ? "admin-users" : "home";
+}
+
+export default function App({ user, onUserUpdated }: AppProps) {
   const [message, setMessage] = useState<string | null>(null);
-  const [view, setView] = useState<AppView>("home");
+  const [view, setView] = useState<AppView>(() => initialViewForRole(user.role));
   const [detailTicketNumber, setDetailTicketNumber] = useState<string | null>(null);
   const [ticketDetail, setTicketDetail] = useState<TicketDetailResponse["data"] | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -142,6 +163,18 @@ export default function App({ user }: AppProps) {
     setView("create-ticket");
   };
 
+  // Role-change reconciliation (review 48-B1 / 48-B3).
+  //
+  // When the authenticated role changes — most importantly after a successful
+  // self-demotion, where AuthGate publishes the refreshed `/api/auth/me` user —
+  // any view that is no longer permitted must not keep rendering. An
+  // Administrator who is demoted to IT Staff must leave User Management; a
+  // non-Administrator must never render the Administrator view.
+  useEffect(() => {
+    if (user.role === "ADMINISTRATOR") return;
+    setView((current) => (current === "admin-users" ? "home" : current));
+  }, [user.role]);
+
   // Focus management for removal dialog
   useEffect(() => {
     if (removeDialogAttachment) {
@@ -203,20 +236,24 @@ export default function App({ user }: AppProps) {
           <span className="hamburger-bar" />
         </button>
         <nav id="primary-navigation" aria-label="Primary" className={mobileMenuOpen ? "mobile-menu-open" : ""}>
-          <a
-            href="#my-tickets"
-            className={view === "home" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
-          >
-            My Tickets
-          </a>
-          <a
-            href="#create-ticket"
-            className={view === "create-ticket" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
-          >
-            Create Ticket
-          </a>
+          {user.role !== "ADMINISTRATOR" && (
+            <>
+              <a
+                href="#my-tickets"
+                className={view === "home" ? "nav-active" : ""}
+                onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
+              >
+                My Tickets
+              </a>
+              <a
+                href="#create-ticket"
+                className={view === "create-ticket" ? "nav-active" : ""}
+                onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
+              >
+                Create Ticket
+              </a>
+            </>
+          )}
           {user.role === "ADMINISTRATOR" && (
             <a
               href="#admin-users"
@@ -243,7 +280,12 @@ export default function App({ user }: AppProps) {
           onCreateAnother={handleCreateAnother}
         />
       )}
-      {view === "admin-users" && user.role === "ADMINISTRATOR" && <AdminUserManagement />}
+      {view === "admin-users" && user.role === "ADMINISTRATOR" && (
+        <AdminUserManagement
+          currentUser={user}
+          onUserUpdated={onUserUpdated ?? (() => {})}
+        />
+      )}
       {view === "ticket-detail" && (
         <main className="app-container">
           {detailLoading && (

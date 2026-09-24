@@ -20,6 +20,18 @@
 4. Every Acceptance Criterion must map to at least one planned test before implementation begins.
 5. The contract must be reviewed and approved before dependent implementation issues begin.
 
+## Issue #41 Review Follow-up Regression Entry
+
+- Prompt summary: Check whether the Issue #41 follow-up code changes required a full test run,
+  refresh the execution log, and commit the completed work.
+- What was done with output: Reviewed the changed client/server behavior, ran the focused client
+  and admin API tests, then ran the full server suite (**469 passed**) and full client suite
+  (**142 passed**). Refreshed the Issue #41 evidence artifacts and prepended the result to
+  `docs/lab-03/tests.md` before committing the related implementation, tests, and documentation.
+- Reflection: A documentation-only previous commit did not justify a new full run by itself, but
+  the uncommitted follow-up changed shared navigation, identity propagation, modal behavior, and
+  authorization logic, so the full regression was required before commit.
+
 ## Issue #34 Implementation Entry
 
 - Prompt summary: Create the Sprint 3 engineering contract (Spec DD + Test DD) for Issue #34 from the Lab 3 handout and Lab 2 baseline.
@@ -350,11 +362,12 @@
     pre-existing Administrator rows in `afterAll` — the fix was to stop mutating shared
     state, not to relax the Lab 2 assertions.
   - **F-41-3 (empty/no-op PATCH) was resolved against the frozen spec, not invented.**
-    `api-spec.md` §26 is silent on omitted/empty bodies; `specification.md`'s
+    The decision is formally recorded in `specification.md` §13, decision 20 and referenced from
+    `api-spec.md` §26. `api-spec.md` §26 is silent on omitted/empty bodies, but the
     closed-contract policy requires the agent to resolve the choice and document it. The
-    resolution is partial-update semantics: omitted fields are unchanged, an empty/no-op
-    body is a valid no-op returning `200`, and unknown properties (including `passwordHash`)
-    are ignored exactly. No validation rule beyond the frozen error table was added.
+    resolution is partial-update semantics: omitted fields are unchanged, an empty/no-op body is
+    a valid no-op returning `200`, and unknown properties (including `passwordHash`) are ignored
+    exactly. No validation rule beyond the frozen error table was added.
   - **Deactivation/role changes that fall short of the invariant use a normal write**, and
     only the paths that can *reduce* the active-Administrator count enter the Serializable
     transaction — so the guard is applied where it is needed without serializing every edit.

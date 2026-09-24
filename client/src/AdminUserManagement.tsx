@@ -14,7 +14,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiJson, type ApiError } from "./api-client";
+import { apiJson, fetchMe, type ApiError, type AuthUser } from "./api-client";
+import Modal from "./Modal";
 
 type Role = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
 
@@ -77,7 +78,24 @@ const EMPTY_FORM: UserFormState = {
   initialPassword: "",
 };
 
-export default function AdminUserManagement() {
+interface AdminUserManagementProps {
+  /**
+   * The current authenticated user (single source of truth, owned by AuthGate).
+   * Used to detect a self-edit so the authenticated identity can be refreshed
+   * after a successful role change (review 48-B3).
+   */
+  currentUser: AuthUser;
+  /**
+   * Publishes a refreshed authenticated user back to the shared session state.
+   * The component never mutates a local copy of the authenticated role.
+   */
+  onUserUpdated: (user: AuthUser) => void;
+}
+
+export default function AdminUserManagement({
+  currentUser,
+  onUserUpdated,
+}: AdminUserManagementProps) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -209,6 +227,28 @@ export default function AdminUserManagement() {
           isActive: editForm.isActive,
         },
       });
+
+      // Review 48-B3 — self-demotion identity refresh.
+      //
+      // The backend is authoritative and already permitted this edit. If the
+      // edited user is the CURRENT authenticated user and the role changed, the
+      // client's cached identity is now stale: AuthGate would keep rendering
+      // Administrator navigation while the server would reject Administrator
+      // requests. Re-read the authenticated user from the server and publish it
+      // to the shared session state — never mutate a local role copy here.
+      const editedSelf = editTarget.id === currentUser.id;
+      const roleChanged = editForm.role !== currentUser.role;
+      if (editedSelf && roleChanged) {
+        try {
+          const refreshed = await fetchMe();
+          onUserUpdated(refreshed);
+        } catch {
+          // The mutation succeeded; a failed identity refresh must not be
+          // reported as a failed edit. The server remains authoritative and
+          // will reject any now-unauthorized request.
+        }
+      }
+
       setEditTarget(null);
       await loadUsers();
     } catch (err) {
@@ -366,13 +406,7 @@ export default function AdminUserManagement() {
 
       {/* ---- Create User modal ---- */}
       {createOpen && (
-        <div className="modal-overlay" role="presentation">
-          <div
-            className="modal-content"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-user-title"
-          >
+        <Modal labelledBy="create-user-title" onClose={() => setCreateOpen(false)} busy={createBusy}>
             <h2 id="create-user-title">Create User</h2>
             <form onSubmit={submitCreate} noValidate>
               <div className="form-field">
@@ -494,19 +528,12 @@ export default function AdminUserManagement() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* ---- Edit User modal ---- */}
       {editTarget && (
-        <div className="modal-overlay" role="presentation">
-          <div
-            className="modal-content"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-user-title"
-          >
+        <Modal labelledBy="edit-user-title" onClose={() => setEditTarget(null)} busy={editBusy}>
             <h2 id="edit-user-title">Edit User</h2>
             <form onSubmit={submitEdit} noValidate>
               <div className="form-field">
@@ -605,19 +632,12 @@ export default function AdminUserManagement() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* ---- Reset Password modal ---- */}
       {resetTarget && (
-        <div className="modal-overlay" role="presentation">
-          <div
-            className="modal-content"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="reset-password-title"
-          >
+        <Modal labelledBy="reset-password-title" onClose={() => setResetTarget(null)} busy={resetBusy}>
             <h2 id="reset-password-title">Reset Initial Password</h2>
             <p>
               Set a new initial password for <strong>{resetTarget.name}</strong>. The user must
@@ -672,8 +692,7 @@ export default function AdminUserManagement() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </main>
   );

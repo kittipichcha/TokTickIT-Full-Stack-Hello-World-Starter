@@ -35,8 +35,9 @@ SEC-AUTHZ-10, API-REQ-01, API-REQ-02. Rows owned by other issues remain `Planned
 
 Issue #41 (Administrator User Management) implemented the four frozen admin endpoints
 (`api-spec.md` §24–§27) and the minimal §5.8 UI, and executed its frozen rows. The rows
-updated to `Passed` by #41 are: API-ADM-01..10, API-ADM-07b, SEC-AUTHZ-03, SEC-AUTHZ-09,
-UI-ADM-01, UI-ADM-02. `E2E-03` remains owned by **#42** and is deliberately left `Planned`.
+updated to `Passed` by #41 are: API-ADM-01..11, API-ADM-07b, SEC-AUTHZ-03, SEC-AUTHZ-09,
+UI-ADM-01, UI-ADM-02, UI-48-NAV, UI-48-MODAL-01/02/03, UI-48-SELF-DEMOTION. `E2E-03`
+remains owned by **#42** and is deliberately left `Planned`.
 Rows owned by other issues remain `Planned`.
 
 Every `Passed` row above is backed by an executed run recorded in
@@ -56,6 +57,53 @@ owned by **#37** (`authorization.api.test.ts`); #35 contributes only supplementa
 assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
+
+- **2026-09-24 — Issue #41 review follow-up regression and commit gate**
+  - Re-ran the focused changed slices after the follow-up code changes:
+    `server/tests/lab-03/users-admin.api.test.ts` — **38 passed**;
+    `client/src/App.test.tsx` + `client/src/lab-03-tests/UserManagement.test.tsx` —
+    **24 passed**.
+  - Re-ran the required full suites because the previous commit was documentation-only
+    but the working-tree follow-up changed shared client navigation/auth state, modal
+    behavior, admin service logic, and their tests:
+    `cd server && npx vitest run` — **35 files / 469 passed**;
+    `cd client && npx vitest run` — **13 files / 142 passed**.
+  - Skipped: **0**. Server output includes the documented injected migration failure
+    paths; client output includes existing JSDOM `window.open`/navigation warnings.
+  - Raw outputs refreshed under `artifacts/lab-03/issue-41/`. Commit gate passed.
+
+- **2026-09-22 — Issue #41 review follow-up (PR #48 blockers 48-B1..48-B4)**
+  - **48-B1 — Administrator initial navigation.** `client/src/App.tsx` now selects the
+    initial `AppView` from the authenticated role (`initialViewForRole`): an Administrator
+    lands on **User Management**, never the Requester-only My Tickets screen. My Tickets and
+    Create Ticket are hidden from an Administrator's navigation; Requester navigation is
+    unchanged. A role-change reconciliation effect leaves User Management when the
+    authenticated role is no longer Administrator. New row **UI-48-NAV**.
+  - **48-B2 — inactive-Administrator demotion.** `server/src/admin-service.ts`
+    `updateUser()`: the last-active-Administrator guard now runs only when the target is
+    **currently active AND currently an Administrator AND the patch removes Administrator
+    status**. An inactive Administrator is already excluded from the active count, so
+    demoting/deactivating them cannot reduce it and now succeeds (`200`). The Serializable
+    transaction and bounded retry are unchanged. New row **API-ADM-11**; verified to
+    **fail** (`409` instead of `200`) when the `target.isActive === true` condition is
+    removed, i.e. the test is genuinely sensitive to the fix.
+  - **48-B3 — stale identity after self-demotion.** After a successful edit of the
+    authenticated user's own role, `AdminUserManagement` re-reads `/api/auth/me` and
+    publishes the refreshed user through `App` → `AuthGate` (`onUserUpdated`), so the shared
+    authenticated identity — not a local role copy — drives navigation. The backend remains
+    authoritative. New row **UI-48-SELF-DEMOTION**.
+  - **48-B4 — accessible dialogs.** New shared `client/src/Modal.tsx` implements initial
+    focus, a Tab trap, a Shift+Tab trap, Escape-to-close with focus restoration to the
+    invoking control, and no mutation on Escape/Cancel. All three Administrator dialogs
+    (Create / Edit / Reset Password) now use it. New rows **UI-48-MODAL-01/02/03**.
+  - **Executed:** `server/tests/lab-03/users-admin.api.test.ts` — 38 passed;
+    `client/src/App.test.tsx` + `client/src/lab-03-tests/UserManagement.test.tsx` — 24
+    passed. Full-suite regression: server **469 passed / 35 files**, client **142 passed /
+    13 files**.
+  - **Integration note (not resolved here):** the final Administrator default destination
+    after #49 (Staff Queue) integration is an explicit integration decision. #48 sets the
+    Administrator entry point to User Management for its own feature set and does not
+    silently decide the post-#49 contract.
 
 - **2026-09-21 — Issue #41 (Administrator User Management) — frozen rows executed**
   - Implemented the four frozen admin endpoints (`api-spec.md` §24–§27) in
@@ -587,6 +635,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-ADM-08 | API | Set new initial password | User must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-26 | BR-30 | AC-16 | Passed |
 | API-ADM-09 | API | Edit / set-initial-password on nonexistent userId | `404 NOT_FOUND` — user does not exist | `server/tests/lab-03/users-admin.api.test.ts` | FR-25, FR-26 | BR-31 | AC-17, AC-16 | Passed |
 | API-ADM-10 | API | Non-last Administrator changes own role away from Administrator | Succeeds; rejected only if it is the last active Administrator (BR-28 path) | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-34, BR-28 | AC-19 | Passed |
+| API-ADM-11 | API | Inactive Administrator demotion/deactivation | Succeeds with `200` while exactly one active Administrator remains — the last-active-Administrator guard runs only when the target is currently active AND currently an Administrator; active count unchanged | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-28, BR-34 | AC-19 | Passed |
 | UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Passed |
 | UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Planned |
 | DB-MIG-01 | DB | DevRequester → User migration | Every legacy Requester becomes exactly one User with the same `id`, `name`, `email`, and `isActive`, role `REQUESTER`, and `mustChangePassword=true` | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
@@ -634,6 +683,11 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-STAFF-02 | UI | Status change to Resolved/Closed/Cancelled | Confirm modal shown before request is sent; cancel aborts, confirm proceeds | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Planned |
 | UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Passed |
 | UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Passed |
+| UI-48-NAV | UI | Administrator role-based initial navigation | A fresh Administrator session lands on User Management (not My Tickets); Requester-only nav (My Tickets, Create Ticket) is hidden from an Administrator; Requester navigation is unchanged; leaving User Management when the authenticated role is no longer Administrator | `client/src/App.test.tsx` | FR-21 | BR-28 | AC-15 | Passed |
+| UI-48-MODAL-01 | UI | Create User dialog keyboard behavior | Initial focus on the first control; Tab trap; Shift+Tab trap; Escape closes and restores focus to the invoking control; Escape/Cancel never submit; confirm submits exactly once | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-24 | BR-25 | AC-23 | Passed |
+| UI-48-MODAL-02 | UI | Edit User dialog keyboard behavior | Initial focus on the first control; Tab trap; Shift+Tab trap; Escape closes and restores focus to the invoking control; Escape/Cancel never submit; confirm submits exactly once | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-25 | BR-26 | AC-23 | Passed |
+| UI-48-MODAL-03 | UI | Reset Password dialog keyboard behavior | Initial focus on the first control; Tab trap; Shift+Tab trap; Escape closes and restores focus to the invoking control; Escape/Close never submit; confirm submits exactly once | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-26 | BR-30 | AC-23 | Passed |
+| UI-48-SELF-DEMOTION | UI | Self-demotion refreshes the authenticated identity | After a successful self-demotion the client re-reads `/api/auth/me` and publishes the refreshed role to the shared session state; editing another user does not refresh the identity | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-25 | BR-34 | AC-19 | Passed |
 | UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Planned |
 | VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Planned |
 | VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Planned |
@@ -659,11 +713,12 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-12 → API-STAFF-02, API-STAFF-06, UI-STAFF-01, E2E-02
 - AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, E2E-02
 - AC-14 → API-STAFF-05, API-STAFF-10, UI-STAFF-01, E2E-02
-- AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
+- AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, UI-48-NAV, E2E-03
 - AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, E2E-03
 - AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
-- AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, UI-ADM-01
+- AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, API-ADM-11, UI-ADM-01, UI-48-SELF-DEMOTION
+- AC-23 → A11Y-01, UI-48-MODAL-01, UI-48-MODAL-02, UI-48-MODAL-03
 - AC-20 → SEC-AUTHZ-03, SEC-AUTHZ-09
 - AC-21 → UI-STYLE-01
 - AC-22 → VISUAL-01, VISUAL-02

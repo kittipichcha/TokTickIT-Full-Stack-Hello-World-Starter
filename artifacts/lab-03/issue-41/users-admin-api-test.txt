@@ -1,10 +1,10 @@
-◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
 
- RUN  v4.1.10 [worktree]/server
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-41-worktree/server
 
 
  Test Files  1 passed (1)
-      Tests  36 passed (36)
-   Start at  17:27:33
-   Duration  16.95s (transform 810ms, setup 0ms, import 10.74s, tests 5.19s, environment 0ms)
+      Tests  38 passed (38)
+   Start at  09:24:37
+   Duration  6.44s (transform 446ms, setup 0ms, import 1.13s, tests 4.93s, environment 0ms)
 

@@ -13,6 +13,7 @@
  *   - API-ADM-08  Set new initial password (must change at next login)
  *   - API-ADM-09  Edit/set-initial-password on nonexistent userId -> 404
  *   - API-ADM-10  Non-last Administrator changes own role away from Administrator
+ *   - API-ADM-11  Inactive Administrator demotion/deactivation succeeds (review 48-B2)
  *   - SEC-AUTHZ-03 Non-Admin requests user management -> 403
  *   - SEC-AUTHZ-09 Non-Administrator calls create-user/edit-user -> 403
  *
@@ -700,6 +701,101 @@ describe("API-ADM-10: non-last Administrator changes own role away from Administ
 
     // Restore the acting admin's role for the remaining tests.
     await prisma.user.update({ where: { id: admin.userId }, data: { role: "ADMINISTRATOR" } });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// API-ADM-11 — inactive Administrator demotion (Issue #41 review 48-B2)
+//
+// The last-active-Administrator guard must only run when the target is CURRENTLY
+// ACTIVE and CURRENTLY an Administrator. An inactive Administrator is already
+// excluded from the active count, so demoting them cannot reduce it and must
+// succeed (200) even when exactly one active Administrator remains.
+// ---------------------------------------------------------------------------
+
+describe("API-ADM-11: inactive Administrator can be demoted while one active Administrator remains", () => {
+  itIfDb("demoting an inactive Administrator -> 200, role updated, active count unchanged", async () => {
+    const prisma = getPrisma();
+
+    // Fixture: Admin A active, Admin B inactive. Exactly one active Administrator.
+    await prisma.user.updateMany({ where: { role: "ADMINISTRATOR" }, data: { isActive: false } });
+    await prisma.user.update({
+      where: { id: admin.userId },
+      data: { isActive: true, role: "ADMINISTRATOR" },
+    });
+    await prisma.user.update({
+      where: { id: admin2.userId },
+      data: { isActive: false, role: "ADMINISTRATOR" },
+    });
+
+    const activeBefore = await prisma.user.count({
+      where: { role: "ADMINISTRATOR", isActive: true },
+    });
+    expect(activeBefore).toBe(1);
+
+    // Admin A demotes the INACTIVE Admin B to IT_STAFF.
+    const res = await withSession(
+      request(app).patch(`/api/admin/users/${admin2.userId}`),
+      admin,
+      { csrf: true },
+    ).send({ role: "IT_STAFF" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.role).toBe("IT_STAFF");
+
+    const after = await prisma.user.findUnique({ where: { id: admin2.userId } });
+    expect(after!.role).toBe("IT_STAFF");
+    expect(after!.isActive).toBe(false);
+
+    // Admin A remains the sole active Administrator — the invariant is preserved.
+    const adminAAfter = await prisma.user.findUnique({ where: { id: admin.userId } });
+    expect(adminAAfter!.role).toBe("ADMINISTRATOR");
+    expect(adminAAfter!.isActive).toBe(true);
+
+    const activeAfter = await prisma.user.count({
+      where: { role: "ADMINISTRATOR", isActive: true },
+    });
+    expect(activeAfter).toBe(1);
+
+    // Restore both Administrators for the remaining tests.
+    await prisma.user.update({
+      where: { id: admin2.userId },
+      data: { isActive: true, role: "ADMINISTRATOR" },
+    });
+  });
+
+  itIfDb("deactivating an already-inactive Administrator -> 200 (no count reduction)", async () => {
+    const prisma = getPrisma();
+
+    await prisma.user.updateMany({ where: { role: "ADMINISTRATOR" }, data: { isActive: false } });
+    await prisma.user.update({
+      where: { id: admin.userId },
+      data: { isActive: true, role: "ADMINISTRATOR" },
+    });
+    await prisma.user.update({
+      where: { id: admin2.userId },
+      data: { isActive: false, role: "ADMINISTRATOR" },
+    });
+
+    const res = await withSession(
+      request(app).patch(`/api/admin/users/${admin2.userId}`),
+      admin,
+      { csrf: true },
+    ).send({ isActive: false });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.isActive).toBe(false);
+
+    const activeAfter = await prisma.user.count({
+      where: { role: "ADMINISTRATOR", isActive: true },
+    });
+    expect(activeAfter).toBe(1);
+
+    // Restore both Administrators for the remaining tests.
+    await prisma.user.update({
+      where: { id: admin2.userId },
+      data: { isActive: true, role: "ADMINISTRATOR" },
+    });
   });
 });
 

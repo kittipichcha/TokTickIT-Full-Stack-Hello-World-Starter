@@ -744,6 +744,11 @@ in §15); it never returns `400`.
 
 **Auth:** Administrator.
 
+**Partial-update semantics:** This endpoint uses partial-update semantics as specified in
+`specification.md` §13, decision 20. Omitted fields are left unchanged; an empty/no-op body
+returns `200 OK` with the current row; unknown properties, including `passwordHash`, are
+ignored.
+
 **Request body**
 ```json
 { "name": "Updated", "email": "updated@example.com", "role": "IT_STAFF", "isActive": true }

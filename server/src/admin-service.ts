@@ -420,12 +420,22 @@ export async function updateUser(
   }
 
   // Determine whether this patch can affect the last-active-Administrator invariant.
-  // Only deactivating an Administrator or demoting an Administrator can reduce the
-  // active-Administrator count; every other edit is a normal write.
+  //
+  // The invariant is "the active-Administrator count never becomes zero". Only an edit
+  // that removes Administrator status from a CURRENTLY ACTIVE Administrator can reduce
+  // that count:
+  //   - active Administrator -> inactive          (deactivation)
+  //   - active Administrator -> non-Administrator (demotion)
+  //
+  // An INACTIVE Administrator is already excluded from the count, so demoting or
+  // deactivating them cannot reduce it and must not be blocked by the guard.
   const deactivatesAdmin =
     isActive === false && target.isActive === true && target.role === "ADMINISTRATOR";
   const demotes =
-    role !== undefined && role !== "ADMINISTRATOR" && target.role === "ADMINISTRATOR";
+    role !== undefined &&
+    role !== "ADMINISTRATOR" &&
+    target.role === "ADMINISTRATOR" &&
+    target.isActive === true;
   const touchesLastAdminInvariant = deactivatesAdmin || demotes;
 
   const data: Prisma.UserUpdateInput = {};

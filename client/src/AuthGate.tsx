@@ -60,6 +60,17 @@ export default function AuthGate() {
     setState("authenticated");
   }
 
+  /**
+   * Publishes a refreshed authenticated user (review 48-B3).
+   *
+   * After a successful self-demotion the server's `/api/auth/me` is the single
+   * source of truth for the current identity. The refreshed user replaces the
+   * cached one so role-specific navigation and view gating update immediately.
+   */
+  function handleUserUpdated(nextUser: AuthUser) {
+    setUser(nextUser);
+  }
+
   async function handleLogout() {
     setLogoutError(null);
     try {
@@ -111,7 +122,7 @@ export default function AuthGate() {
           </p>
         )}
       </header>
-      {user && <App user={user} />}
+      {user && <App user={user} onUserUpdated={handleUserUpdated} />}
     </div>
   );
 }

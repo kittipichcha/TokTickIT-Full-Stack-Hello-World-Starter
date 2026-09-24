@@ -1,9 +1,9 @@
 
- RUN  v4.1.10 [worktree]/client
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-41-worktree/client
 
 
- Test Files  1 passed (1)
-      Tests  10 passed (10)
-   Start at  17:27:54
-   Duration  6.33s (transform 253ms, setup 0ms, import 853ms, tests 3.81s, environment 1.27s)
+ Test Files  2 passed (2)
+      Tests  24 passed (24)
+   Start at  09:24:55
+   Duration  10.43s (transform 814ms, setup 0ms, import 1.91s, tests 8.35s, environment 2.38s)
 

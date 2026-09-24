@@ -1,20 +1,20 @@
 
- RUN  v4.1.10 [worktree]/client
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-41-worktree/client
 
 Error: Not implemented: window.open
-    at module.exports ([worktree]\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
-    at [worktree]\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
-    at onClick ([worktree]/client/src/App.tsx:418:42) undefined
+    at module.exports (C:\Users\kitti\CPE334\issue-41-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at C:\Users\kitti\CPE334\issue-41-worktree\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at onClick (C:/Users/kitti/CPE334/issue-41-worktree/client/src/App.tsx:460:42) undefined
 Error: Not implemented: navigation (except hash changes)
-    at module.exports ([worktree]\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
-    at navigateFetch ([worktree]\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
-    at exports.navigate ([worktree]\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
-    at Timeout._onTimeout ([worktree]\client\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at module.exports (C:\Users\kitti\CPE334\issue-41-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (C:\Users\kitti\CPE334\issue-41-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (C:\Users\kitti\CPE334\issue-41-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (C:\Users\kitti\CPE334\issue-41-worktree\client\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
     at listOnTimeout (node:internal/timers:605:17)
     at processTimers (node:internal/timers:541:7) undefined
 
  Test Files  13 passed (13)
-      Tests  130 passed (130)
-   Start at  17:23:30
-   Duration  55.69s (transform 8.10s, setup 0ms, import 119.19s, tests 49.40s, environment 307.62s)
+      Tests  142 passed (142)
+   Start at  08:57:45
+   Duration  23.80s (transform 4.77s, setup 0ms, import 18.79s, tests 56.58s, environment 31.50s)
 

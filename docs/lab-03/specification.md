@@ -688,3 +688,11 @@ authorization, and safe errors are defined in `docs/lab-03/api-spec.md`.
     tests for no gain. Each element carries only `id` and `name`; the active-only filter
     (`isActive = true`) is applied server-side and `isActive` is not part of the response object.
     See `docs/lab-03/api-spec.md` §5.
+20. **PATCH partial-update semantics (F-41-3, closed-contract decision):** `PATCH
+    /api/admin/users/:userId` is a partial update. Fields omitted from the body are left
+    unchanged; an empty body or a body whose effective update is a no-op is treated as a valid
+    no-op and returns `200 OK` with the current row. Unknown properties are ignored, including
+    `passwordHash`; they are not treated as validation errors and do not mutate the row. This is
+    the closed-contract interpretation for a silent endpoint gap in `api-spec.md`, and it keeps
+    the contract internally consistent without inventing new validation rules beyond the frozen
+    error table. See `api-spec.md` §26.
