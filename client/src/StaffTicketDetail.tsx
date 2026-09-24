@@ -84,6 +84,19 @@ export default function StaffTicketDetail({
   const backLinkRef = useRef<HTMLAnchorElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const ownerRequestSeqRef = useRef(0);
+  const detailReadGenerationRef = useRef(0);
+  const detailReadSequenceRef = useRef(0);
+  const currentTicketNumberRef = useRef(ticketNumber);
+  currentTicketNumberRef.current = ticketNumber;
+
+  const beginMutation = () => {
+    detailReadGenerationRef.current += 1;
+  };
+
+  const isCurrentDetailRead = (generation: number, sequence: number, requestedTicket: string) =>
+    generation === detailReadGenerationRef.current
+    && sequence === detailReadSequenceRef.current
+    && requestedTicket === currentTicketNumberRef.current;
 
   const loadOwners = useCallback(async () => {
     const requestId = ++ownerRequestSeqRef.current;
@@ -110,12 +123,16 @@ export default function StaffTicketDetail({
   }, [loadOwners]);
 
   const load = useCallback(async (preserveDetail = false) => {
+    const requestedTicket = ticketNumber;
+    const generation = detailReadGenerationRef.current;
+    const sequence = ++detailReadSequenceRef.current;
     if (!preserveDetail) setLoading(true);
     setError(null);
     try {
-      const data = await fetchStaffTicketDetail(ticketNumber);
-      setDetail(data);
+      const data = await fetchStaffTicketDetail(requestedTicket);
+      if (isCurrentDetailRead(generation, sequence, requestedTicket)) setDetail(data);
     } catch (err) {
+      if (!isCurrentDetailRead(generation, sequence, requestedTicket)) return;
       const apiError = err as ApiError;
       const kind: DetailLoadError = apiError.status === 403
         ? "forbidden"
@@ -127,7 +144,7 @@ export default function StaffTicketDetail({
         message: err instanceof Error ? err.message : "Failed to load ticket detail.",
       });
     } finally {
-      setLoading(false);
+      if (isCurrentDetailRead(generation, sequence, requestedTicket)) setLoading(false);
     }
   }, [ticketNumber]);
 
@@ -136,10 +153,14 @@ export default function StaffTicketDetail({
   }, [load]);
 
   const refreshAfterMutation = async (successMessage: string) => {
+    const requestedTicket = ticketNumber;
+    const generation = detailReadGenerationRef.current;
+    const sequence = ++detailReadSequenceRef.current;
     try {
-      const refreshed = await fetchStaffTicketDetail(ticketNumber);
-      setDetail(refreshed);
+      const refreshed = await fetchStaffTicketDetail(requestedTicket);
+      if (isCurrentDetailRead(generation, sequence, requestedTicket)) setDetail(refreshed);
     } catch (refreshErr) {
+      if (!isCurrentDetailRead(generation, sequence, requestedTicket)) return;
       setActionError(
         refreshErr instanceof Error
           ? `${successMessage}, but refresh failed: ${refreshErr.message}`
@@ -149,6 +170,7 @@ export default function StaffTicketDetail({
   };
 
   const handleClaim = async () => {
+    beginMutation();
     setIsActing(true);
     setActionError(null);
     try {
@@ -172,6 +194,7 @@ export default function StaffTicketDetail({
    */
   const handleAssignOwner = async () => {
     if (selectedOwnerId === undefined) return;
+    beginMutation();
     setIsActing(true);
     setActionError(null);
     try {
@@ -187,6 +210,7 @@ export default function StaffTicketDetail({
   };
 
   const handlePriorityChange = async (value: string) => {
+    beginMutation();
     setIsActing(true);
     setActionError(null);
     try {
@@ -201,6 +225,7 @@ export default function StaffTicketDetail({
   };
 
   const performTransition = async (target: TicketStatus) => {
+    beginMutation();
     setIsActing(true);
     setActionError(null);
     const invokingControl = lastFocusedRef.current;
@@ -223,10 +248,14 @@ export default function StaffTicketDetail({
       // unrelated read request that could hide their actionable error.
       setActionError(err instanceof Error ? err.message : "Failed to change status.");
       if ((err as ApiError).status === 409) {
+        const requestedTicket = ticketNumber;
+        const generation = detailReadGenerationRef.current;
+        const sequence = ++detailReadSequenceRef.current;
         try {
-          const refreshed = await fetchStaffTicketDetail(ticketNumber);
-          setDetail(refreshed);
+          const refreshed = await fetchStaffTicketDetail(requestedTicket);
+          if (isCurrentDetailRead(generation, sequence, requestedTicket)) setDetail(refreshed);
         } catch {
+          if (!isCurrentDetailRead(generation, sequence, requestedTicket)) return;
           setActionError(
             "The ticket status may have changed, but the latest ticket data could not be refreshed.",
           );
@@ -572,6 +601,7 @@ export default function StaffTicketDetail({
       <CommentThread
         comments={detail.publicComments}
         onPost={async (content) => {
+          beginMutation();
           const createdComment = await postTicketComment(ticketNumber, content);
           setDetail((current) =>
             current ? { ...current, publicComments: [...current.publicComments, createdComment] } : current,
@@ -592,6 +622,7 @@ export default function StaffTicketDetail({
       <InternalNoteThread
         notes={detail.internalNotes}
         onPost={async (content) => {
+          beginMutation();
           const createdNote = await postInternalNote(ticketNumber, content);
           setDetail((current) =>
             current ? { ...current, internalNotes: [...current.internalNotes, createdNote] } : current,

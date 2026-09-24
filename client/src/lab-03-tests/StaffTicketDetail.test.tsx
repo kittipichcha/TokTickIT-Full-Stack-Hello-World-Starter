@@ -158,6 +158,58 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
     );
   });
 
+  it("keeps a newer note when an older comment refresh resolves last", async () => {
+    let resolveCommentRefresh: ((value: api.StaffTicketDetail) => void) | undefined;
+    let resolveNoteRefresh: ((value: api.StaffTicketDetail) => void) | undefined;
+    vi.mocked(api.fetchStaffTicketDetail)
+      .mockResolvedValueOnce(detail())
+      .mockImplementationOnce(
+        () => new Promise((resolve) => {
+          resolveCommentRefresh = resolve;
+        }),
+      )
+      .mockImplementationOnce(
+        () => new Promise((resolve) => {
+          resolveNoteRefresh = resolve;
+        }),
+      );
+    vi.mocked(api.postTicketComment).mockResolvedValue({
+      id: 1,
+      content: "Saved comment.",
+      authorId: 5,
+      createdAt: "2026-09-10T00:00:00Z",
+    });
+    vi.mocked(api.postInternalNote).mockResolvedValue({
+      id: 2,
+      content: "Saved note.",
+      authorId: 5,
+      createdAt: "2026-09-10T00:00:00Z",
+    });
+    const { container } = render(
+      <StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />,
+    );
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.type(screen.getByLabelText("Add a comment"), "Saved comment.");
+    await userEvent.click(screen.getByRole("button", { name: /Post Comment/i }));
+    await waitFor(() => expect(api.fetchStaffTicketDetail).toHaveBeenCalledTimes(2));
+
+    await userEvent.type(screen.getByLabelText("Add an internal note"), "Saved note.");
+    await userEvent.click(screen.getByRole("button", { name: /Post Note/i }));
+    await waitFor(() => expect(api.fetchStaffTicketDetail).toHaveBeenCalledTimes(3));
+
+    resolveNoteRefresh?.(detail({
+      publicComments: [{ id: 1, content: "Saved comment.", authorId: 5, createdAt: "2026-09-10T00:00:00Z" }],
+      internalNotes: [{ id: 2, content: "Saved note.", authorId: 5, createdAt: "2026-09-10T00:00:00Z" }],
+    }));
+    await waitFor(() => expect(screen.getByText("Saved note.")).toBeTruthy());
+
+    resolveCommentRefresh?.(detail({
+      publicComments: [{ id: 1, content: "Saved comment.", authorId: 5, createdAt: "2026-09-10T00:00:00Z" }],
+    }));
+    await waitFor(() => expect(container.querySelectorAll(".note-item .comment-content")).toHaveLength(1));
+  });
+
   it("renders HTML/script content as text, never as markup (BR-24)", async () => {
     const payload = '<script>alert("xss")</script><b>bold</b>';
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(
