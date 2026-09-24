@@ -28,6 +28,23 @@
   `artifacts/lab-03/issue-41/README.md`; E2E-03 remains owned by Issue #42.
 - Human review/approval remains pending and is not recorded as complete.
 
+## Issue #41 PR #48 Review Follow-up (2026-09-24)
+
+- Prompt summary: Apply the supplied review remediation plan to the current Issue #41 branch.
+- Scope gate: the worktree was clean. Its `origin/lab3-staging` ref already included the #49 merge
+  and was an ancestor of this branch, so the Issue #41 triple-dot diff contains no Issue #38 files.
+  A fresh fetch was unavailable because GitHub could not be reached; a local backup branch was
+  created before checking the ancestry.
+- Implementation: retained the existing Serializable target reread and deterministic
+  inactive-to-active race regression. Self-reset now publishes `mustChangePassword` to AuthGate;
+  Create/Edit show success status; user rows render as labeled cards below 768px; and the unsupported
+  decision-20 citation was removed from the PATCH description.
+- Verification so far: Admin API **39 passed**; focused client **39 passed**; full client **231
+  passed across 17 files**; server/client type checks and builds passed. The full server suite is
+  still running and has emitted expected migration error-path diagnostics; its final status will
+  be recorded after completion.
+- E2E-03 remains owned by Issue #42. No approval or re-review is recorded as complete.
+
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.
 2. Reusing the established Lab 2 documentation format avoids inventing new conventions and keeps the contract consistent.
