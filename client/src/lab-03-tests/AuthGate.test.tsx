@@ -18,7 +18,14 @@ vi.mock("../api-client");
 
 // Mock the downstream App component to avoid rendering its full dependency tree.
 vi.mock("../App", () => ({
-  default: () => <div data-testid="app-stub">App</div>,
+  default: ({ onUserUpdated }: { onUserUpdated: (user: apiClient.AuthUser) => void }) => (
+    <div data-testid="app-stub">
+      App
+      <button type="button" onClick={() => onUserUpdated({ ...AUTHENTICATED_USER, mustChangePassword: true })}>
+        Simulate self reset
+      </button>
+    </div>
+  ),
 }));
 
 const AUTHENTICATED_USER: apiClient.AuthUser = {
@@ -95,6 +102,21 @@ describe("UI-AUTHGATE-02: successful logout transitions to Login", () => {
 
     // No error alert should appear
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+describe("UI-ADM-SELF-RESET: AuthGate reflects an administrator's own password reset", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(apiClient.fetchMe).mockResolvedValue({ ...AUTHENTICATED_USER, role: "ADMINISTRATOR" });
+  });
+  afterEach(cleanup);
+
+  it("moves immediately to Change Password when mustChangePassword becomes true", async () => {
+    render(<AuthGate />);
+    await userEvent.click(await screen.findByRole("button", { name: "Simulate self reset" }));
+    expect(await screen.findByRole("heading", { name: "Change your password" })).toBeTruthy();
+    expect(screen.queryByTestId("app-stub")).toBeNull();
   });
 });
 

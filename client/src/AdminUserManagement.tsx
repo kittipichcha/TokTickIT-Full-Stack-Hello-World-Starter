@@ -99,6 +99,7 @@ export default function AdminUserManagement({
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [mutationSuccess, setMutationSuccess] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("");
@@ -157,6 +158,7 @@ export default function AdminUserManagement({
   // ---- Create ----
 
   function openCreate() {
+    setMutationSuccess(null);
     setCreateForm(EMPTY_FORM);
     setCreateFieldErrors({});
     setCreateError(null);
@@ -182,6 +184,7 @@ export default function AdminUserManagement({
           initialPassword: createForm.initialPassword,
         },
       });
+      setMutationSuccess("User created successfully.");
       setCreateOpen(false);
       setCreateForm(EMPTY_FORM);
       await loadUsers();
@@ -197,6 +200,7 @@ export default function AdminUserManagement({
   // ---- Edit ----
 
   function openEdit(user: AdminUser) {
+    setMutationSuccess(null);
     setEditTarget(user);
     setEditForm({
       name: user.name,
@@ -239,6 +243,7 @@ export default function AdminUserManagement({
         });
       }
 
+      setMutationSuccess("User updated successfully.");
       setEditTarget(null);
       await loadUsers();
     } catch (err) {
@@ -277,6 +282,9 @@ export default function AdminUserManagement({
           body: { initialPassword: resetPassword },
         },
       );
+      if (resetTarget.id === currentUser.id) {
+        onUserUpdated({ ...currentUser, mustChangePassword: true });
+      }
       setResetSuccess("Initial password set. The user must change it at next login.");
       setResetPassword("");
     } catch (err) {
@@ -293,6 +301,7 @@ export default function AdminUserManagement({
   return (
     <main className="app-container my-tickets">
       <h1 className="page-title">User Management</h1>
+      {mutationSuccess && <p className="admin-user-success" role="status">{mutationSuccess}</p>}
 
       <div className="my-tickets-toolbar">
         <div className="toolbar-filters">
@@ -355,7 +364,7 @@ export default function AdminUserManagement({
       )}
 
       {!loading && !loadError && users.length > 0 && (
-        <div className="tickets-table-wrapper">
+        <div className="tickets-table-wrapper admin-users-desktop">
           <table className="tickets-table">
             <thead>
               <tr>
@@ -369,17 +378,17 @@ export default function AdminUserManagement({
             <tbody>
               {users.map((u) => (
                 <tr key={u.id}>
-                  <td>{u.name}</td>
-                  <td>{u.email}</td>
-                  <td>
+                  <td data-label="Name">{u.name}</td>
+                  <td data-label="Email">{u.email}</td>
+                  <td data-label="Role">
                     <span className="role-badge">{ROLE_LABELS[u.role]}</span>
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <span className={u.isActive ? "status-active" : "status-inactive"}>
                       {u.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Actions">
                     <button type="button" className="tertiary-button" onClick={() => openEdit(u)}>
                       Edit
                     </button>

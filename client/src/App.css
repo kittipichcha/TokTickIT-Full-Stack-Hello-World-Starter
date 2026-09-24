@@ -386,6 +386,18 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 }
 .status-active { color: var(--color-secondary); font-size: 13px; font-weight: 600; }
 .status-inactive { color: var(--color-warning); font-size: 13px; font-weight: 600; }
+.admin-user-success { color: var(--color-secondary); font-weight: 600; }
+@media (max-width: 767px) {
+  .admin-users-desktop { overflow: visible; }
+  .admin-users-desktop table,
+  .admin-users-desktop tbody,
+  .admin-users-desktop tr,
+  .admin-users-desktop td { display: block; width: 100%; }
+  .admin-users-desktop thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .admin-users-desktop tbody tr { margin-bottom: 12px; padding: 10px 14px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--color-surface); }
+  .admin-users-desktop tbody td { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; padding: 6px 0; overflow-wrap: anywhere; border: 0; }
+  .admin-users-desktop tbody td::before { content: attr(data-label); color: var(--text-secondary); font-weight: 600; }
+}
 .modal-content .form-field { margin-bottom: 12px; }
 .modal-content .form-field label { display: block; }
 .modal-content .form-field input[type="text"],

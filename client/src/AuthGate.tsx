@@ -69,6 +69,7 @@ export default function AuthGate() {
    */
   function handleUserUpdated(nextUser: AuthUser) {
     setUser(nextUser);
+    setState(nextUser.mustChangePassword ? "change-password" : "authenticated");
   }
 
   async function handleLogout() {

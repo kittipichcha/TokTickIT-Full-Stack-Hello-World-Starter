@@ -79,6 +79,9 @@ describe("UI-ADM-01: User Management", () => {
     expect(within(table).getByText("Administrator")).toBeTruthy();
     expect(within(table).getAllByText("Active").length).toBeGreaterThan(0);
     expect(within(table).getByText("Inactive")).toBeTruthy();
+    expect(within(table).getAllByText("Grace Hopper")).toHaveLength(1);
+    // Each table row carries field labels so CSS can present it as a mobile card.
+    expect(table.querySelector('td[data-label="Email"]')).toBeTruthy();
 
     // Column headers.
     for (const header of ["Name", "Email", "Role", "Status", "Edit"]) {
@@ -120,6 +123,7 @@ describe("UI-ADM-01: User Management", () => {
         }),
       );
     });
+    expect((await screen.findByRole("status")).textContent).toContain("User created successfully.");
   });
 
   it("edits a user through the Edit modal", async () => {
@@ -154,6 +158,7 @@ describe("UI-ADM-01: User Management", () => {
         }),
       );
     });
+    expect((await screen.findByRole("status")).textContent).toContain("User updated successfully.");
   });
 
   it("resets a user's initial password through the Reset Password modal", async () => {
@@ -184,6 +189,25 @@ describe("UI-ADM-01: User Management", () => {
         }),
       );
     });
+  });
+
+  it("publishes the forced-change state when the Administrator resets their own password", async () => {
+    vi.mocked(apiClient.apiJson).mockImplementation(async (path, options) => {
+      if (options?.method === "POST") return { data: { id: 3, mustChangePassword: true } };
+      return { data: USERS };
+    });
+    const onUserUpdated = vi.fn();
+    renderAdmin(ADMIN_USER, onUserUpdated);
+    await waitFor(() => expect(screen.getByText("Alan Turing")).toBeTruthy());
+    const row = screen.getByText("Alan Turing").closest("tr")!;
+    await userEvent.click(within(row).getByRole("button", { name: "Reset Password" }));
+    const dialog = screen.getByRole("dialog", { name: "Reset Initial Password" });
+    await userEvent.type(within(dialog).getByLabelText(/New initial password/), "ResetPass123!xyz");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Set Password" }));
+    await waitFor(() => expect(onUserUpdated).toHaveBeenCalledWith({
+      ...ADMIN_USER,
+      mustChangePassword: true,
+    }));
   });
 
   it("surfaces a duplicate-email 409 inline and preserves the entered form data (BR-33)", async () => {
