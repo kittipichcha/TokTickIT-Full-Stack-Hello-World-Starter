@@ -16,7 +16,7 @@
  * migrated-shape ticket assertions (M-38-5).
  */
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
@@ -958,5 +958,51 @@ describe("API-STAFF-11 — Full status transition matrix (AC-13)", () => {
         expect(after!.currentStatus).toBe(fromStatus);
       }
     }
+  });
+});
+
+describe("API-49-FAIL-02 — priority failure containment", () => {
+  itIfDb("contains a priority write failure and recovers without changing Requested Priority", async () => {
+    const prisma = getPrisma();
+    const ticketNumber = await createTicket({
+      requesterId: requester.userId,
+      summary: "Priority failure containment",
+      itPriority: "LOW",
+    });
+    const before = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber } });
+    const updateSpy = vi.spyOn(prisma.ticket, "update").mockRejectedValueOnce(
+      new Error("review-test SQL/path sentinel"),
+    );
+
+    let failed;
+    try {
+      failed = await withSession(
+        request(app).patch(`/api/staff/tickets/${ticketNumber}/priority`),
+        staffA,
+        { csrf: true },
+      ).send({ itPriority: "HIGH" });
+      expect(updateSpy).toHaveBeenCalled();
+    } finally {
+      updateSpy.mockRestore();
+    }
+
+    expect(failed.status).toBe(500);
+    expect(failed.body).toEqual({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+    expect(JSON.stringify(failed.body)).not.toContain("review-test SQL/path sentinel");
+    const unchanged = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber } });
+    expect(unchanged.itPriority).toBe(before.itPriority);
+    expect(unchanged.requestedPriority).toBe(before.requestedPriority);
+
+    const recovered = await withSession(
+      request(app).patch(`/api/staff/tickets/${ticketNumber}/priority`),
+      staffA,
+      { csrf: true },
+    ).send({ itPriority: "HIGH" });
+    expect(recovered.status).toBe(200);
+    const updated = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber } });
+    expect(updated.itPriority).toBe("HIGH");
+    expect(updated.requestedPriority).toBe(before.requestedPriority);
   });
 });

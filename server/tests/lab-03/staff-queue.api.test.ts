@@ -10,7 +10,7 @@
  * visible in the queue.
  */
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
@@ -489,5 +489,32 @@ describe("Queue required information (supplementary — ui-spec §5.6)", () => {
     expect(row.categoryName.length).toBeGreaterThan(0);
     expect(row.updatedAt).toBeTruthy();
     expect(row.createdAt).toBeTruthy();
+  });
+});
+
+describe("API-49-FAIL-01 — queue failure containment", () => {
+  itIfDb("returns the canonical internal error and recovers", async () => {
+    const prisma = getPrisma();
+    const countSpy = vi.spyOn(prisma.ticket, "count").mockRejectedValueOnce(
+      new Error("review-test SQL/path sentinel"),
+    );
+
+    let failed;
+    try {
+      failed = await withSession(request(app).get("/api/staff/queue"), staff);
+      expect(countSpy).toHaveBeenCalled();
+    } finally {
+      countSpy.mockRestore();
+    }
+
+    expect(failed.status).toBe(500);
+    expect(failed.body).toEqual({
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+    });
+    expect(JSON.stringify(failed.body)).not.toContain("review-test SQL/path sentinel");
+
+    const recovered = await withSession(request(app).get("/api/staff/queue"), staff);
+    expect(recovered.status).toBe(200);
+    expect(recovered.body.pagination).toMatchObject({ page: 1, pageSize: 10 });
   });
 });
