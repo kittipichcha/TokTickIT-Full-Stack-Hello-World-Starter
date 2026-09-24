@@ -10,7 +10,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminUserManagement from "../AdminUserManagement";
 import * as apiClient from "../api-client";
@@ -53,6 +53,10 @@ const ADMIN_USER: apiClient.AuthUser = {
   mustChangePassword: false,
 };
 
+function desktopUser(name: string) {
+  return within(screen.getByRole("table")).getByText(name);
+}
+
 /** Renders the screen with the authenticated-user props it now requires. */
 function renderAdmin(
   currentUser: apiClient.AuthUser = ADMIN_USER,
@@ -67,21 +71,30 @@ describe("UI-ADM-01: User Management", () => {
   it("renders the user table with Name, Email, Role, and Status", async () => {
     renderAdmin();
 
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
-    expect(screen.getByText("ada@example.com")).toBeTruthy();
-    expect(screen.getByText("Grace Hopper")).toBeTruthy();
-    expect(screen.getByText("Alan Turing")).toBeTruthy();
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
+    const table = screen.getByRole("table");
+    expect(within(table).getByText("ada@example.com")).toBeTruthy();
+    expect(within(table).getByText("Grace Hopper")).toBeTruthy();
+    expect(desktopUser("Alan Turing")).toBeTruthy();
 
     // Role + status columns (scoped to the table — the filter select also has role labels).
-    const table = screen.getByRole("table");
     expect(within(table).getByText("Requester")).toBeTruthy();
     expect(within(table).getByText("IT Staff")).toBeTruthy();
     expect(within(table).getByText("Administrator")).toBeTruthy();
     expect(within(table).getAllByText("Active").length).toBeGreaterThan(0);
     expect(within(table).getByText("Inactive")).toBeTruthy();
     expect(within(table).getAllByText("Grace Hopper")).toHaveLength(1);
-    // Each table row carries field labels so CSS can present it as a mobile card.
-    expect(table.querySelector('td[data-label="Email"]')).toBeTruthy();
+    expect(table.closest(".desktop-only")).toBeTruthy();
+    const mobileCards = document.querySelector(".admin-user-cards.mobile-only");
+    expect(mobileCards).toBeTruthy();
+    const adaCard = Array.from(mobileCards!.querySelectorAll(".admin-user-card"))
+      .find((card) => card.textContent?.includes("Ada Lovelace")) as HTMLElement;
+    expect(adaCard).toBeTruthy();
+    expect(within(adaCard).getByText("ada@example.com")).toBeTruthy();
+    expect(within(adaCard).getByText("Requester")).toBeTruthy();
+    expect(within(adaCard).getByText("Active")).toBeTruthy();
+    expect(within(adaCard).getByRole("button", { name: "Edit" })).toBeTruthy();
+    expect(within(adaCard).getByRole("button", { name: "Reset Password" })).toBeTruthy();
 
     // Column headers.
     for (const header of ["Name", "Email", "Role", "Status", "Edit"]) {
@@ -98,7 +111,7 @@ describe("UI-ADM-01: User Management", () => {
     });
 
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
     await userEvent.click(screen.getByRole("button", { name: "Create User" }));
 
@@ -135,9 +148,9 @@ describe("UI-ADM-01: User Management", () => {
     });
 
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
-    const row = screen.getByText("Ada Lovelace").closest("tr")!;
+    const row = desktopUser("Ada Lovelace").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
 
     const dialog = screen.getByRole("dialog", { name: "Edit User" });
@@ -170,9 +183,9 @@ describe("UI-ADM-01: User Management", () => {
     });
 
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
-    const row = screen.getByText("Ada Lovelace").closest("tr")!;
+    const row = desktopUser("Ada Lovelace").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Reset Password" }));
 
     const dialog = screen.getByRole("dialog", { name: "Reset Initial Password" });
@@ -191,6 +204,24 @@ describe("UI-ADM-01: User Management", () => {
     });
   });
 
+  it("does not publish an identity update when resetting another user's password", async () => {
+    vi.mocked(apiClient.apiJson).mockImplementation(async (path) => {
+      return path.endsWith("/initial-password")
+        ? { data: { id: 1, mustChangePassword: true } }
+        : { data: USERS };
+    });
+    const onUserUpdated = vi.fn();
+    renderAdmin(ADMIN_USER, onUserUpdated);
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
+    const card = document.querySelector(".admin-user-cards .admin-user-card") as HTMLElement;
+    fireEvent.click(within(card).getByRole("button", { name: "Reset Password" }));
+    const dialog = screen.getByRole("dialog", { name: "Reset Initial Password" });
+    await userEvent.type(within(dialog).getByLabelText(/New initial password/), "ResetPass123!xyz");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Set Password" }));
+    await waitFor(() => expect(screen.getByText(/Initial password set/)).toBeTruthy());
+    expect(onUserUpdated).not.toHaveBeenCalled();
+  });
+
   it("publishes the forced-change state when the Administrator resets their own password", async () => {
     vi.mocked(apiClient.apiJson).mockImplementation(async (path, options) => {
       if (options?.method === "POST") return { data: { id: 3, mustChangePassword: true } };
@@ -198,8 +229,8 @@ describe("UI-ADM-01: User Management", () => {
     });
     const onUserUpdated = vi.fn();
     renderAdmin(ADMIN_USER, onUserUpdated);
-    await waitFor(() => expect(screen.getByText("Alan Turing")).toBeTruthy());
-    const row = screen.getByText("Alan Turing").closest("tr")!;
+    await waitFor(() => expect(desktopUser("Alan Turing")).toBeTruthy());
+    const row = desktopUser("Alan Turing").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Reset Password" }));
     const dialog = screen.getByRole("dialog", { name: "Reset Initial Password" });
     await userEvent.type(within(dialog).getByLabelText(/New initial password/), "ResetPass123!xyz");
@@ -222,9 +253,9 @@ describe("UI-ADM-01: User Management", () => {
     });
 
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
-    const row = screen.getByText("Ada Lovelace").closest("tr")!;
+    const row = desktopUser("Ada Lovelace").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
 
     const dialog = screen.getByRole("dialog", { name: "Edit User" });
@@ -246,6 +277,7 @@ describe("UI-ADM-01: User Management", () => {
     expect((within(stillOpen).getByLabelText(/Name/) as HTMLInputElement).value).toBe(
       "Ada Lovelace",
     );
+    expect(screen.queryByText("User updated successfully.")).toBeNull();
   });
 
   it("surfaces a last-active-Administrator 409 inline without clearing the form", async () => {
@@ -260,9 +292,9 @@ describe("UI-ADM-01: User Management", () => {
     });
 
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Alan Turing")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Alan Turing")).toBeTruthy());
 
-    const row = screen.getByText("Alan Turing").closest("tr")!;
+    const row = desktopUser("Alan Turing").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
 
     const dialog = screen.getByRole("dialog", { name: "Edit User" });
@@ -288,7 +320,7 @@ describe("UI-ADM-01: User Management", () => {
     });
 
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
     await userEvent.click(screen.getByRole("button", { name: "Create User" }));
     const dialog = screen.getByRole("dialog", { name: "Create User" });
@@ -302,6 +334,7 @@ describe("UI-ADM-01: User Management", () => {
         screen.getByText("Role must be one of REQUESTER, IT_STAFF, ADMINISTRATOR."),
       ).toBeTruthy();
     });
+    expect(screen.queryByText("User created successfully.")).toBeNull();
   });
 });
 
@@ -320,7 +353,7 @@ describe("UI-ADM-02: Admin user search zero results", () => {
 
   it("sends the search term to the API", async () => {
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
     await userEvent.type(screen.getByLabelText("Search users"), "grace");
 
@@ -334,7 +367,7 @@ describe("UI-ADM-02: Admin user search zero results", () => {
 
   it("sends the role filter to the API", async () => {
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
     await userEvent.selectOptions(screen.getByLabelText("Filter by role"), "IT_STAFF");
 
@@ -367,7 +400,7 @@ async function openDialog(
 describe("UI-48-MODAL-01: Create User dialog keyboard behavior", () => {
   it("focuses the first control on open, traps Tab/Shift+Tab, and restores focus on Escape", async () => {
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
     const trigger = screen.getByRole("button", { name: "Create User" });
     trigger.focus();
@@ -403,7 +436,7 @@ describe("UI-48-MODAL-01: Create User dialog keyboard behavior", () => {
 
   it("Escape and Cancel never submit; only the submit control mutates", async () => {
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
     await userEvent.click(screen.getByRole("button", { name: "Create User" }));
     let dialog = screen.getByRole("dialog", { name: "Create User" });
@@ -453,9 +486,9 @@ describe("UI-48-MODAL-01: Create User dialog keyboard behavior", () => {
 describe("UI-48-MODAL-02: Edit User dialog keyboard behavior", () => {
   it("focuses the first control on open, traps Tab/Shift+Tab, and restores focus on Escape", async () => {
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
-    const row = screen.getByText("Ada Lovelace").closest("tr")!;
+    const row = desktopUser("Ada Lovelace").closest("tr")!;
     const trigger = within(row).getByRole("button", { name: "Edit" });
     trigger.focus();
     await userEvent.click(trigger);
@@ -486,9 +519,9 @@ describe("UI-48-MODAL-02: Edit User dialog keyboard behavior", () => {
 
   it("Escape and Cancel never submit; only the submit control mutates", async () => {
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
-    const row = screen.getByText("Ada Lovelace").closest("tr")!;
+    const row = desktopUser("Ada Lovelace").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
 
     await userEvent.keyboard("{Escape}");
@@ -527,9 +560,9 @@ describe("UI-48-MODAL-02: Edit User dialog keyboard behavior", () => {
 describe("UI-48-MODAL-03: Reset Password dialog keyboard behavior", () => {
   it("focuses the first control on open, traps Tab/Shift+Tab, and restores focus on Escape", async () => {
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
-    const row = screen.getByText("Ada Lovelace").closest("tr")!;
+    const row = desktopUser("Ada Lovelace").closest("tr")!;
     const trigger = within(row).getByRole("button", { name: "Reset Password" });
     trigger.focus();
     await userEvent.click(trigger);
@@ -560,9 +593,9 @@ describe("UI-48-MODAL-03: Reset Password dialog keyboard behavior", () => {
 
   it("Escape and Close never submit; only the submit control mutates", async () => {
     renderAdmin();
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
-    const row = screen.getByText("Ada Lovelace").closest("tr")!;
+    const row = desktopUser("Ada Lovelace").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Reset Password" }));
 
     await userEvent.keyboard("{Escape}");
@@ -619,9 +652,9 @@ describe("UI-48-SELF-DEMOTION: self-demotion refreshes the authenticated identit
 
     const onUserUpdated = vi.fn();
     renderAdmin(ADMIN_USER, onUserUpdated);
-    await waitFor(() => expect(screen.getByText("Alan Turing")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Alan Turing")).toBeTruthy());
 
-    const row = screen.getByText("Alan Turing").closest("tr")!;
+    const row = desktopUser("Alan Turing").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
 
     const dialog = screen.getByRole("dialog", { name: "Edit User" });
@@ -650,9 +683,9 @@ describe("UI-48-SELF-DEMOTION: self-demotion refreshes the authenticated identit
 
     const onUserUpdated = vi.fn();
     renderAdmin(ADMIN_USER, onUserUpdated);
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeTruthy());
+    await waitFor(() => expect(desktopUser("Ada Lovelace")).toBeTruthy());
 
-    const row = screen.getByText("Ada Lovelace").closest("tr")!;
+    const row = desktopUser("Ada Lovelace").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
     const dialog = screen.getByRole("dialog", { name: "Edit User" });
     await userEvent.click(within(dialog).getByRole("button", { name: "Save Changes" }));
@@ -674,8 +707,8 @@ describe("UI-48-SELF-DEMOTION: self-demotion refreshes the authenticated identit
     });
     const onUserUpdated = vi.fn();
     renderAdmin(ADMIN_USER, onUserUpdated);
-    await waitFor(() => expect(screen.getByText("Alan Turing")).toBeTruthy());
-    const row = screen.getByText("Alan Turing").closest("tr")!;
+    await waitFor(() => expect(desktopUser("Alan Turing")).toBeTruthy());
+    const row = desktopUser("Alan Turing").closest("tr")!;
     await userEvent.click(within(row).getByRole("button", { name: "Edit" }));
     const dialog = screen.getByRole("dialog", { name: "Edit User" });
     await userEvent.clear(within(dialog).getByLabelText(/Name/));

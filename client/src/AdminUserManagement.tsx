@@ -364,7 +364,7 @@ export default function AdminUserManagement({
       )}
 
       {!loading && !loadError && users.length > 0 && (
-        <div className="tickets-table-wrapper admin-users-desktop">
+        <div className="tickets-table-wrapper desktop-only admin-users-desktop">
           <table className="tickets-table">
             <thead>
               <tr>
@@ -400,6 +400,42 @@ export default function AdminUserManagement({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && !loadError && users.length > 0 && (
+        <div className="tickets-cards mobile-only admin-user-cards" aria-label="Users">
+          {users.map((u) => (
+            <article className="ticket-card admin-user-card" key={u.id}>
+              <h2 className="admin-user-card-name">{u.name}</h2>
+              <dl className="admin-user-card-fields">
+                <div>
+                  <dt>Email</dt>
+                  <dd>{u.email}</dd>
+                </div>
+                <div>
+                  <dt>Role</dt>
+                  <dd><span className="role-badge">{ROLE_LABELS[u.role]}</span></dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>
+                    <span className={u.isActive ? "status-active" : "status-inactive"}>
+                      {u.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+              <div className="admin-user-card-actions">
+                <button type="button" className="tertiary-button" onClick={() => openEdit(u)}>
+                  Edit
+                </button>
+                <button type="button" className="tertiary-button" onClick={() => openReset(u)}>
+                  Reset Password
+                </button>
+              </div>
+            </article>
+          ))}
         </div>
       )}
 
