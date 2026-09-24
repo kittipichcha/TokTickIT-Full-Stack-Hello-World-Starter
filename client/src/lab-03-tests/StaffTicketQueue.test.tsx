@@ -285,12 +285,15 @@ describe("Owner filter (ui-spec §5.6)", () => {
     expect(ownerFilter).toBeTruthy();
     expect(ownerFilter.disabled).toBe(true);
     expect(screen.getByText(/owner filtering is unavailable/i)).toBeTruthy();
+    expect(ownerFilter.getAttribute("aria-describedby")).toBe("queue-owner-error");
+    expect(document.getElementById("queue-owner-error")?.textContent).toContain("Owner filtering is unavailable");
     expect(screen.getByRole("button", { name: /^Retry$/i })).toBeTruthy();
 
     await userEvent.click(screen.getByRole("button", { name: /^Retry$/i }));
     await waitFor(() => expect(screen.getByRole("option", { name: /Alice — IT Staff/ })).toBeTruthy());
     expect(ownerFilter.disabled).toBe(false);
     expect(screen.queryByText(/owner filtering is unavailable/i)).toBeNull();
+    expect(ownerFilter.getAttribute("aria-describedby")).toBeNull();
   });
 });
 

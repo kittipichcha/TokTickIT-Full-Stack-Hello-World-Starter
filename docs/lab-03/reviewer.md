@@ -426,6 +426,15 @@ contract decision:
 **Verdict: remediation complete; re-review requested. Human review is PENDING** — no approval
 is claimed, and no false sign-off is recorded.
 
+**PR #49 accessibility follow-up (2026-09-24):** The next review identified two remaining
+accessibility blockers: confirmed status transitions could restore focus to a button removed by
+the status update, and eligible-owner lookup errors were not associated with their selects.
+The implementation now focuses the mounted Back to Queue control after successful status rendering,
+preserves invoking-button focus for Escape/Cancel and failures, and associates both owner errors
+with conditional `aria-describedby` references. Focused client tests pass 67/67; the full client
+suite passes 205/205 and the client build passes. Human re-review remains pending; no approval is
+claimed.
+
 ---
 
 ## Pull Requests I reviewed (authored by my partner)

@@ -284,6 +284,8 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
     const ownerSelect = screen.getByLabelText("Ticket Owner") as HTMLSelectElement;
     await waitFor(() => expect(ownerSelect.disabled).toBe(true));
     expect(screen.getByText(/assignment is unavailable/i)).toBeTruthy();
+    expect(ownerSelect.getAttribute("aria-describedby")).toBe("detail-owner-error");
+    expect(document.getElementById("detail-owner-error")?.textContent).toContain("Assignment is unavailable");
     expect(screen.getByRole("button", { name: /^Retry$/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Claim \/ Reassign to me/i })).toHaveProperty("disabled", false);
   });
@@ -302,6 +304,7 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
     await waitFor(() => expect(screen.getByRole("option", { name: /Alice — IT Staff/ })).toBeTruthy());
     expect((screen.getByLabelText("Ticket Owner") as HTMLSelectElement).disabled).toBe(false);
     expect(screen.queryByText(/assignment is unavailable/i)).toBeNull();
+    expect(screen.getByLabelText("Ticket Owner").getAttribute("aria-describedby")).toBeNull();
   });
 });
 
@@ -413,7 +416,7 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
     );
   });
 
-  it("keeps focus on a connected element after a confirmed transition commits locally", async () => {
+  it("moves focus to Back to Queue after a confirmed transition commits locally", async () => {
     let resolveRefetch: ((value: api.StaffTicketDetail) => void) | undefined;
     vi.mocked(api.fetchStaffTicketDetail)
       .mockResolvedValueOnce(detail({ currentStatus: "IN_PROGRESS", ticketOwnerId: 5 }))
@@ -430,11 +433,27 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
     await userEvent.click(trigger);
     await userEvent.click(screen.getByRole("button", { name: /Confirm/i }));
     await waitFor(() => expect(api.applyStatusTransition).toHaveBeenCalled());
-    expect(document.activeElement?.isConnected).toBe(true);
 
     resolveRefetch?.(detail({ currentStatus: "RESOLVED", ticketOwnerId: 5 }));
     await waitFor(() => expect(screen.getByText("RESOLVED")).toBeTruthy());
-    expect(document.activeElement?.isConnected).toBe(true);
+    expect(document.activeElement).toBe(screen.getByRole("link", { name: /Back to Queue/i }));
+  });
+
+  it("keeps focus on Back to Queue when the confirmed transition refresh fails", async () => {
+    vi.mocked(api.fetchStaffTicketDetail)
+      .mockResolvedValueOnce(detail({ currentStatus: "IN_PROGRESS", ticketOwnerId: 5 }))
+      .mockRejectedValueOnce(new Error("Refresh failed"));
+    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED" });
+    render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
+
+    await screen.findByText("TKT-2026-000001");
+    await userEvent.click(screen.getByRole("button", { name: "Resolved" }));
+    await userEvent.click(screen.getByRole("button", { name: /Confirm/i }));
+
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("link", { name: /Back to Queue/i })),
+    );
+    expect(screen.getByRole("alert").textContent).toContain("Refresh failed");
   });
 
   it("cancelling the modal aborts the request", async () => {

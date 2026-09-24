@@ -22,6 +22,17 @@
 
 ## Issue #38 PR #49 Remediation Entry (2026-09-24)
 
+## Issue #38 PR #49 Accessibility Follow-up (2026-09-24)
+
+- Prompt summary: Follow the implementation plan for the two remaining PR #49 blockers, verify
+  the result, and update the PR/Issue tracking.
+- What was done with output: confirmed-transition focus now targets the mounted Back to Queue
+  control after the status render; Queue and Staff Detail owner lookup errors now use conditional
+  `aria-describedby` associations; focused and full client tests were expanded and run.
+- Validation: focused client tests passed **67/67**; full client suite passed **205/205** across
+  16 files; client build passed. Final browser-level accessibility and release evidence remains
+  assigned to Issue #42.
+
 - Prompt summary: Implement the five remaining PR #49 review findings for Issue #38: separate
   mutation success from refresh failure, surface owner lookup failures, associate composer errors
   accessibly, align validation with trimmed length, and add requester comment regression coverage.

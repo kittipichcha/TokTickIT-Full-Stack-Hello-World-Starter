@@ -233,6 +233,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
           <label htmlFor="queue-owner">Filter by owner</label>
           <select
             id="queue-owner"
+            aria-describedby={ownerLoadState === "error" ? "queue-owner-error" : undefined}
             value={ownerId === undefined ? "" : String(ownerId)}
             disabled={ownerLoadState !== "loaded"}
             onChange={(e) => {
@@ -248,7 +249,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
             ))}
           </select>
           {ownerLoadState === "error" && (
-            <div className="field-error" role="alert">
+            <div id="queue-owner-error" className="field-error" role="alert">
               <span>Unable to load eligible owners. Owner filtering is unavailable.</span>
               <button className="tertiary-button" onClick={() => void loadOwners()}>
                 Retry

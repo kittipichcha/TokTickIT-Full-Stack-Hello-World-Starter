@@ -51,6 +51,18 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-24 — PR #49 accessibility blocker remediation**
+  - Confirmed status transitions now focus the mounted **Back to Queue** control after the
+    successful local status render, including when the best-effort refresh fails. Escape and
+    Cancel still restore focus to the invoking transition button without calling the API.
+  - Queue and Staff Detail eligible-owner lookup errors now expose stable IDs through conditional
+    `aria-describedby` references; Retry removes the stale reference after recovery.
+  - **Focused client tests:** 2 files, **67 passed**, 0 skipped.
+  - **Full client suite:** 16 files, **205 passed**, 0 skipped.
+  - **Client build:** passed.
+  - This verification covers the two remaining PR #49 accessibility findings. Final browser-level
+    accessibility, E2E, responsive, and release evidence remains owned by Issue #42.
+
 - **2026-09-24 — Issue #38 PR #49 remaining-findings remediation**
   - **Finding 1:** Staff owner, IT Priority, status, Internal Note, and Public Comment
     mutations now commit successful responses locally before best-effort refresh. Focused
@@ -773,10 +785,12 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-QUE-02 | UI | Staff Queue zero-result search/filter | Empty-state message shown; no error | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Passed |
 | UI-QUE-03 | UI | Staff Queue tablet condensation | Test verifies secondary columns are marked consistently in both table header and ticket rows for the 768–991px condensed layout; required information remains available through condensed Queue/Detail representation and the Detail action remains available | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-17 | AC-10 | Passed |
 | UI-QUE-04 | UI | Staff Queue forbidden state | HTTP 403 renders distinct access-denied feedback without Retry | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | BR-31 | AC-10 | Passed |
+| UI-QUE-05 | UI | Staff Queue owner lookup error association | Failed eligible-owner lookup associates the error text with the owner select via `aria-describedby`; Retry removes the stale reference after recovery | `client/src/lab-03-tests/StaffTicketQueue.test.tsx` | FR-14 | — | AC-23 | Passed |
 | UI-STAFF-01 | UI | Staff Ticket Detail | Ownership (claim + assign/reassign to any eligible owner)/priority/status/comments/notes | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16–20 | BR-14–18 | AC-11–14 | Passed |
 | UI-STAFF-02 | UI | Status change to Resolved/Closed/Cancelled | Confirm modal shown before request is sent; cancel aborts, confirm proceeds | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-STAFF-03 | UI | Unassigned Ticket status controls | Permitted status controls are disabled and claim/assign guidance is shown until the Ticket has an owner | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
-| UI-STAFF-04 | UI | Status transition focus restoration | Confirmed status refetch leaves focus on a mounted control | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
+| UI-STAFF-04 | UI | Status transition focus restoration | Confirmed status success and refetch leave focus on the exact mounted Back to Queue control, including refresh failure | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
+| UI-STAFF-05 | UI | Staff Detail owner lookup error association | Failed eligible-owner lookup associates the error text with the Ticket Owner select via `aria-describedby`; Retry removes the stale reference after recovery | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-16 | — | AC-23 | Passed |
 | API-STAFF-11 | API | Full status transition matrix | All 8x8 source/target pairs match the shared matrix; forbidden and unowned requests return 409 with no mutation | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-49-01 | UI | IT Staff initial navigation | IT Staff starts on the Ticket Queue; My Tickets/Create Ticket are absent and the Requester list is never fetched | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
 | UI-49-02 | UI | Administrator initial navigation | Administrator starts on the Ticket Queue, not My Tickets | `client/src/App.test.tsx` | FR-08 | — | AC-10 | Passed |
@@ -842,7 +856,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-20 → SEC-AUTHZ-03, SEC-AUTHZ-09
 - AC-21 → UI-STYLE-01
 - AC-22 → VISUAL-01, VISUAL-02
-- AC-23 → A11Y-01
+- AC-23 → A11Y-01, UI-QUE-05, UI-STAFF-04, UI-STAFF-05
 - AC-24 → SEED-01
 - AC-25 → DB-MIG-01, DB-MIG-02, DB-MIG-05, DB-MIG-06, DB-MIG-07, DB-MIG-08, DB-MIG-09, DB-MIG-10, DB-MIG-11, DB-MIG-12, DB-MIG-13, SEC-MIG-01, TKT-PRIO-01, TKT-PRIO-02, TKT-PRIO-03
 - AC-26 → DB-MIG-03, DB-MIG-04, API-AUTH-06, API-AUTH-07

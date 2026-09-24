@@ -79,6 +79,9 @@ export default function StaffTicketDetail({
   // Issue #38 review fix (49-B4) — modal focus management (ui-spec §8).
   const modalRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
+  const transitionInFlightRef = useRef(false);
+  const focusAfterTransitionRef = useRef(false);
+  const backLinkRef = useRef<HTMLAnchorElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const ownerRequestSeqRef = useRef(0);
 
@@ -200,16 +203,20 @@ export default function StaffTicketDetail({
   const performTransition = async (target: TicketStatus) => {
     setIsActing(true);
     setActionError(null);
-    setPendingTransition(null);
     const invokingControl = lastFocusedRef.current;
-    invokingControl?.focus();
-    lastFocusedRef.current = null;
-    queueMicrotask(() => invokingControl?.focus());
+    const isConfirmedTransition = invokingControl !== null;
+    transitionInFlightRef.current = isConfirmedTransition;
+    setPendingTransition(null);
     try {
       const result = await applyStatusTransition(ticketNumber, target);
+      if (isConfirmedTransition) {
+        focusAfterTransitionRef.current = true;
+      }
       setDetail((current) => current ? { ...current, currentStatus: result.currentStatus } : current);
       await refreshAfterMutation("Status updated successfully");
     } catch (err) {
+      transitionInFlightRef.current = false;
+      invokingControl?.focus();
       // A 409 (stale client state) is handled safely: show the message and
       // re-fetch the current status rather than corrupting local state. Other
       // mutation failures preserve the user's screen and do not make an
@@ -250,11 +257,21 @@ export default function StaffTicketDetail({
     if (pendingTransition) {
       lastFocusedRef.current = document.activeElement as HTMLElement | null;
       cancelButtonRef.current?.focus();
+    } else if (transitionInFlightRef.current) {
+      // Confirmed transitions restore focus after the successful status render.
     } else if (lastFocusedRef.current) {
       lastFocusedRef.current.focus();
       lastFocusedRef.current = null;
     }
   }, [pendingTransition]);
+
+  useEffect(() => {
+    if (!focusAfterTransitionRef.current) return;
+    focusAfterTransitionRef.current = false;
+    transitionInFlightRef.current = false;
+    lastFocusedRef.current = null;
+    backLinkRef.current?.focus();
+  }, [detail?.currentStatus]);
 
   /** Traps Tab/Shift+Tab inside the dialog and closes it on Escape. */
   const handleModalKeyDown = (e: React.KeyboardEvent) => {
@@ -373,6 +390,7 @@ export default function StaffTicketDetail({
         <a
           href="#staff-queue"
           className="back-link"
+          ref={backLinkRef}
           onClick={(e) => {
             e.preventDefault();
             onBack();
@@ -469,6 +487,7 @@ export default function StaffTicketDetail({
             </label>
             <select
               id="owner-select"
+              aria-describedby={ownerLoadState === "error" ? "detail-owner-error" : undefined}
               value={selectedOwnerId === undefined ? "" : String(selectedOwnerId)}
               onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : undefined)}
               disabled={isActing || ownerLoadState !== "loaded"}
@@ -483,7 +502,7 @@ export default function StaffTicketDetail({
               ))}
             </select>
             {ownerLoadState === "error" && (
-              <div className="field-error" role="alert">
+              <div id="detail-owner-error" className="field-error" role="alert">
                 <span>Unable to load eligible owners. Assignment is unavailable.</span>
                 <button className="tertiary-button" onClick={() => void loadOwners()}>
                   Retry
