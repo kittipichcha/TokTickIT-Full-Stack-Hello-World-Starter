@@ -9,7 +9,7 @@
     "test:e2e:mobile": "npx playwright test --project=mobile",
     "test:client": "cd client && npm test",
     "test:server": "cd server && npm test",
-    "test:client:ui": "cd client && npx vitest run src/lab-02-tests/UiStyles.test.tsx",
+    "test:client:ui": "cd client && npx vitest run src/lab-02-tests/UiStyles.test.tsx src/lab-03-tests/UiStyles.test.tsx",
     "test:all": "cd client && npm test && cd ../server && npm test"
   },
   "keywords": [],
