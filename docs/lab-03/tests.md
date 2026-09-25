@@ -51,6 +51,57 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-25 — Issue #41 UI-AUTHGATE-05 forced-password-change reconciliation**
+  - Added the full Administrator self-reset → Change Password → successful change → later profile
+    update lifecycle test. It asserts the `AuthUser.mustChangePassword` prop passed to App is
+    `false` after success and remains false after the ordinary identity update.
+  - Test-first evidence: with the cache reconciliation temporarily removed, UI-AUTHGATE-05 failed
+    on the direct flag assertion (`true` received, `false` expected). After restoring the fix, the
+    focused AuthGate file passed 9/9; App + User Management + AuthGate passed 42/42.
+  - Full client suite passed **234/234 across 17 files**, 0 skipped. Client TypeScript check and
+    production build passed. `git diff --check` passed; conflict-marker scan found none.
+  - UI-AUTHGATE-05 status: **Passed**. Exact outputs and source hashes are in
+    `artifacts/lab-03/issue-41/`.
+
+- **2026-09-24 — Issue #41 PR #48 review remediation verification (final local run)**
+  - Implemented a distinct mobile Administrator user-card list below 768px; the desktop table is
+    retained above that breakpoint. Cards include name, email, role, status, Edit, and Reset Password.
+  - Focused client: **41 passed across 3 files**. Full client: **233 passed across 17 files**.
+    Admin API: **39 passed**; full server: **578 passed across 39 files**. Client/server type checks
+    and builds passed. No suite reported skipped tests.
+  - Responsive structural assertions passed in JSDOM. The existing mobile screenshot has not been
+    regenerated in this environment because no browser or Playwright executable is available;
+    screenshot/E2E evidence remains pending and E2E-03 remains owned by #42.
+  - Code implementation SHA: `05b03516087d537944cbfe0f8020dca805abd347`; docs/evidence changes follow
+    separately. Raw summary files are in `artifacts/lab-03/issue-41/`.
+
+- **2026-09-24 — Issue #41 PR #48 review follow-up**
+  - The working branch is based on its locally available `origin/lab3-staging` ref, which includes
+    PR #49; the triple-dot diff contains only Issue #41 work. Refreshing the remote ref was blocked
+    by unavailable GitHub network access.
+  - Fixed the self-reset UI state handoff, added Create/Edit success status and mobile card-style
+    rows, and removed the unsupported decision-20 PATCH citation. The existing Serializable
+    target reread and `API-ADM-12` stale-classification race regression remain in place.
+  - Focused client: **39 passed across 3 files**. Focused Admin API: **39 passed**. Full client:
+    **231 passed across 17 files**. Full server: **578 passed across 39 files**; expected migration
+    error-path diagnostics were emitted. Type checks, production builds, and `git diff --check`
+    passed; 0 skipped. E2E-03 remains owned by #42.
+  - The tested client source is `00bbc00`; the server concurrency implementation remains at
+    `49c9c1a`. Evidence summaries are in `artifacts/lab-03/issue-41/`.
+
+- **2026-09-24 — Issue #41/#38 integration follow-up (PR #48/#49)**
+  - Administrator view access now combines Ticket Queue/Staff Detail with User Management;
+    IT Staff keep Queue/Detail only and Requesters keep their own screens.
+  - Successful self-edits update cached name, email, and role directly from the PATCH response;
+    preserving `mustChangePassword` from the existing session avoids a follow-up `/auth/me` call.
+  - `UI-48-NAV` now asserts the integrated role matrix. `UI-48-SELF-DEMOTION` now covers
+    immediate role and profile identity updates. Focused client: **37 passed**; Admin API:
+    **38 passed**; Staff client: **68 passed**; Staff server: **93 passed**.
+  - Full client: **229 passed across 17 files**; full server: **578 passed across 39 files**.
+    Client/server TypeScript checks and builds passed; `git diff --check` passed; 0 skipped.
+    `E2E-03` remains Planned and owned by #42. Full suite output summaries are in the Issue 41
+    evidence bundle.
+
 - **2026-09-24 — Issue #38 PR #49 remaining verification gaps and refresh ordering**
   - **B1:** Added real-session Staff and Administrator GET Public Comments authorization
     coverage; both roles receive only the seeded public comment and no Internal Note data.
@@ -735,13 +786,13 @@ security/authorization, migration/regression, and end-to-end coverage.
 | TKT-PRIO-03 | API | Create response shape unchanged | The Lab 2 create response envelope and key set are unchanged; `itPriority` now reflects the frozen initialization rule and `ticketOwnerId` remains null | `server/tests/lab-03/ticket-priority.integration.test.ts` | FR-10 | BR-16 | AC-25 | Passed |
 | SEC-AUTHZ-01 | API | Requester supplies another requesterId | Authenticated identity applied; no other user's data | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-03, BR-12 | AC-03 | Passed |
 | SEC-AUTHZ-02 | API | Requester requests Internal Notes | Forbidden; no note data returned | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-04, BR-32 | AC-04 | Passed |
-| SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Planned |
+| SEC-AUTHZ-03 | API | Non-Admin requests user management | Forbidden | `server/tests/lab-03/users-admin.api.test.ts` | FR-07, FR-09 | — | AC-20 | Passed |
 | SEC-AUTHZ-04 | API | Unauthenticated protected endpoint | 401 UNAUTHENTICATED | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Passed |
 | SEC-AUTHZ-05 | API | Cross-user Ticket/Attachment access | 404 NOT_FOUND; no existence leak | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12, BR-32 | AC-03 | Passed |
 | SEC-AUTHZ-06 | API | Session idle timeout expiration | An actually expired session is rejected by a protected endpoint with `401 UNAUTHENTICATED`; a valid session works before expiry; the 30-minute rolling configuration is asserted as supplementary evidence | `server/tests/lab-03/auth.api.test.ts` | FR-02 | BR-31 | AC-06 | Passed |
 | SEC-AUTHZ-07 | API | CSRF on state-changing endpoint | Missing/invalid CSRF token rejected (403 FORBIDDEN); mutation not applied | `server/tests/lab-03/authorization.api.test.ts` | FR-07 | BR-31 | AC-06 | Passed |
 | SEC-AUTHZ-08 | API | Requester posts/reads comments on a not-owned ticket | `404 NOT_FOUND`; no data leaked | `server/tests/lab-03/comments-notes.api.test.ts` | FR-12 | BR-12, BR-32 | AC-03 | Passed |
-| SEC-AUTHZ-09 | API | Non-Administrator calls create-user / edit-user | `403 FORBIDDEN` | `server/tests/lab-03/users-admin.api.test.ts` | FR-24, FR-25 | — | AC-20 | Planned |
+| SEC-AUTHZ-09 | API | Non-Administrator calls create-user / edit-user | `403 FORBIDDEN` | `server/tests/lab-03/users-admin.api.test.ts` | FR-24, FR-25 | — | AC-20 | Passed |
 | SEC-AUTHZ-10 | API | IT Staff/Administrator attempts attachment upload or delete | `403 FORBIDDEN` (view-only; cannot mutate Attachments) | `server/tests/lab-03/authorization.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
 | API-REQ-01 | API | Requester creates Ticket | Ticket owned by authenticated identity | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-11 | AC-07 | Passed |
 | API-REQ-02 | API | Requester My Tickets | Only owned Tickets returned; search/filter/sort/pagination preserved. Filters on the full frozen `TicketStatus` enum (not only `NEW`); accepts the documented sort keys `createdAt`/`ticketNumber`/`summary`/`status`/`priority` (plus the Lab 2 `requestedPriority` alias); `sort=status` and `sort=priority` use logical workflow/priority order, not alphabetical; invalid `sort`/`order`/`page`/`pageSize` fall back to safe defaults while out-of-enum `status`/`requestedPriority` remain `400 VALIDATION_ERROR` (preserved Lab 2 contract) | `server/tests/lab-03/requester.api.test.ts` | FR-10 | BR-12 | AC-07 | Passed |
@@ -765,17 +816,19 @@ security/authorization, migration/regression, and end-to-end coverage.
 | API-49-FAIL-02 | API | IT Priority unexpected failure containment | Injected priority update failure returns the exact canonical `500 INTERNAL_ERROR`; both priority fields remain unchanged and a healthy retry updates IT Priority only | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | FR-17 | BR-31 | AC-12 | Passed |
 | API-49-FAIL-03 | API | Public Comment unexpected failure containment | Injected comment create failure returns the exact canonical `500 INTERNAL_ERROR`; no record is inserted and a healthy retry creates one comment | `server/tests/lab-03/comments-notes.api.test.ts` | FR-19 | BR-21, BR-31 | AC-08, AC-14 | Passed |
 | API-49-FAIL-04 | API | Internal Note unexpected failure containment | Injected note create failure returns the exact canonical `500 INTERNAL_ERROR`; no record is inserted and a healthy retry creates one note | `server/tests/lab-03/comments-notes.api.test.ts` | FR-20 | BR-21, BR-31 | AC-14 | Passed |
-| API-ADM-01 | API | User list | Name/Email/Role/Status returned | `server/tests/lab-03/users-admin.api.test.ts` | FR-21 | — | AC-15 | Planned |
-| API-ADM-02 | API | User search/filter | Name/email search; optional role filter | `server/tests/lab-03/users-admin.api.test.ts` | FR-22, FR-23 | — | AC-15 | Planned |
-| API-ADM-03 | API | Create user | User created; must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-24 | BR-25, BR-30 | AC-16 | Planned |
-| API-ADM-04 | API | Duplicate email | 409 CONFLICT | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-13 | AC-17 | Planned |
-| API-ADM-05 | API | Edit user | Name/email/role/activation updated | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-26 | AC-17 | Planned |
-| API-ADM-06 | API | Self-deactivation | Rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-27 | AC-18 | Planned |
-| API-ADM-07 | API | Last active Administrator | Rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-28, BR-29 | AC-19 | Planned |
-| API-ADM-07b | API | Last active Administrator role change | Role change to non-Administrator rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-28 | AC-19 | Planned |
-| API-ADM-08 | API | Set new initial password | User must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-26 | BR-30 | AC-16 | Planned |
-| API-ADM-09 | API | Edit / set-initial-password on nonexistent userId | `404 NOT_FOUND` — user does not exist | `server/tests/lab-03/users-admin.api.test.ts` | FR-25, FR-26 | BR-31 | AC-17, AC-16 | Planned |
-| API-ADM-10 | API | Non-last Administrator changes own role away from Administrator | Succeeds; rejected only if it is the last active Administrator (BR-28 path) | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-34, BR-28 | AC-19 | Planned |
+| API-ADM-01 | API | User list | Name/Email/Role/Status returned | `server/tests/lab-03/users-admin.api.test.ts` | FR-21 | — | AC-15 | Passed |
+| API-ADM-02 | API | User search/filter | Name/email search; optional role filter | `server/tests/lab-03/users-admin.api.test.ts` | FR-22, FR-23 | — | AC-15 | Passed |
+| API-ADM-03 | API | Create user | User created; must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-24 | BR-25, BR-30 | AC-16 | Passed |
+| API-ADM-04 | API | Duplicate email | 409 CONFLICT | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-13 | AC-17 | Passed |
+| API-ADM-05 | API | Edit user | Name/email/role/activation updated | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-26 | AC-17 | Passed |
+| API-ADM-06 | API | Self-deactivation | Rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-27 | AC-18 | Passed |
+| API-ADM-07 | API | Last active Administrator | Rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-28, BR-29 | AC-19 | Passed |
+| API-ADM-07b | API | Last active Administrator role change | Role change to non-Administrator rejected | `server/tests/lab-03/users-admin.api.test.ts` | — | BR-28 | AC-19 | Passed |
+| API-ADM-08 | API | Set new initial password | User must change password next login | `server/tests/lab-03/users-admin.api.test.ts` | FR-26 | BR-30 | AC-16 | Passed |
+| API-ADM-09 | API | Edit / set-initial-password on nonexistent userId | `404 NOT_FOUND` — user does not exist | `server/tests/lab-03/users-admin.api.test.ts` | FR-25, FR-26 | BR-31 | AC-17, AC-16 | Passed |
+| API-ADM-10 | API | Non-last Administrator changes own role away from Administrator | Succeeds; rejected only if it is the last active Administrator (BR-28 path) | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-34, BR-28 | AC-19 | Passed |
+| API-ADM-11 | API | Demote/deactivate an already-inactive Administrator | Succeeds without changing active Administrator count | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-28 | AC-19 | Passed |
+| API-ADM-12 | API | Inactive→active race during demotion | Transactional target reread and Serializable retry preserve at least one active Administrator | `server/tests/lab-03/users-admin.api.test.ts` | FR-25 | BR-28 | AC-19 | Passed |
 | UNIT-AUTH-01 | Unit | Password hashing | bcrypt hash; no plaintext | `server/tests/lab-03/auth.unit.test.ts` | FR-01 | BR-06 | AC-01 | Passed |
 | UNIT-COMMENT-01 | Unit | Comment/Note validation | Trim; whitespace rejected; length limits | `server/tests/lab-03/comments-notes.unit.test.ts` | FR-12 | BR-21, BR-23, BR-24 | AC-08 | Passed |
 | DB-MIG-01 | DB | DevRequester → User migration | Every legacy Requester becomes exactly one User with the same `id`, `name`, `email`, and `isActive`, role `REQUESTER`, and `mustChangePassword=true` | `server/tests/lab-03/migration.integration.test.ts` | FR-10 | BR-11 | AC-25 | Passed |
@@ -860,8 +913,15 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-49-MODAL-08 | UI | Modal Cancel | Cancel closes without calling the status API | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-49-MODAL-09 | UI | Modal Confirm | Confirm calls the status API exactly once | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-18 | BR-18 | AC-13 | Passed |
 | UI-49-MODAL-10 | UI | Modal focus restoration | Focus returns to the invoking control after close | `client/src/lab-03-tests/StaffTicketDetail.test.tsx` | FR-08 | — | AC-23 | Passed |
-| UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
-| UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Planned |
+| UI-ADM-01 | UI | User Management | List/search/filter/create/edit/activate; explicit Create/Edit success status; mobile card-style user rows; self-reset publishes `mustChangePassword` and opens Change Password | `client/src/lab-03-tests/UserManagement.test.tsx`, `client/src/lab-03-tests/AuthGate.test.tsx` | FR-21–26 | BR-25–30 | AC-15–19 | Passed |
+| UI-48-SELF-RESET | UI | Self initial-password reset | Successful self-reset publishes `mustChangePassword=true`; resetting another user does not update the current identity | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-26 | BR-30 | AC-16 | Passed |
+| UI-ADM-RESP-01 | UI | Administrator responsive representation | Desktop table and a distinct mobile user-card list expose name, email, role, status, edit and reset actions | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-08, FR-21–26 | — | AC-15–19, AC-22 | Passed |
+| UI-ADM-FEEDBACK-01 | UI | Administrator mutation feedback | Successful create/edit announces success; API failures retain entered values and never announce success | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-23–25 | BR-33 | AC-17–19 | Passed |
+| UI-AUTHGATE-04 | UI | Authenticated identity update gate | `mustChangePassword=true` switches to Change Password; ordinary profile updates remain authenticated | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03, FR-26 | BR-09, BR-30 | AC-06, AC-16 | Passed |
+| UI-AUTHGATE-05 | UI | Forced password-change completion | Administrator self-reset → Change Password → successful password change clears the cached `mustChangePassword` flag; a later ordinary profile update keeps the authenticated shell visible and does not reopen Change Password | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-05, FR-26 | BR-02, BR-30 | AC-02, AC-16 | Passed |
+| UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Passed |
+| UI-48-NAV | UI | Integrated role navigation | Administrator starts at Ticket Queue and can open User Management; IT Staff cannot see User Management or Requester destinations; Requesters retain Requester destinations | `client/src/App.test.tsx` | FR-08, FR-21 | BR-28 | AC-10, AC-15 | Passed |
+| UI-48-SELF-DEMOTION | UI | Self-edit identity reconciliation | Successful self-edit immediately publishes returned name/email/role without `/auth/me`; other-user edit does not change identity | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-25 | BR-34 | AC-19 | Passed |
 | UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Planned |
 | VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Planned |
 | VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Planned |
@@ -874,11 +934,11 @@ security/authorization, migration/regression, and end-to-end coverage.
 ## 6. Requirement → Test Mapping Summary
 Every Acceptance Criterion maps to at least one planned test:
 - AC-01 → API-AUTH-01, API-AUTH-05, API-AUTH-09, API-AUTH-10, SEC-AUTHZ-11, UNIT-AUTH-01, UI-LOGIN-01, E2E-01
-- AC-02 → API-AUTH-06, API-AUTH-07, API-AUTH-08, API-AUTH-11, UI-CHPWD-01, UI-CHPWD-02, E2E-01
+- AC-02 → API-AUTH-06, API-AUTH-07, API-AUTH-08, API-AUTH-11, UI-CHPWD-01, UI-CHPWD-02, UI-AUTHGATE-05, E2E-01
 - AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05, SEC-AUTHZ-08
 - AC-04 → SEC-AUTHZ-02
 - AC-05 → API-AUTH-02, API-AUTH-03, SEC-AUTHZ-12, E2E-01
-- AC-06 → API-AUTH-04, API-AUTH-05b, API-AUTH-12, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, UI-AUTHGATE-03, E2E-01
+- AC-06 → API-AUTH-04, API-AUTH-05b, API-AUTH-12, CSRF-ME-01, SEC-AUTHZ-04, SEC-AUTHZ-06, SEC-AUTHZ-07, UI-AUTHGATE-01, UI-AUTHGATE-02, UI-AUTHGATE-03, UI-AUTHGATE-04, E2E-01
 - AC-07 → API-REQ-01, API-REQ-02, SEC-AUTHZ-10, E2E-04
 - AC-08 → API-REQ-03, API-49-CREAD-01, API-49-FAIL-03, UNIT-COMMENT-01, UI-49-SAFE-01, E2E-04
 - AC-09 → API-REQ-04, E2E-04
@@ -888,10 +948,10 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, UI-49-MODAL-01, UI-49-MODAL-02, UI-49-MODAL-03, UI-49-MODAL-08, UI-49-MODAL-09, E2E-02
 - AC-14 → API-STAFF-05, API-STAFF-10, API-49-FAIL-03, API-49-FAIL-04, UI-STAFF-01, UI-49-SAFE-01, UI-49-SAFE-02, UI-49-RACE-01, E2E-02
 - AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
-- AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, E2E-03
-- AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, E2E-03
+- AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, UI-48-SELF-RESET, UI-AUTHGATE-04, UI-AUTHGATE-05, E2E-03
+- AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, UI-ADM-FEEDBACK-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
-- AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, UI-ADM-01
+- AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, API-ADM-11, API-ADM-12, UI-ADM-01, UI-48-SELF-DEMOTION
 - AC-20 → SEC-AUTHZ-03, SEC-AUTHZ-09
 - AC-21 → UI-STYLE-01
 - AC-22 → VISUAL-01, VISUAL-02

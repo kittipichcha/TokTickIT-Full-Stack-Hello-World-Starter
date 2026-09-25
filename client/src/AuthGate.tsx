@@ -57,7 +57,22 @@ export default function AuthGate() {
   }
 
   function handlePasswordChanged() {
+    setUser((current) =>
+      current ? { ...current, mustChangePassword: false } : current,
+    );
     setState("authenticated");
+  }
+
+  /**
+   * Publishes a refreshed authenticated user (review 48-B3).
+   *
+   * After a successful self-demotion the server's `/api/auth/me` is the single
+   * source of truth for the current identity. The refreshed user replaces the
+   * cached one so role-specific navigation and view gating update immediately.
+   */
+  function handleUserUpdated(nextUser: AuthUser) {
+    setUser(nextUser);
+    setState(nextUser.mustChangePassword ? "change-password" : "authenticated");
   }
 
   async function handleLogout() {
@@ -111,7 +126,7 @@ export default function AuthGate() {
           </p>
         )}
       </header>
-      {user && <App user={user} />}
+      {user && <App user={user} onUserUpdated={handleUserUpdated} />}
     </div>
   );
 }

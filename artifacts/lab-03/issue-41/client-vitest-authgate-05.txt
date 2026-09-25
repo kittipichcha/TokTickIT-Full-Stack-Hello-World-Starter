@@ -1,0 +1,15 @@
+﻿Issue #41 UI-AUTHGATE-05 focused verification — 2026-09-25
+
+Test-first check (temporary removal of AuthGate.handlePasswordChanged cache reconciliation):
+  node_modules/.bin/vitest.cmd run src/lab-03-tests/AuthGate.test.tsx -t UI-AUTHGATE-05
+  Expected failure observed: App received mustChangePassword=true; assertion expected false.
+
+After restoring the fix:
+  node_modules/.bin/vitest.cmd run src/lab-03-tests/AuthGate.test.tsx
+  Result: 1 file passed; 9 tests passed; 0 skipped.
+
+Required focused set:
+  node_modules/.bin/vitest.cmd run src/App.test.tsx src/lab-03-tests/UserManagement.test.tsx src/lab-03-tests/AuthGate.test.tsx
+  Result: 3 files passed; 42 tests passed; 0 skipped.
+
+A first sandboxed run failed during Vite config loading. These results are from the bounded-access reruns.

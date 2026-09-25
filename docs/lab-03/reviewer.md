@@ -9,6 +9,53 @@
 | [#44 — Add Sprint 3 engineering contract (Issue #34)](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/44) | `feature/issue-34-sprint-3-contract` | Changes Requested (2026-09-10) |
 | [#46 — feat(lab-03): Issue #35 — Identity, Database Migration & Authentication](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/46) | `feature/issue-35-identity-db-migration-auth` → `lab3-staging` | Changes Requested (2026-09-17) — remediation in progress; **human review PENDING** |
 | [#47 — feat(lab-03): Issue #37 — Authorization + Requester Migration / Regression](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/47) | `feature/issue-37-authorization-requester-migration` → `lab3-staging` | Agent review (2026-09-20) — 2 blocking + 6 non-blocking findings, all remediated; **human review PENDING** |
+| [#48 — Issue #41 Administrator User Management](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/48) | `feature/issue-41-admin-user-management` → `lab3-staging` | Local #38/#41 integration and automated verification complete (2026-09-24); **live target comparison and fresh human review PENDING** |
+
+**Issue #41/#38 integration and PR #48 review fix (2026-09-24):** `origin/lab3-staging` at
+`bde221f` was fetched and merged into `feature/issue-41-admin-user-management` at merge commit
+`3337918`, so the PR branch contains the current base. Commit `49c9c1a` closes the remaining
+last-active-Administrator TOCTOU hole by reading the target, deciding whether its requested
+role/activation change reduces the active-Administrator count, checking that count, and
+writing inside the same Serializable transaction. New regression `API-ADM-12` forces the
+inactive→active race on an independent database connection; it was observed failing against
+the pre-fix implementation and passes after the fix. The complete Admin API suite passes
+39/39, the full server suite passes 578/578 with zero skipped, and the server build passes.
+The Windows verification run used a local-only `tsx` temp-directory fallback for the
+environment's `os.userInfo()` `ENOMEM`; details and raw output are in
+`artifacts/lab-03/issue-41/README.md`. This entry records implementation and evidence only;
+fresh human review is still pending and this is not peer approval.
+
+**Issue #41 PR #48 review remediation follow-up (2026-09-24):** The local `origin/lab3-staging`
+ref already included PR #49 and is an ancestor of the feature branch; no Staff files are introduced
+by the Issue #41 diff. The remote could not be refreshed because GitHub was unreachable. Added the
+self-reset `mustChangePassword` state handoff, Create/Edit success status, and responsive card-style
+rows, and removed the incorrect decision-20 PATCH citation. Preserved the Serializable target
+reread and its deterministic `API-ADM-12` regression. Focused client tests passed 39/39; focused
+Admin API tests passed 39/39; full client passed 231/231 across 17 files; full server passed
+578/578 across 39 files. Type checks, builds, and `git diff --check` passed with zero skipped
+tests. Fresh human PR re-review remains pending; this entry is evidence, not peer approval.
+
+**Issue #41 final local remediation verification (2026-09-24):** Implementation commit
+`05b03516087d537944cbfe0f8020dca805abd347` adds a separate `<768px` user-card representation
+with the same Edit and Reset Password handlers; it no longer styles the desktop table as cards.
+The focused client set passes 41/41 across three files, the full client passes 233/233 across 17
+files, the Admin API passes 39/39, and the full server passes 578/578 across 39 files. Client and
+server type checks/builds pass. The JSDOM coverage proves both responsive trees and card actions;
+the screenshot artifact still needs a browser capture and is not claimed as refreshed. Human
+review/approval remains pending.
+
+**Issue #41 stale-password-flag review follow-up (2026-09-25):** The supplied latest review finding
+identified that successful forced password change returned AuthGate to the application while its
+cached `AuthUser.mustChangePassword` value remained `true`. The existing local reconciliation in
+`AuthGate.handlePasswordChanged()` sets that cached flag to `false` while preserving the rest of
+the identity. Regression `UI-AUTHGATE-05` now covers Administrator self-reset, successful password
+change, the exposed cached flag, and a later ordinary identity update. The initial sandboxed test
+launch could not load Vite, then a bounded-access rerun completed. **Human re-review and approval
+remain pending.** This regression was observed failing against the behavior without reconciliation (`true` instead of
+`false`), then passed after the fix. Focused client tests passed 42/42 across App, User Management,
+and AuthGate; the full client suite passed 234/234 across 17 files; TypeScript and production build
+passed. Fresh human re-review and approval remain pending. This entry records implementation and
+automated evidence only; it does not claim peer approval.
 
 **Issue #34**
 Reviewer comment I received: **Request Changes** — 5 blocking issues before the contract could be considered frozen:

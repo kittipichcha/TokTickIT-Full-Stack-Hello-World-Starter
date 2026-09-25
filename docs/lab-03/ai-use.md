@@ -2,6 +2,23 @@
 
 **LLM/agent used:** GitHub Copilot (DeepSeek V4 Flash 0731)
 
+## Issue #41 cached authentication-state remediation (2026-09-25)
+
+- Prompt summary: Follow the supplied detailed Issue #41 remediation plan for the stale
+  `mustChangePassword` flag after a successful forced password change.
+- Agent used: OpenAI Codex.
+- Work performed: Reviewed the current Issue #41 worktree and Lab 3 requirements; added the
+  `UI-AUTHGATE-05` lifecycle regression, traceability row, and factual review/evidence notes. The
+  existing `AuthGate.handlePasswordChanged()` reconciliation was already present as a local
+  uncommitted change and was retained.
+- Verification: PowerShell's `npx.ps1` was blocked by execution policy, and the first `.cmd`
+  invocation was blocked by the workspace sandbox while esbuild read an ancestor directory.
+  Retried with bounded access: the regression failed against the unfixed handler as expected,
+  then the focused AuthGate file passed 9/9, the three-file client set passed 42/42, the full
+  client suite passed 234/234, and typecheck/build passed.
+- Judgment/reflection: The test directly surfaces the user flag passed to `App`, so shell visibility
+  alone cannot mask stale cached identity. Fresh human re-review remains pending.
+
 ## Selected key prompts (6-10)
 | # | Prompt (summarised) | What I did with the result |
 |---|---------------------|----------------------------|
@@ -12,6 +29,52 @@
 | 5 | Draft `docs/lab-03/api-spec.md` | Produced the REST API contract with auth/session decisions and all endpoints. |
 | 6 | Draft `docs/lab-03/ui-spec.md` | Produced the Zen Green UI contract for all Lab 3 screens. |
 | 7 | Draft `docs/lab-03/tests.md` | Produced the test design and traceability matrix in the Lab 2 format, with every AC mapped to a planned test. |
+
+## Issue #41/#38 Integration Follow-up (2026-09-24)
+
+- Prompt summary: Merge the available Staff implementation into the Issue #41 worktree and
+  follow the supplied post-merge integration and verification plan.
+- Repository check: the local `lab3-staging` reference was already an ancestor of Issue #41 and
+  lacked the Staff implementation; network access to refresh it was unavailable. Integrated the
+  matching local `feature/issue-38-staff-ticket-operations` branch instead, preserving its Staff
+  implementation and evidence.
+- Implementation: retained Requester/Staff routing and added Administrator User Management as a
+  third authorized view; reconciled self-edit identity from the successful PATCH response.
+- Verification: focused Admin/Staff tests, full client/server suites, TypeScript checks, builds,
+  and Git whitespace/conflict checks passed. Evidence is recorded in
+  `artifacts/lab-03/issue-41/README.md`; E2E-03 remains owned by Issue #42.
+- Human review/approval remains pending and is not recorded as complete.
+
+## Issue #41 PR #48 Review Follow-up (2026-09-24)
+
+- Prompt summary: Apply the supplied review remediation plan to the current Issue #41 branch.
+- Scope gate: the worktree was clean. Its `origin/lab3-staging` ref already included the #49 merge
+  and was an ancestor of this branch, so the Issue #41 triple-dot diff contains no Issue #38 files.
+  A fresh fetch was unavailable because GitHub could not be reached; a local backup branch was
+  created before checking the ancestry.
+- Implementation: retained the existing Serializable target reread and deterministic
+  inactive-to-active race regression. Self-reset now publishes `mustChangePassword` to AuthGate;
+  Create/Edit show success status; user rows render as labeled cards below 768px; and the unsupported
+  decision-20 citation was removed from the PATCH description.
+- Verification: Admin API **39 passed**; focused client **39 passed**; full client **231 passed
+  across 17 files**; full server **578 passed across 39 files**. Server/client type checks and
+  builds passed, as did `git diff --check`; 0 tests skipped. The migration harness emitted its
+  expected failure-path diagnostics. Evidence summaries are recorded in the Issue #41 bundle.
+- E2E-03 remains owned by Issue #42. No approval or re-review is recorded as complete.
+
+## Issue #41 Final PR #48 Remediation Verification (2026-09-24)
+
+- Implementation SHA: `05b03516087d537944cbfe0f8020dca805abd347`.
+- Replaced the narrow-width table restyling with a separate mobile card list, retaining the existing
+  row handlers. Added structure/action assertions plus regressions for self-reset versus another
+  user's reset and for AuthGate's ordinary identity-update path.
+- Removed the unsupported PATCH semantics paragraph from `api-spec.md` §26 and corrected the
+  service comment so implementation behavior is not attributed to specification decision 20.
+- Focused client tests: 41/41; full client: 233/233 across 17 files; Admin API: 39/39; full server:
+  578/578 across 39 files. Client/server type checks and builds passed.
+- The mobile screenshot could not be refreshed because this environment has no browser or
+  Playwright executable. The structural test does not claim to prove actual viewport rendering;
+  fresh screenshot evidence and human PR re-review remain pending.
 
 ## Reflection
 1. A strict process baseline before feature coding reduces confusion and keeps implementation traceable to FR/BR/AC.

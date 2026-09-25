@@ -13,6 +13,7 @@ import {
 } from "./api";
 import CreateTicket from "./CreateTicket";
 import MyTickets from "./MyTickets";
+import AdminUserManagement from "./AdminUserManagement";
 import StaffTicketQueue from "./StaffTicketQueue";
 import StaffTicketDetail from "./StaffTicketDetail";
 import CommentThread from "./CommentThread";
@@ -20,7 +21,7 @@ import { postTicketComment, postAppearsResolved } from "./api";
 import { formatUtcDate, formatFileSize } from "./format";
 import type { AuthUser } from "./api-client";
 
-type AppView = "home" | "create-ticket" | "ticket-detail" | "staff-queue" | "staff-ticket-detail";
+type AppView = "home" | "create-ticket" | "ticket-detail" | "staff-queue" | "staff-ticket-detail" | "admin-users";
 
 /**
  * Issue #38 review fix (49-B1) — role-specific navigation and entry behavior
@@ -33,6 +34,7 @@ type AppView = "home" | "create-ticket" | "ticket-detail" | "staff-queue" | "sta
  */
 const REQUESTER_VIEWS: readonly AppView[] = ["home", "create-ticket", "ticket-detail"];
 const STAFF_VIEWS: readonly AppView[] = ["staff-queue", "staff-ticket-detail"];
+const ADMIN_VIEWS: readonly AppView[] = ["staff-queue", "staff-ticket-detail", "admin-users"];
 
 interface FailedAttachment {
   id: string;
@@ -45,13 +47,14 @@ interface FailedAttachment {
 interface AppProps {
   /** The authenticated user, supplied by AuthGate from the session. */
   user: AuthUser;
+  onUserUpdated?: (user: AuthUser) => void;
 }
 
-export default function App({ user }: AppProps) {
+export default function App({ user, onUserUpdated }: AppProps) {
   const [message, setMessage] = useState<string | null>(null);
 
   const isStaff = user.role === "IT_STAFF" || user.role === "ADMINISTRATOR";
-  const allowedViews = isStaff ? STAFF_VIEWS : REQUESTER_VIEWS;
+  const allowedViews = user.role === "ADMINISTRATOR" ? ADMIN_VIEWS : user.role === "IT_STAFF" ? STAFF_VIEWS : REQUESTER_VIEWS;
   const initialView: AppView = isStaff ? "staff-queue" : "home";
 
   const [view, setView] = useState<AppView>(initialView);
@@ -269,6 +272,12 @@ export default function App({ user }: AppProps) {
               Ticket Queue
             </a>
           )}
+          {user.role === "ADMINISTRATOR" && (
+            <a href="#admin-users" className={activeView === "admin-users" ? "nav-active" : ""}
+              onClick={(e) => { e.preventDefault(); setView("admin-users"); setMobileMenuOpen(false); }}>
+              User Management
+            </a>
+          )}
         </nav>
       </header>
       {message && <p className="notice" role="status">{message}</p>}
@@ -300,6 +309,9 @@ export default function App({ user }: AppProps) {
           currentUserId={user.id}
           onBack={() => setView("staff-queue")}
         />
+      )}
+      {activeView === "admin-users" && user.role === "ADMINISTRATOR" && (
+        <AdminUserManagement currentUser={user} onUserUpdated={onUserUpdated ?? (() => {})} />
       )}
       {activeView === "ticket-detail" && (
         <main className="app-container">

@@ -44,6 +44,12 @@ import {
   listNotesHandler,
   setAppearsResolvedHandler,
 } from "./staff-controller.js";
+import {
+  listUsersHandler,
+  createUserHandler,
+  updateUserHandler,
+  setInitialPasswordHandler,
+} from "./admin-controller.js";
 
 export const router = Router();
 
@@ -282,3 +288,9 @@ router.post(
   requireTicketOwnership,
   setAppearsResolvedHandler,
 );
+
+// ---- Administrator user management (Issue #41) ----
+router.get("/admin/users", requireAuth, requirePasswordChanged, requireRole(["ADMINISTRATOR"]), listUsersHandler);
+router.post("/admin/users", requireAuth, requirePasswordChanged, requireCsrf, requireRole(["ADMINISTRATOR"]), createUserHandler);
+router.patch("/admin/users/:userId", requireAuth, requirePasswordChanged, requireCsrf, requireRole(["ADMINISTRATOR"]), updateUserHandler);
+router.post("/admin/users/:userId/initial-password", requireAuth, requirePasswordChanged, requireCsrf, requireRole(["ADMINISTRATOR"]), setInitialPasswordHandler);
