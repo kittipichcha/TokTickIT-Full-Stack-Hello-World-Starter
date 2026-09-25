@@ -1,3 +1,5 @@
-Command: cd client && npx tsc --noEmit && npm run build
-Result: type check passed; Vite production build passed.
-Implementation SHA: 05b03516087d537944cbfe0f8020dca805abd347
+﻿Issue #41 client build verification — 2026-09-25
+
+Command: cd client && npm.cmd run build
+Result: TypeScript compilation passed; Vite production build passed.
+Standalone `tsc --noEmit`: passed.

@@ -1,0 +1,6 @@
+﻿Issue #41 client build — 2026-09-25
+
+Command: npm.cmd run build
+Result: passed; TypeScript compilation and Vite production bundle completed.
+Standalone type check: node_modules/.bin/tsc.cmd --noEmit — passed.
+The first sandboxed build attempt was blocked at Vite config loading; the bounded-access rerun completed successfully.

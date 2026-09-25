@@ -18,13 +18,17 @@ vi.mock("../api-client");
 
 // Mock the downstream App component to avoid rendering its full dependency tree.
 vi.mock("../App", () => ({
-  default: ({ onUserUpdated }: { onUserUpdated: (user: apiClient.AuthUser) => void }) => (
+  default: ({ user, onUserUpdated }: {
+    user: apiClient.AuthUser;
+    onUserUpdated: (user: apiClient.AuthUser) => void;
+  }) => (
     <div data-testid="app-stub">
       App
+      <output data-testid="must-change-password">{String(user.mustChangePassword)}</output>
       <button type="button" onClick={() => onUserUpdated({ ...AUTHENTICATED_USER, mustChangePassword: true })}>
         Simulate self reset
       </button>
-      <button type="button" onClick={() => onUserUpdated({ ...AUTHENTICATED_USER, name: "Ada Updated" })}>
+      <button type="button" onClick={() => onUserUpdated({ ...user, name: "Ada Updated" })}>
         Simulate profile update
       </button>
     </div>
@@ -127,6 +131,41 @@ describe("UI-ADM-SELF-RESET: AuthGate reflects an administrator's own password r
     await userEvent.click(await screen.findByRole("button", { name: "Simulate profile update" }));
     expect(screen.getByTestId("app-stub")).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Change your password" })).toBeNull();
+  });
+});
+
+describe("UI-AUTHGATE-05: forced password change reconciles cached identity", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(apiClient.fetchMe).mockResolvedValue({
+      ...AUTHENTICATED_USER,
+      role: "ADMINISTRATOR",
+    });
+    vi.mocked(apiClient.changePassword).mockResolvedValue(undefined);
+  });
+  afterEach(cleanup);
+
+  it("clears the cached flag and stays authenticated after an ordinary identity update", async () => {
+    render(<AuthGate />);
+    await screen.findByRole("button", { name: /Logout/i });
+
+    await userEvent.click(screen.getByRole("button", { name: "Simulate self reset" }));
+    expect(await screen.findByRole("heading", { name: "Change your password" })).toBeTruthy();
+    expect(screen.queryByTestId("app-stub")).toBeNull();
+
+    await userEvent.type(screen.getByLabelText(/Current password/i), "OldPassword1!");
+    await userEvent.type(screen.getByLabelText(/^New password/i), "NewPassword2!");
+    await userEvent.type(screen.getByLabelText(/Confirm new password/i), "NewPassword2!");
+    await userEvent.click(screen.getByRole("button", { name: "Change password" }));
+
+    expect(await screen.findByTestId("app-stub")).toBeTruthy();
+    expect(screen.getByTestId("must-change-password").textContent).toBe("false");
+    await userEvent.click(screen.getByRole("button", { name: "Simulate profile update" }));
+
+    expect(screen.getByTestId("app-stub")).toBeTruthy();
+    expect(screen.getByTestId("must-change-password").textContent).toBe("false");
+    expect(screen.queryByRole("heading", { name: "Change your password" })).toBeNull();
+    expect(apiClient.changePassword).toHaveBeenCalledWith("OldPassword1!", "NewPassword2!");
   });
 });
 

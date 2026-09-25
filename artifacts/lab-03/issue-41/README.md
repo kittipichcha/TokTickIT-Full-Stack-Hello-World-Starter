@@ -79,3 +79,24 @@ Client implementation SHA: `05b03516087d537944cbfe0f8020dca805abd347`.
   screenshot before relying on visual evidence. E2E-03 remains owned by Issue #42.
 - API §26's unsupported decision-20 attribution was removed; decision 20 itself was not changed.
 - Fresh human review/approval remains pending.
+
+## Issue #41 forced-password-change state remediation — 2026-09-25
+
+- Added `UI-AUTHGATE-05` to exercise Administrator self-reset → Change Password → successful
+  password change → ordinary profile update. The App test double exposes the actual cached
+  `mustChangePassword` value passed by AuthGate, and the test asserts it is `false` after success.
+- `AuthGate.handlePasswordChanged()` now reconciles the cached user flag to `false` while keeping
+  the other identity fields, then enters the authenticated state. No server/API behavior changed.
+- `client/src/AuthGate.tsx` and `client/src/lab-03-tests/AuthGate.test.tsx` SHA-256 values and the
+  pre-commit checkout HEAD are recorded in `source-sha.txt`; use Git history for the resulting
+  commit identifier.
+- Verification: UI-AUTHGATE-05 failed against the handler without cache reconciliation as expected,
+  then passed after the fix. AuthGate passed 9/9; App + User Management + AuthGate passed 42/42;
+  the full client suite passed 234/234 across 17 files with 0 skipped. TypeScript check, client
+  production build, `git diff --check`, and conflict-marker scan passed. A first sandboxed test/build
+  attempt stopped at config loading; bounded-access reruns completed successfully. Run summaries
+  are in `client-vitest-authgate-05.txt`, `client-vitest.txt`, and `client-build.txt`.
+- `UI-AUTHGATE-05` is Passed in Test DD based on the executable result. Server suites were not
+  rerun; their previous evidence is left intact and is not represented as current verification.
+- Fresh human re-review/approval remains pending. E2E-03 and the refreshed mobile screenshot remain
+  with Issue #42; neither is claimed as completed here.

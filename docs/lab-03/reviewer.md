@@ -44,6 +44,19 @@ server type checks/builds pass. The JSDOM coverage proves both responsive trees 
 the screenshot artifact still needs a browser capture and is not claimed as refreshed. Human
 review/approval remains pending.
 
+**Issue #41 stale-password-flag review follow-up (2026-09-25):** The supplied latest review finding
+identified that successful forced password change returned AuthGate to the application while its
+cached `AuthUser.mustChangePassword` value remained `true`. The existing local reconciliation in
+`AuthGate.handlePasswordChanged()` sets that cached flag to `false` while preserving the rest of
+the identity. Regression `UI-AUTHGATE-05` now covers Administrator self-reset, successful password
+change, the exposed cached flag, and a later ordinary identity update. The initial sandboxed test
+launch could not load Vite, then a bounded-access rerun completed. **Human re-review and approval
+remain pending.** This regression was observed failing against the behavior without reconciliation (`true` instead of
+`false`), then passed after the fix. Focused client tests passed 42/42 across App, User Management,
+and AuthGate; the full client suite passed 234/234 across 17 files; TypeScript and production build
+passed. Fresh human re-review and approval remain pending. This entry records implementation and
+automated evidence only; it does not claim peer approval.
+
 **Issue #34**
 Reviewer comment I received: **Request Changes** — 5 blocking issues before the contract could be considered frozen:
 1. Existing Requester initial-password migration behavior was not explicit (no test proving a migrated Requester receives an initial password, can authenticate, and is forced to change it).

@@ -51,6 +51,18 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-25 — Issue #41 UI-AUTHGATE-05 forced-password-change reconciliation**
+  - Added the full Administrator self-reset → Change Password → successful change → later profile
+    update lifecycle test. It asserts the `AuthUser.mustChangePassword` prop passed to App is
+    `false` after success and remains false after the ordinary identity update.
+  - Test-first evidence: with the cache reconciliation temporarily removed, UI-AUTHGATE-05 failed
+    on the direct flag assertion (`true` received, `false` expected). After restoring the fix, the
+    focused AuthGate file passed 9/9; App + User Management + AuthGate passed 42/42.
+  - Full client suite passed **234/234 across 17 files**, 0 skipped. Client TypeScript check and
+    production build passed. `git diff --check` passed; conflict-marker scan found none.
+  - UI-AUTHGATE-05 status: **Passed**. Exact outputs and source hashes are in
+    `artifacts/lab-03/issue-41/`.
+
 - **2026-09-24 — Issue #41 PR #48 review remediation verification (final local run)**
   - Implemented a distinct mobile Administrator user-card list below 768px; the desktop table is
     retained above that breakpoint. Cards include name, email, role, status, Edit, and Reset Password.
@@ -906,6 +918,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-ADM-RESP-01 | UI | Administrator responsive representation | Desktop table and a distinct mobile user-card list expose name, email, role, status, edit and reset actions | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-08, FR-21–26 | — | AC-15–19, AC-22 | Passed |
 | UI-ADM-FEEDBACK-01 | UI | Administrator mutation feedback | Successful create/edit announces success; API failures retain entered values and never announce success | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-23–25 | BR-33 | AC-17–19 | Passed |
 | UI-AUTHGATE-04 | UI | Authenticated identity update gate | `mustChangePassword=true` switches to Change Password; ordinary profile updates remain authenticated | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-03, FR-26 | BR-09, BR-30 | AC-06, AC-16 | Passed |
+| UI-AUTHGATE-05 | UI | Forced password-change completion | Administrator self-reset → Change Password → successful password change clears the cached `mustChangePassword` flag; a later ordinary profile update keeps the authenticated shell visible and does not reopen Change Password | `client/src/lab-03-tests/AuthGate.test.tsx` | FR-05, FR-26 | BR-02, BR-30 | AC-02, AC-16 | Passed |
 | UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Passed |
 | UI-48-NAV | UI | Integrated role navigation | Administrator starts at Ticket Queue and can open User Management; IT Staff cannot see User Management or Requester destinations; Requesters retain Requester destinations | `client/src/App.test.tsx` | FR-08, FR-21 | BR-28 | AC-10, AC-15 | Passed |
 | UI-48-SELF-DEMOTION | UI | Self-edit identity reconciliation | Successful self-edit immediately publishes returned name/email/role without `/auth/me`; other-user edit does not change identity | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-25 | BR-34 | AC-19 | Passed |
@@ -921,7 +934,7 @@ security/authorization, migration/regression, and end-to-end coverage.
 ## 6. Requirement → Test Mapping Summary
 Every Acceptance Criterion maps to at least one planned test:
 - AC-01 → API-AUTH-01, API-AUTH-05, API-AUTH-09, API-AUTH-10, SEC-AUTHZ-11, UNIT-AUTH-01, UI-LOGIN-01, E2E-01
-- AC-02 → API-AUTH-06, API-AUTH-07, API-AUTH-08, API-AUTH-11, UI-CHPWD-01, UI-CHPWD-02, E2E-01
+- AC-02 → API-AUTH-06, API-AUTH-07, API-AUTH-08, API-AUTH-11, UI-CHPWD-01, UI-CHPWD-02, UI-AUTHGATE-05, E2E-01
 - AC-03 → SEC-AUTHZ-01, SEC-AUTHZ-05, SEC-AUTHZ-08
 - AC-04 → SEC-AUTHZ-02
 - AC-05 → API-AUTH-02, API-AUTH-03, SEC-AUTHZ-12, E2E-01
@@ -935,7 +948,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, UI-49-MODAL-01, UI-49-MODAL-02, UI-49-MODAL-03, UI-49-MODAL-08, UI-49-MODAL-09, E2E-02
 - AC-14 → API-STAFF-05, API-STAFF-10, API-49-FAIL-03, API-49-FAIL-04, UI-STAFF-01, UI-49-SAFE-01, UI-49-SAFE-02, UI-49-RACE-01, E2E-02
 - AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
-- AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, UI-48-SELF-RESET, UI-AUTHGATE-04, E2E-03
+- AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, UI-48-SELF-RESET, UI-AUTHGATE-04, UI-AUTHGATE-05, E2E-03
 - AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, UI-ADM-FEEDBACK-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
 - AC-19 → API-ADM-07, API-ADM-07b, API-ADM-10, API-ADM-11, API-ADM-12, UI-ADM-01, UI-48-SELF-DEMOTION

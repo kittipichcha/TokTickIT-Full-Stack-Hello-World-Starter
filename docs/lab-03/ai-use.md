@@ -2,6 +2,23 @@
 
 **LLM/agent used:** GitHub Copilot (DeepSeek V4 Flash 0731)
 
+## Issue #41 cached authentication-state remediation (2026-09-25)
+
+- Prompt summary: Follow the supplied detailed Issue #41 remediation plan for the stale
+  `mustChangePassword` flag after a successful forced password change.
+- Agent used: OpenAI Codex.
+- Work performed: Reviewed the current Issue #41 worktree and Lab 3 requirements; added the
+  `UI-AUTHGATE-05` lifecycle regression, traceability row, and factual review/evidence notes. The
+  existing `AuthGate.handlePasswordChanged()` reconciliation was already present as a local
+  uncommitted change and was retained.
+- Verification: PowerShell's `npx.ps1` was blocked by execution policy, and the first `.cmd`
+  invocation was blocked by the workspace sandbox while esbuild read an ancestor directory.
+  Retried with bounded access: the regression failed against the unfixed handler as expected,
+  then the focused AuthGate file passed 9/9, the three-file client set passed 42/42, the full
+  client suite passed 234/234, and typecheck/build passed.
+- Judgment/reflection: The test directly surfaces the user flag passed to `App`, so shell visibility
+  alone cannot mask stale cached identity. Fresh human re-review remains pending.
+
 ## Selected key prompts (6-10)
 | # | Prompt (summarised) | What I did with the result |
 |---|---------------------|----------------------------|

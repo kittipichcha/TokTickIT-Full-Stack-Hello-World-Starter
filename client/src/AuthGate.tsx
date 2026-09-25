@@ -57,6 +57,9 @@ export default function AuthGate() {
   }
 
   function handlePasswordChanged() {
+    setUser((current) =>
+      current ? { ...current, mustChangePassword: false } : current,
+    );
     setState("authenticated");
   }
 

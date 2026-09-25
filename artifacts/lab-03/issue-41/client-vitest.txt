@@ -1,4 +1,8 @@
-Command: cd client && npx vitest run
-Result: 17 test files passed; 233 tests passed; 0 skipped.
-JSDOM window.open/navigation diagnostics appeared in the output; Vitest exited 0.
-Implementation SHA: 05b03516087d537944cbfe0f8020dca805abd347
+﻿Issue #41 client verification — 2026-09-25
+
+Focused regression file (AuthGate): 9 passed, 0 skipped.
+Required focused set (App, UserManagement, AuthGate): 42 passed across 3 files, 0 skipped.
+Full client suite: 234 passed across 17 files, 0 skipped.
+Test-first proof: UI-AUTHGATE-05 failed against the handler without cached-flag reconciliation (`true` received, `false` expected), then passed after the fix.
+TypeScript check passed. Production build passed.
+JSDOM emitted expected window.open/navigation not-implemented diagnostics from existing App tests; Vitest exited 0.

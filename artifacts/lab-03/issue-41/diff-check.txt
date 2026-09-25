@@ -1,4 +1,12 @@
-git diff --check — passed.
-Conflict marker scan — no markers found.
-Issue #41 branch is 16 commits ahead of and based on the local origin/lab3-staging ref; no Issue #38 paths in triple-dot diff.
-Tested source SHA: 00bbc00
+﻿Issue #41 local verification — 2026-09-25
+
+Against the current remediation snapshot:
+- git diff --check: passed.
+- git grep conflict-marker scan: no markers found.
+- client TypeScript check: passed.
+- UI-AUTHGATE-05 test-first check: failed against the unfixed handler as expected, then passed after fix.
+- focused client set (App, UserManagement, AuthGate): 42 passed / 3 files.
+- full client suite: 234 passed / 17 files, 0 skipped.
+- client production build: passed.
+- Server suites were not rerun; previous server evidence remains historical and unchanged.
+- Screenshot freshness, E2E-03, and fresh human review remain pending under their documented ownership.

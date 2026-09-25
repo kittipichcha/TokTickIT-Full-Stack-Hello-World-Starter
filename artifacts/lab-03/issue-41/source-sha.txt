@@ -1,1 +1,10 @@
-05b03516087d537944cbfe0f8020dca805abd347
+Issue #41 remediation snapshot — 2026-09-25
+Repository: feature/issue-41-admin-user-management
+Pre-commit HEAD at evidence capture: 85a26eae35f3f3c2e65c4af8ae8fdc14dcb5e6c9
+This evidence records the tested source snapshot immediately before commit; use Git history for the resulting commit identifier.
+
+Changed-source SHA-256:
+client/src/AuthGate.tsx: 6BFBFC9CBA1684E1DAE1ED52F97B4C6D0AE112598AC256FD76CEA7D4ED860C26
+client/src/lab-03-tests/AuthGate.test.tsx: 14CCC389AA31E924991B1AAA9644A3FF4A33F1AB8DCDB28E242A8549CB298735
+
+Verification: UI-AUTHGATE-05 failed against the unfixed behavior then passed. AuthGate 9/9; focused App/UserManagement/AuthGate 42/42; full client 234/234 across 17 files; TypeScript check and client production build passed. See client-vitest.txt, client-build.txt, and client-vitest-authgate-05.txt. Server tests were not rerun.
