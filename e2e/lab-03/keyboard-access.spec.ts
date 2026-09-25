@@ -38,7 +38,10 @@ test.describe("A11Y-01: keyboard and focus behavior", () => {
     await expect(page.locator(".status-badge")).toHaveText("IN_PROGRESS");
 
     const resolvedButton = page.locator(".transition-buttons").getByRole("button", { name: "Resolved" });
+    await expect(resolvedButton).toBeVisible();
+    await expect(resolvedButton).toBeEnabled();
     await resolvedButton.focus();
+    await expect(resolvedButton).toBeFocused();
     await page.keyboard.press("Enter");
     const dialog = page.getByRole("dialog", { name: "Confirm status change" });
     await expect(dialog).toBeVisible();

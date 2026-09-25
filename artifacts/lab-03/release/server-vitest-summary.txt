@@ -1,0 +1,7 @@
+Command: npm.cmd test -- --reporter=dot
+Working directory: server
+Exit code: 0
+Test Files  39 passed (39)
+Tests       598 passed (598)
+Start       15:28:57 local time, 2026-09-25
+Duration    1197.57s

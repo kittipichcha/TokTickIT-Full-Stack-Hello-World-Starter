@@ -1,0 +1,6 @@
+Command: npm.cmd run test:e2e -- --workers=1 --reporter=dot
+Configured projects: desktop, tablet, mobile
+Latest full run: 183 passed, 0 failed, 0 skipped (183 total), duration 22.7 minutes.
+The run completed after the A11Y-01 keyboard test synchronization guard was added. Raw output: playwright-full-final.txt.
+Lab 3-only structured report: lab3-playwright.json (27/27 passed).
+Earlier full runs had transient Lab 2 visual/network failures and an A11Y-01 focus-timing failure; those are superseded by this clean full run.

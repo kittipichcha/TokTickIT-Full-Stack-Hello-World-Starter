@@ -1,0 +1,1115 @@
+{
+  "database": "tocktick",
+  "inspectedTables": [
+    "User",
+    "Ticket",
+    "Attachment",
+    "Comment",
+    "InternalNote",
+    "Category",
+    "RelatedSystem",
+    "TicketSequence"
+  ],
+  "columns": [
+    {
+      "table_name": "Attachment",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('\"Attachment_id_seq\"'::regclass)"
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "ticketId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "originalFilename",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "storedFilename",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "mimeType",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "fileSizeBytes",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "isRemoved",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "removedAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "removalReason",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "uploadedAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "uploaderUserId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Attachment",
+      "column_name": "removedByUserId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Category",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('\"Category_id_seq\"'::regclass)"
+    },
+    {
+      "table_name": "Category",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Category",
+      "column_name": "createdAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "Category",
+      "column_name": "isActive",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "table_name": "Comment",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('\"Comment_id_seq\"'::regclass)"
+    },
+    {
+      "table_name": "Comment",
+      "column_name": "ticketId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Comment",
+      "column_name": "authorId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Comment",
+      "column_name": "content",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Comment",
+      "column_name": "createdAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "InternalNote",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('\"InternalNote_id_seq\"'::regclass)"
+    },
+    {
+      "table_name": "InternalNote",
+      "column_name": "ticketId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "InternalNote",
+      "column_name": "authorId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "InternalNote",
+      "column_name": "content",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "InternalNote",
+      "column_name": "createdAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "RelatedSystem",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('\"RelatedSystem_id_seq\"'::regclass)"
+    },
+    {
+      "table_name": "RelatedSystem",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "RelatedSystem",
+      "column_name": "isActive",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "table_name": "RelatedSystem",
+      "column_name": "createdAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('\"Ticket_id_seq\"'::regclass)"
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "ticketNumber",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "requesterId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "categoryId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "relatedSystemId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "summary",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "requestedPriority",
+      "data_type": "USER-DEFINED",
+      "udt_name": "Priority",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "itPriority",
+      "data_type": "USER-DEFINED",
+      "udt_name": "Priority",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "ticketOwnerId",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "currentStatus",
+      "data_type": "USER-DEFINED",
+      "udt_name": "TicketStatus",
+      "is_nullable": "NO",
+      "column_default": "'NEW'::\"TicketStatus\""
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "createdAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "updatedAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Ticket",
+      "column_name": "appearsResolved",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "table_name": "TicketSequence",
+      "column_name": "year",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "TicketSequence",
+      "column_name": "lastSeq",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "table_name": "User",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('\"User_id_seq\"'::regclass)"
+    },
+    {
+      "table_name": "User",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "email",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "role",
+      "data_type": "USER-DEFINED",
+      "udt_name": "Role",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "passwordHash",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "isActive",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "table_name": "User",
+      "column_name": "mustChangePassword",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "table_name": "User",
+      "column_name": "createdAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "User",
+      "column_name": "updatedAt",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "indexes": [
+    {
+      "tablename": "Attachment",
+      "indexname": "Attachment_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"Attachment_pkey\" ON public.\"Attachment\" USING btree (id)"
+    },
+    {
+      "tablename": "Attachment",
+      "indexname": "Attachment_storedFilename_key",
+      "indexdef": "CREATE UNIQUE INDEX \"Attachment_storedFilename_key\" ON public.\"Attachment\" USING btree (\"storedFilename\")"
+    },
+    {
+      "tablename": "Attachment",
+      "indexname": "Attachment_ticketId_idx",
+      "indexdef": "CREATE INDEX \"Attachment_ticketId_idx\" ON public.\"Attachment\" USING btree (\"ticketId\")"
+    },
+    {
+      "tablename": "Category",
+      "indexname": "Category_name_key",
+      "indexdef": "CREATE UNIQUE INDEX \"Category_name_key\" ON public.\"Category\" USING btree (name)"
+    },
+    {
+      "tablename": "Category",
+      "indexname": "Category_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"Category_pkey\" ON public.\"Category\" USING btree (id)"
+    },
+    {
+      "tablename": "Comment",
+      "indexname": "Comment_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"Comment_pkey\" ON public.\"Comment\" USING btree (id)"
+    },
+    {
+      "tablename": "Comment",
+      "indexname": "Comment_ticketId_idx",
+      "indexdef": "CREATE INDEX \"Comment_ticketId_idx\" ON public.\"Comment\" USING btree (\"ticketId\")"
+    },
+    {
+      "tablename": "InternalNote",
+      "indexname": "InternalNote_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"InternalNote_pkey\" ON public.\"InternalNote\" USING btree (id)"
+    },
+    {
+      "tablename": "InternalNote",
+      "indexname": "InternalNote_ticketId_idx",
+      "indexdef": "CREATE INDEX \"InternalNote_ticketId_idx\" ON public.\"InternalNote\" USING btree (\"ticketId\")"
+    },
+    {
+      "tablename": "RelatedSystem",
+      "indexname": "RelatedSystem_name_key",
+      "indexdef": "CREATE UNIQUE INDEX \"RelatedSystem_name_key\" ON public.\"RelatedSystem\" USING btree (name)"
+    },
+    {
+      "tablename": "RelatedSystem",
+      "indexname": "RelatedSystem_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"RelatedSystem_pkey\" ON public.\"RelatedSystem\" USING btree (id)"
+    },
+    {
+      "tablename": "Ticket",
+      "indexname": "Ticket_createdAt_idx",
+      "indexdef": "CREATE INDEX \"Ticket_createdAt_idx\" ON public.\"Ticket\" USING btree (\"createdAt\")"
+    },
+    {
+      "tablename": "Ticket",
+      "indexname": "Ticket_currentStatus_idx",
+      "indexdef": "CREATE INDEX \"Ticket_currentStatus_idx\" ON public.\"Ticket\" USING btree (\"currentStatus\")"
+    },
+    {
+      "tablename": "Ticket",
+      "indexname": "Ticket_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"Ticket_pkey\" ON public.\"Ticket\" USING btree (id)"
+    },
+    {
+      "tablename": "Ticket",
+      "indexname": "Ticket_requesterId_idx",
+      "indexdef": "CREATE INDEX \"Ticket_requesterId_idx\" ON public.\"Ticket\" USING btree (\"requesterId\")"
+    },
+    {
+      "tablename": "Ticket",
+      "indexname": "Ticket_ticketNumber_key",
+      "indexdef": "CREATE UNIQUE INDEX \"Ticket_ticketNumber_key\" ON public.\"Ticket\" USING btree (\"ticketNumber\")"
+    },
+    {
+      "tablename": "Ticket",
+      "indexname": "Ticket_ticketOwnerId_idx",
+      "indexdef": "CREATE INDEX \"Ticket_ticketOwnerId_idx\" ON public.\"Ticket\" USING btree (\"ticketOwnerId\")"
+    },
+    {
+      "tablename": "TicketSequence",
+      "indexname": "TicketSequence_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"TicketSequence_pkey\" ON public.\"TicketSequence\" USING btree (year)"
+    },
+    {
+      "tablename": "User",
+      "indexname": "User_email_key",
+      "indexdef": "CREATE UNIQUE INDEX \"User_email_key\" ON public.\"User\" USING btree (email)"
+    },
+    {
+      "tablename": "User",
+      "indexname": "User_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"User_pkey\" ON public.\"User\" USING btree (id)"
+    }
+  ],
+  "constraints": [
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_fileSizeBytes_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"fileSizeBytes\""
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_id_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL id"
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_isRemoved_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"isRemoved\""
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_mimeType_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"mimeType\""
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_originalFilename_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"originalFilename\""
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_pkey",
+      "contype": "p",
+      "confdeltype": " ",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_removedByUserId_fkey",
+      "contype": "f",
+      "confdeltype": "n",
+      "definition": "FOREIGN KEY (\"removedByUserId\") REFERENCES \"User\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_storedFilename_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"storedFilename\""
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_ticketId_fkey",
+      "contype": "f",
+      "confdeltype": "r",
+      "definition": "FOREIGN KEY (\"ticketId\") REFERENCES \"Ticket\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_ticketId_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"ticketId\""
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_uploadedAt_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"uploadedAt\""
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_uploaderUserId_fkey",
+      "contype": "f",
+      "confdeltype": "r",
+      "definition": "FOREIGN KEY (\"uploaderUserId\") REFERENCES \"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "Attachment",
+      "conname": "Attachment_uploaderUserId_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"uploaderUserId\""
+    },
+    {
+      "table_name": "Category",
+      "conname": "Category_createdAt_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"createdAt\""
+    },
+    {
+      "table_name": "Category",
+      "conname": "Category_id_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL id"
+    },
+    {
+      "table_name": "Category",
+      "conname": "Category_isActive_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"isActive\""
+    },
+    {
+      "table_name": "Category",
+      "conname": "Category_name_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL name"
+    },
+    {
+      "table_name": "Category",
+      "conname": "Category_pkey",
+      "contype": "p",
+      "confdeltype": " ",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "Comment",
+      "conname": "Comment_authorId_fkey",
+      "contype": "f",
+      "confdeltype": "r",
+      "definition": "FOREIGN KEY (\"authorId\") REFERENCES \"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "Comment",
+      "conname": "Comment_authorId_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"authorId\""
+    },
+    {
+      "table_name": "Comment",
+      "conname": "Comment_content_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL content"
+    },
+    {
+      "table_name": "Comment",
+      "conname": "Comment_createdAt_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"createdAt\""
+    },
+    {
+      "table_name": "Comment",
+      "conname": "Comment_id_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL id"
+    },
+    {
+      "table_name": "Comment",
+      "conname": "Comment_pkey",
+      "contype": "p",
+      "confdeltype": " ",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "Comment",
+      "conname": "Comment_ticketId_fkey",
+      "contype": "f",
+      "confdeltype": "r",
+      "definition": "FOREIGN KEY (\"ticketId\") REFERENCES \"Ticket\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "Comment",
+      "conname": "Comment_ticketId_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"ticketId\""
+    },
+    {
+      "table_name": "InternalNote",
+      "conname": "InternalNote_authorId_fkey",
+      "contype": "f",
+      "confdeltype": "r",
+      "definition": "FOREIGN KEY (\"authorId\") REFERENCES \"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "InternalNote",
+      "conname": "InternalNote_authorId_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"authorId\""
+    },
+    {
+      "table_name": "InternalNote",
+      "conname": "InternalNote_content_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL content"
+    },
+    {
+      "table_name": "InternalNote",
+      "conname": "InternalNote_createdAt_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"createdAt\""
+    },
+    {
+      "table_name": "InternalNote",
+      "conname": "InternalNote_id_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL id"
+    },
+    {
+      "table_name": "InternalNote",
+      "conname": "InternalNote_pkey",
+      "contype": "p",
+      "confdeltype": " ",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "InternalNote",
+      "conname": "InternalNote_ticketId_fkey",
+      "contype": "f",
+      "confdeltype": "r",
+      "definition": "FOREIGN KEY (\"ticketId\") REFERENCES \"Ticket\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "InternalNote",
+      "conname": "InternalNote_ticketId_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"ticketId\""
+    },
+    {
+      "table_name": "RelatedSystem",
+      "conname": "RelatedSystem_createdAt_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"createdAt\""
+    },
+    {
+      "table_name": "RelatedSystem",
+      "conname": "RelatedSystem_id_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL id"
+    },
+    {
+      "table_name": "RelatedSystem",
+      "conname": "RelatedSystem_isActive_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"isActive\""
+    },
+    {
+      "table_name": "RelatedSystem",
+      "conname": "RelatedSystem_name_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL name"
+    },
+    {
+      "table_name": "RelatedSystem",
+      "conname": "RelatedSystem_pkey",
+      "contype": "p",
+      "confdeltype": " ",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_appearsResolved_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"appearsResolved\""
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_categoryId_fkey",
+      "contype": "f",
+      "confdeltype": "r",
+      "definition": "FOREIGN KEY (\"categoryId\") REFERENCES \"Category\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_categoryId_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"categoryId\""
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_createdAt_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"createdAt\""
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_currentStatus_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"currentStatus\""
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_description_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL description"
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_id_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL id"
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_pkey",
+      "contype": "p",
+      "confdeltype": " ",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_relatedSystemId_fkey",
+      "contype": "f",
+      "confdeltype": "r",
+      "definition": "FOREIGN KEY (\"relatedSystemId\") REFERENCES \"RelatedSystem\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_relatedSystemId_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"relatedSystemId\""
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_requestedPriority_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"requestedPriority\""
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_requesterId_fkey",
+      "contype": "f",
+      "confdeltype": "r",
+      "definition": "FOREIGN KEY (\"requesterId\") REFERENCES \"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_requesterId_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"requesterId\""
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_summary_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL summary"
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_ticketNumber_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"ticketNumber\""
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_ticketOwnerId_fkey",
+      "contype": "f",
+      "confdeltype": "n",
+      "definition": "FOREIGN KEY (\"ticketOwnerId\") REFERENCES \"User\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+    },
+    {
+      "table_name": "Ticket",
+      "conname": "Ticket_updatedAt_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"updatedAt\""
+    },
+    {
+      "table_name": "TicketSequence",
+      "conname": "TicketSequence_lastSeq_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"lastSeq\""
+    },
+    {
+      "table_name": "TicketSequence",
+      "conname": "TicketSequence_pkey",
+      "contype": "p",
+      "confdeltype": " ",
+      "definition": "PRIMARY KEY (year)"
+    },
+    {
+      "table_name": "TicketSequence",
+      "conname": "TicketSequence_year_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL year"
+    },
+    {
+      "table_name": "User",
+      "conname": "User_createdAt_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"createdAt\""
+    },
+    {
+      "table_name": "User",
+      "conname": "User_email_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL email"
+    },
+    {
+      "table_name": "User",
+      "conname": "User_id_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL id"
+    },
+    {
+      "table_name": "User",
+      "conname": "User_isActive_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"isActive\""
+    },
+    {
+      "table_name": "User",
+      "conname": "User_mustChangePassword_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"mustChangePassword\""
+    },
+    {
+      "table_name": "User",
+      "conname": "User_name_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL name"
+    },
+    {
+      "table_name": "User",
+      "conname": "User_passwordHash_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"passwordHash\""
+    },
+    {
+      "table_name": "User",
+      "conname": "User_pkey",
+      "contype": "p",
+      "confdeltype": " ",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "User",
+      "conname": "User_role_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL role"
+    },
+    {
+      "table_name": "User",
+      "conname": "User_updatedAt_not_null",
+      "contype": "n",
+      "confdeltype": " ",
+      "definition": "NOT NULL \"updatedAt\""
+    }
+  ],
+  "enums": [
+    {
+      "typname": "Priority",
+      "enumlabel": "LOW",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "Priority",
+      "enumlabel": "MEDIUM",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "Priority",
+      "enumlabel": "HIGH",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "Role",
+      "enumlabel": "REQUESTER",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "Role",
+      "enumlabel": "IT_STAFF",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "Role",
+      "enumlabel": "ADMINISTRATOR",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "TicketStatus",
+      "enumlabel": "NEW",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "TicketStatus",
+      "enumlabel": "OPEN",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "TicketStatus",
+      "enumlabel": "IN_PROGRESS",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "TicketStatus",
+      "enumlabel": "WAITING_FOR_REQUESTER",
+      "enumsortorder": 4
+    },
+    {
+      "typname": "TicketStatus",
+      "enumlabel": "RESOLVED",
+      "enumsortorder": 5
+    },
+    {
+      "typname": "TicketStatus",
+      "enumlabel": "CLOSED",
+      "enumsortorder": 6
+    },
+    {
+      "typname": "TicketStatus",
+      "enumlabel": "REOPENED",
+      "enumsortorder": 7
+    },
+    {
+      "typname": "TicketStatus",
+      "enumlabel": "CANCELLED",
+      "enumsortorder": 8
+    }
+  ],
+  "migrationResidue": []
+}

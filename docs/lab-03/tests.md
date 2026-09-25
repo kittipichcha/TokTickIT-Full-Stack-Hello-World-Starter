@@ -51,6 +51,26 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-25 — Issue #42 final verification evidence reconciliation**
+  - Prompt scope: reconcile final Issue #42 verification and acceptance evidence; preserve all
+    release blockers and do not mark release/sign-off green.
+  - The test synchronization guard for A11Y-01 now asserts enabled/focused state before Enter.
+    Latest full Playwright command, `npm.cmd run test:e2e -- --workers=1 --reporter=dot`, passed
+    **183/183** across desktop, tablet, and mobile in 22.7 minutes (0 failed, 0 skipped).
+    Lab 3 structured browser report passed **27/27**.
+  - Other verification: full client **252/252 across 18 files**; full server **598/598 across 39
+    files**; combined Lab 2 + Lab 3 UI style **34 passed**; focused style **18 passed**;
+    SEC-AUTHZ-07 **52 passed**. Type checks, builds, and Prisma schema validation passed.
+    Test-DD §5 path audit found **32/32** referenced paths.
+  - Remaining blockers: REL-12 was not run because the available temporary database role lacks
+    `CREATEDB`, and the plan requires an isolated owned scratch database. The upstream #38
+    historical server-start/client-dev smoke artifact-presence gate remains unresolved despite
+    fresh equivalent smoke checks. Human review, PDF/Kanban/submission, and post-merge checks remain
+    outstanding. §9.3 catalog audit passed only on the existing temporary Lab 3 database and does
+    not clear REL-12.
+  - Raw full browser output: `artifacts/lab-03/release/playwright-full-final.txt`; summary:
+    `artifacts/lab-03/release/playwright-full-regression-summary.txt`. No release approval is claimed.
+
 - **2026-09-25 — Issue #41 UI-AUTHGATE-05 forced-password-change reconciliation**
   - Added the full Administrator self-reset → Change Password → successful change → later profile
     update lifecycle test. It asserts the `AuthUser.mustChangePassword` prop passed to App is
@@ -922,14 +942,14 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Passed |
 | UI-48-NAV | UI | Integrated role navigation | Administrator starts at Ticket Queue and can open User Management; IT Staff cannot see User Management or Requester destinations; Requesters retain Requester destinations | `client/src/App.test.tsx` | FR-08, FR-21 | BR-28 | AC-10, AC-15 | Passed |
 | UI-48-SELF-DEMOTION | UI | Self-edit identity reconciliation | Successful self-edit immediately publishes returned name/email/role without `/auth/me`; other-user edit does not change identity | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-25 | BR-34 | AC-19 | Passed |
-| UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Planned |
-| VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Planned |
-| VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Planned |
-| A11Y-01 | Accessibility | Keyboard/focus/aria | Keyboard-operable; focus visible | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-23 | Planned |
-| E2E-01 | E2E | Authentication flow | Login → change password → app → logout | `e2e/lab-03/authentication.spec.ts` | FR-01–06 | BR-01–10 | AC-01, AC-02, AC-05, AC-06 | Planned |
-| E2E-02 | E2E | Staff ticket flow | Queue → detail → claim → priority → status → comments/notes | `e2e/lab-03/staff-ticket-flow.spec.ts` | FR-14–20 | BR-14–18 | AC-10–14 | Planned |
-| E2E-03 | E2E | User administration | List → search → create → edit → initial password | `e2e/lab-03/user-administration.spec.ts` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
-| E2E-04 | E2E | Requester regression | Create → My Tickets → detail → comments → appears resolved (removes Dev Requester selector) | `e2e/lab-03/requester-regression.spec.ts` | FR-10–13 | BR-05, BR-11, BR-19 | AC-07–09 | Planned |
+| UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Passed |
+| VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Passed |
+| VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Passed |
+| A11Y-01 | Accessibility | Keyboard/focus/aria | Keyboard-operable; focus visible | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-23 | Passed |
+| E2E-01 | E2E | Authentication flow | Login → change password → app → logout | `e2e/lab-03/authentication.spec.ts` | FR-01–06 | BR-01–10 | AC-01, AC-02, AC-05, AC-06 | Passed |
+| E2E-02 | E2E | Staff ticket flow | Queue → detail → claim → priority → status → comments/notes | `e2e/lab-03/staff-ticket-flow.spec.ts` | FR-14–20 | BR-14–18 | AC-10–14 | Passed |
+| E2E-03 | E2E | User administration | List → search → create → edit → initial password | `e2e/lab-03/user-administration.spec.ts` | FR-21–26 | BR-25–30 | AC-15–19 | Passed |
+| E2E-04 | E2E | Requester regression | Create → My Tickets → detail → comments → appears resolved (removes Dev Requester selector) | `e2e/lab-03/requester-regression.spec.ts` | FR-10–13 | BR-05, BR-11, BR-19 | AC-07–09 | Passed |
 
 ## 6. Requirement → Test Mapping Summary
 Every Acceptance Criterion maps to at least one planned test:
@@ -947,7 +967,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-12 → API-STAFF-02, API-STAFF-06, API-49-FAIL-02, UI-STAFF-01, E2E-02
 - AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, UI-49-MODAL-01, UI-49-MODAL-02, UI-49-MODAL-03, UI-49-MODAL-08, UI-49-MODAL-09, E2E-02
 - AC-14 → API-STAFF-05, API-STAFF-10, API-49-FAIL-03, API-49-FAIL-04, UI-STAFF-01, UI-49-SAFE-01, UI-49-SAFE-02, UI-49-RACE-01, E2E-02
-- AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
+- AC-15 → API-ADM-01, API-ADM-02, UI-ADM-01, UI-ADM-02, E2E-03
 - AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, UI-48-SELF-RESET, UI-AUTHGATE-04, UI-AUTHGATE-05, E2E-03
 - AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, UI-ADM-FEEDBACK-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01

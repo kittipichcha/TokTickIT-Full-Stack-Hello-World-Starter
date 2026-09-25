@@ -2,6 +2,24 @@
 
 **LLM/agent used:** GitHub Copilot (DeepSeek V4 Flash 0731)
 
+## Issue #42 final verification reconciliation (2026-09-25)
+
+- Prompt summary: reconcile final Issue #42 verification documents using confirmed run evidence,
+  preserve unresolved release gates, and do not report release/sign-off as green.
+- Work performed: updated the newest-first test results entry, this AI-use log, regression summary,
+  verification summary, acceptance matrix, and final gate. Recorded the latest full Playwright
+  run at 183/183 across desktop/tablet/mobile, plus the test synchronization guard and other
+  validated counts.
+- Verification: full client suite 252/252 across 18 files; server 598/598 across 39 files;
+  combined UI style 34 passed; focused style 18 passed; SEC-AUTHZ-07 52 passed; Lab 3 Playwright
+  27/27; Test-DD §5 paths 32/32. Type checks, builds, and Prisma validation passed. Full browser
+  raw output is `artifacts/lab-03/release/playwright-full-final.txt`.
+- Caveats: REL-12 remains blocked because the temporary DB role lacks `CREATEDB`; #38's historical
+  smoke artifact gate remains unresolved. Human review, submission, and post-merge checks remain
+  outstanding. The §9.3 audit used the existing temporary Lab 3 DB and does not clear REL-12.
+- Reflection: a clean full browser run resolves the earlier flaky-run gate, while database
+  isolation and historical evidence requirements remain independent release blockers.
+
 ## Issue #41 cached authentication-state remediation (2026-09-25)
 
 - Prompt summary: Follow the supplied detailed Issue #41 remediation plan for the stale
