@@ -565,14 +565,15 @@ evidence remain owned by Issue #42.
 
 ## 13. Lab 3 integrated browser verification (Issue #42)
 
-Playwright starts its own API and Vite servers and refuses to reuse an existing server. Before
-running it, create a disposable PostgreSQL database, apply the documented Lab 3 migrations, and
-set `E2E_DATABASE_URL` to that database URL in the invoking environment. The same URL is passed to
+Playwright starts its own API and Vite servers and refuses to reuse an existing server. Point
+`E2E_DATABASE_URL` at a disposable PostgreSQL database, or configure the same scratch target in
+`server/.env` as `DATABASE_URL`. The suite requires the documented Lab 3 schema before it runs.
+The same URL is passed to
 the Lab 2 requester fixture setup and the API process; no suite should target a development or
 production database.
 
 Run `npm run test:e2e -- --workers=1` from the repository root. The initial suite is serial across
 desktop (1280×800), tablet (820×1180), and mobile (390×844). The API readiness probe is
 `/api/auth/me` and Vite readiness is the Login page at `http://127.0.0.1:5173`. Playwright owns
-both processes and stops them after the run. To list tests, use the same `E2E_DATABASE_URL`
-environment setting because the configuration rejects an unspecified database before startup.
+both processes and stops them after the run. The configuration refuses to start fixtures without
+one of those database settings.

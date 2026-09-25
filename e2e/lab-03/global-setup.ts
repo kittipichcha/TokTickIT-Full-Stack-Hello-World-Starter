@@ -14,8 +14,11 @@ export default async function globalSetup(): Promise<void> {
   process.env.DATABASE_URL = databaseUrl;
   await lab2GlobalSetup();
 
-  const { PrismaClient } = serverRequire("@prisma/client") as typeof import("@prisma/client");
-  const bcrypt = serverRequire("bcrypt") as typeof import("bcrypt");
+  const { PrismaClient } = serverRequire("@prisma/client") as { PrismaClient: new () => {
+    user: { upsert: (args: unknown) => Promise<unknown> };
+    $disconnect: () => Promise<void>;
+  } };
+  const bcrypt = serverRequire("bcrypt") as { hash: (password: string, rounds: number) => Promise<string> };
   const prisma = new PrismaClient();
   try {
     for (const [key, account] of Object.entries(USERS)) {
