@@ -2,6 +2,25 @@
 
 **LLM/agent used:** GitHub Copilot (DeepSeek V4 Flash 0731)
 
+## Issue #42 PR #56 documentation review response (2026-09-26)
+
+- Prompt summary: coordinate the authorized response to human PR #56 review; preserve user-owned
+  PDF and Kanban work; document the confirmed disposable E2E database and current evidence.
+- Agent used: OpenAI Codex.
+- Work performed: replaced grouped acceptance evidence with one row for each AC-01 through
+  AC-26; reconciled historical browser totals by run and scope; updated verification, integration,
+  and final-gate records; recorded the human changes-requested review and response; documented
+  the focused responsive/keyboard results and the `kitti` `CREATEDB` / `lab3e2e` prerequisite.
+  Preserved existing README and `.env.example` edits, including the explicit E2E URL.
+- Verification: focused responsive run reported 12/12 and focused keyboard run reported 12/12
+  across desktop, tablet, and mobile in the execution handoff. Full current-head server/client
+  suites, full configured Playwright regression, and REL-12 were not run as part of this
+  documentation pass. `git diff --check` exited 0. A static check confirmed 26 unique ordered
+  acceptance rows and the required seven columns.
+- Reflection: historical release artifacts remain useful only when their source boundary and
+  run scope are explicit. Focused accessibility/responsive passes do not establish full release
+  readiness.
+
 ## Issue #42 E2E review follow-up (2026-09-26)
 
 - Prompt summary: address observed attachment download filename and mobile admin-dialog failures
@@ -49,9 +68,11 @@
   combined UI style 34 passed; focused style 18 passed; SEC-AUTHZ-07 52 passed; Lab 3 Playwright
   27/27; Test-DD §5 paths 32/32. Type checks, builds, and Prisma validation passed. Full browser
   raw output is `artifacts/lab-03/release/playwright-full-final.txt`.
-- Caveats: REL-12 remains blocked because the temporary DB role lacks `CREATEDB`; #38's historical
-  smoke artifact gate remains unresolved. Human review, submission, and post-merge checks remain
-  outstanding. The §9.3 audit used the existing temporary Lab 3 DB and does not clear REL-12.
+- Caveats at the time: REL-12 could not start because the temporary DB role lacked `CREATEDB`;
+  #38's historical smoke artifact gate remained unresolved. The user has since confirmed role
+  `kitti` has `CREATEDB` and disposable database `lab3e2e` is available, but REL-12 remains
+  unrun. Human review, submission, and post-merge checks remain outstanding. The §9.3 audit used
+  the existing temporary Lab 3 DB and does not clear REL-12.
 - Reflection: a clean full browser run resolves the earlier flaky-run gate, while database
   isolation and historical evidence requirements remain independent release blockers.
 

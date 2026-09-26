@@ -10,6 +10,21 @@
 | [#46 — feat(lab-03): Issue #35 — Identity, Database Migration & Authentication](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/46) | `feature/issue-35-identity-db-migration-auth` → `lab3-staging` | Changes Requested (2026-09-17) — remediation in progress; **human review PENDING** |
 | [#47 — feat(lab-03): Issue #37 — Authorization + Requester Migration / Regression](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/47) | `feature/issue-37-authorization-requester-migration` → `lab3-staging` | Agent review (2026-09-20) — 2 blocking + 6 non-blocking findings, all remediated; **human review PENDING** |
 | [#48 — Issue #41 Administrator User Management](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/48) | `feature/issue-41-admin-user-management` → `lab3-staging` | Local #38/#41 integration and automated verification complete (2026-09-24); **live target comparison and fresh human review PENDING** |
+| [#56 — Issue #42 integration/release](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/56) | `feature/issue-42-integration-release` | Changes Requested by human reviewer @oangsa (review `5f9aa11`, 2026-09-26); response in progress, **not approved** |
+
+**Issue #42 — PR #56 review response (2026-09-26)**
+
+Reviewer comment received: **Changes Requested**. The review identified stale final-head evidence,
+grouped rather than individual AC rows, inconsistent browser counts (181/183 versus 183/183 and
+27/42), missing explicit `E2E_DATABASE_URL` README setup, incomplete responsive/keyboard coverage,
+and a REL-12 database-role prerequisite. PDF Parts 1–9 and Kanban closeout remain user-owned.
+
+How I responded: expanded the acceptance matrix to one row per AC-01 through AC-26; labeled
+historical runs by scope and reconciled their counts; recorded focused responsive and keyboard
+runs as 12/12 each without asserting full-suite or current-head completion; documented that role
+`kitti` now has `CREATEDB` and database `lab3e2e` is the disposable E2E target while REL-12 remains
+unrun; and clarified the README's required `E2E_DATABASE_URL` setup. PDF and Kanban work remain
+for the author. This response records no approval; reviewer re-review is pending.
 
 **Issue #41/#38 integration and PR #48 review fix (2026-09-24):** `origin/lab3-staging` at
 `bde221f` was fetched and merged into `feature/issue-41-admin-user-management` at merge commit

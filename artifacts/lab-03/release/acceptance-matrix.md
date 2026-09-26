@@ -1,15 +1,45 @@
-# Issue #42 integrated acceptance evidence (pre-merge)
+# Issue #42 integrated acceptance evidence (review response)
 
-Baseline: `lab3-staging` @ `77d810b17b60f0628e8b05e22d448c3340a754c2`. Implementation source was verified through `862a97a`; the test synchronization guard was present as an uncommitted change during the latest browser run. This matrix records pre-merge evidence and does not constitute post-merge or final-release approval.
+## Evidence boundary
 
-| Acceptance criteria | Coverage / evidence | Integrated result |
-|---|---|---|
-| AC-01–06 | Authentication/security rows in [`docs/lab-03/tests.md`](../../../docs/lab-03/tests.md); E2E-01 in [`lab3-playwright.json`](lab3-playwright.json); authorization JSON in [`sec-authz-07-vitest.json`](sec-authz-07-vitest.json) | Covered; Lab 3 browser flow passed. Final auth dependency evidence review remains open. |
-| AC-07–09 | Requester rows in tests.md; E2E-04 in lab3-playwright.json | Covered; passed in desktop/tablet/mobile. |
-| AC-10–14 | Queue/Staff rows in tests.md; E2E-02, VISUAL-02, A11Y-01 in lab3-playwright.json | Covered; passed in desktop/tablet/mobile. |
-| AC-15–20 | Administrator rows in tests.md; E2E-03 in lab3-playwright.json | Covered; passed in desktop/tablet/mobile. |
-| AC-21 | UI-STYLE-01 row; [`ui-style-vitest.txt`](ui-style-vitest.txt) | Passed, 18/18 focused tests; full client suite 252/252. |
-| AC-22–23 | VISUAL-01/02 and A11Y-01 rows; screenshots under `../screenshots/`; lab3-playwright.json | Passed in all three projects. |
-| AC-24–26 | Seed/migration/auth rows in tests.md; full server run 598/598; upstream #35 proof bundle | Existing migration suite passed. Final integrated Lab 2 → Lab 3 REL-12 audit is blocked; no release sign-off. |
+This matrix records the human review response and available evidence. The release artifacts
+predate the current review worktree; they do not prove final-head verification. The latest
+focused responsive and keyboard executions each report 12/12 passed across desktop, tablet, and
+mobile. Full application suites, full configured Playwright regression, and REL-12 have not been
+rerun against the current worktree. A PostgreSQL `kitti` role with `CREATEDB` and the disposable
+`lab3e2e` target are now available; this enables REL-12 but does not mean REL-12 has run.
 
-The latest full configured Playwright run passed **183/183** across desktop, tablet, and mobile in 22.7 minutes; the dedicated Lab 3 JSON run passed 27/27. The raw full-run output is `playwright-full-final.txt`. REL-12 remains blocked because the available PostgreSQL role lacks `CREATEDB`; the #38 historical smoke-artifact gate also remains unresolved. Human review, submission, and post-merge checks remain outstanding.
+| ID | Requirement | Implementation | Automated Test | Test Result | Evidence | Final Status |
+|---|---|---|---|---|---|---|
+| AC-01 | Valid active-user login establishes authenticated identity and role. | Session authentication and role identity. | API-AUTH-01, API-AUTH-05, E2E-01 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-02 | Required initial-password change blocks normal screens until saved. | Forced password-change gate. | API-AUTH-06/07, UI-CHPWD-01/02, E2E-01 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-03 | Requester identity comes from authenticated session, not supplied requesterId. | Server-side requester ownership checks. | SEC-AUTHZ-01/05/08 | Historical pass; current-head rerun pending. | `tests.md`; historical server suite records | Pending final-head verification |
+| AC-04 | Requester cannot access Internal Note content. | Role authorization on note endpoints. | SEC-AUTHZ-02 | Historical pass; current-head rerun pending. | `tests.md`; historical server suite records | Pending final-head verification |
+| AC-05 | Inactive-account login fails without exposing account status. | Generic authentication failure. | API-AUTH-02/03, E2E-01 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-06 | Logout removes authenticated access. | Session invalidation and protected-route checks. | API-AUTH-04, SEC-AUTHZ-04/06/07, E2E-01 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-07 | Requester-created Ticket belongs to authenticated user and appears in My Tickets. | Requester create/list/detail flow. | API-REQ-01/02, E2E-04 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-08 | Requester Public Comment records backend author and timestamp. | Public Comment endpoint and UI. | API-REQ-03, API-49-CREAD-01, E2E-04 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-09 | Requester resolved indication does not change Ticket status. | Separate appears-resolved flag. | API-REQ-04, E2E-04 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-10 | Staff Queue supports search, filters, sorting, pagination, and no-results state. | Staff Queue and responsive detail navigation. | API-QUE-01/02, UI-QUE-01..04, E2E-02 | Historical journey pass; focused responsive suite 12/12, not full current-head regression. | `tests.md`; `lab3-playwright.json` is historical | Pending final-head verification |
+| AC-11 | Staff claim/reassignment selects active Staff or Administrator owner. | Eligible-owner validation and assignment. | API-STAFF-01/09, API-OWN-01, E2E-02 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-12 | IT Priority changes without changing Requested Priority. | Separate priority fields and update route. | API-STAFF-02/06, E2E-02 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-13 | Permitted Staff status changes follow transition matrix. | Transition validation and confirmation flow. | API-STAFF-03/04/07/08/11, E2E-02 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-14 | Staff Internal Notes are visible only to Staff and Administrators. | Role-protected note create/read flow. | API-STAFF-05/10, UI-49-SAFE-02, E2E-02 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-15 | Administrator user list supports fields, search, role filter, and empty state. | User Management list and responsive representation. | UI-ADM-01/02, E2E-03 | Historical journey pass; focused responsive suite 12/12, not full current-head regression. | `tests.md`; `lab3-playwright.json` is historical | Pending final-head verification |
+| AC-16 | Administrator creates role-assigned user requiring password change. | User creation and forced-change flag. | UI-ADM-01, UI-48-SELF-RESET, E2E-03 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-17 | Administrator edits user fields; duplicate email is rejected. | User edit validation and persistence. | UI-ADM-01, UI-ADM-FEEDBACK-01, E2E-03 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-18 | Administrator cannot deactivate own account. | Self-deactivation guard. | API-ADM-06, E2E-03 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-19 | System rejects deactivation of last active Administrator. | Last-admin invariant. | API-ADM-07, E2E-03 | Historical pass; current-head rerun pending. | `tests.md`; historical `lab3-playwright.json` | Pending final-head verification |
+| AC-20 | Non-Administrator is forbidden from user-management endpoints. | Administrator-only authorization. | SEC-AUTHZ-03/09, E2E-03 | Historical pass; current-head rerun pending. | `tests.md`; historical server and browser evidence | Pending final-head verification |
+| AC-21 | UI uses Zen Green design tokens and reusable components without ad-hoc colors. | Shared style tokens and components. | UI-STYLE-01 | Historical 18/18 focused suite; current-head rerun pending. | `ui-style-vitest.txt` (historical) | Pending final-head verification |
+| AC-22 | Major screens remain readable at desktop, tablet, and mobile without overflow/clipping. | Responsive layouts plus focused viewport assertions. | VISUAL-01/02 | Focused responsive suite 12/12 across three projects; full major-screen contract remains unverified on current head. | Execution result supplied for this review response; historical `lab3-playwright.json` is not current evidence | Partial; full contract pending |
+| AC-23 | Major screens are keyboard-operable with reachable controls and visible focus. | Keyboard traversal and focus assertions. | A11Y-01 | Focused keyboard suite 12/12 across three projects; full major-screen contract remains unverified on current head. | Execution result supplied for this review response; historical `lab3-playwright.json` is not current evidence | Partial; full contract pending |
+| AC-24 | Repeated seed runs are idempotent and error-free. | Idempotent seed implementation. | SEED-01 and seed integration tests | Historical pass; current-head server/database verification pending. | `tests.md`; historical server output | Pending verification |
+| AC-25 | Lab 2 migration preserves Ticket/Attachment ownership and valid data. | DevRequester-to-User migration. | DB-MIG-01/02/05..13, REL-12 | REL-12 not run. PostgreSQL role `kitti` now has `CREATEDB`; disposable `lab3e2e` target is available. | `integration-flow-results.md`; historical migration artifacts | Blocked on REL-12 execution |
+| AC-26 | Migrated Requester can authenticate with deterministic initial password and must change it before normal use. | Migration password derivation and forced-change gate. | DB-MIG-03/04, API-AUTH-06/07, REL-12 | REL-12 not run; end-to-end migrated-data evidence pending. | `integration-flow-results.md`; historical migration artifacts | Blocked on REL-12 execution |
+
+The former grouped run summary reported 183 full-suite browser passes while the separate Lab 3
+structured report contained 27 passes; these counts describe different scopes, not conflicting
+totals. A later Issue #42 review-fix run recorded 42/42 Lab 3 tests. None covers the current
+responsive/keyboard additions unless explicitly identified above. Human reviewer approval,
+PDF completion, Kanban update, full current-head verification, and REL-12 remain outstanding.

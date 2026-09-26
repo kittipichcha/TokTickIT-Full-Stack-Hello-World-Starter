@@ -51,7 +51,21 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
-- **2026-09-26 — Issue #42 E2E review follow-up (attachment filename CORS and mobile admin dialogs)**
+- **2026-09-26 — Issue #42 PR #56 review response: responsive and keyboard coverage**
+  - Scope: extend responsive and keyboard coverage for major Lab 3 screens; reconcile
+    acceptance and release evidence without claiming final approval.
+  - Tests changed: `e2e/lab-03/responsive-visual.spec.ts` and
+    `e2e/lab-03/keyboard-access.spec.ts` (working-tree changes). Focused responsive run:
+    **12 passed, 0 failed, 0 skipped** across desktop, tablet, and mobile. Focused keyboard
+    run: **12 passed, 0 failed, 0 skipped** across those projects. Exact invocation and raw
+    outputs were not included in the handoff evidence, so this log does not invent them.
+  - Other validation: `git diff --check` exited 0. A static acceptance-matrix check confirmed
+    26 unique ordered AC rows and the required seven columns. No full server/client suite,
+    complete Playwright regression, or REL-12 run is claimed here.
+  - Follow-up: run full current-head verification and REL-12 with PostgreSQL role `kitti`
+    (`CREATEDB`) and disposable database `lab3e2e`. User owns PDF and Kanban closeout.
+
+- **2026-09-26 — Issue #42 E2E review follow-up (attachment filename CORS and mobile admin dialogs; historical)**
   - Scope: exposed `Content-Disposition` alongside `X-CSRF-Token`; asserted configured-origin
     CORS headers and original attachment filename; closed rejected edit dialogs before mobile
     navigation. E2E-01..04 statuses now reflect the complete passing 42-test browser run.
@@ -98,8 +112,10 @@ assertions inside `auth.api.test.ts`.
     files**; combined Lab 2 + Lab 3 UI style **34 passed**; focused style **18 passed**;
     SEC-AUTHZ-07 **52 passed**. Type checks, builds, and Prisma schema validation passed.
     Test-DD §5 path audit found **32/32** referenced paths.
-  - Remaining blockers: REL-12 was not run because the available temporary database role lacks
-    `CREATEDB`, and the plan requires an isolated owned scratch database. The upstream #38
+  - At the time of this entry, REL-12 was not run because the available temporary database role
+    lacked `CREATEDB`, and the plan requires an isolated owned scratch database. The user has
+    since confirmed role `kitti` now has `CREATEDB` and the disposable target is `lab3e2e`; REL-12
+    still has not run. The upstream #38
     historical server-start/client-dev smoke artifact-presence gate remains unresolved despite
     fresh equivalent smoke checks. Human review, PDF/Kanban/submission, and post-merge checks remain
     outstanding. §9.3 catalog audit passed only on the existing temporary Lab 3 database and does
@@ -979,9 +995,9 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-48-NAV | UI | Integrated role navigation | Administrator starts at Ticket Queue and can open User Management; IT Staff cannot see User Management or Requester destinations; Requesters retain Requester destinations | `client/src/App.test.tsx` | FR-08, FR-21 | BR-28 | AC-10, AC-15 | Passed |
 | UI-48-SELF-DEMOTION | UI | Self-edit identity reconciliation | Successful self-edit immediately publishes returned name/email/role without `/auth/me`; other-user edit does not change identity | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-25 | BR-34 | AC-19 | Passed |
 | UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Passed |
-| VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Passed |
-| VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Passed |
-| A11Y-01 | Accessibility | Keyboard/focus/aria | Keyboard-operable; focus visible | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-23 | Passed |
+| VISUAL-01 | Responsive | Major-screen controls and layout | Focused current run checks primary controls across authentication, Requester, Staff, and Admin screens; full major-screen contract remains pending | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Implemented |
+| VISUAL-02 | Responsive | Staff Queue presentation | Desktop table, tablet condensation, mobile cards, viewport bounds, and no horizontal overflow | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Implemented |
+| A11Y-01 | Accessibility | Keyboard traversal and visible focus | Focused current run traverses login, forced password change, Requester, Staff, and Admin controls; full major-screen contract remains pending | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-23 | Implemented |
 | E2E-01 | E2E | Authentication flow | Login → change password → app → logout; inactive account safe failure/no shell | `e2e/lab-03/authentication.spec.ts` | FR-01–06 | BR-01–10 | AC-01, AC-02, AC-05, AC-06 | Passed |
 | E2E-02 | E2E | Staff ticket flow | Queue → sort/pagination → detail → claim → priority → status → comments/notes/attachment read | `e2e/lab-03/staff-ticket-flow.spec.ts` | FR-14–20 | BR-14–18 | AC-10–14 | Passed |
 | E2E-03 | E2E | User administration | List → search → create → edit → reset; invalid input, self-deactivation, last-admin demotion, non-admin denial | `e2e/lab-03/user-administration.spec.ts` | FR-21–26 | BR-25–30 | AC-15–19 | Passed |

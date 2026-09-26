@@ -1,33 +1,39 @@
 # TokTickIT - Full Stack Hello World Starter
 
-This repository is now being aligned to Lab 2: TokTickIT Requester Ticketing MVP.
+This repository contains the integrated Lab 3 TokTickIT ticketing application. Lab 3 adds
+session authentication, role-based Requester/IT Staff/Administrator screens, Staff ticket
+operations, Administrator user management, and a data-preserving Lab 2 migration.
 
-## 1. Scope for Lab 2
-The target behavior is defined in these files:
-- `docs/lab-02/specification.md`
-- `docs/lab-02/api-spec.md`
-- `docs/lab-02/tests.md`
-- `docs/lab-02/ui-spec.md`
+## 1. Current Scope
+The current contract is defined in:
+- `docs/lab-03/specification.md`
+- `docs/lab-03/api-spec.md`
+- `docs/lab-03/ui-spec.md`
+- `docs/lab-03/tests.md`
 
-In summary, Lab 2 requires:
-- Development requester selection (testing identity, not real auth)
-- Create ticket flow (category, related system, summary, description, requested priority)
-- Ticket number generation on backend
-- My Tickets with search, filter, sort, pagination
-- Ticket detail with ownership enforcement
-- Attachment upload/list/preview/download/soft-remove
-- Responsive Zen Green UI and keyboard-accessible flows
+The application supports authenticated Requester ticket and attachment workflows, Staff Queue
+and Ticket Detail operations, Administrator User Management, role/ownership authorization,
+public comments, internal notes, and the Lab 3 migration/seed contract. The Lab 2 requester
+ticket and attachment behavior remains supported under session identity.
 
-## 2. Current Implementation Status (as of 2026-08-30)
+## 2. Verification Status
 
 > **Superseded in Lab 3 (Issues #35 / #37).** The Development Requester selector,
 > the `X-Dev-Requester-Id` header, and `GET /api/dev-requesters` /
 > `GET /api/requester-context` were removed in Lab 3. Identity is now established by a
 > real session (login → httpOnly cookie + CSRF token), and reference-data and Ticket
-> routes require an authenticated session. A full README rewrite is owned by #42;
-> until then, the statements below describe the Lab 2 baseline.
+> routes require an authenticated session. The Lab 2 details below are historical implementation
+> notes; the current contract is in `docs/lab-03/`.
 
-Implemented in code right now:
+The recorded 598 server tests, 252 client tests, and full Playwright runs are historical
+pre-merge evidence, not verification of the current review worktree. Historical browser counts
+refer to distinct runs: 183/183 full configured, 27/27 earlier Lab 3, and 42/42 later Lab 3.
+The current focused responsive suite passed 12/12 and the keyboard suite passed 12/12 across
+desktop, tablet, and mobile. Full current-head verification and REL-12 remain pending. PostgreSQL
+role `kitti` now has `CREATEDB`, and `lab3e2e` is the disposable target; release approval is not
+recorded. See `artifacts/lab-03/release/verification-summary.md` for evidence scope.
+
+Historical Lab 2 implementation details follow:
 - `GET /api/categories` (active-only; **requires an authenticated session** in Lab 3)
 - ~~`GET /api/dev-requesters`~~ (removed in Lab 3)
 - `GET /api/related-systems` (active-only; **requires an authenticated session** in Lab 3)
@@ -229,8 +235,12 @@ Create `server/.env` (based on `.env.example` if present) with:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/toktickit?schema=public"
+E2E_DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/lab3e2e?schema=public"
 PORT=3000
 ```
+
+`E2E_DATABASE_URL` must point to the separate disposable `lab3e2e` database. Playwright does
+not fall back to `DATABASE_URL`; never point E2E tests at a development or production database.
 
 Run migration and seed:
 
@@ -285,23 +295,12 @@ npm test
 
 End-to-end tests (Playwright, desktop/tablet/mobile):
 ```bash
-npm run test:e2e
+npm run test:e2e -- --workers=1
 ```
 
-Important:
-- `docs/lab-02/tests.md` is the full Lab 2 test plan. Issue #12 was amended
-  (2026-08-24) to scope down to the requester-selection foundation only. Its required
-  rows (`API-REQ-01`, `UI-REQ-01..07`) are implemented and passing. The five
-  cross-feature rows previously listed in #12 (`API-REQ-02`, `API-REQ-03`,
-  `API-CONTRACT-01`, `UI-MY-03`, `E2E-05`) have been formally reassigned to #13, #14,
-  and #18 where their dependent models/endpoints/screens exist.
-- Server tests: 335 passing across 26 files; client tests: 100 passing across 8 files.
-- Lab 2 E2E suite: 159 passing, 0 failing (desktop/tablet/mobile).
-- Visual/responsive evidence: 82 screenshots (26 states × 3 viewports + 4 E2E workflow shots).
-- Final release verification evidence lives in `artifacts/lab-02/release/` and was
-  produced at the authoritative baseline `8cdebe824272cf101570bb78772379a9090b497f`.
-- Lab 3 (Issue #35) current counts: server **403 passing across 34 files**; client
-  **120 passing across 12 files**. Evidence bundle: `artifacts/lab-03/issue-35/`.
+Recorded Lab 3 run counts above are historical. Check `docs/lab-03/tests.md` and
+`artifacts/lab-03/release/` for source revisions, raw outputs, and outstanding gates before
+using any result as release evidence.
 
 ## 8. API Implemented Today
 
@@ -309,7 +308,7 @@ Important:
 > `GET /api/dev-requesters` / `GET /api/requester-context` endpoints were removed.
 > `GET /api/categories`, `GET /api/related-systems`, and all Ticket/Attachment routes
 > now require an authenticated session (login → session cookie + CSRF token). See
-> §11 for the Lab 3 authentication surface. A full README rewrite is owned by #42.
+> §11–§13 for the current Lab 3 authentication, Staff operations, and browser-test setup.
 
 ### `GET /api/categories`
 Returns active categories only. **Requires an authenticated session** (Lab 3). Response example:
@@ -408,9 +407,9 @@ omitted/blank, 1–200 chars after trim). A removed attachment returns `409 CONF
 10. ~~Full Lab 2 test evidence and docs completion~~ ✅
 
 ## 10. Notes
-- Lab 2 uses development requester identity only, not real authentication.
+- The Development Requester selector is historical and was removed in Lab 3.
 - Keep ownership enforcement server-side for all requester-owned resources.
-- Keep `docs/lab-02/tests.md` and `docs/lab-02/ai-use.md` updated as work progresses.
+- Current requirements and verification records live under `docs/lab-03/`.
 
 ## 11. Lab 3 — Identity, Database Migration & Authentication (Issue #35)
 
@@ -565,9 +564,9 @@ evidence remain owned by Issue #42.
 
 ## 13. Lab 3 integrated browser verification (Issue #42)
 
-Playwright starts its own API and Vite servers and refuses to reuse an existing server. Point
-`E2E_DATABASE_URL` at a disposable PostgreSQL database, or configure the same scratch target in
-`server/.env` as `DATABASE_URL`. The suite requires the documented Lab 3 schema before it runs.
+Playwright starts its own API and Vite servers and refuses to reuse an existing server. Set
+`E2E_DATABASE_URL` to the disposable `lab3e2e` PostgreSQL database in `server/.env`. The suite
+requires the documented Lab 3 schema before it runs and does not use `DATABASE_URL` as fallback.
 The same URL is passed to
 the Lab 2 requester fixture setup and the API process; no suite should target a development or
 production database.
