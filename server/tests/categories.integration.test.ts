@@ -1,9 +1,17 @@
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import request from "supertest";
 import { app } from "../src/app.js";
 import { disconnectPrisma } from "../src/prisma.js";
+import { ensureAndLogin, withSession, type TestSession } from "./lab-03/helpers/auth.js";
 
 describe("Categories API - Real Database Connection", () => {
+  let session: TestSession;
+
+  beforeAll(async () => {
+    if (!process.env.DATABASE_URL) return;
+    session = await ensureAndLogin({ email: "categories-integration@example.com", name: "Categories Integration", role: "REQUESTER" });
+  });
+
   afterAll(async () => {
     await disconnectPrisma();
   });
@@ -11,14 +19,14 @@ describe("Categories API - Real Database Connection", () => {
   const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
   itIfDb("should return 200 with all categories in ascending order by ID", async () => {
-    const response = await request(app).get("/api/categories");
+    const response = await withSession(request(app).get("/api/categories"), session);
 
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
   });
 
   itIfDb("should return categories with id and name fields", async () => {
-    const response = await request(app).get("/api/categories");
+    const response = await withSession(request(app).get("/api/categories"), session);
 
     expect(response.status).toBe(200);
     response.body.forEach((category: { id: unknown; name: unknown }) => {
@@ -28,7 +36,7 @@ describe("Categories API - Real Database Connection", () => {
   });
 
   itIfDb("should return categories sorted by ID then name (composite sort)", async () => {
-    const response = await request(app).get("/api/categories");
+    const response = await withSession(request(app).get("/api/categories"), session);
 
     expect(response.status).toBe(200);
     

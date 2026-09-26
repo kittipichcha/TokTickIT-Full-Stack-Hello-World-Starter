@@ -1,0 +1,2 @@
+GET /api/auth/me => 401
+{"error":{"code":"UNAUTHENTICATED","message":"Authentication required."}}

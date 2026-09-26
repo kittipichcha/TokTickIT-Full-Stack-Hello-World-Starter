@@ -1,0 +1,23 @@
+Issue #38 / PR #49 accessibility blocker remediation
+Head: bb66b813 (before this remediation commit)
+
+Focused client command:
+npm test -- src/lab-03-tests/StaffTicketDetail.test.tsx src/lab-03-tests/StaffTicketQueue.test.tsx
+Result: 2 files passed, 67 tests passed, 0 skipped.
+
+Full client command:
+npm test
+Result: 16 files passed, 205 tests passed, 0 skipped.
+
+Client build command:
+npm run build
+Result: passed (TypeScript and Vite production build).
+
+Implemented checks:
+- Confirmed status transitions focus the mounted Back to Queue control after local success,
+  including refresh failure; Escape/Cancel retain invoking-control focus.
+- Queue and Staff Detail owner lookup errors are conditionally associated with their selects via
+  aria-describedby, and Retry removes the stale reference after recovery.
+
+Expected jsdom window.open/navigation notices were emitted by existing tests; the suites exited 0.
+Final browser-level accessibility, E2E, responsive, and release evidence remains owned by Issue #42.

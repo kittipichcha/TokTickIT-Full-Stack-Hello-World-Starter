@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 import * as api from "../api";
+import { TEST_USER } from "./helpers/user";
 
 vi.mock("../api");
 
@@ -21,8 +22,6 @@ const relatedSystems = [
 ];
 
 async function setupAuthenticatedApp() {
-  vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
-  vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
   vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
   vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
   vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
@@ -30,23 +29,18 @@ async function setupAuthenticatedApp() {
     pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
   }));
 
-  render(<App />);
+  render(<App user={TEST_USER} />);
 
   // Wait for requester selector to load and select a requester
-  await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-  await userEvent.click(screen.getByRole("button", { name: "Continue" }));
 
   // Wait for app shell to appear — look for the Ada Lovelace text
-  await screen.findAllByText(/Ada Lovelace/);
+  await screen.findByText("TokTickIT");
 }
 
 describe("UI-TKT-01: Empty summary blocks submit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
   });
 
   afterEach(() => {
@@ -80,9 +74,6 @@ describe("UI-TKT-02: Summary over 120 chars blocks submit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
   });
 
   afterEach(() => {
@@ -110,9 +101,6 @@ describe("UI-TKT-03: Description under 10 chars blocks submit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
   });
 
   afterEach(() => {
@@ -140,9 +128,6 @@ describe("UI-TKT-04: Submit busy state prevents duplicate submission", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
   });
 
   afterEach(() => {
@@ -174,9 +159,6 @@ describe("UI-TKT-05: Case A — failed create preserves form and shows inline er
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
   });
 
   afterEach(() => {
@@ -214,9 +196,6 @@ describe("UI-TKT-07: Requested Priority defaults to MEDIUM", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
   });
 
   afterEach(() => {
@@ -237,9 +216,6 @@ describe("UI-ERR-01: Case A — ticket create API failure preserves form state",
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
   });
 
   afterEach(() => {
@@ -276,9 +252,6 @@ describe("UI-TKT-SUCCESS: Success flow — Ticket Number display, date formattin
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
   });
 
   afterEach(() => {
@@ -460,9 +433,6 @@ describe("UI-TKT-CAP-01: Create Ticket five-active-attachment capacity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.isAllowedAttachmentType).mockImplementation((filename) => {
       const allowed = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
       const lower = filename.toLowerCase();
@@ -619,9 +589,6 @@ describe("UI-TKT-08: Valid + invalid pre-submit attachments submit the ticket wi
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.isAllowedAttachmentType).mockImplementation((filename) => {
       const allowed = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
       const lower = filename.toLowerCase();
@@ -709,8 +676,8 @@ describe("UI-TKT-08: Valid + invalid pre-submit attachments submit the ticket wi
     expect(api.uploadAttachment).toHaveBeenCalledTimes(1);
     // 7. Its argument is the valid file.
     const uploadArg = vi.mocked(api.uploadAttachment).mock.calls[0];
-    expect(uploadArg[2].name).toBe("valid.jpg");
+    expect(uploadArg[1].name).toBe("valid.jpg");
     // 8. The invalid file is never passed to uploadAttachment().
-    expect(uploadArg[2].name).not.toBe("invalid.txt");
+    expect(uploadArg[1].name).not.toBe("invalid.txt");
   });
 });

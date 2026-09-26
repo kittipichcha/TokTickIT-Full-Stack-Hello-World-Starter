@@ -1,46 +1,63 @@
 import { useEffect, useState, useRef } from "react";
 import "./App.css";
 import {
-  clearStoredRequesterId,
-  fetchDevRequesters,
-  fetchRequesterContext,
   fetchTicketDetail,
-  getStoredRequesterId,
-  setStoredRequesterId,
   uploadAttachment,
   removeAttachment,
   previewAttachmentFile,
   downloadAttachmentFile,
   isAllowedAttachmentType,
   isWithinSizeLimit,
-  type DevRequester,
   type TicketDetailResponse,
   type AttachmentItem,
 } from "./api";
 import CreateTicket from "./CreateTicket";
 import MyTickets from "./MyTickets";
+import AdminUserManagement from "./AdminUserManagement";
+import StaffTicketQueue from "./StaffTicketQueue";
+import StaffTicketDetail from "./StaffTicketDetail";
+import CommentThread from "./CommentThread";
+import { postTicketComment, postAppearsResolved } from "./api";
 import { formatUtcDate, formatFileSize } from "./format";
+import type { AuthUser } from "./api-client";
 
-type SelectorState = "loading" | "ready" | "empty" | "error";
-type AppView = "home" | "create-ticket" | "ticket-detail";
+type AppView = "home" | "create-ticket" | "ticket-detail" | "staff-queue" | "staff-ticket-detail" | "admin-users";
+
+/**
+ * Issue #38 review fix (49-B1) — role-specific navigation and entry behavior
+ * (FR-08, ui-spec §5.3).
+ *
+ * The Requester screens and the Staff screens are disjoint: a Requester may only
+ * reach `home` / `create-ticket` / `ticket-detail`, and IT Staff / Administrator
+ * may only reach `staff-queue` / `staff-ticket-detail`. The backend authorization
+ * is unchanged — this is the frontend entry/routing behavior only.
+ */
+const REQUESTER_VIEWS: readonly AppView[] = ["home", "create-ticket", "ticket-detail"];
+const STAFF_VIEWS: readonly AppView[] = ["staff-queue", "staff-ticket-detail"];
+const ADMIN_VIEWS: readonly AppView[] = ["staff-queue", "staff-ticket-detail", "admin-users"];
 
 interface FailedAttachment {
   id: string;
   fileName: string;
   file: File;
-  requesterId: number;
   ticketNumber: string;
   error: string;
 }
 
-export default function App() {
-  const [requesters, setRequesters] = useState<DevRequester[]>([]);
-  const [selectorState, setSelectorState] = useState<SelectorState>("loading");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [activeRequester, setActiveRequester] = useState<DevRequester | null>(null);
+interface AppProps {
+  /** The authenticated user, supplied by AuthGate from the session. */
+  user: AuthUser;
+  onUserUpdated?: (user: AuthUser) => void;
+}
+
+export default function App({ user, onUserUpdated }: AppProps) {
   const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<AppView>("home");
+
+  const isStaff = user.role === "IT_STAFF" || user.role === "ADMINISTRATOR";
+  const allowedViews = user.role === "ADMINISTRATOR" ? ADMIN_VIEWS : user.role === "IT_STAFF" ? STAFF_VIEWS : REQUESTER_VIEWS;
+  const initialView: AppView = isStaff ? "staff-queue" : "home";
+
+  const [view, setView] = useState<AppView>(initialView);
   const [detailTicketNumber, setDetailTicketNumber] = useState<string | null>(null);
   const [ticketDetail, setTicketDetail] = useState<TicketDetailResponse["data"] | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -48,6 +65,25 @@ export default function App() {
   const [detailRetryCounter, setDetailRetryCounter] = useState(0);
   const [myTicketsResetKey, setMyTicketsResetKey] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Issue #38 — staff views
+  const [staffDetailTicketNumber, setStaffDetailTicketNumber] = useState<string | null>(null);
+  const [appearsResolvedError, setAppearsResolvedError] = useState<string | null>(null);
+  const [isUpdatingAppearsResolved, setIsUpdatingAppearsResolved] = useState(false);
+
+  /**
+   * Issue #38 review fix (49-B1) — a view that is not permitted for the current
+   * role is never rendered. Stale or manipulated state (including a role change
+   * such as #41's Administrator self-demotion) is redirected to the role's
+   * initial view instead of rendering a Requester-only screen for Staff/Admin.
+   */
+  const activeView: AppView = allowedViews.includes(view) ? view : initialView;
+
+  useEffect(() => {
+    if (!allowedViews.includes(view)) {
+      setView(initialView);
+    }
+  }, [allowedViews, initialView, view]);
 
   // Attachment dialog state
   const [removeDialogAttachment, setRemoveDialogAttachment] = useState<AttachmentItem | null>(null);
@@ -64,12 +100,11 @@ export default function App() {
   const [unavailableAttachmentIds, setUnavailableAttachmentIds] = useState<number[]>([]);
   const [unavailableAttachmentErrors, setUnavailableAttachmentErrors] = useState<Record<number, string>>({});
 
-  // Failed Add Attachment upload in Ticket Detail — scoped to requester + ticket
+  // Failed Add Attachment upload in Ticket Detail — scoped to the ticket
   const [failedAddAttachment, setFailedAddAttachment] = useState<{
     id: string;
     fileName: string;
     file: File;
-    requesterId: number;
     ticketNumber: string;
     error: string;
   } | null>(null);
@@ -78,89 +113,24 @@ export default function App() {
   const [failedAttachments, setFailedAttachments] = useState<FailedAttachment[]>([]);
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
-  const loadRequesters = async () => {
-    setSelectorState("loading");
-    setMessage(null);
-    try {
-      const data = await fetchDevRequesters();
-      setRequesters(data);
-      const storedId = getStoredRequesterId();
-      const storedRequester = data.find((requester) => requester.id === storedId);
-      if (storedId !== null && !storedRequester) {
-        clearStoredRequesterId();
-        setMessage("Your saved requester is no longer active. Please select an active requester.");
-      }
-      if (storedRequester) {
-        setActiveRequester(storedRequester);
-        setSelectedId(storedRequester.id);
-      }
-      setSelectorState(data.length > 0 ? "ready" : "empty");
-    } catch (loadError) {
-      setSelectorState("error");
-      setError(loadError instanceof Error ? loadError.message : "Failed to load requesters.");
-    }
-  };
-
-  useEffect(() => {
-    void loadRequesters();
-  }, []);
-
-  const continueToApp = async () => {
-    const requester = requesters.find((candidate) => candidate.id === selectedId);
-    if (!requester) return;
-
-    try {
-      await fetchRequesterContext(requester.id);
-      setStoredRequesterId(requester.id);
-      setActiveRequester(requester);
-      setMessage(null);
-      setError(null);
-    } catch {
-      clearStoredRequesterId();
-      setActiveRequester(null);
-      setSelectedId(null);
-      setMessage("Selected requester is no longer active. Please select an active requester.");
-      setError(null);
-      setSelectorState("ready");
-    }
-  };
-
-  const changeRequester = () => {
-    clearStoredRequesterId();
-    setActiveRequester(null);
-    setSelectedId(null);
-    setError(null);
-    setView("home");
-    setMyTicketsResetKey((k) => k + 1);
-    // Clear all attachment failure/retry state — it is scoped to the previous requester.
-    setFailedAttachments([]);
-    setFailedAddAttachment(null);
-    setUnavailableAttachmentIds([]);
-    setUnavailableAttachmentErrors({});
-    setAddAttachmentError(null);
-    void loadRequesters();
-  };
-
   const handleViewTicket = (ticketNumber: string, failedFiles?: Array<{ file: File; fileName: string; id: string; error: string }>) => {
     setDetailTicketNumber(ticketNumber);
     setView("ticket-detail");
-    if (failedFiles && failedFiles.length > 0 && activeRequester) {
-      // Scope each failed attachment to the requester + ticket that produced it.
-      setFailedAttachments(failedFiles.map((f) => ({ ...f, requesterId: activeRequester.id, ticketNumber })));
+    if (failedFiles && failedFiles.length > 0) {
+      setFailedAttachments(failedFiles.map((f) => ({ ...f, ticketNumber })));
     }
   };
 
   // Handle retry of a failed attachment from Create Ticket flow.
-  // The retry ALWAYS targets the failed attachment's own requester + ticket
-  // identity — never the currently displayed detail ticket.
+  // The retry ALWAYS targets the failed attachment's own ticket identity —
+  // never the currently displayed detail ticket.
   const handleRetryFailedAttachment = async (failedAtt: FailedAttachment) => {
-    if (!activeRequester) return;
     setRetryingId(failedAtt.id);
     try {
       // Phase 1: the mutation itself. A successful retry upload is terminal —
       // the failed row is removed permanently and must never be restored
       // merely because the subsequent refresh failed.
-      await uploadAttachment(failedAtt.requesterId, failedAtt.ticketNumber, failedAtt.file);
+      await uploadAttachment(failedAtt.ticketNumber, failedAtt.file);
       // Mutation succeeded — remove from failed list permanently.
       setFailedAttachments((prev) => prev.filter((f) => f.id !== failedAtt.id));
       // Phase 2: refresh. A refresh failure is a detail error only, NOT a
@@ -168,7 +138,7 @@ export default function App() {
       setUnavailableAttachmentIds([]);
       setUnavailableAttachmentErrors({});
       try {
-        const data = await fetchTicketDetail(failedAtt.requesterId, failedAtt.ticketNumber);
+        const data = await fetchTicketDetail(failedAtt.ticketNumber);
         setTicketDetail(data);
       } catch (refreshErr) {
         setDetailError(refreshErr instanceof Error ? refreshErr.message : "Failed to refresh ticket detail.");
@@ -182,14 +152,14 @@ export default function App() {
 
   // Load ticket detail when entering the ticket-detail view
   useEffect(() => {
-    if (view !== "ticket-detail" || !detailTicketNumber || !activeRequester) return;
+    if (activeView !== "ticket-detail" || !detailTicketNumber) return;
 
     let cancelled = false;
     setDetailLoading(true);
     setDetailError(null);
     setTicketDetail(null);
 
-    fetchTicketDetail(activeRequester.id, detailTicketNumber)
+    fetchTicketDetail(detailTicketNumber)
       .then((data) => {
         if (!cancelled) {
           setTicketDetail(data);
@@ -208,7 +178,7 @@ export default function App() {
       });
 
     return () => { cancelled = true; };
-  }, [view, detailTicketNumber, activeRequester, detailRetryCounter]);
+  }, [activeView, detailTicketNumber, detailRetryCounter]);
 
   const handleCreateAnother = () => {
     setView("create-ticket");
@@ -258,57 +228,6 @@ export default function App() {
     }
   };
 
-  if (!activeRequester) {
-    return (
-      <main className="app-container selector-screen">
-        <p className="eyebrow">TokTickIT</p>
-        <h1>Choose a Development Requester</h1>
-        <p className="testing-note">For Lab 2 testing only, not a login screen.</p>
-        {message && <p className="notice" role="status">{message}</p>}
-        {selectorState === "loading" && (
-          <div className="selector-form" role="status" aria-label="Loading active requesters">
-            <span className="requester-label">Development Requester</span>
-            <div className="skeleton-select" aria-hidden="true" />
-            <button className="primary-button" disabled>Continue</button>
-          </div>
-        )}
-        {selectorState === "error" && (
-          <div className="error-box" role="alert">
-            <p>{error}</p>
-            <button className="secondary-button" onClick={() => void loadRequesters()}>Retry</button>
-          </div>
-        )}
-        {selectorState === "empty" && <p className="empty-state">No active development requesters are available.</p>}
-        {selectorState === "ready" && (
-          <div className="selector-form">
-            <label className="requester-label" id="requester-label" htmlFor="requester-select">Development Requester</label>
-            <select
-              id="requester-select"
-              className="requester-select"
-              aria-labelledby="requester-label"
-              value={selectedId ?? ""}
-              onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
-            >
-              <option value="" disabled>Select a requester…</option>
-              {requesters.map((requester) => (
-                <option key={requester.id} value={requester.id}>
-                  {requester.name} — {requester.email}
-                </option>
-              ))}
-            </select>
-            <button
-              className="primary-button"
-              disabled={selectedId === null || !requesters.some((r) => r.id === selectedId)}
-              onClick={() => void continueToApp()}
-            >
-              Continue
-            </button>
-          </div>
-        )}
-      </main>
-    );
-  }
-
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -326,39 +245,75 @@ export default function App() {
           <span className="hamburger-bar" />
         </button>
         <nav id="primary-navigation" aria-label="Primary" className={mobileMenuOpen ? "mobile-menu-open" : ""}>
-          <a
-            href="#my-tickets"
-            className={view === "home" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
-          >
-            My Tickets
-          </a>
-          <a
-            href="#create-ticket"
-            className={view === "create-ticket" ? "nav-active" : ""}
-            onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
-          >
-            Create Ticket
-          </a>
+          {!isStaff && (
+            <>
+              <a
+                href="#my-tickets"
+                className={activeView === "home" ? "nav-active" : ""}
+                onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
+              >
+                My Tickets
+              </a>
+              <a
+                href="#create-ticket"
+                className={activeView === "create-ticket" ? "nav-active" : ""}
+                onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
+              >
+                Create Ticket
+              </a>
+            </>
+          )}
+          {isStaff && (
+            <a
+              href="#staff-queue"
+              className={activeView === "staff-queue" || activeView === "staff-ticket-detail" ? "nav-active" : ""}
+              onClick={(e) => { e.preventDefault(); setView("staff-queue"); setMobileMenuOpen(false); }}
+            >
+              Ticket Queue
+            </a>
+          )}
+          {user.role === "ADMINISTRATOR" && (
+            <a href="#admin-users" className={activeView === "admin-users" ? "nav-active" : ""}
+              onClick={(e) => { e.preventDefault(); setView("admin-users"); setMobileMenuOpen(false); }}>
+              User Management
+            </a>
+          )}
         </nav>
-        <div className="identity">{activeRequester.name}<button className="header-button" onClick={changeRequester}>Change Requester</button></div>
       </header>
-      {view === "home" && (
+      {message && <p className="notice" role="status">{message}</p>}
+      {activeView === "home" && (
         <MyTickets
-          requester={activeRequester}
           onViewTicket={handleViewTicket}
           onCreateTicket={() => setView("create-ticket")}
           resetKey={myTicketsResetKey}
         />
       )}
-      {view === "create-ticket" && (
+      {activeView === "create-ticket" && (
         <CreateTicket
-          requester={activeRequester}
+          requesterName={user.name}
           onViewTicket={handleViewTicket}
           onCreateAnother={handleCreateAnother}
         />
       )}
-      {view === "ticket-detail" && (
+      {activeView === "staff-queue" && (
+        <StaffTicketQueue
+          onOpenDetail={(ticketNumber) => {
+            setStaffDetailTicketNumber(ticketNumber);
+            setView("staff-ticket-detail");
+          }}
+        />
+      )}
+      {activeView === "staff-ticket-detail" && staffDetailTicketNumber && (
+        <StaffTicketDetail
+          ticketNumber={staffDetailTicketNumber}
+          currentUserId={user.id}
+          onBack={() => setView("staff-queue")}
+        />
+      )}
+      {activeView === "admin-users" && user.role === "ADMINISTRATOR" && (
+        <AdminUserManagement currentUser={user} onUserUpdated={onUserUpdated ?? (() => {})} />
+      )}
+      {activeView === "ticket-detail" && (
         <main className="app-container">
           {detailLoading && (
             <div role="status" aria-label="Loading ticket detail">
@@ -527,7 +482,7 @@ export default function App() {
                               className="tertiary-button"
                               onClick={async () => {
                                 try {
-                                  const { blob } = await previewAttachmentFile(activeRequester!.id, att.id);
+                                  const { blob } = await previewAttachmentFile(att.id);
                                   const url = URL.createObjectURL(blob);
                                   window.open(url, "_blank");
                                   setTimeout(() => URL.revokeObjectURL(url), 60000);
@@ -544,7 +499,7 @@ export default function App() {
                               className="tertiary-button"
                               onClick={async () => {
                                 try {
-                                  const { blob, filename } = await downloadAttachmentFile(activeRequester!.id, att.id);
+                                  const { blob, filename } = await downloadAttachmentFile(att.id);
                                   const url = URL.createObjectURL(blob);
                                   const a = document.createElement("a");
                                   a.href = url;
@@ -573,9 +528,9 @@ export default function App() {
                       </li>
                     ))}
                     {/* Failed attachments with retry — only those scoped to the
-                        current requester AND the currently displayed ticket */}
+                        currently displayed ticket */}
                     {failedAttachments
-                      .filter((fAtt) => fAtt.requesterId === activeRequester!.id && fAtt.ticketNumber === detailTicketNumber)
+                      .filter((fAtt) => fAtt.ticketNumber === detailTicketNumber)
                       .map((fAtt) => (
                       <li key={fAtt.id} className="attachment-row attachment-failed">
                         <span className="attachment-icon">{"📄"}</span>
@@ -594,9 +549,8 @@ export default function App() {
                         </button>
                       </li>
                     ))}
-                    {/* Failed Add Attachment upload — only when scoped to current requester + ticket */}
+                    {/* Failed Add Attachment upload — only when scoped to the current ticket */}
                     {failedAddAttachment &&
-                      failedAddAttachment.requesterId === activeRequester!.id &&
                       failedAddAttachment.ticketNumber === detailTicketNumber && (
                       <li key={failedAddAttachment.id} className="attachment-row attachment-unavailable">
                         <span className="attachment-icon">{"📄"}</span>
@@ -608,7 +562,6 @@ export default function App() {
                         <button
                           className="tertiary-button"
                           onClick={async () => {
-                            if (!activeRequester) return;
                             setFailedAddAttachment(null);
                             setIsAddingAttachment(true);
                             try {
@@ -616,7 +569,7 @@ export default function App() {
                               // upload is terminal — the failed row is cleared
                               // permanently and must never be restored merely
                               // because the subsequent refresh failed.
-                              await uploadAttachment(failedAddAttachment.requesterId, failedAddAttachment.ticketNumber, failedAddAttachment.file);
+                              await uploadAttachment(failedAddAttachment.ticketNumber, failedAddAttachment.file);
                               // Mutation succeeded — the failed row stays cleared.
                               setUnavailableAttachmentIds([]);
                               setUnavailableAttachmentErrors({});
@@ -624,7 +577,7 @@ export default function App() {
                               // error only, NOT a mutation failure, so it must
                               // not restore the retry row.
                               try {
-                                const data = await fetchTicketDetail(failedAddAttachment.requesterId, failedAddAttachment.ticketNumber);
+                                const data = await fetchTicketDetail(failedAddAttachment.ticketNumber);
                                 setTicketDetail(data);
                               } catch (refreshErr) {
                                 setDetailError(refreshErr instanceof Error ? refreshErr.message : "Failed to refresh ticket detail.");
@@ -655,7 +608,7 @@ export default function App() {
                     accept=".jpg,.jpeg,.png,.webp,.pdf"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (!file || !activeRequester || !detailTicketNumber) return;
+                      if (!file || !detailTicketNumber) return;
                       e.target.value = "";
 
                       // Enforce the five-active-attachment capacity client-side.
@@ -682,7 +635,7 @@ export default function App() {
                         // Phase 1: the mutation itself. A successful upload is
                         // terminal — it must never enter the retry state merely
                         // because the subsequent refresh failed.
-                        await uploadAttachment(activeRequester.id, detailTicketNumber, file);
+                        await uploadAttachment(detailTicketNumber, file);
                         // Mutation succeeded — clear any prior failed state.
                         setFailedAddAttachment(null);
                         // Phase 2: refresh. A refresh failure is a detail error
@@ -690,7 +643,7 @@ export default function App() {
                         setUnavailableAttachmentIds([]);
                         setUnavailableAttachmentErrors({});
                         try {
-                          const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber);
+                          const data = await fetchTicketDetail(detailTicketNumber);
                           setTicketDetail(data);
                         } catch (refreshErr) {
                           setDetailError(refreshErr instanceof Error ? refreshErr.message : "Failed to refresh ticket detail.");
@@ -700,7 +653,6 @@ export default function App() {
                           id: `failed-upload-${Date.now()}`,
                           fileName: file.name,
                           file,
-                          requesterId: activeRequester.id,
                           ticketNumber: detailTicketNumber,
                           error: err instanceof Error ? err.message : "Upload failed.",
                         });
@@ -727,6 +679,79 @@ export default function App() {
                 <button className="secondary-button" onClick={() => setView("home")}>← Back to My Tickets</button>
                 <button className="primary-button" onClick={() => setView("create-ticket")}>Create Another</button>
               </div>
+
+              {/* Issue #38 — Public Comments (BR-04: notes never appear here) */}
+              <CommentThread
+                comments={ticketDetail.publicComments ?? []}
+                onPost={async (content) => {
+                  const createdComment = await postTicketComment(ticketDetail.ticketNumber, content);
+                  setTicketDetail((current) =>
+                    current
+                      ? { ...current, publicComments: [...(current.publicComments ?? []), createdComment] }
+                      : current,
+                  );
+                  try {
+                    const data = await fetchTicketDetail(ticketDetail.ticketNumber);
+                    setTicketDetail(data);
+                  } catch (refreshErr) {
+                    setDetailError(
+                      refreshErr instanceof Error
+                        ? `Comment posted, but the ticket could not be refreshed: ${refreshErr.message}`
+                        : "Comment posted, but the ticket could not be refreshed.",
+                    );
+                  }
+                }}
+              />
+
+              {/* Issue #38 — "Problem Appears Resolved" (BR-19: boolean only, no status change) */}
+              <section className="appears-resolved-section" aria-label="Problem Appears Resolved">
+                <h2>Problem Appears Resolved</h2>
+                <p className="appears-resolved-state">
+                  {ticketDetail.appearsResolved
+                    ? "You have indicated the problem appears resolved."
+                    : "You have not indicated the problem appears resolved."}
+                </p>
+                <button
+                  className="secondary-button"
+                  disabled={isUpdatingAppearsResolved}
+                  onClick={async () => {
+                    setIsUpdatingAppearsResolved(true);
+                    setAppearsResolvedError(null);
+                    try {
+                      const result = await postAppearsResolved(
+                        ticketDetail.ticketNumber,
+                        !ticketDetail.appearsResolved,
+                      );
+                      setTicketDetail((current) =>
+                        current ? { ...current, appearsResolved: result.appearsResolved } : current,
+                      );
+                      try {
+                        const data = await fetchTicketDetail(ticketDetail.ticketNumber);
+                        setTicketDetail(data);
+                      } catch (refreshErr) {
+                        setAppearsResolvedError(
+                          refreshErr instanceof Error
+                            ? `Indicator updated, but the ticket could not be refreshed: ${refreshErr.message}`
+                            : "Indicator updated, but the ticket could not be refreshed.",
+                        );
+                      }
+                    } catch (err) {
+                      setAppearsResolvedError(
+                        err instanceof Error ? err.message : "Failed to update the indicator.",
+                      );
+                    } finally {
+                      setIsUpdatingAppearsResolved(false);
+                    }
+                  }}
+                >
+                  {ticketDetail.appearsResolved
+                    ? "Clear indication"
+                    : "Indicate problem appears resolved"}
+                </button>
+                {appearsResolvedError && (
+                  <p className="field-error" role="alert">{appearsResolvedError}</p>
+                )}
+              </section>
             </div>
           )}
 
@@ -768,12 +793,10 @@ export default function App() {
                     className="destructive-button"
                     disabled={isRemoving}
                     onClick={async () => {
-                      if (!activeRequester) return;
                       setIsRemoving(true);
                       try {
                         // Phase 1: the mutation. A successful removal is terminal.
                         await removeAttachment(
-                          activeRequester.id,
                           removeDialogAttachment.id,
                           removeReason.trim() || undefined,
                         );
@@ -784,7 +807,7 @@ export default function App() {
                         setUnavailableAttachmentIds([]);
                         setUnavailableAttachmentErrors({});
                         try {
-                          const data = await fetchTicketDetail(activeRequester.id, detailTicketNumber!);
+                          const data = await fetchTicketDetail(detailTicketNumber!);
                           setTicketDetail(data);
                         } catch (refreshErr) {
                           setDetailError(refreshErr instanceof Error ? refreshErr.message : "Failed to refresh ticket detail.");

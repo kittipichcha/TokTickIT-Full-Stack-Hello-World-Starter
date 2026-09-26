@@ -1,18 +1,9 @@
 import { parseContentDispositionFilename } from "./format";
+import { apiJson, apiRequest, parseApiError, type ApiError } from "./api-client";
 
 export interface Category {
   id: number;
   name: string;
-}
-
-export interface DevRequester {
-  id: number;
-  name: string;
-  email: string;
-}
-
-export interface DevRequesterResponse {
-  data: DevRequester[];
 }
 
 export interface RelatedSystem {
@@ -96,6 +87,17 @@ export interface TicketDetailResponse {
     currentStatus: string;
     createdAt: string;
     updatedAt: string;
+    /**
+     * Issue #38 — Requester "Problem Appears Resolved" indicator (BR-19).
+     * Optional so Lab 2 fixtures that predate the field remain valid; the
+     * server always returns it.
+     */
+    appearsResolved?: boolean;
+    /**
+     * Issue #38 — Public Comments only (BR-04: notes never reach a Requester
+     * payload). Optional for Lab 2 fixture compatibility.
+     */
+    publicComments?: CommentItem[];
     attachments: Array<{
       id: number;
       originalFilename: string;
@@ -105,35 +107,33 @@ export interface TicketDetailResponse {
       isRemoved: boolean;
       removedAt: string | null;
       removalReason: string | null;
-      removedByRequesterId: number | null;
+      removedByUserId: number | null;
     }>;
   };
 }
 
+/**
+ * Fetches a Ticket's detail.
+ *
+ * Identity comes from the authenticated session (httpOnly cookie) — there is no
+ * client-supplied requester id. Shared read: the owning Requester or IT
+ * Staff/Administrator.
+ */
 export async function fetchTicketDetail(
-  requesterId: number,
   ticketNumber: string,
 ): Promise<TicketDetailResponse["data"]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}`, apiBaseUrl), {
-    headers: requesterHeaders(requesterId),
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(body?.error?.message || `Failed to fetch ticket: ${response.status}`) as Error & { code?: string };
-    err.code = body?.error?.code;
-    throw err;
-  }
-  const result = (await response.json()) as TicketDetailResponse;
+  const result = await apiJson<TicketDetailResponse>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}`,
+    { fallbackError: "Failed to fetch ticket." },
+  );
   return result.data;
 }
 
+/** Fetches the authenticated Requester's own Tickets (My Tickets). */
 export async function fetchMyTickets(
-  requesterId: number,
   params: MyTicketsParams = {},
 ): Promise<MyTicketsResponse> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const url = new URL("/api/tickets", apiBaseUrl);
+  const url = new URL("/api/tickets", "http://placeholder.invalid");
 
   if (params.search) url.searchParams.set("search", params.search);
   if (params.categoryId !== undefined) url.searchParams.set("categoryId", String(params.categoryId));
@@ -144,67 +144,26 @@ export async function fetchMyTickets(
   if (params.page !== undefined) url.searchParams.set("page", String(params.page));
   if (params.pageSize !== undefined) url.searchParams.set("pageSize", String(params.pageSize));
 
-  const response = await fetch(url, {
-    headers: requesterHeaders(requesterId),
+  return apiJson<MyTicketsResponse>(`${url.pathname}${url.search}`, {
+    fallbackError: "Failed to fetch tickets.",
   });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(body?.error?.message || `Failed to fetch tickets: ${response.status}`) as Error & { code?: string };
-    err.code = body?.error?.code;
-    throw err;
-  }
-  return (await response.json()) as MyTicketsResponse;
 }
 
-export const REQUESTER_STORAGE_KEY = "toktickit.requesterId";
-
+/** Fetches active Categories (authenticated session required). */
 export async function fetchCategories(): Promise<Category[]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/categories", apiBaseUrl));
-  if (!response.ok) throw new Error(`Failed to fetch categories: ${response.status} ${response.statusText}`);
-  return response.json();
-}
-
-export async function fetchDevRequesters(): Promise<DevRequester[]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/dev-requesters", apiBaseUrl));
-  if (!response.ok) throw new Error(`Failed to fetch requesters: ${response.status} ${response.statusText}`);
-  const payload = (await response.json()) as DevRequesterResponse;
-  return payload.data;
-}
-
-export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/related-systems", apiBaseUrl));
-  if (!response.ok) throw new Error(`Failed to fetch related systems: ${response.status} ${response.statusText}`);
-  const payload = (await response.json()) as RelatedSystemResponse;
-  return payload.data;
-}
-
-export function getStoredRequesterId(): number | null {
-  const stored = sessionStorage.getItem(REQUESTER_STORAGE_KEY);
-  return stored && /^[1-9][0-9]*$/.test(stored) ? Number(stored) : null;
-}
-
-export function setStoredRequesterId(id: number): void {
-  sessionStorage.setItem(REQUESTER_STORAGE_KEY, String(id));
-}
-
-export function clearStoredRequesterId(): void {
-  sessionStorage.removeItem(REQUESTER_STORAGE_KEY);
-}
-
-export function requesterHeaders(id: number): HeadersInit {
-  return { "X-Dev-Requester-Id": String(id) };
-}
-
-export async function fetchRequesterContext(id: number): Promise<{ requesterId: number }> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/requester-context", apiBaseUrl), {
-    headers: requesterHeaders(id),
+  // GET /api/categories returns a BARE ARRAY (preserved from Lab 2; see
+  // docs/lab-03/api-spec.md §5 and specification.md D-19). It is not wrapped
+  // in `{ data }`.
+  return apiJson<Category[]>("/api/categories", {
+    fallbackError: "Failed to fetch categories.",
   });
-  if (!response.ok) throw new Error(`Failed to validate requester context: ${response.status} ${response.statusText}`);
-  const payload = (await response.json()) as { data: { requesterId: number } };
+}
+
+/** Fetches active Related Systems (authenticated session required). */
+export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
+  const payload = await apiJson<{ data: RelatedSystem[] }>("/api/related-systems", {
+    fallbackError: "Failed to fetch related systems.",
+  });
   return payload.data;
 }
 
@@ -216,27 +175,21 @@ export interface CreateTicketPayload {
   requestedPriority: string;
 }
 
+/**
+ * Creates a Ticket for the authenticated Requester.
+ *
+ * State-changing: sends the session cookie and the CSRF token from the shared
+ * transport. Any `requesterId` in the payload is ignored server-side.
+ */
 export async function createTicket(
-  requesterId: number,
   payload: CreateTicketPayload,
 ): Promise<TicketResponse["data"]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(new URL("/api/tickets", apiBaseUrl), {
+  const result = await apiJson<TicketResponse>("/api/tickets", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...requesterHeaders(requesterId),
-    },
-    body: JSON.stringify(payload),
+    body: payload,
+    includeCsrf: true,
+    fallbackError: "Failed to create ticket.",
   });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(body?.error?.message || `Failed to create ticket: ${response.status}`) as Error & { code?: string; fields?: Record<string, string> };
-    err.code = body?.error?.code;
-    err.fields = body?.error?.fields;
-    throw err;
-  }
-  const result = (await response.json()) as TicketResponse;
   return result.data;
 }
 
@@ -251,7 +204,7 @@ export interface AttachmentItem {
   isRemoved: boolean;
   removedAt: string | null;
   removalReason: string | null;
-  removedByRequesterId: number | null;
+  removedByUserId: number | null;
 }
 
 export interface AttachmentUploadResult {
@@ -290,101 +243,56 @@ export function isWithinSizeLimit(sizeBytes: number): boolean {
   return sizeBytes <= 5_000_000;
 }
 
+/**
+ * Uploads an Attachment to an owned Ticket.
+ * State-changing: session cookie + CSRF token; multipart body sent as-is.
+ */
 export async function uploadAttachment(
-  requesterId: number,
   ticketNumber: string,
   file: File,
 ): Promise<AttachmentUploadResult["data"]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(
-    new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`, apiBaseUrl),
+  const response = await apiRequest(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`,
     {
       method: "POST",
-      headers: requesterHeaders(requesterId),
       body: formData,
+      rawBody: true,
+      includeCsrf: true,
     },
   );
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(
-      body?.error?.message || `Failed to upload attachment: ${response.status}`,
-    ) as AttachmentError;
-    err.code = body?.error?.code;
-    err.fields = body?.error?.fields;
-    throw err;
+    throw await parseApiError(response, "Failed to upload attachment.");
   }
 
   const result = (await response.json()) as AttachmentUploadResult;
   return result.data;
 }
 
-export async function fetchAttachments(
-  requesterId: number,
-  ticketNumber: string,
-): Promise<AttachmentItem[]> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(
-    new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`, apiBaseUrl),
-    {
-      headers: requesterHeaders(requesterId),
-    },
+/** Lists a Ticket's Attachments (shared read: owner Requester or Staff/Admin). */
+export async function fetchAttachments(ticketNumber: string): Promise<AttachmentItem[]> {
+  const response = await apiRequest(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/attachments`,
   );
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(
-      body?.error?.message || `Failed to fetch attachments: ${response.status}`,
-    ) as AttachmentError;
-    err.code = body?.error?.code;
-    throw err;
+    throw await parseApiError(response, "Failed to fetch attachments.");
   }
 
   return (await response.json()) as AttachmentItem[];
 }
 
-export function getAttachmentDownloadUrl(
-  attachmentId: number,
-  requesterId: number,
-): string {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const url = new URL(`/api/attachments/${attachmentId}/download`, apiBaseUrl);
-  // Add requester ID as query parameter for download via new window
-  url.searchParams.set("requesterId", String(requesterId));
-  return url.toString();
-}
-
-export function getAttachmentPreviewUrl(
-  attachmentId: number,
-  requesterId: number,
-): string {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const url = new URL(`/api/attachments/${attachmentId}/preview`, apiBaseUrl);
-  url.searchParams.set("requesterId", String(requesterId));
-  return url.toString();
-}
-
+/** Downloads an Attachment file (shared read). */
 export async function downloadAttachmentFile(
-  requesterId: number,
   attachmentId: number,
 ): Promise<{ blob: Blob; filename: string }> {
-  // NOTE: First param is requesterId, second is attachmentId
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(
-    new URL(`/api/attachments/${attachmentId}/download`, apiBaseUrl),
-    { headers: requesterHeaders(requesterId) },
-  );
+  const response = await apiRequest(`/api/attachments/${attachmentId}/download`);
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(
-      body?.error?.message || `Failed to download attachment: ${response.status}`,
-    ) as AttachmentError;
-    err.code = body?.error?.code;
-    throw err;
+    throw await parseApiError(response, "Failed to download attachment.");
   }
 
   const disposition = response.headers.get("content-disposition") || "";
@@ -394,23 +302,14 @@ export async function downloadAttachmentFile(
   return { blob, filename };
 }
 
+/** Previews an Attachment (shared read). */
 export async function previewAttachmentFile(
-  requesterId: number,
   attachmentId: number,
 ): Promise<{ blob: Blob; mimeType: string }> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const response = await fetch(
-    new URL(`/api/attachments/${attachmentId}/preview`, apiBaseUrl),
-    { headers: requesterHeaders(requesterId) },
-  );
+  const response = await apiRequest(`/api/attachments/${attachmentId}/preview`);
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const err = new Error(
-      body?.error?.message || `Failed to preview attachment: ${response.status}`,
-    ) as AttachmentError;
-    err.code = body?.error?.code;
-    throw err;
+    throw await parseApiError(response, "Failed to preview attachment.");
   }
 
   const mimeType = response.headers.get("content-type") || "application/octet-stream";
@@ -418,35 +317,252 @@ export async function previewAttachmentFile(
   return { blob, mimeType };
 }
 
+/**
+ * Soft-removes an Attachment (Requester-owner-only mutation).
+ * State-changing: session cookie + CSRF token.
+ */
 export async function removeAttachment(
-  requesterId: number,
   attachmentId: number,
   removalReason?: string,
 ): Promise<AttachmentItem> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const body = removalReason !== undefined ? { removalReason } : undefined;
 
-  const response = await fetch(
-    new URL(`/api/attachments/${attachmentId}`, apiBaseUrl),
-    {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        ...requesterHeaders(requesterId),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    },
-  );
+  const response = await apiRequest(`/api/attachments/${attachmentId}`, {
+    method: "DELETE",
+    body,
+    includeCsrf: true,
+  });
 
   if (!response.ok) {
-    const bodyJson = await response.json().catch(() => ({}));
-    const err = new Error(
-      bodyJson?.error?.message || `Failed to remove attachment: ${response.status}`,
-    ) as AttachmentError;
-    err.code = bodyJson?.error?.code;
-    throw err;
+    throw await parseApiError(response, "Failed to remove attachment.");
   }
 
   const result = (await response.json()) as AttachmentRemoveResult;
+  return result.data;
+}
+
+export type { ApiError };
+
+// ---------------------------------------------------------------------------
+// Issue #38 — IT Staff ticket operations
+// ---------------------------------------------------------------------------
+
+export interface StaffQueueItem {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  /** Category name (ui-spec §5.6 required queue information). */
+  categoryName: string;
+  currentStatus: string;
+  requestedPriority: string;
+  itPriority: string | null;
+  ticketOwnerId: number | null;
+  requesterId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffQueueResponse {
+  data: StaffQueueItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    unfilteredTotalItems: number;
+  };
+}
+
+export interface StaffQueueParams {
+  search?: string;
+  status?: string;
+  priority?: string;
+  ownerId?: number;
+  sort?: string;
+  order?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+/** Fetches the IT Staff / Administrator ticket queue (api-spec §15). */
+export async function fetchStaffQueue(
+  params: StaffQueueParams = {},
+): Promise<StaffQueueResponse> {
+  const url = new URL("/api/staff/queue", "http://placeholder.invalid");
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.status) url.searchParams.set("status", params.status);
+  if (params.priority) url.searchParams.set("priority", params.priority);
+  if (params.ownerId !== undefined) url.searchParams.set("ownerId", String(params.ownerId));
+  if (params.sort) url.searchParams.set("sort", params.sort);
+  if (params.order) url.searchParams.set("order", params.order);
+  if (params.page !== undefined) url.searchParams.set("page", String(params.page));
+  if (params.pageSize !== undefined) url.searchParams.set("pageSize", String(params.pageSize));
+
+  return apiJson<StaffQueueResponse>(`${url.pathname}${url.search}`, {
+    fallbackError: "Failed to fetch the staff queue.",
+  });
+}
+
+export interface CommentItem {
+  id: number;
+  content: string;
+  authorId: number;
+  createdAt: string;
+}
+
+/** An eligible Ticket owner (active IT Staff / Administrator). */
+export interface AssignableOwner {
+  id: number;
+  name: string;
+  role: string;
+}
+
+/**
+ * Fetches the eligible Ticket-owner set (api-spec §17a).
+ *
+ * Read-only; IT Staff / Administrator only. Used by the Queue owner filter and
+ * the Staff Detail ownership control. The server returns only `{id, name, role}`
+ * for active IT Staff/Administrators — never credentials, Requesters, or
+ * inactive users. This list is a UX affordance; the ownership endpoint remains
+ * the final authorization boundary.
+ */
+export async function fetchAssignableOwners(): Promise<AssignableOwner[]> {
+  const result = await apiJson<{ data: AssignableOwner[] }>("/api/staff/owners", {
+    fallbackError: "Failed to fetch eligible owners.",
+  });
+  return result.data;
+}
+
+export interface StaffTicketDetail {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  currentStatus: string;
+  requestedPriority: string;
+  itPriority: string | null;
+  ticketOwnerId: number | null;
+  requesterId: number;
+  requesterName: string;
+  requesterIsActive: boolean;
+  categoryId: number;
+  categoryName: string;
+  relatedSystemId: number;
+  relatedSystemName: string;
+  appearsResolved: boolean;
+  createdAt: string;
+  updatedAt: string;
+  publicComments: CommentItem[];
+  internalNotes: CommentItem[];
+  /**
+   * Issue #38 review fix (49-B2) — the Ticket's existing Attachments
+   * (ui-spec §5.7). Read-only on the Staff surface: the Staff screen never
+   * uploads or removes Attachments.
+   */
+  attachments: AttachmentItem[];
+}
+
+/** Fetches the Staff/Admin Ticket Detail (api-spec §16). */
+export async function fetchStaffTicketDetail(
+  ticketNumber: string,
+): Promise<StaffTicketDetail> {
+  const result = await apiJson<{ data: StaffTicketDetail }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}`,
+    { fallbackError: "Failed to fetch ticket detail." },
+  );
+  return result.data;
+}
+
+/** Claims/reassigns a Ticket's owner (api-spec §17). State-changing. */
+export async function setTicketOwner(
+  ticketNumber: string,
+  ownerId: number,
+): Promise<{ ticketOwnerId: number }> {
+  const result = await apiJson<{ data: { ticketOwnerId: number } }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/owner`,
+    { method: "POST", body: { ownerId }, includeCsrf: true, fallbackError: "Failed to set owner." },
+  );
+  return result.data;
+}
+
+/** Sets the IT Priority (api-spec §18). State-changing. */
+export async function setItPriority(
+  ticketNumber: string,
+  itPriority: string,
+): Promise<{ itPriority: string }> {
+  const result = await apiJson<{ data: { itPriority: string } }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/priority`,
+    { method: "PATCH", body: { itPriority }, includeCsrf: true, fallbackError: "Failed to set IT priority." },
+  );
+  return result.data;
+}
+
+/** Applies a status transition (api-spec §19). State-changing. */
+export async function applyStatusTransition(
+  ticketNumber: string,
+  status: string,
+): Promise<{ currentStatus: string }> {
+  const result = await apiJson<{ data: { currentStatus: string } }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/status`,
+    { method: "PATCH", body: { status }, includeCsrf: true, fallbackError: "Failed to change status." },
+  );
+  return result.data;
+}
+
+/** Posts a Public Comment (api-spec §20). State-changing. */
+export async function postTicketComment(
+  ticketNumber: string,
+  content: string,
+): Promise<CommentItem> {
+  const result = await apiJson<{ data: CommentItem }>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/comments`,
+    { method: "POST", body: { content }, includeCsrf: true, fallbackError: "Failed to post comment." },
+  );
+  return result.data;
+}
+
+/** Lists Public Comments (api-spec §21). */
+export async function fetchTicketComments(ticketNumber: string): Promise<CommentItem[]> {
+  const result = await apiJson<{ data: CommentItem[] }>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/comments`,
+    { fallbackError: "Failed to fetch comments." },
+  );
+  return result.data;
+}
+
+/** Posts an Internal Note (api-spec §22). State-changing; Staff/Admin only. */
+export async function postInternalNote(
+  ticketNumber: string,
+  content: string,
+): Promise<CommentItem> {
+  const result = await apiJson<{ data: CommentItem }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/notes`,
+    { method: "POST", body: { content }, includeCsrf: true, fallbackError: "Failed to post note." },
+  );
+  return result.data;
+}
+
+/** Lists Internal Notes (api-spec §23). Staff/Admin only. */
+export async function fetchInternalNotes(ticketNumber: string): Promise<CommentItem[]> {
+  const result = await apiJson<{ data: CommentItem[] }>(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/notes`,
+    { fallbackError: "Failed to fetch notes." },
+  );
+  return result.data;
+}
+
+/** Sets the Requester "Problem Appears Resolved" indicator (api-spec §20a). State-changing. */
+export async function postAppearsResolved(
+  ticketNumber: string,
+  appearsResolved: boolean,
+): Promise<{ ticketNumber: string; appearsResolved: boolean; currentStatus: string }> {
+  const result = await apiJson<{
+    data: { ticketNumber: string; appearsResolved: boolean; currentStatus: string };
+  }>(`/api/tickets/${encodeURIComponent(ticketNumber)}/appears-resolved`, {
+    method: "POST",
+    body: { appearsResolved },
+    includeCsrf: true,
+    fallbackError: "Failed to update the appears-resolved indicator.",
+  });
   return result.data;
 }

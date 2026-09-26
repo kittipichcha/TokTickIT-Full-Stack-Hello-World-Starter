@@ -11,12 +11,20 @@ const VIEWPORTS = [
   { name: "mobile", width: 390, height: 844 },
 ] as const;
 
-const REQUESTERS = [
-  { id: 1, name: "Jennifer Anderson", email: "jennifer.anderson@example.com" },
-  { id: 2, name: "Michael Chen", email: "michael.chen@example.com" },
-  { id: 3, name: "Sarah Williams", email: "sarah.williams@example.com" },
-  { id: 4, name: "David Kumar", email: "david.kumar@example.com" },
-];
+/**
+ * Authenticated session stub (Issue #37).
+ *
+ * The Dev-Requester selector and its `/api/dev-requesters` + `/api/requester-context`
+ * endpoints were removed. The shell now renders only after `GET /api/auth/me`
+ * succeeds, so the visual suite stubs that endpoint with an authenticated Requester.
+ */
+const AUTH_USER = {
+  id: 1,
+  name: "E2E Requester A",
+  email: "e2e-requester-a@example.com",
+  role: "REQUESTER",
+  mustChangePassword: false,
+};
 
 const CATEGORIES = [
   { id: 1, name: "Hardware" }, { id: 2, name: "Software" },
@@ -91,23 +99,19 @@ async function setupApiMocks(
   options: {
     ticketData?: TicketData[]; attachmentData?: AttachmentData[];
     detailTicket?: ReturnType<typeof makeDetailTicket>;
-    devRequesters?: typeof REQUESTERS; categories?: typeof CATEGORIES;
-    relatedSystems?: typeof RELATED_SYSTEMS; failRequesterContext?: boolean;
-    slowRequesters?: boolean; failMyTickets?: boolean; failDetail?: boolean;
+    categories?: typeof CATEGORIES;
+    relatedSystems?: typeof RELATED_SYSTEMS;
+    failMyTickets?: boolean; failDetail?: boolean;
     failPreview?: boolean;
   } = {},
 ) {
   const {
     ticketData = [], attachmentData = [], detailTicket,
-    devRequesters = REQUESTERS, categories = CATEGORIES,
-    relatedSystems = RELATED_SYSTEMS, failRequesterContext = false,
-    slowRequesters = false, failMyTickets = false, failDetail = false,
+    categories = CATEGORIES,
+    relatedSystems = RELATED_SYSTEMS,
+    failMyTickets = false, failDetail = false,
     failPreview = false,
   } = options;
-
-  await context.addInitScript(() => {
-    sessionStorage.setItem("toktickit.requesterId", "1");
-  });
 
   // IMPORTANT: Playwright matches routes in REVERSE registration order (the
   // last registered route is matched first). The catch-all `**/api/**` must be
@@ -206,19 +210,10 @@ async function setupApiMocks(
 
   // Bootstrap endpoints — registered AFTER the catch-all so they take
   // precedence (Playwright matches the last-registered route first).
-  await page.route("**/api/dev-requesters", async (route) => {
-    if (slowRequesters) { await new Promise(() => undefined); return; }
+  // Authenticated session: the shell renders only after /api/auth/me succeeds.
+  await page.route("**/api/auth/me", async (route) => {
     await route.fulfill({ status: 200, contentType: "application/json",
-      body: JSON.stringify({ data: devRequesters }) });
-  });
-  await page.route("**/api/requester-context", async (route) => {
-    if (failRequesterContext) {
-      await route.fulfill({ status: 422, contentType: "application/json",
-        body: JSON.stringify({ error: { code: "REQUESTER_CONTEXT_INVALID", message: "A valid active requester is required." } }) });
-      return;
-    }
-    await route.fulfill({ status: 200, contentType: "application/json",
-      body: JSON.stringify({ data: { requesterId: 1 } }) });
+      body: JSON.stringify({ data: AUTH_USER }) });
   });
   await page.route("**/api/categories", async (route) => {
     await route.fulfill({ status: 200, contentType: "application/json",
@@ -265,36 +260,47 @@ async function clickNavLink(page: Page, label: string): Promise<void> {
   }
 }
 
-// ─── Requester Selection ───────────────────────────────────────────────────
+// ─── Login ─────────────────────────────────────────────────────────────────
 
-test.describe("Requester Selection screenshots", () => {
-  test("loading state @visual", async ({ page, context }) => {
-    await setupApiMocks(page, context, { slowRequesters: true });
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
-    await screenshotAllViewports(page, "requester-selection/loading", async () => {});
-  });
-  test("empty state @visual", async ({ page, context }) => {
-    await setupApiMocks(page, context, { devRequesters: [] });
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
-    await screenshotAllViewports(page, "requester-selection/empty", async () => {});
-  });
-  test("failure state @visual", async ({ page, context }) => {
-    await setupApiMocks(page, context, { devRequesters: [] });
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
-    await page.route("**/api/dev-requesters", async (route) => {
-      await route.fulfill({ status: 500, contentType: "application/json",
-        body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } }) });
+/**
+ * Issue #37 retired the Dev-Requester selector screen. Its replacement is the
+ * real Login screen (ui-spec §5.1), so these screenshots now capture the Login
+ * states. `/api/auth/me` is stubbed with 401 so AuthGate renders the Login screen.
+ */
+test.describe("Login screenshots", () => {
+  async function stubUnauthenticated(page: Page): Promise<void> {
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({ status: 401, contentType: "application/json",
+        body: JSON.stringify({ error: { code: "UNAUTHENTICATED", message: "Not authenticated." } }) });
     });
-    await screenshotAllViewports(page, "requester-selection/failure", async () => {});
+  }
+
+  test("default state @visual", async ({ page }) => {
+    await stubUnauthenticated(page);
+    await screenshotAllViewports(page, "login/default", async () => {
+      await page.waitForSelector("#login-email", { timeout: 10000 });
+    });
   });
-  test("populated state @visual", async ({ page, context }) => {
-    await setupApiMocks(page, context, {});
-    // Clear the stored requester AFTER setupApiMocks so its setItem init
-    // script runs first and this removeItem runs last → selector screen shows.
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
-    await screenshotAllViewports(page, "requester-selection/populated", async () => {
-      await page.waitForSelector("#requester-select", { timeout: 10000 });
-      await page.selectOption("#requester-select", "2");
+  test("validation error state @visual", async ({ page }) => {
+    await stubUnauthenticated(page);
+    await screenshotAllViewports(page, "login/validation-error", async () => {
+      await page.waitForSelector("#login-email", { timeout: 10000 });
+      await page.click("button:has-text('Login')");
+      await page.waitForSelector(".field-error", { timeout: 5000 });
+    });
+  });
+  test("failure state @visual", async ({ page }) => {
+    await stubUnauthenticated(page);
+    await page.route("**/api/auth/login", async (route) => {
+      await route.fulfill({ status: 401, contentType: "application/json",
+        body: JSON.stringify({ error: { code: "UNAUTHENTICATED", message: "Invalid email or password." } }) });
+    });
+    await screenshotAllViewports(page, "login/failure", async () => {
+      await page.waitForSelector("#login-email", { timeout: 10000 });
+      await page.fill("#login-email", "nobody@example.com");
+      await page.fill("#login-password", "wrong-password");
+      await page.click("button:has-text('Login')");
+      await page.waitForSelector(".error-box", { timeout: 5000 });
     });
   });
 });
@@ -708,7 +714,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(2000);
     await assertTouchTargets(page, [
-      "button:has-text('Change Requester')",
+      "button:has-text('Logout')",
       ".ticket-card-toggle",
       ".pagination-page",
       "button:has-text('Previous')",
@@ -743,25 +749,30 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     ]);
   });
 
-  test("Requester Selection responsive", async ({ page, context }) => {
-    await setupApiMocks(page, context, {});
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
+  test("Login responsive", async ({ page }) => {
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({ status: 401, contentType: "application/json",
+        body: JSON.stringify({ error: { code: "UNAUTHENTICATED", message: "Not authenticated." } }) });
+    });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector("#requester-select", { timeout: 10000 }); await page.waitForTimeout(500);
+      await page.goto("/"); await page.waitForSelector("#login-email", { timeout: 10000 }); await page.waitForTimeout(500);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
-      expect(overflow, `${vp.name}: selector no horizontal scroll`).toBe(false);
+      expect(overflow, `${vp.name}: login no horizontal scroll`).toBe(false);
     }
   });
 
-  test("Requester Selection mobile touch targets >= 44px", async ({ page, context }) => {
-    await setupApiMocks(page, context, {});
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
+  test("Login mobile touch targets >= 44px", async ({ page }) => {
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({ status: 401, contentType: "application/json",
+        body: JSON.stringify({ error: { code: "UNAUTHENTICATED", message: "Not authenticated." } }) });
+    });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/"); await page.waitForSelector("#requester-select", { timeout: 10000 }); await page.waitForTimeout(500);
+    await page.goto("/"); await page.waitForSelector("#login-email", { timeout: 10000 }); await page.waitForTimeout(500);
     await assertTouchTargets(page, [
-      "#requester-select",
-      "button:has-text('Continue')",
+      "#login-email",
+      "#login-password",
+      "button:has-text('Login')",
     ]);
   });
 
@@ -802,7 +813,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(2000);
       await assertNoClippedText(page, [
-        "button:has-text('Change Requester')",
+        "button:has-text('Logout')",
         ".ticket-card-toggle",
         ".pagination-page",
         "button:has-text('Previous')",
@@ -810,7 +821,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
         "th", "td",
       ]);
       await assertNoOverlap(page, [
-        "button:has-text('Change Requester')",
+        "button:has-text('Logout')",
         ".ticket-card-toggle",
         ".pagination-page",
         "button:has-text('Previous')",
@@ -835,14 +846,16 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     }
   });
 
-  test("Requester Selection no clipped labels or overlapping controls", async ({ page, context }) => {
-    await setupApiMocks(page, context, {});
-    await context.addInitScript(() => { sessionStorage.removeItem("toktickit.requesterId"); });
+  test("Login no clipped labels or overlapping controls", async ({ page }) => {
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({ status: 401, contentType: "application/json",
+        body: JSON.stringify({ error: { code: "UNAUTHENTICATED", message: "Not authenticated." } }) });
+    });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector("#requester-select", { timeout: 10000 }); await page.waitForTimeout(500);
-      await assertNoClippedText(page, ["#requester-select", "button:has-text('Continue')"]);
-      await assertNoOverlap(page, ["#requester-select", "button:has-text('Continue')"]);
+      await page.goto("/"); await page.waitForSelector("#login-email", { timeout: 10000 }); await page.waitForTimeout(500);
+      await assertNoClippedText(page, ["#login-email", "#login-password", "button:has-text('Login')"]);
+      await assertNoOverlap(page, ["#login-email", "#login-password", "button:has-text('Login')"]);
     }
   });
 

@@ -1,87 +1,79 @@
-import { describe, it, expect, afterAll } from "vitest";
+/**
+ * RR-04 class (b) — superseded Dev-Requester behavior, retired and replaced.
+ *
+ * Lab 2's requester-selection integration suite asserted the real-database behavior
+ * of `GET /api/dev-requesters` and `GET /api/requester-context` — the Development
+ * Requester selector's data source and validation endpoint. Lab 3 §8.2 removes the
+ * selector and both endpoints, so those assertions describe obsolete behavior.
+ *
+ * Replacement assertions: the authenticated identity is established by a real login
+ * against the real database, and the removed endpoints are gone.
+ */
+
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { disconnectPrisma, getPrisma } from "../../src/prisma.js";
+import { ensureAndLogin, withSession, type TestSession } from "../lab-03/helpers/auth.js";
 
-describe("Requester Selection API - Real Database Connection", () => {
-  afterAll(async () => {
-    await disconnectPrisma();
+const itIfDb = process.env.DATABASE_URL ? it : it.skip;
+
+process.env.SESSION_SECRET = "test-only-session-secret-not-for-production";
+process.env.NODE_ENV = "test";
+
+const EMAIL = "requester-selection-retired@example.com";
+
+let session: TestSession;
+
+beforeAll(async () => {
+  if (!process.env.DATABASE_URL) return;
+  session = await ensureAndLogin({ email: EMAIL, name: "Selection Retired", role: "REQUESTER" });
+});
+
+afterAll(async () => {
+  if (!process.env.DATABASE_URL) return;
+  await disconnectPrisma();
+});
+
+describe("Requester identity — real database, authenticated session", () => {
+  itIfDb("a real login establishes the authenticated identity from the database", async () => {
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { email: EMAIL } });
+    expect(user).toBeTruthy();
+
+    const me = await withSession(request(app).get("/api/auth/me"), session);
+    expect(me.status).toBe(200);
+    expect(me.body.data.id).toBe(user!.id);
+    expect(me.body.data.role).toBe("REQUESTER");
   });
 
-  const itIfDb = process.env.DATABASE_URL ? it : it.skip;
-
-  itIfDb("GET /api/dev-requesters returns only active requesters from actual database in expected shape and order", async () => {
+  itIfDb("the removed selector endpoint is no longer served", async () => {
     const response = await request(app).get("/api/dev-requesters");
-
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("data");
-    expect(Array.isArray(response.body.data)).toBe(true);
-
-    const requesters: Array<{ id: number; name: string; email: string }> = response.body.data;
-    expect(requesters.length).toBeGreaterThan(0);
-
-    // Verify all returned requesters have required properties
-    requesters.forEach((req) => {
-      expect(typeof req.id).toBe("number");
-      expect(typeof req.name).toBe("string");
-      expect(typeof req.email).toBe("string");
-    });
-
-    // Inactive requester 'Edsger Dijkstra' should NOT be returned
-    const inactiveFound = requesters.some((req) => req.email === "edsger@example.com");
-    expect(inactiveFound).toBe(false);
-
-    // Verify ordering by name asc, id asc
-    for (let i = 1; i < requesters.length; i++) {
-      const prev = requesters[i - 1];
-      const curr = requesters[i];
-      const isOrdered =
-        prev.name.localeCompare(curr.name) < 0 ||
-        (prev.name === curr.name && prev.id <= curr.id);
-      expect(isOrdered).toBe(true);
-    }
+    expect(response.status).toBe(404);
   });
 
-  itIfDb("GET /api/requester-context succeeds for active requester ID in database", async () => {
-    // First fetch active requesters to get a real active ID
-    const listRes = await request(app).get("/api/dev-requesters");
-    expect(listRes.status).toBe(200);
-    const activeRequester = listRes.body.data[0];
+  itIfDb("the removed requester-context endpoint is no longer served", async () => {
+    const response = await request(app).get("/api/requester-context");
+    expect(response.status).toBe(404);
+  });
 
+  itIfDb("the legacy header cannot establish identity", async () => {
     const response = await request(app)
       .get("/api/requester-context")
-      .set("X-Dev-Requester-Id", String(activeRequester.id));
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      data: { requesterId: activeRequester.id },
-    });
+      .set("X-Dev-Requester-Id", "1");
+    expect(response.status).toBe(404);
   });
 
-  itIfDb("GET /api/requester-context returns 422 for nonexistent or inactive requester ID", async () => {
-    // Non-existent ID
-    const responseNonExistent = await request(app)
-      .get("/api/requester-context")
-      .set("X-Dev-Requester-Id", "999999");
+  itIfDb("an inactive requester cannot authenticate", async () => {
+    const prisma = getPrisma();
+    const inactive = await prisma.user.findFirst({ where: { isActive: false, role: "REQUESTER" } });
+    if (!inactive) return;
 
-    expect(responseNonExistent.status).toBe(422);
-    expect(responseNonExistent.body).toEqual({
-      error: {
-        code: "REQUESTER_CONTEXT_INVALID",
-        message: "A valid active requester is required.",
-      },
-    });
-  });
+    const response = await request(app)
+      .post("/api/auth/login")
+      .send({ email: inactive.email, password: "TestPass123!xyz" });
 
-  itIfDb("GET /api/requester-context returns 422 for missing or invalid header", async () => {
-    const responseMissing = await request(app).get("/api/requester-context");
-    expect(responseMissing.status).toBe(422);
-    expect(responseMissing.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
-
-    const responseInvalid = await request(app)
-      .get("/api/requester-context")
-      .set("X-Dev-Requester-Id", "invalid-id");
-    expect(responseInvalid.status).toBe(422);
-    expect(responseInvalid.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe("UNAUTHENTICATED");
   });
 });

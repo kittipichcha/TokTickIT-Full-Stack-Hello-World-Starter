@@ -1,15 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
+import { setSeamIdentity, clearSeamIdentity } from "./helpers/identity.js";
 
 vi.mock("../../src/service.js", async () => {
   const actual = await vi.importActual<typeof import("../../src/service.js")>("../../src/service.js");
   return {
     ...actual,
-    isActiveDevRequester: vi.fn(),
     createTicket: vi.fn(),
     getCategories: vi.fn(),
-    getActiveDevRequesters: vi.fn(),
     getActiveRelatedSystems: vi.fn(),
     getTicketByNumber: vi.fn(),
     categoryExists: vi.fn(),
@@ -34,7 +33,7 @@ const service = await import("../../src/service.js");
 describe("API-TKT-INT-01: Integer lexical validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   // ── Decimal forms ──────────────────────────────────────────────────────
@@ -42,7 +41,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
   it("rejects categoryId: 1.0 with 400 VALIDATION_ERROR", async () => {
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"categoryId":1.0,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -54,7 +52,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
   it("rejects categoryId: 1e0 with 400 VALIDATION_ERROR", async () => {
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"categoryId":1e0,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -66,7 +63,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
   it("rejects relatedSystemId: 1.0 with 400 VALIDATION_ERROR", async () => {
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"categoryId":1,"relatedSystemId":1.0,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -78,7 +74,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
   it("rejects relatedSystemId: 1e0 with 400 VALIDATION_ERROR", async () => {
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"categoryId":1,"relatedSystemId":1e0,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -92,7 +87,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
   it("rejects invalid top-level categoryId even when a nested property has the same name with a valid value", async () => {
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"ignored":{"categoryId":1},"categoryId":1.0,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -115,7 +109,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
 
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"ignored":{"categoryId":1.0},"categoryId":1,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -129,7 +122,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
   it("rejects escaped top-level categoryId with decimal value", async () => {
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"category\\u0049d":1.0,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -152,7 +144,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
 
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"ignored":{"a":1,"b":2},"categoryId":1,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -171,7 +162,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
 
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send(
         '{\n' +
@@ -204,7 +194,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
 
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"ignored":[{"a":1,"b":2}],"categoryId":1,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -216,7 +205,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
   it("rejects categoryId: 01 with 400 VALIDATION_ERROR (leading zero)", async () => {
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"categoryId":01,"relatedSystemId":1,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -230,7 +218,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
   it("rejects relatedSystemId: 01 with 400 VALIDATION_ERROR (leading zero)", async () => {
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"categoryId":1,"relatedSystemId":01,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -254,7 +241,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
 
     const rawRes = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send('{"categoryId":1,"relatedSystemId":42,"summary":"Valid summary text","description":"Valid description text for testing","requestedPriority":"MEDIUM"}');
 
@@ -280,7 +266,6 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
 
       const response = await request(app)
         .post("/api/tickets")
-        .set("X-Dev-Requester-Id", "1")
         .set("Content-Type", "application/json")
         .send(body);
 
@@ -290,4 +275,8 @@ describe("API-TKT-INT-01: Integer lexical validation", () => {
       expect(service.createTicket).not.toHaveBeenCalled();
     },
   );
+});
+
+afterEach(() => {
+  clearSeamIdentity();
 });

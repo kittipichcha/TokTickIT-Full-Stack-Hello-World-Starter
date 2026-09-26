@@ -1,0 +1,8 @@
+
+ RUN  v4.1.10 <repo>/<worktree>/client
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  16:53:08
+   Duration  1.91s (transform 118ms, setup 0ms, import 158ms, tests 26ms, environment 1.28s)

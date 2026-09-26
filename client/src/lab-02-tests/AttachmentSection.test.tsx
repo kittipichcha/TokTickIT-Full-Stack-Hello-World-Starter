@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 import * as api from "../api";
+import { TEST_USER } from "./helpers/user";
 
 vi.mock("../api");
 
@@ -30,7 +31,7 @@ function makeAttachment(id: number, overrides: Partial<api.AttachmentItem> = {})
     isRemoved: overrides.isRemoved ?? false,
     removedAt: overrides.removedAt ?? null,
     removalReason: overrides.removalReason ?? null,
-    removedByRequesterId: overrides.removedByRequesterId ?? null,
+    removedByUserId: overrides.removedByUserId ?? null,
   };
 }
 
@@ -64,17 +65,12 @@ const emptyTicketsResponse: api.MyTicketsResponse = {
 };
 
 async function setupAuthenticatedApp() {
-  vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
-  vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
   vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
   vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
 
-  render(<App />);
+  render(<App user={TEST_USER} />);
 
-  await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-  await userEvent.click(screen.getByRole("button", { name: "Continue" }));
-
-  await screen.findAllByText(/Ada Lovelace/);
+  await screen.findByText("TokTickIT");
 }
 
 function getFileInput(): HTMLInputElement | null {
@@ -86,9 +82,6 @@ describe("UI-ATT-01: Disallowed attachment type rejected client-side", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.isAllowedAttachmentType).mockImplementation((filename) => {
       const allowed = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
       const lower = filename.toLowerCase();
@@ -124,9 +117,6 @@ describe("UI-ATT-02: Removed attachment shows Removed badge and disabled control
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
       data: [{
         id: 1,
@@ -157,7 +147,7 @@ describe("UI-ATT-02: Removed attachment shows Removed badge and disabled control
       isRemoved: true,
       removalReason: "No longer needed",
       removedAt: "2026-08-27T01:00:00.000Z",
-      removedByRequesterId: 1,
+      removedByUserId: 1,
     });
 
     vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
@@ -188,9 +178,6 @@ describe("UI-ATT-03: Oversized file rejected client-side", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.isAllowedAttachmentType).mockReturnValue(true);
     vi.mocked(api.isWithinSizeLimit).mockImplementation((size) => size <= 5_000_000);
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => emptyTicketsResponse);
@@ -222,9 +209,6 @@ describe("UI-ATT-04: Removal confirmation dialog and cancel behavior", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
       data: [{
         id: 1,
@@ -277,10 +261,6 @@ describe("UI-ATT-05: Multi-file attachment partial success orchestration", () =>
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
     vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
     vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
     vi.mocked(api.isAllowedAttachmentType).mockReturnValue(true);
@@ -372,10 +352,6 @@ describe("UI-ATT-06: Failed attachment retry from Ticket Detail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
     vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
     vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
     vi.mocked(api.isAllowedAttachmentType).mockReturnValue(true);
@@ -503,9 +479,6 @@ describe("UI-ATT-07: Removal dialog accessibility — focus trap, Escape, focus 
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
       data: [{
         id: 1,
@@ -692,9 +665,6 @@ describe("UI-ATT-08: Unavailable attachment state on Preview/Download failure", 
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
       data: [{
         id: 1,
@@ -844,9 +814,6 @@ describe("UI-ATT-CAP-01: Ticket Detail five-active-attachment capacity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
       data: [{
         id: 1,
@@ -935,7 +902,7 @@ describe("UI-ATT-CAP-01: Ticket Detail five-active-attachment capacity", () => {
       isRemoved: true,
       removedAt: "2026-08-27T01:00:00.000Z",
       removalReason: "test",
-      removedByRequesterId: 1,
+      removedByUserId: 1,
     });
     // After removal, the detail refresh returns four active attachments.
     vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
@@ -971,10 +938,6 @@ describe("UI-ATT-RETRY-OWN: Failed attachment retry is scoped to requester + tic
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
     vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
     vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
     vi.mocked(api.isAllowedAttachmentType).mockReturnValue(true);
@@ -1061,7 +1024,7 @@ describe("UI-ATT-RETRY-OWN: Failed attachment retry is scoped to requester + tic
       ],
       pagination: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1, unfilteredTotalItems: 2 },
     }));
-    vi.mocked(api.fetchTicketDetail).mockImplementation(async (rid, tn) =>
+    vi.mocked(api.fetchTicketDetail).mockImplementation(async (tn) =>
       makeTicketDetail(tn, tn === testTicketNumber ? [] : []),
     );
 
@@ -1124,34 +1087,16 @@ describe("UI-ATT-RETRY-OWN: Failed attachment retry is scoped to requester + tic
     expect(screen.getByText("a-switch.jpg")).toBeTruthy();
     expect(screen.getByText("Retry")).toBeTruthy();
 
-    // Switch requester. Configure the dev-requester list to include requester 2 BEFORE the
-    // switch triggers a reload, so the selector offers both requesters.
-    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => [
-      { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
-      { id: 2, name: "Grace Hopper", email: "grace@example.com" },
-    ]);
-    await userEvent.click(screen.getByRole("button", { name: "Change Requester" }));
+    // The Development Requester selector and its Change Requester action are removed
+    // (Lab 3 §8.2). Identity is fixed for the session, so the failed retry row is
+    // scoped to the ticket it was produced for and never leaks to another ticket.
+    expect(screen.queryByRole("button", { name: /change requester/i })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: /development requester/i })).toBeNull();
 
-    // Back on the early-selector screen.
-    await screen.findByRole("combobox", { name: /development requester/i });
-
-    // Select requester 2 (Grace Hopper) and continue.
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async (id) => ({ requesterId: id }));
-    // Requester 2 (Grace Hopper) is now the active requester; the shell mounts My Tickets
-    // for requester 2's scope right after Continue.
-    vi.mocked(api.fetchMyTickets).mockImplementation(async (rid) => ({
-      data: [],
-      pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
-    }));
-
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: /development requester/i }), "2");
-    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
-
-    // Requester 2's shell mounts. The prior requester's failed attachment retry must be
-    // cleared by the switch — it must not resurface anywhere in requester 2's scope.
-    await screen.findByText("Grace Hopper");
+    // Navigating away from the ticket clears the ticket-scoped retry row.
+    await userEvent.click(screen.getByRole("button", { name: /back to my tickets/i }));
+    await screen.findByText("TokTickIT");
     await waitFor(() => expect(screen.queryByText("a-switch.jpg")).toBeNull());
-    expect(screen.queryByText("Retry")).toBeNull();
   });
 });
 
@@ -1159,9 +1104,6 @@ describe("UI-ATT-MUT-REF: Mutation success is terminal — refresh failure is no
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
       data: [{
         id: 1,
@@ -1251,7 +1193,7 @@ describe("UI-ATT-MUT-REF: Mutation success is terminal — refresh failure is no
       isRemoved: true,
       removedAt: "2026-08-27T01:00:00.000Z",
       removalReason: "test",
-      removedByRequesterId: 1,
+      removedByUserId: 1,
     });
     vi.mocked(api.fetchTicketDetail).mockRejectedValue(new Error("Refresh failed after remove"));
 
@@ -1280,9 +1222,6 @@ describe("UI-ATT-RETRY-TERMINAL: Retry upload success is terminal — refresh fa
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
       data: [{
         id: 1,
@@ -1366,7 +1305,7 @@ describe("UI-ATT-RETRY-TERMINAL: Retry upload success is terminal — refresh fa
     const uploadCalls = vi.mocked(api.uploadAttachment).mock.calls;
     expect(uploadCalls.length).toBe(2);
     // The retry call targets the same file.
-    expect(uploadCalls[1][2].name).toBe("retry-me.jpg");
+    expect(uploadCalls[1][1].name).toBe("retry-me.jpg");
   });
 });
 
@@ -1374,9 +1313,6 @@ describe("UI-DETAIL-01: Ticket Detail screen-level state matrix", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) => sessionStorage.setItem("toktickit.requesterId", String(id)));
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() => sessionStorage.removeItem("toktickit.requesterId"));
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
       data: [{
         id: 1,
@@ -1434,12 +1370,15 @@ describe("UI-DETAIL-01: Ticket Detail screen-level state matrix", () => {
     expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Test ticket summary")).toBeTruthy();
     expect(screen.getByText("Test ticket description for detail view.")).toBeTruthy();
-    // No editable text inputs / textareas / selects in the detail view.
-    // (The hidden file input for Add Attachment is not an editable text field.)
-    expect(document.querySelector('.ticket-detail input[type="text"]')).toBeNull();
-    expect(document.querySelector('.ticket-detail input:not([type="file"])')).toBeNull();
-    expect(document.querySelector('.ticket-detail textarea')).toBeNull();
-    expect(document.querySelector('.ticket-detail select')).toBeNull();
+    // No editable text inputs / textareas / selects among the read-only ticket
+    // fields. (The hidden file input for Add Attachment is not an editable text
+    // field.) Issue #38 adds a Public Comments compose box to the detail screen —
+    // that is a new, intentional control, not a ticket field, so the read-only
+    // assertion is scoped to the ticket-info region.
+    expect(document.querySelector('.ticket-info input[type="text"]')).toBeNull();
+    expect(document.querySelector('.ticket-info input:not([type="file"])')).toBeNull();
+    expect(document.querySelector('.ticket-info textarea')).toBeNull();
+    expect(document.querySelector('.ticket-info select')).toBeNull();
   });
 
   it("shows the loading skeleton while the detail request is unresolved", async () => {
@@ -1510,7 +1449,7 @@ describe("UI-DETAIL-01: Ticket Detail screen-level state matrix", () => {
       isRemoved: true,
       removalReason: "No longer needed",
       removedAt: "2026-08-27T01:00:00.000Z",
-      removedByRequesterId: 1,
+      removedByUserId: 1,
     });
     vi.mocked(api.fetchTicketDetail).mockImplementation(async () =>
       makeTicketDetail(testTicketNumber, [removedAtt]),
@@ -1542,7 +1481,7 @@ describe("UI-DETAIL-01: Ticket Detail screen-level state matrix", () => {
     await waitFor(() => {
       expect(api.previewAttachmentFile).toHaveBeenCalledTimes(1);
     });
-    expect(api.previewAttachmentFile).toHaveBeenCalledWith(1, activeAtt.id);
+    expect(api.previewAttachmentFile).toHaveBeenCalledWith(activeAtt.id);
   });
 
   it("invokes the download API when Download is clicked", async () => {
@@ -1563,7 +1502,7 @@ describe("UI-DETAIL-01: Ticket Detail screen-level state matrix", () => {
     await waitFor(() => {
       expect(api.downloadAttachmentFile).toHaveBeenCalledTimes(1);
     });
-    expect(api.downloadAttachmentFile).toHaveBeenCalledWith(1, activeAtt.id);
+    expect(api.downloadAttachmentFile).toHaveBeenCalledWith(activeAtt.id);
   });
 
   it("removes an attachment through the confirmation dialog and updates the UI", async () => {
@@ -1581,7 +1520,7 @@ describe("UI-DETAIL-01: Ticket Detail screen-level state matrix", () => {
       isRemoved: true,
       removedAt: "2026-08-27T01:00:00.000Z",
       removalReason: "test",
-      removedByRequesterId: 1,
+      removedByUserId: 1,
     });
     await openTicketDetail();
 
@@ -1596,7 +1535,7 @@ describe("UI-DETAIL-01: Ticket Detail screen-level state matrix", () => {
     await waitFor(() => {
       expect(api.removeAttachment).toHaveBeenCalledTimes(1);
     });
-    expect(api.removeAttachment).toHaveBeenCalledWith(1, activeAtt.id, undefined);
+    expect(api.removeAttachment).toHaveBeenCalledWith(activeAtt.id, undefined);
     // Dialog closes after the mutation.
     await waitFor(() => {
       expect(screen.queryByText(/Are you sure/)).toBeNull();

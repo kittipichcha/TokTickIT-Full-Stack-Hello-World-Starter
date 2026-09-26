@@ -8,7 +8,12 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["vitest/globals"]
+    "noEmit": true,
+    "types": ["vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@shared/ticket-status": ["../server/src/ticket-status.ts"]
+    }
   },
   "include": ["src", "tests"]
 }

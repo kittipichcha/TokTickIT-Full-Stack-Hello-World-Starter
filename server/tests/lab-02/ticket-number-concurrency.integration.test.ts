@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import { registerSession, sess, clearSessions } from "../lab-03/helpers/auth.js";
 import {
   allocateTicketNumber,
   allocateTicketNumberWithClient,
@@ -62,7 +63,8 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
     // Assert that restoration succeeded
     const restored = await prisma.ticketSequence.findUnique({ where: { year } });
     expect(restored).toEqual(currentYearSnapshot);
-    await disconnectPrisma();
+    await clearSessions();
+  await disconnectPrisma();
   });
 
   itIfDb("allocates 000001 then 000002 within the same year (increment of exactly 1)", async () => {
@@ -109,7 +111,8 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
   itIfDb("createTicket produces distinct, format-valid numbers and currentStatus NEW", async () => {
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
+    await registerSession(requester!.id);
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester && category && system).toBeTruthy();
@@ -124,12 +127,14 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
     const res1 = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requester!.id))
+      .set("Cookie", sess(requester!.id).cookie)
+        .set("X-CSRF-Token", sess(requester!.id).csrfToken)
       .send(body);
 
     const res2 = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requester!.id))
+      .set("Cookie", sess(requester!.id).cookie)
+        .set("X-CSRF-Token", sess(requester!.id).csrfToken)
       .send({ ...body, summary: `${SUMMARY_MARKER} second` });
 
     expect(res1.status).toBe(201);
@@ -166,7 +171,8 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
   itIfDb("concurrent HTTP creates all receive distinct, contiguous ticket numbers with matching persisted year", async () => {
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
+    await registerSession(requester!.id);
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester && category && system).toBeTruthy();
@@ -178,7 +184,8 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
       Array.from({ length: CONCURRENT_COUNT }, (_, i) =>
         request(app)
           .post("/api/tickets")
-          .set("X-Dev-Requester-Id", String(requester!.id))
+          .set("Cookie", sess(requester!.id).cookie)
+        .set("X-CSRF-Token", sess(requester!.id).csrfToken)
           .send({
             categoryId: category!.id,
             relatedSystemId: system!.id,
@@ -232,7 +239,8 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
   itIfDb("returns 409 TICKET_SEQUENCE_EXHAUSTED and creates no ticket when exhausted", async () => {
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
+    await registerSession(requester!.id);
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester && category && system).toBeTruthy();
@@ -249,7 +257,8 @@ describe("API-TKT-06: ticket-number UTC allocation, concurrency, and exhaustion"
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requester!.id))
+      .set("Cookie", sess(requester!.id).cookie)
+        .set("X-CSRF-Token", sess(requester!.id).csrfToken)
       .send({
         categoryId: category!.id,
         relatedSystemId: system!.id,

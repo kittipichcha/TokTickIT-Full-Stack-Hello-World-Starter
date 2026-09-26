@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import { registerSession, sess, clearSessions } from "../lab-03/helpers/auth.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
@@ -61,6 +62,7 @@ afterAll(async () => {
     await prisma.ticketSequence.create({ data: currentYearSequenceSnapshot });
   }
   
+  await clearSessions();
   await disconnectPrisma();
 });
 
@@ -72,13 +74,14 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
     expect(requester).toBeTruthy();
     expect(category).toBeTruthy();
     expect(system).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
     activeCategoryId = category!.id;
     activeSystemId = system!.id;
   });
@@ -96,7 +99,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   itIfDb('persists trimmed summary: "  abcde  " → "abcde"', async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -117,7 +121,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   itIfDb('persists trimmed description: "  1234567890  " → "1234567890"', async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -141,7 +146,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   itIfDb("rejects summary with 4 characters after trim", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -157,7 +163,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   itIfDb("accepts summary with 5 characters after trim", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -179,7 +186,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
     const summary120 = "a".repeat(120);
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -194,7 +202,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   itIfDb("rejects summary with 121 characters after trim", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -212,7 +221,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   itIfDb("rejects description with 9 characters after trim", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -229,7 +239,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   itIfDb("accepts description with 10 characters after trim", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -245,7 +256,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   itIfDb("accepts description with 2000 characters after trim", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -261,7 +273,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
   itIfDb("rejects description with 2001 characters after trim", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -282,7 +295,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -305,7 +319,8 @@ describe("API-TKT-INT-02: Real database normalization and boundaries", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,
@@ -333,7 +348,7 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
 
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
 
@@ -342,14 +357,16 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
     expect(system).toBeTruthy();
 
     requesterId = requester!.id;
+    await registerSession(requesterId);
     activeCategoryId = category!.id;
     activeSystemId = system!.id;
   });
 
-  itIfDb("persists requesterId from X-Dev-Requester-Id header, ignores client-supplied ownership fields", async () => {
+  itIfDb("persists requesterId from the authenticated identity, ignores client-supplied ownership fields", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         categoryId: activeCategoryId,
         relatedSystemId: activeSystemId,
@@ -370,15 +387,17 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
     });
 
     expect(ticket!.requesterId).toBe(requesterId);
-    expect(ticket!.itPriority).toBeNull();
+    // Frozen §9.3: itPriority initially copies requestedPriority.
+    expect(ticket!.itPriority).toBe("MEDIUM");
     expect(ticket!.ticketOwnerId).toBeNull();
     expect(ticket!.currentStatus).toBe("NEW");
   });
 
-  itIfDb("returns itPriority and ticketOwnerId as null on requester-created tickets", async () => {
+  itIfDb("returns itPriority equal to requestedPriority and ticketOwnerId null on requester-created tickets", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         categoryId: activeCategoryId,
         relatedSystemId: activeSystemId,
@@ -389,7 +408,7 @@ describe("API-TKT-INT-03: Real ownership and defaults", () => {
 
     expect(res.status).toBe(201);
     createdTicketNumbers.push(res.body.data.ticketNumber);
-    expect(res.body.data.itPriority).toBeNull();
+    expect(res.body.data.itPriority).toBe("MEDIUM");
     expect(res.body.data.ticketOwnerId).toBeNull();
     expect(res.body.data.currentStatus).toBe("NEW");
   });
@@ -406,8 +425,8 @@ describe("API-TKT-INT-04: Real Ticket Detail ownership enforcement", () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
 
-    const requesters = await prisma.devRequester.findMany({
-      where: { isActive: true },
+    const requesters = await prisma.user.findMany({
+      where: { isActive: true, role: "REQUESTER" },
       take: 2,
       orderBy: { id: "asc" },
     });
@@ -415,6 +434,8 @@ describe("API-TKT-INT-04: Real Ticket Detail ownership enforcement", () => {
 
     requesterAId = requesters[0]!.id;
     requesterBId = requesters[1]!.id;
+    await registerSession(requesterAId);
+    await registerSession(requesterBId);
 
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
@@ -426,7 +447,8 @@ describe("API-TKT-INT-04: Real Ticket Detail ownership enforcement", () => {
     // Create a ticket owned by Requester A
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterAId))
+      .set("Cookie", sess(requesterAId).cookie)
+        .set("X-CSRF-Token", sess(requesterAId).csrfToken)
       .send({
         categoryId: activeCategoryId,
         relatedSystemId: activeSystemId,
@@ -443,7 +465,8 @@ describe("API-TKT-INT-04: Real Ticket Detail ownership enforcement", () => {
   itIfDb("returns 200 with full ticket detail for owner (Requester A)", async () => {
     const res = await request(app)
       .get(`/api/tickets/${ticketNumber}`)
-      .set("X-Dev-Requester-Id", String(requesterAId));
+      .set("Cookie", sess(requesterAId).cookie)
+        .set("X-CSRF-Token", sess(requesterAId).csrfToken);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toBeDefined();
@@ -458,7 +481,8 @@ describe("API-TKT-INT-04: Real Ticket Detail ownership enforcement", () => {
   itIfDb("returns 404 NOT_FOUND for non-owner (Requester B)", async () => {
     const res = await request(app)
       .get(`/api/tickets/${ticketNumber}`)
-      .set("X-Dev-Requester-Id", String(requesterBId));
+      .set("Cookie", sess(requesterBId).cookie)
+        .set("X-CSRF-Token", sess(requesterBId).csrfToken);
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");

@@ -1,15 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
+import { setSeamIdentity, clearSeamIdentity } from "./helpers/identity.js";
 
 vi.mock("../../src/service.js", async () => {
   const actual = await vi.importActual<typeof import("../../src/service.js")>("../../src/service.js");
   return {
     ...actual,
-    isActiveDevRequester: vi.fn(),
     createTicket: vi.fn(),
     getCategories: vi.fn(),
-    getActiveDevRequesters: vi.fn(),
     getActiveRelatedSystems: vi.fn(),
     getTicketByNumber: vi.fn(),
     categoryExists: vi.fn(),
@@ -25,7 +24,7 @@ const { ValidationError, InactiveReferenceError } = service;
 describe("API-TKT-01: Create ticket success", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   const validBody = {
@@ -46,7 +45,7 @@ describe("API-TKT-01: Create ticket success", () => {
       summary: "Laptop battery drains quickly",
       description: "Battery drains much faster than usual even when idle.",
       requestedPriority: "MEDIUM",
-      itPriority: null,
+      itPriority: "MEDIUM",
       ticketOwnerId: null,
       currentStatus: "NEW",
       createdAt: new Date("2026-08-21T09:14:00.000Z"),
@@ -55,14 +54,13 @@ describe("API-TKT-01: Create ticket success", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send(validBody);
 
     expect(res.status).toBe(201);
     expect(res.body.data).toBeDefined();
     expect(res.body.data.ticketNumber).toMatch(/^TKT-\d{4}-\d{6}$/);
     expect(res.body.data.currentStatus).toBe("NEW");
-    expect(res.body.data.itPriority).toBeNull();
+    expect(res.body.data.itPriority).toBe("MEDIUM");
     expect(res.body.data.ticketOwnerId).toBeNull();
   });
 
@@ -78,7 +76,7 @@ describe("API-TKT-01: Create ticket success", () => {
       summary: "Laptop battery drains quickly",
       description: "Battery drains much faster than usual even when idle.",
       requestedPriority: "MEDIUM",
-      itPriority: null,
+      itPriority: "MEDIUM",
       ticketOwnerId: null,
       currentStatus: "NEW",
       createdAt,
@@ -87,7 +85,6 @@ describe("API-TKT-01: Create ticket success", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send(validBody);
 
     expect(res.status).toBe(201);
@@ -99,19 +96,19 @@ describe("API-TKT-01: Create ticket success", () => {
     expect(res.body.data.summary).toBe("Laptop battery drains quickly");
     expect(res.body.data.description).toBe("Battery drains much faster than usual even when idle.");
     expect(res.body.data.requestedPriority).toBe("MEDIUM");
-    expect(res.body.data.itPriority).toBeNull();
+    expect(res.body.data.itPriority).toBe("MEDIUM");
     expect(res.body.data.ticketOwnerId).toBeNull();
     expect(res.body.data.currentStatus).toBe("NEW");
   });
 });
 
-describe("API-TKT-04: Ownership assigned from X-Dev-Requester-Id", () => {
+describe("API-TKT-04: Ownership assigned from the authenticated identity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 42 });
   });
 
-  it("persists ownership from the validated caller header", async () => {
+  it("persists ownership from the authenticated identity, never the request body", async () => {
     let capturedRequesterId: number | null = null;
     vi.mocked(service.createTicket).mockImplementation(async (rid) => {
       capturedRequesterId = rid;
@@ -127,37 +124,37 @@ describe("API-TKT-04: Ownership assigned from X-Dev-Requester-Id", () => {
 
     await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "42")
       .send({
         categoryId: 1, relatedSystemId: 1,
         summary: "Valid summary text",
         description: "Valid description text for testing",
         requestedPriority: "MEDIUM",
+        // A body-supplied requesterId must be ignored (SEC-AUTHZ-01).
+        requesterId: 999,
       });
 
     expect(capturedRequesterId).toBe(42);
   });
 });
 
-describe("API-TKT-05: IT Priority and Ticket Owner remain null", () => {
+describe("API-TKT-05: IT Priority initialized from Requested Priority; Ticket Owner remains null", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
-  it("returns itPriority and ticketOwnerId as null on requester-created tickets", async () => {
+  it("returns itPriority equal to requestedPriority and ticketOwnerId null on requester-created tickets", async () => {
     vi.mocked(service.createTicket).mockResolvedValue({
       id: 1, ticketNumber: "TKT-2026-000001", requesterId: 1,
       categoryId: 1, relatedSystemId: 1,
       summary: "Valid summary text",
       description: "Valid description text for testing",
-      requestedPriority: "MEDIUM", itPriority: null, ticketOwnerId: null,
+      requestedPriority: "MEDIUM", itPriority: "MEDIUM", ticketOwnerId: null,
       currentStatus: "NEW", createdAt: new Date(), updatedAt: new Date(),
     });
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({
         categoryId: 1, relatedSystemId: 1,
         summary: "Valid summary text",
@@ -166,7 +163,7 @@ describe("API-TKT-05: IT Priority and Ticket Owner remain null", () => {
       });
 
     expect(res.status).toBe(201);
-    expect(res.body.data.itPriority).toBeNull();
+    expect(res.body.data.itPriority).toBe("MEDIUM");
     expect(res.body.data.ticketOwnerId).toBeNull();
   });
 });
@@ -174,7 +171,7 @@ describe("API-TKT-05: IT Priority and Ticket Owner remain null", () => {
 describe("API-TKT-07: Requested Priority server-side validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   const validBody = {
@@ -191,7 +188,6 @@ describe("API-TKT-07: Requested Priority server-side validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send(validBody);
 
     expect(res.status).toBe(400);
@@ -206,7 +202,6 @@ describe("API-TKT-07: Requested Priority server-side validation", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, requestedPriority: "URGENT" });
 
     expect(res.status).toBe(400);
@@ -220,24 +215,24 @@ describe("API-TKT-07: Requested Priority server-side validation", () => {
       categoryId: 1, relatedSystemId: 1,
       summary: "Valid summary text",
       description: "Valid description text for testing",
-      requestedPriority: priority, itPriority: null, ticketOwnerId: null,
+      requestedPriority: priority, itPriority: priority, ticketOwnerId: null,
       currentStatus: "NEW", createdAt: new Date(), updatedAt: new Date(),
     });
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({ ...validBody, requestedPriority: priority });
 
     expect(res.status).toBe(201);
     expect(res.body.data.requestedPriority).toBe(priority);
+    expect(res.body.data.itPriority).toBe(priority);
   });
 });
 
 describe("API-TKT-02: Inactive/stale reference rejection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
   });
 
   it("rejects inactive category with 409 INACTIVE_REFERENCE", async () => {
@@ -247,7 +242,6 @@ describe("API-TKT-02: Inactive/stale reference rejection", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({
         categoryId: 1, relatedSystemId: 1,
         summary: "Valid summary text",
@@ -266,7 +260,6 @@ describe("API-TKT-02: Inactive/stale reference rejection", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", "1")
       .send({
         categoryId: 1, relatedSystemId: 1,
         summary: "Valid summary text",
@@ -277,4 +270,8 @@ describe("API-TKT-02: Inactive/stale reference rejection", () => {
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("INACTIVE_REFERENCE");
   });
+});
+
+afterEach(() => {
+  clearSeamIdentity();
 });

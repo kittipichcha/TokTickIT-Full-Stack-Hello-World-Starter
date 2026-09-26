@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
-  selectRequester,
+  loginAsRequesterById,
   openCreateTicket,
   openMyTickets,
   openTicketBySummary,
@@ -47,7 +47,7 @@ test.describe("E2E-04: Partial success — ticket created, attachment fails", ()
     });
 
     // 1. Create the ticket with a valid attachment selected.
-    await selectRequester(page, "1");
+    await loginAsRequesterById(page, "1");
     await openCreateTicket(page);
 
     await page.selectOption("#categoryId", { index: 1 });

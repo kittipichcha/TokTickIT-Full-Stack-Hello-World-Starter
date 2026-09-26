@@ -1,14 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
+import { setSeamIdentity, clearSeamIdentity } from "./helpers/identity.js";
 
 // Mock the service module
 vi.mock("../../src/service.js", async () => {
   const actual = await vi.importActual<Record<string, unknown>>("../../src/service.js");
   return {
     ...actual,
-    isActiveDevRequester: vi.fn(),
     ticketOwnedByRequester: vi.fn(),
+    attachmentOwnedByRequester: vi.fn(),
     uploadAttachment: vi.fn(),
     listAttachments: vi.fn(),
     getAttachmentById: vi.fn(),
@@ -24,8 +25,10 @@ const service = await import("../../src/service.js");
 describe("API-ATT-01: Attachment type/content validation matrix", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
   });
 
   it("rejects when file part is missing with 400 VALIDATION_ERROR", async () => {
@@ -36,7 +39,6 @@ describe("API-ATT-01: Attachment type/content validation matrix", () => {
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1");
 
     // The multer middleware will handle parsing; if no file, the handler returns 400
     expect(res.status).toBe(400);
@@ -50,7 +52,6 @@ describe("API-ATT-01: Attachment type/content validation matrix", () => {
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", Buffer.from("fake content"), "test.txt");
 
     expect(res.status).toBe(415);
@@ -71,7 +72,6 @@ describe("API-ATT-01: Attachment type/content validation matrix", () => {
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", Buffer.from([0xff, 0xd8, 0xff, 0x00]), "test.jpg");
 
     expect(res.status).toBe(201);
@@ -85,7 +85,8 @@ describe("API-ATT-01: Attachment type/content validation matrix", () => {
 describe("API-ATT-16: Attachment ID range validation (never a 500)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.downloadAttachment).mockResolvedValue(null);
     vi.mocked(service.previewAttachment).mockResolvedValue(null);
@@ -96,16 +97,14 @@ describe("API-ATT-16: Attachment ID range validation (never a 500)", () => {
   it("accepts a normal valid ID (reaches the service)", async () => {
     const res = await request(app)
       .get("/api/attachments/123/download")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(404); // service returns null → 404
-    expect(service.downloadAttachment).toHaveBeenCalledWith(123, 1);
+    expect(service.downloadAttachment).toHaveBeenCalledWith(123, { userId: 1, role: "REQUESTER" });
   });
 
   it("rejects an ID above the PostgreSQL INTEGER max with 404, never 500", async () => {
     const res = await request(app)
       .get("/api/attachments/2147483648/download")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");
@@ -116,7 +115,6 @@ describe("API-ATT-16: Attachment ID range validation (never a 500)", () => {
   it("rejects a sufficiently large digit-only ID with 404, never 500", async () => {
     const res = await request(app)
       .get("/api/attachments/99999999999999999999/download")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");
@@ -126,7 +124,6 @@ describe("API-ATT-16: Attachment ID range validation (never a 500)", () => {
   it("rejects a non-numeric attachment ID with 404", async () => {
     const res = await request(app)
       .get("/api/attachments/abc/download")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");
@@ -136,13 +133,11 @@ describe("API-ATT-16: Attachment ID range validation (never a 500)", () => {
   it("applies the same range guard to preview and delete", async () => {
     const previewRes = await request(app)
       .get("/api/attachments/2147483648/preview")
-      .set("X-Dev-Requester-Id", "1");
     expect(previewRes.status).toBe(404);
     expect(service.previewAttachment).not.toHaveBeenCalled();
 
     const deleteRes = await request(app)
       .delete("/api/attachments/2147483648")
-      .set("X-Dev-Requester-Id", "1");
     expect(deleteRes.status).toBe(404);
     expect(service.removeAttachment).not.toHaveBeenCalled();
   });
@@ -151,7 +146,8 @@ describe("API-ATT-16: Attachment ID range validation (never a 500)", () => {
 describe("API-ATT-02: Sixth active attachment rejected by server", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -162,7 +158,6 @@ describe("API-ATT-02: Sixth active attachment rejected by server", () => {
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", Buffer.from([0xff, 0xd8, 0xff, 0x00]), "test.jpg");
 
     expect(res.status).toBe(400);
@@ -174,7 +169,8 @@ describe("API-ATT-02: Sixth active attachment rejected by server", () => {
 describe("API-ATT-03: Oversized file rejected with 413", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -185,7 +181,6 @@ describe("API-ATT-03: Oversized file rejected with 413", () => {
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", oversizedBuffer, "large.jpg");
 
     // Multer returns 413 with FILE_TOO_LARGE — the controller never runs
@@ -200,7 +195,8 @@ describe("API-ATT-03: Oversized file rejected with 413", () => {
 describe("ATT-SIZE-01: Maximum accepted size boundary (4,999,999 bytes)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -223,7 +219,6 @@ describe("ATT-SIZE-01: Maximum accepted size boundary (4,999,999 bytes)", () => 
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", buffer, "large.jpg");
 
     expect(res.status).toBe(201);
@@ -234,7 +229,8 @@ describe("ATT-SIZE-01: Maximum accepted size boundary (4,999,999 bytes)", () => 
 describe("ATT-SIZE-02: Maximum accepted size boundary (5,000,000 bytes)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -259,7 +255,6 @@ describe("ATT-SIZE-02: Maximum accepted size boundary (5,000,000 bytes)", () => 
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", buffer, "exact-max.jpg");
 
     expect(res.status).toBe(201);
@@ -272,7 +267,8 @@ describe("ATT-SIZE-02: Maximum accepted size boundary (5,000,000 bytes)", () => 
 describe("API-ATT-04: Soft remove sets metadata and blocks access", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -286,26 +282,26 @@ describe("API-ATT-04: Soft remove sets metadata and blocks access", () => {
       isRemoved: true,
       removedAt: new Date("2026-08-27T01:00:00.000Z"),
       removalReason: "Test removal",
-      removedByRequesterId: 1,
+      removedByUserId: 1,
     };
     vi.mocked(service.removeAttachment).mockResolvedValue(mockResult as never);
 
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1")
       .send({ removalReason: "Test removal" });
 
     expect(res.status).toBe(200);
     expect(res.body.data.isRemoved).toBe(true);
     expect(res.body.data.removalReason).toBe("Test removal");
-    expect(res.body.data.removedByRequesterId).toBe(1);
+    expect(res.body.data.removedByUserId).toBe(1);
   });
 });
 
 describe("API-ATT-05: Preview/download for active vs removed", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -316,12 +312,18 @@ describe("API-ATT-05: Preview/download for active vs removed", () => {
       originalFilename: "test.jpg",
     });
 
+    const origin = process.env.CORS_ORIGIN ?? "http://localhost:5173";
     const res = await request(app)
       .get("/api/attachments/1/download")
-      .set("X-Dev-Requester-Id", "1");
+      .set("Origin", origin);
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/jpeg");
+    expect(res.headers["access-control-allow-origin"]).toBe(origin);
+    expect(res.headers["access-control-allow-credentials"]).toBe("true");
+    expect(res.headers["access-control-expose-headers"]).toContain("Content-Disposition");
+    expect(res.headers["access-control-expose-headers"]).toContain("X-CSRF-Token");
+    expect(res.headers["content-disposition"]).toContain('filename="test.jpg"');
   });
 
   it("download returns 410 ATTACHMENT_REMOVED for removed attachment", async () => {
@@ -331,7 +333,6 @@ describe("API-ATT-05: Preview/download for active vs removed", () => {
 
     const res = await request(app)
       .get("/api/attachments/1/download")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(410);
     expect(res.body.error.code).toBe("ATTACHMENT_REMOVED");
@@ -345,7 +346,6 @@ describe("API-ATT-05: Preview/download for active vs removed", () => {
 
     const res = await request(app)
       .get("/api/attachments/1/preview")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/jpeg");
@@ -359,7 +359,6 @@ describe("API-ATT-05: Preview/download for active vs removed", () => {
 
     const res = await request(app)
       .get("/api/attachments/1/preview")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/png");
@@ -372,7 +371,6 @@ describe("API-ATT-05: Preview/download for active vs removed", () => {
 
     const res = await request(app)
       .get("/api/attachments/1/preview")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(500);
     expect(res.headers["content-type"]).not.toBe("application/pdf");
@@ -383,7 +381,8 @@ describe("API-ATT-05: Preview/download for active vs removed", () => {
 describe("API-ATT-06: BR-17 partial success — ticket persists after attachment failure", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -397,7 +396,6 @@ describe("API-ATT-06: BR-17 partial success — ticket persists after attachment
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", Buffer.from("bad file"), "test.txt");
 
     expect(res.status).toBe(415);
@@ -408,7 +406,8 @@ describe("API-ATT-06: BR-17 partial success — ticket persists after attachment
 describe("API-ATT-07: Attachment metadata and stored filename", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -426,7 +425,6 @@ describe("API-ATT-07: Attachment metadata and stored filename", () => {
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", Buffer.from([0xff, 0xd8, 0xff, 0x00]), "photo.jpg");
 
     expect(res.status).toBe(201);
@@ -446,7 +444,8 @@ describe("API-ATT-07: Attachment metadata and stored filename", () => {
 describe("API-ATT-09: Attachment list ordering", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -455,20 +454,19 @@ describe("API-ATT-09: Attachment list ordering", () => {
       {
         id: 1, originalFilename: "a.jpg", mimeType: "image/jpeg", fileSizeBytes: 100,
         uploadedAt: new Date("2026-08-27T00:00:00.000Z"), isRemoved: false,
-        removedAt: null, removalReason: null, removedByRequesterId: null,
+        removedAt: null, removalReason: null, removedByUserId: null,
       },
       {
         id: 2, originalFilename: "b.jpg", mimeType: "image/jpeg", fileSizeBytes: 200,
         uploadedAt: new Date("2026-08-27T00:01:00.000Z"), isRemoved: true,
         removedAt: new Date("2026-08-27T01:00:00.000Z"), removalReason: "Removed",
-        removedByRequesterId: 1,
+        removedByUserId: 1,
       },
     ];
     vi.mocked(service.listAttachments).mockResolvedValue(mockAttachments as never);
 
     const res = await request(app)
       .get("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
@@ -481,7 +479,8 @@ describe("API-ATT-09: Attachment list ordering", () => {
 describe("API-ATT-10: Removal reason normalization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.normalizeRemovalReason).mockImplementation(
       (reason: unknown) => {
@@ -503,7 +502,7 @@ describe("API-ATT-10: Removal reason normalization", () => {
         isRemoved: true,
         removedAt: new Date(),
         removalReason: reason,
-        removedByRequesterId: _rid,
+        removedByUserId: _rid,
       }),
     );
   });
@@ -511,7 +510,6 @@ describe("API-ATT-10: Removal reason normalization", () => {
   it("accepts omitted reason as null", async () => {
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(200);
     expect(res.body.data.removalReason).toBeNull();
@@ -520,7 +518,6 @@ describe("API-ATT-10: Removal reason normalization", () => {
   it("accepts blank reason as null", async () => {
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1")
       .send({ removalReason: "   " });
 
     expect(res.status).toBe(200);
@@ -530,7 +527,6 @@ describe("API-ATT-10: Removal reason normalization", () => {
   it("rejects non-string reason with 400", async () => {
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1")
       .send({ removalReason: 123 });
 
     expect(res.status).toBe(400);
@@ -541,12 +537,13 @@ describe("API-ATT-10: Removal reason normalization", () => {
 describe("API-ATT-11: DELETE content-type handling (api-spec §0)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.removeAttachment).mockResolvedValue({
       id: 1, originalFilename: "test.jpg", mimeType: "image/jpeg", fileSizeBytes: 100,
       uploadedAt: new Date(), isRemoved: true, removedAt: new Date(),
-      removalReason: null, removedByRequesterId: 1,
+      removalReason: null, removedByUserId: 1,
     } as never);
     vi.mocked(service.normalizeRemovalReason).mockReturnValue(null);
   });
@@ -554,7 +551,6 @@ describe("API-ATT-11: DELETE content-type handling (api-spec §0)", () => {
   it("accepts an omitted body with no content type", async () => {
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(200);
     expect(res.body.data.isRemoved).toBe(true);
@@ -563,7 +559,6 @@ describe("API-ATT-11: DELETE content-type handling (api-spec §0)", () => {
   it("accepts a JSON body with application/json", async () => {
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json")
       .send({ removalReason: "Replaced" });
 
@@ -573,7 +568,6 @@ describe("API-ATT-11: DELETE content-type handling (api-spec §0)", () => {
   it("accepts a JSON body with a charset parameter", async () => {
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1")
       .set("Content-Type", "application/json; charset=utf-8")
       .send({ removalReason: "Replaced" });
 
@@ -585,7 +579,6 @@ describe("API-ATT-11: DELETE content-type handling (api-spec §0)", () => {
     async (mediaType) => {
       const res = await request(app)
         .delete("/api/attachments/1")
-        .set("X-Dev-Requester-Id", "1")
         .set("Content-Type", mediaType)
         .send("not json");
 
@@ -599,7 +592,6 @@ describe("API-ATT-11: DELETE content-type handling (api-spec §0)", () => {
   it("rejects a body with no content type with 400 VALIDATION_ERROR", async () => {
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1")
       .send("not json");
 
     expect(res.status).toBe(400);
@@ -611,7 +603,8 @@ describe("API-ATT-11: DELETE content-type handling (api-spec §0)", () => {
 describe("API-ATT-12: Second removal returns 409 CONFLICT", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -622,17 +615,17 @@ describe("API-ATT-12: Second removal returns 409 CONFLICT", () => {
 
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("CONFLICT");
   });
 });
 
-describe("API-ATT-13: Removal sets removedByRequesterId", () => {
+describe("API-ATT-13: Removal sets removedByUserId", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -640,22 +633,22 @@ describe("API-ATT-13: Removal sets removedByRequesterId", () => {
     vi.mocked(service.removeAttachment).mockResolvedValue({
       id: 1, originalFilename: "test.jpg", mimeType: "image/jpeg", fileSizeBytes: 100,
       uploadedAt: new Date(), isRemoved: true, removedAt: new Date(),
-      removalReason: null, removedByRequesterId: 5,
+      removalReason: null, removedByUserId: 5,
     } as never);
 
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "5");
 
     expect(res.status).toBe(200);
-    expect(res.body.data.removedByRequesterId).toBe(5);
+    expect(res.body.data.removedByUserId).toBe(5);
   });
 });
 
 describe("API-ATT-15: Removed slot becomes reusable", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -667,7 +660,6 @@ describe("API-ATT-15: Removed slot becomes reusable", () => {
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", Buffer.from([0xff, 0xd8, 0xff, 0x00]), "new.jpg");
 
     expect(res.status).toBe(201);
@@ -678,7 +670,8 @@ describe("API-ATT-15: Removed slot becomes reusable", () => {
 describe("API-ATT-OWN-01: Cross-requester ownership enforcement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
   });
 
@@ -689,7 +682,6 @@ describe("API-ATT-OWN-01: Cross-requester ownership enforcement", () => {
 
     const res = await request(app)
       .post("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1")
       .attach("file", Buffer.from([0xff, 0xd8, 0xff, 0x00]), "test.jpg");
 
     expect(res.status).toBe(404);
@@ -703,7 +695,6 @@ describe("API-ATT-OWN-01: Cross-requester ownership enforcement", () => {
 
     const res = await request(app)
       .get("/api/tickets/TKT-2026-000001/attachments")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(404);
   });
@@ -713,7 +704,6 @@ describe("API-ATT-OWN-01: Cross-requester ownership enforcement", () => {
 
     const res = await request(app)
       .get("/api/attachments/1/download")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(404);
   });
@@ -723,7 +713,6 @@ describe("API-ATT-OWN-01: Cross-requester ownership enforcement", () => {
 
     const res = await request(app)
       .get("/api/attachments/1/preview")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(404);
   });
@@ -733,7 +722,6 @@ describe("API-ATT-OWN-01: Cross-requester ownership enforcement", () => {
 
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1");
 
     expect(res.status).toBe(404);
   });
@@ -742,7 +730,8 @@ describe("API-ATT-OWN-01: Cross-requester ownership enforcement", () => {
 describe("API-ATT-08: Removal reason 200-char boundary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(service.isActiveDevRequester).mockResolvedValue(true);
+    setSeamIdentity({ userId: 1 });
+    vi.mocked(service.attachmentOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.ticketOwnedByRequester).mockResolvedValue(true);
     vi.mocked(service.normalizeRemovalReason).mockImplementation(
       (reason: unknown) => {
@@ -758,7 +747,7 @@ describe("API-ATT-08: Removal reason 200-char boundary", () => {
       async (_id: number, _rid: number, reason: string | null) => ({
         id: 1, originalFilename: "test.jpg", mimeType: "image/jpeg", fileSizeBytes: 100,
         uploadedAt: new Date(), isRemoved: true, removedAt: new Date(),
-        removalReason: reason, removedByRequesterId: _rid,
+        removalReason: reason, removedByUserId: _rid,
       }),
     );
   });
@@ -767,7 +756,6 @@ describe("API-ATT-08: Removal reason 200-char boundary", () => {
     const reason = "a".repeat(200);
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1")
       .send({ removalReason: reason });
 
     expect(res.status).toBe(200);
@@ -778,9 +766,12 @@ describe("API-ATT-08: Removal reason 200-char boundary", () => {
     const reason = "a".repeat(201);
     const res = await request(app)
       .delete("/api/attachments/1")
-      .set("X-Dev-Requester-Id", "1")
       .send({ removalReason: reason });
 
     expect(res.status).toBe(400);
   });
+});
+
+afterEach(() => {
+  clearSeamIdentity();
 });

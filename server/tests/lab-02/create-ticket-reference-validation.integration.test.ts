@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import { registerSession, sess, clearSessions } from "../lab-03/helpers/auth.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
 
@@ -39,7 +40,7 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
       where: { year: currentYear },
     });
 
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
 
@@ -48,6 +49,7 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
     expect(system).toBeTruthy();
 
     requesterId = requester!.id;
+    await registerSession(requesterId);
     activeCategoryId = category!.id;
     activeSystemId = system!.id;
 
@@ -88,7 +90,8 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
       await prisma.ticketSequence.create({ data: currentYearSequenceSnapshot });
     }
     
-    await disconnectPrisma();
+    await clearSessions();
+  await disconnectPrisma();
   });
 
   const validBody = {
@@ -104,7 +107,8 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         summary: markerSummary,
@@ -127,7 +131,8 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         summary: markerSummary,
@@ -150,7 +155,8 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         summary: markerSummary,
@@ -173,7 +179,8 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         summary: markerSummary,
@@ -192,7 +199,8 @@ describe("API-TKT-02-INT: Inactive/stale reference rejection (real DB)", () => {
   itIfDb("accepts valid create with active references (real DB)", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .send({
         ...validBody,
         categoryId: activeCategoryId,

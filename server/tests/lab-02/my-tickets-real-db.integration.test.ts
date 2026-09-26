@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
+import { registerSession, sess, clearSessions } from "../lab-03/helpers/auth.js";
 import { allocateTicketNumberWithClient } from "../../src/ticket-number.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
@@ -41,8 +42,8 @@ afterAll(async () => {
 
   // Clean up any test-created requesters
   if (createdRequesterIds.length > 0) {
-    await prisma.devRequester.deleteMany({
-      where: { id: { in: createdRequesterIds } },
+    await prisma.user.deleteMany({
+      where: { id: { in: createdRequesterIds }, role: "REQUESTER" },
     });
   }
 
@@ -53,6 +54,7 @@ afterAll(async () => {
     await prisma.ticketSequence.create({ data: currentYearSequenceSnapshot });
   }
 
+  await clearSessions();
   await disconnectPrisma();
 });
 
@@ -77,7 +79,8 @@ async function createTicket(
 
   const res = await request(app)
     .post("/api/tickets")
-    .set("X-Dev-Requester-Id", String(requesterId))
+    .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
     .send({
       categoryId: overrides.categoryId ?? category!.id,
       relatedSystemId: overrides.relatedSystemId ?? system!.id,
@@ -96,8 +99,8 @@ async function createTicket(
  */
 async function getTwoRequesters(): Promise<[number, number]> {
   const prisma = getPrisma();
-  const requesters = await prisma.devRequester.findMany({
-    where: { isActive: true },
+  const requesters = await prisma.user.findMany({
+    where: { isActive: true, role: "REQUESTER" },
     take: 2,
     orderBy: { id: "asc" },
   });
@@ -116,6 +119,8 @@ describe("My Tickets Real DB — Test 1: Ownership isolation", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     [requesterAId, requesterBId] = await getTwoRequesters();
+    await registerSession(requesterAId);
+    await registerSession(requesterBId);
     ticketANumber = await createTicket(requesterAId, {
       summary: `${TEST_MARKER} OWNERSHIP-A`,
       description: `${TEST_MARKER} Ownership ticket for requester A.`,
@@ -129,7 +134,8 @@ describe("My Tickets Real DB — Test 1: Ownership isolation", () => {
   itIfDb("Requester A sees only their own ticket", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterAId));
+      .set("Cookie", sess(requesterAId).cookie)
+        .set("X-CSRF-Token", sess(requesterAId).csrfToken);
 
     expect(res.status).toBe(200);
     const ticketNumbers = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
@@ -144,7 +150,8 @@ describe("My Tickets Real DB — Test 1: Ownership isolation", () => {
   itIfDb("Requester B does not see Requester A's ticket", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterBId));
+      .set("Cookie", sess(requesterBId).cookie)
+        .set("X-CSRF-Token", sess(requesterBId).csrfToken);
 
     expect(res.status).toBe(200);
     const ticketNumbers = res.body.data.map((t: { ticketNumber: string }) => t.ticketNumber);
@@ -166,9 +173,11 @@ describe("My Tickets Real DB — Test 2: Search", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
+    await registerSession(requesterId);
 
     ticketLaptop = await createTicket(requesterId, {
       summary: `${TEST_MARKER} Laptop battery issue`,
@@ -183,7 +192,8 @@ describe("My Tickets Real DB — Test 2: Search", () => {
   itIfDb("finds ticket by ticket number", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ search: ticketLaptop });
 
     expect(res.status).toBe(200);
@@ -194,7 +204,8 @@ describe("My Tickets Real DB — Test 2: Search", () => {
   itIfDb("finds ticket by summary substring", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ search: "Laptop" });
 
     expect(res.status).toBe(200);
@@ -206,7 +217,8 @@ describe("My Tickets Real DB — Test 2: Search", () => {
   itIfDb("search is case-insensitive", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ search: "BATTERY" });
 
     expect(res.status).toBe(200);
@@ -217,7 +229,8 @@ describe("My Tickets Real DB — Test 2: Search", () => {
   itIfDb("search matches substring", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ search: "atter" });
 
     expect(res.status).toBe(200);
@@ -228,7 +241,8 @@ describe("My Tickets Real DB — Test 2: Search", () => {
   itIfDb("search is trimmed before query", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ search: "   laptop   " });
 
     expect(res.status).toBe(200);
@@ -239,7 +253,8 @@ describe("My Tickets Real DB — Test 2: Search", () => {
   itIfDb("whitespace-only search is inactive (returns all tickets)", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ search: "     " });
 
     expect(res.status).toBe(200);
@@ -258,7 +273,8 @@ describe("My Tickets Real DB — Test 2: Search", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ search: "%" });
 
     expect(res.status).toBe(200);
@@ -277,7 +293,8 @@ describe("My Tickets Real DB — Test 2: Search", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ search: "_" });
 
     expect(res.status).toBe(200);
@@ -296,7 +313,8 @@ describe("My Tickets Real DB — Test 2: Search", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ search: "\\" });
 
     expect(res.status).toBe(200);
@@ -316,15 +334,24 @@ describe("My Tickets Real DB — Test 2b: Response shape", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
+    // Self-sufficient: create the ticket this suite asserts on, rather than
+    // depending on another describe block having created one for the same
+    // requester (which made the test order-dependent).
+    await createTicket(requesterId, {
+      summary: `${TEST_MARKER} RESPONSE-SHAPE`,
+      description: `${TEST_MARKER} Ticket used to assert the documented response shape.`,
+    });
   });
 
   itIfDb("each ticket item has the exact documented response shape", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "1", pageSize: "1" });
 
     expect(res.status).toBe(200);
@@ -378,9 +405,10 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
 
     const hardware = await prisma.category.findFirst({ where: { name: "Hardware", isActive: true } });
     const software = await prisma.category.findFirst({ where: { name: "Software", isActive: true } });
@@ -416,7 +444,8 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
   itIfDb("filters by categoryId only", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ categoryId: String(hardwareCategoryId) });
 
     expect(res.status).toBe(200);
@@ -428,7 +457,8 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
   itIfDb("filters by requestedPriority only", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ requestedPriority: "HIGH" });
 
     expect(res.status).toBe(200);
@@ -440,7 +470,8 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
   itIfDb("applies all three filters conjunctively (category + priority + status)", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({
         categoryId: String(hardwareCategoryId),
         requestedPriority: "HIGH",
@@ -463,7 +494,8 @@ describe("My Tickets Real DB — Test 3: Conjunctive filters", () => {
   itIfDb("conjunctive filters return intersection only", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({
         categoryId: String(hardwareCategoryId),
         requestedPriority: "HIGH",
@@ -494,9 +526,10 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
 
     // Create tickets with different priorities; createdAt will be sequential
     lowTicketNumber = await createTicket(requesterId, {
@@ -519,7 +552,8 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
   itIfDb("sorts by requestedPriority ascending: LOW < MEDIUM < HIGH", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ sort: "requestedPriority", order: "asc", search: `${TEST_MARKER} PRIO-` });
 
     expect(res.status).toBe(200);
@@ -540,7 +574,8 @@ describe("My Tickets Real DB — Test 4: Priority ordering", () => {
   itIfDb("sorts by requestedPriority descending: HIGH > MEDIUM > LOW", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ sort: "requestedPriority", order: "desc", search: `${TEST_MARKER} PRIO-` });
 
     expect(res.status).toBe(200);
@@ -571,9 +606,10 @@ describe("My Tickets Real DB — Test 4b: Summary ordering with distinct values"
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
 
     // Create tickets with distinct summary values that sort deterministically
     summaryATicket = await createTicket(requesterId, {
@@ -593,7 +629,8 @@ describe("My Tickets Real DB — Test 4b: Summary ordering with distinct values"
   itIfDb("sorts by summary ascending: Apple < Banana < Cherry", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ sort: "summary", order: "asc", search: "SUM-ORD-" });
 
     expect(res.status).toBe(200);
@@ -610,7 +647,8 @@ describe("My Tickets Real DB — Test 4b: Summary ordering with distinct values"
   itIfDb("sorts by summary descending: Cherry > Banana > Apple", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ sort: "summary", order: "desc", search: "SUM-ORD-" });
 
     expect(res.status).toBe(200);
@@ -634,9 +672,10 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
 
     // Create tickets with same requestedPriority to test tie-breakers
     await createTicket(requesterId, {
@@ -705,7 +744,8 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
   itIfDb("tie-breaker: createdAt DESC, id DESC after primary sort", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ sort: "requestedPriority", order: "asc", search: `${TEST_MARKER} TIE-` });
 
     expect(res.status).toBe(200);
@@ -722,7 +762,8 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
   itIfDb("tie-breaker: summary sort with same summary uses createdAt DESC, id DESC", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ sort: "summary", order: "asc", search: `${TEST_MARKER} SAME-SUMMARY-TIE` });
 
     expect(res.status).toBe(200);
@@ -739,7 +780,8 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
   itIfDb("tie-breaker: same createdAt uses id DESC as final tie-breaker", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ sort: "createdAt", order: "asc", search: `${TEST_MARKER} SAME-TS-` });
 
     expect(res.status).toBe(200);
@@ -756,7 +798,8 @@ describe("My Tickets Real DB — Test 5: Tie breakers", () => {
   itIfDb("tie-breaker: ticketNumber sort uses createdAt DESC, id DESC as tie-breaker", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ sort: "ticketNumber", order: "asc" });
 
     expect(res.status).toBe(200);
@@ -777,9 +820,10 @@ describe("My Tickets Real DB — Test 6: Pagination", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
 
     // Create at least 21 tickets
     for (let i = 0; i < 21; i++) {
@@ -793,7 +837,8 @@ describe("My Tickets Real DB — Test 6: Pagination", () => {
   itIfDb("page 1 returns first 10 items with correct metadata", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "1", pageSize: "10", sort: "createdAt", order: "asc", search: `${TEST_MARKER} PAG-` });
 
     expect(res.status).toBe(200);
@@ -828,12 +873,14 @@ describe("My Tickets Real DB — Test 6: Pagination", () => {
 
     const res1 = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "1", pageSize: String(pageSize), sort: "createdAt", order: "asc", search: paginatedSearch });
 
     const res2 = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "2", pageSize: String(pageSize), sort: "createdAt", order: "asc", search: paginatedSearch });
 
     expect(res1.status).toBe(200);
@@ -871,7 +918,8 @@ describe("My Tickets Real DB — Test 6: Pagination", () => {
 
     const res3 = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "3", pageSize: String(pageSize), sort: "createdAt", order: "asc", search: paginatedSearch });
 
     expect(res3.status).toBe(200);
@@ -886,7 +934,8 @@ describe("My Tickets Real DB — Test 6: Pagination", () => {
   itIfDb("valid out-of-range page returns empty data with correct metadata", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "999", pageSize: "10", search: `${TEST_MARKER} PAG-` });
 
     expect(res.status).toBe(200);
@@ -910,23 +959,27 @@ describe("My Tickets Real DB — Test 7: Empty vs No-Results", () => {
     const prisma = getPrisma();
 
     // Find a requester with tickets (the one we've been using)
-    const requesterWithTickets = await prisma.devRequester.findFirst({
-      where: { isActive: true },
+    const requesterWithTickets = await prisma.user.findFirst({
+      where: { isActive: true, role: "REQUESTER" },
       orderBy: { id: "asc" },
     });
     expect(requesterWithTickets).toBeTruthy();
     requesterWithTicketsId = requesterWithTickets!.id;
 
     // Create a dedicated zero-ticket requester for deterministic empty-state testing
-    const newRequester = await prisma.devRequester.create({
+    const newRequester = await prisma.user.create({
       data: {
         name: `${TEST_MARKER}-EMPTY-REQ-${Date.now()}`,
         email: `empty-${Date.now()}@test.com`,
+        role: "REQUESTER",
+        passwordHash: "$2b$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0",
         isActive: true,
+        mustChangePassword: true,
       },
     });
     requesterWithNoTicketsId = newRequester.id;
     createdRequesterIds.push(newRequester.id);
+    await registerSession(requesterWithNoTicketsId);
 
     // Verify zero tickets exist for this requester
     const ticketCount = await prisma.ticket.count({
@@ -938,7 +991,8 @@ describe("My Tickets Real DB — Test 7: Empty vs No-Results", () => {
   itIfDb("empty: requester with zero tickets returns unfilteredTotalItems=0", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterWithNoTicketsId))
+      .set("Cookie", sess(requesterWithNoTicketsId).cookie)
+        .set("X-CSRF-Token", sess(requesterWithNoTicketsId).csrfToken)
       .query({ search: "anything" });
 
     expect(res.status).toBe(200);
@@ -949,7 +1003,8 @@ describe("My Tickets Real DB — Test 7: Empty vs No-Results", () => {
   itIfDb("no-results: requester with tickets but filter matches nothing", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterWithTicketsId))
+      .set("Cookie", sess(requesterWithTicketsId).cookie)
+        .set("X-CSRF-Token", sess(requesterWithTicketsId).csrfToken)
       .query({ search: "ZZZZNONEXISTENT" });
 
     expect(res.status).toBe(200);
@@ -961,7 +1016,8 @@ describe("My Tickets Real DB — Test 7: Empty vs No-Results", () => {
     // Requester with zero tickets: totalPages === 0
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterWithNoTicketsId))
+      .set("Cookie", sess(requesterWithNoTicketsId).cookie)
+        .set("X-CSRF-Token", sess(requesterWithNoTicketsId).csrfToken)
       .query({ page: "9007199254740991", pageSize: "50" });
 
     expect(res.status).toBe(200);
@@ -977,7 +1033,8 @@ describe("My Tickets Real DB — Test 7: Empty vs No-Results", () => {
     // Requester with tickets but filter matches nothing: totalItems=0, unfilteredTotalItems>0
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterWithTicketsId))
+      .set("Cookie", sess(requesterWithTicketsId).cookie)
+        .set("X-CSRF-Token", sess(requesterWithTicketsId).csrfToken)
       .query({ page: "9007199254740991", pageSize: "50", search: "ZZZZNONEXISTENT" });
 
     expect(res.status).toBe(200);
@@ -999,15 +1056,17 @@ describe("My Tickets Real DB — Test 8: Invalid category", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
   });
 
   itIfDb("categoryId=abc returns 400", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ categoryId: "abc" });
 
     expect(res.status).toBe(400);
@@ -1018,7 +1077,8 @@ describe("My Tickets Real DB — Test 8: Invalid category", () => {
   itIfDb("categoryId=0 returns 400", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ categoryId: "0" });
 
     expect(res.status).toBe(400);
@@ -1028,7 +1088,8 @@ describe("My Tickets Real DB — Test 8: Invalid category", () => {
   itIfDb("categoryId=-1 returns 400", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ categoryId: "-1" });
 
     expect(res.status).toBe(400);
@@ -1038,7 +1099,8 @@ describe("My Tickets Real DB — Test 8: Invalid category", () => {
   itIfDb("categoryId=999999 returns 409", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ categoryId: "999999" });
 
     expect(res.status).toBe(409);
@@ -1056,7 +1118,8 @@ describe("My Tickets Real DB — Test 8: Invalid category", () => {
       });
       const res = await request(app)
         .get("/api/tickets")
-        .set("X-Dev-Requester-Id", String(requesterId))
+        .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
         .query({ categoryId: String(newCat.id) });
 
       expect(res.status).toBe(409);
@@ -1069,7 +1132,8 @@ describe("My Tickets Real DB — Test 8: Invalid category", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ categoryId: String(inactiveCat.id) });
 
     expect(res.status).toBe(409);
@@ -1086,15 +1150,17 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
   });
 
   itIfDb("missing page defaults to 1", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId));
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken);
 
     expect(res.status).toBe(200);
     expect(res.body.pagination.page).toBe(1);
@@ -1103,7 +1169,8 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   itIfDb("page=abc falls back to 1", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "abc" });
 
     expect(res.status).toBe(200);
@@ -1113,7 +1180,8 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   itIfDb("page=0 falls back to 1", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "0" });
 
     expect(res.status).toBe(200);
@@ -1123,7 +1191,8 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   itIfDb("page=-1 falls back to 1", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "-1" });
 
     expect(res.status).toBe(200);
@@ -1133,7 +1202,8 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   itIfDb("page=1.0 falls back to 1", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "1.0" });
 
     expect(res.status).toBe(200);
@@ -1143,7 +1213,8 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   itIfDb("page=1e2 falls back to 1", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: "1e2" });
 
     expect(res.status).toBe(200);
@@ -1156,7 +1227,8 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
 
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ page: enormousPage });
 
     expect(res.status).toBe(200);
@@ -1166,7 +1238,8 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   itIfDb("missing pageSize defaults to 10", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId));
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken);
 
     expect(res.status).toBe(200);
     expect(res.body.pagination.pageSize).toBe(10);
@@ -1175,7 +1248,8 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   itIfDb("pageSize=0 falls back to 10", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ pageSize: "0" });
 
     expect(res.status).toBe(200);
@@ -1185,7 +1259,8 @@ describe("My Tickets Real DB — Test 9: Defaults/fallbacks", () => {
   itIfDb("pageSize=51 falls back to 10", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(requesterId))
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken)
       .query({ pageSize: "51" });
 
     expect(res.status).toBe(200);
@@ -1202,9 +1277,10 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const requester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(requester).toBeTruthy();
     requesterId = requester!.id;
+    await registerSession(requesterId);
   });
 
   itIfDb("duplicate search params uses first value", async () => {
@@ -1220,7 +1296,8 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
 
     const res = await request(app)
       .get("/api/tickets?search=first&search=second")
-      .set("X-Dev-Requester-Id", String(requesterId));
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken);
 
     expect(res.status).toBe(200);
     // The controller reads req.query.search as a string, which Express
@@ -1239,7 +1316,8 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
 
     const res = await request(app)
       .get(`/api/tickets?categoryId=${cat!.id}&categoryId=999999`)
-      .set("X-Dev-Requester-Id", String(requesterId));
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken);
 
     expect(res.status).toBe(200);
     // First value (valid cat.id) should be used, so all returned tickets
@@ -1252,7 +1330,8 @@ describe("My Tickets Real DB — Test 10: Duplicate query parameters", () => {
   itIfDb("duplicate sort uses first value", async () => {
     const res = await request(app)
       .get("/api/tickets?sort=createdAt&sort=invalidField")
-      .set("X-Dev-Requester-Id", String(requesterId));
+      .set("Cookie", sess(requesterId).cookie)
+        .set("X-CSRF-Token", sess(requesterId).csrfToken);
 
     expect(res.status).toBe(200);
     // First value (createdAt) should be used; invalidField is ignored.
@@ -1276,8 +1355,8 @@ describe("API-REQ-02: Historical inactive requester — data preserved, API inac
     const prisma = getPrisma();
 
     // Find the inactive requester from seed data (Edsger Dijkstra)
-    const inactive = await prisma.devRequester.findFirst({
-      where: { isActive: false },
+    const inactive = await prisma.user.findFirst({
+      where: { isActive: false, role: "REQUESTER" },
     });
     expect(inactive).toBeTruthy();
     inactiveRequesterId = inactive!.id;
@@ -1286,7 +1365,7 @@ describe("API-REQ-02: Historical inactive requester — data preserved, API inac
 
   itIfDb("inactive requester database row still exists", async () => {
     const prisma = getPrisma();
-    const requester = await prisma.devRequester.findUnique({
+    const requester = await prisma.user.findUnique({
       where: { id: inactiveRequesterId },
     });
     expect(requester).toBeTruthy();
@@ -1294,32 +1373,30 @@ describe("API-REQ-02: Historical inactive requester — data preserved, API inac
     expect(requester!.isActive).toBe(false);
   });
 
-  itIfDb("inactive requester is rejected by requester-context endpoint with 422", async () => {
+  itIfDb("inactive requester cannot authenticate (login rejected)", async () => {
+    const prisma = getPrisma();
+    const inactive = await prisma.user.findUnique({ where: { id: inactiveRequesterId } });
     const res = await request(app)
-      .get("/api/requester-context")
-      .set("X-Dev-Requester-Id", String(inactiveRequesterId));
+      .post("/api/auth/login")
+      .send({ email: inactive!.email, password: "TestPass123!xyz" });
 
-    expect(res.status).toBe(422);
-    expect(res.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHENTICATED");
   });
 
-  itIfDb("inactive requester is rejected by My Tickets endpoint with 422", async () => {
-    const res = await request(app)
-      .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(inactiveRequesterId));
-
-    expect(res.status).toBe(422);
-    expect(res.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
+  itIfDb("inactive requester is rejected by My Tickets endpoint with 401", async () => {
+    const res = await request(app).get("/api/tickets");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHENTICATED");
   });
 
-  itIfDb("inactive requester is rejected by Create Ticket endpoint with 422", async () => {
+  itIfDb("inactive requester is rejected by Create Ticket endpoint with 401", async () => {
     const prisma = getPrisma();
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
 
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Dev-Requester-Id", String(inactiveRequesterId))
       .send({
         categoryId: category!.id,
         relatedSystemId: system!.id,
@@ -1328,15 +1405,16 @@ describe("API-REQ-02: Historical inactive requester — data preserved, API inac
         requestedPriority: "MEDIUM",
       });
 
-    expect(res.status).toBe(422);
-    expect(res.body.error.code).toBe("REQUESTER_CONTEXT_INVALID");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHENTICATED");
   });
 
   itIfDb("tickets owned by inactive requester are not accessible through My Tickets API", async () => {
     // First create a ticket as an active requester
     const prisma = getPrisma();
-    const activeRequester = await prisma.devRequester.findFirst({ where: { isActive: true } });
+    const activeRequester = await prisma.user.findFirst({ where: { isActive: true, role: "REQUESTER" } });
     expect(activeRequester).toBeTruthy();
+    await registerSession(activeRequester!.id);
 
     const ticketNumber = await createTicket(activeRequester!.id, {
       summary: `${TEST_MARKER} INACTIVE-OWNER`,
@@ -1357,17 +1435,10 @@ describe("API-REQ-02: Historical inactive requester — data preserved, API inac
     expect(dbTicketAfterReassign).toBeTruthy();
     expect(dbTicketAfterReassign!.requesterId).toBe(inactiveRequesterId);
 
-    // Inactive requester calls requester-context → 422
-    const resContext = await request(app)
-      .get("/api/requester-context")
-      .set("X-Dev-Requester-Id", String(inactiveRequesterId));
-    expect(resContext.status).toBe(422);
-
-    // Inactive requester calls My Tickets → 422
-    const resTickets = await request(app)
-      .get("/api/tickets")
-      .set("X-Dev-Requester-Id", String(inactiveRequesterId));
-    expect(resTickets.status).toBe(422);
+    // An inactive requester cannot hold a valid session → 401 UNAUTHENTICATED.
+    const resTickets = await request(app).get("/api/tickets");
+    expect(resTickets.status).toBe(401);
+    expect(resTickets.body.error.code).toBe("UNAUTHENTICATED");
 
     // Assert DB row STILL exists after API rejections
     const dbTicketAfterRejection = await prisma.ticket.findUnique({

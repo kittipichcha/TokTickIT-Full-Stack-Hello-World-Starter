@@ -1,0 +1,8 @@
+﻿Issue #41 client verification — 2026-09-25
+
+Focused regression file (AuthGate): 9 passed, 0 skipped.
+Required focused set (App, UserManagement, AuthGate): 42 passed across 3 files, 0 skipped.
+Full client suite: 234 passed across 17 files, 0 skipped.
+Test-first proof: UI-AUTHGATE-05 failed against the handler without cached-flag reconciliation (`true` received, `false` expected), then passed after the fix.
+TypeScript check passed. Production build passed.
+JSDOM emitted expected window.open/navigation not-implemented diagnostics from existing App tests; Vitest exited 0.

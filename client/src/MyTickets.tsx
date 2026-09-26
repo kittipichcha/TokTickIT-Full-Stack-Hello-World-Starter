@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchMyTickets,
   fetchCategories,
-  type DevRequester,
   type MyTicketItem,
   type MyTicketsResponse,
   type Category,
@@ -12,17 +11,31 @@ import { formatUtcDate } from "./format";
 type LoadState = "loading" | "loaded" | "error" | "empty" | "no-results";
 
 interface MyTicketsProps {
-  requester: DevRequester;
   onViewTicket: (ticketNumber: string) => void;
   onCreateTicket: () => void;
   resetKey: number;
 }
 
-const VALID_SORTS = ["createdAt", "ticketNumber", "summary", "requestedPriority"] as const;
+const VALID_SORTS = ["createdAt", "ticketNumber", "summary", "status", "priority"] as const;
 type SortField = (typeof VALID_SORTS)[number];
 type SortOrder = "asc" | "desc";
 
-export default function MyTickets({ requester, onViewTicket, onCreateTicket, resetKey }: MyTicketsProps) {
+/**
+ * The frozen Ticket status set (specification.md §9.3 / api-spec §8).
+ * The filter offers every status the backend accepts.
+ */
+const TICKET_STATUSES = [
+  { value: "NEW", label: "New" },
+  { value: "OPEN", label: "Open" },
+  { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "WAITING_FOR_REQUESTER", label: "Waiting for Requester" },
+  { value: "RESOLVED", label: "Resolved" },
+  { value: "CLOSED", label: "Closed" },
+  { value: "REOPENED", label: "Reopened" },
+  { value: "CANCELLED", label: "Cancelled" },
+] as const;
+
+export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: MyTicketsProps) {
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Filter state
@@ -71,7 +84,7 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
 
     try {
       const trimmedSearch = search.trim();
-      const result = await fetchMyTickets(requester.id, {
+      const result = await fetchMyTickets({
         search: trimmedSearch || undefined,
         categoryId,
         requestedPriority,
@@ -112,7 +125,7 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
         setErrorMessage(err instanceof Error ? err.message : "Failed to load tickets.");
       }
     }
-  }, [requester.id, search, categoryId, requestedPriority, status, sort, order, page, pageSize]);
+  }, [search, categoryId, requestedPriority, status, sort, order, page, pageSize]);
 
   // Reload when filters, sort, page, or resetKey change
   useEffect(() => {
@@ -262,7 +275,9 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
             aria-label="Filter by status"
           >
             <option value="">All Statuses</option>
-            <option value="NEW">New</option>
+            {TICKET_STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
           </select>
           {hasActiveFilters && (
             <button className="tertiary-button" onClick={handleClearFilters}>
@@ -359,8 +374,8 @@ export default function MyTickets({ requester, onViewTicket, onCreateTicket, res
                   {renderSortableHeader("Created Date", "createdAt")}
                   {renderSortableHeader("Summary", "summary")}
                   <th>Category</th>
-                  {renderSortableHeader("Requested Priority", "requestedPriority")}
-                  <th>Current Status</th>
+                  {renderSortableHeader("Requested Priority", "priority")}
+                  {renderSortableHeader("Current Status", "status")}
                   <th>Last Updated</th>
                 </tr>
               </thead>

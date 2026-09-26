@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 import * as api from "../api";
+import { TEST_USER } from "./helpers/user";
 import appCss from "../App.css?raw";
 
 vi.mock("../api");
@@ -22,8 +23,6 @@ const relatedSystems = [
 ];
 
 async function setupAuthenticatedApp() {
-  vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
-  vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
   vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
   vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
   vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
@@ -31,24 +30,14 @@ async function setupAuthenticatedApp() {
     pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0, unfilteredTotalItems: 0 },
   }));
 
-  render(<App />);
-
-  await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-  await userEvent.click(screen.getByRole("button", { name: "Continue" }));
-  await screen.findAllByText(/Ada Lovelace/);
+  render(<App user={TEST_USER} />);
+  await screen.findByText("TokTickIT");
 }
 
 describe("UI-STYLE-01: Editable/read-only/invalid/disabled/busy field and button styles match Zen Green tokens", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) =>
-      sessionStorage.setItem("toktickit.requesterId", String(id)),
-    );
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() =>
-      sessionStorage.removeItem("toktickit.requesterId"),
-    );
     vi.mocked(api.createTicket).mockImplementation(async () => ({
       id: 1,
       ticketNumber: "TKT-2026-000001",
@@ -153,11 +142,10 @@ it("renders Submit button disabled only during submission (not pre-emptively)", 
     expect(submitButton.classList.contains("primary-button")).toBe(true);
   });
 
-  it("renders the header with Change Requester secondary-style button", async () => {
+  it("does not render a Change Requester action (removed by Lab 3 §8.2)", async () => {
     await setupAuthenticatedApp();
 
-    const changeButton = screen.getByRole("button", { name: /change requester/i });
-    expect(changeButton.classList.contains("header-button")).toBe(true);
+    expect(screen.queryByRole("button", { name: /change requester/i })).toBeNull();
   });
 
   it("renders navigation with nav-active class on active link", async () => {
@@ -199,13 +187,6 @@ describe("UI-STYLE-02: Required-field labels show red asterisk; validation messa
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) =>
-      sessionStorage.setItem("toktickit.requesterId", String(id)),
-    );
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() =>
-      sessionStorage.removeItem("toktickit.requesterId"),
-    );
   });
 
   afterEach(() => {
@@ -274,14 +255,6 @@ describe("UI-STYLE-03: Priority/Status/Removed badge styling and non-color-relia
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
-    vi.mocked(api.getStoredRequesterId).mockReturnValue(null);
-    vi.mocked(api.setStoredRequesterId).mockImplementation((id) =>
-      sessionStorage.setItem("toktickit.requesterId", String(id)),
-    );
-    vi.mocked(api.clearStoredRequesterId).mockImplementation(() =>
-      sessionStorage.removeItem("toktickit.requesterId"),
-    );
-    vi.mocked(api.fetchDevRequesters).mockImplementation(async () => requesters);
   });
 
   afterEach(() => {
@@ -289,7 +262,6 @@ describe("UI-STYLE-03: Priority/Status/Removed badge styling and non-color-relia
   });
 
   async function setupWithTicketData(data: ReturnType<typeof makeTicketData>[]) {
-    vi.mocked(api.fetchRequesterContext).mockImplementation(async () => ({ requesterId: 1 }));
     vi.mocked(api.fetchCategories).mockImplementation(async () => categories);
     vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
     vi.mocked(api.fetchMyTickets).mockImplementation(async () => ({
@@ -297,11 +269,8 @@ describe("UI-STYLE-03: Priority/Status/Removed badge styling and non-color-relia
       pagination: { page: 1, pageSize: 10, totalItems: data.length, totalPages: 1, unfilteredTotalItems: data.length },
     }));
 
-    render(<App />);
-
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: /development requester/i }), "1");
-    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
-    await screen.findAllByText(/Ada Lovelace/);
+    render(<App user={TEST_USER} />);
+    await screen.findByText("TokTickIT");
   }
 
   function makeTicketData(id: number, overrides: Record<string, string> = {}) {

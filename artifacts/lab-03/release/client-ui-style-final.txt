@@ -1,0 +1,13 @@
+
+> issue-18-integration-verification@1.0.0 test:client:ui
+> cd client && npx vitest run src/lab-02-tests/UiStyles.test.tsx src/lab-03-tests/UiStyles.test.tsx
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-42-worktree/client
+
+
+ Test Files  2 passed (2)
+      Tests  34 passed (34)
+   Start at  17:18:13
+   Duration  8.73s (transform 1.34s, setup 0ms, import 3.20s, tests 10.31s, environment 2.95s)
+

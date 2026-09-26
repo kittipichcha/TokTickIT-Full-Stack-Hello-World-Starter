@@ -1,0 +1,74 @@
+◇ injected env (2) from .env // tip: ⌘ enable debugging { debug: true }
+
+ RUN  v4.1.10 <repo>/<worktree>/server
+
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-01: every DevRequester became exactly one User with exact ID preservation 16ms
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-02: final schema checklist — User fields, timestamptz, passwordHash length, isRemoved invariant 101ms
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-03: migrated requester initial password matches the frozen derivation and authenticates 139ms
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-04: migrated requester is blocked until password change, then unblocked (same session) 1206ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+MigrationCollisionError: 1 collision(s) block the migration.
+  - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
+Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-05: a real migration collision aborts before backfill, preserves legacy data, and resumes after resolution 58013ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-PRESERVE-01: every legacy Requester and Ticket survives the real migration unchanged 46179ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-PRESERVE-02: every legacy Attachment and its ownership/removal state survives the real migration 46141ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+psql:<tmp>/migrate-lab3-injected-23060-1789831578804.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_11332" --single-transaction -v ON_ERROR_STOP=1 -f "<tmp>\migrate-lab3-injected-23060-1789831578804.sql"
+psql:<tmp>/migrate-lab3-injected-23060-1789831578804.sql:43: ERROR:  division by zero
+
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > MIG-FAIL-01: a late Phase C failure rolls back ALL Phase C DDL and is never recorded as applied 53692ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > MIG-FAIL-02: a pre-backfill legacy-invariant failure leaves the supported Phase-A-applied state 46166ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-03 (supplementary): the frozen derivation is deterministic across independent fresh migrations 87148ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-06: resume with matching counts but mismatched identity is rejected 32006ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-07: resume with matching id/email/role but divergent name/password/activation is rejected 33184ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+psql:<tmp>/migrate-lab3-injected-16296-1789831835691.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_11332" --single-transaction -v ON_ERROR_STOP=1 -f "<tmp>\migrate-lab3-injected-16296-1789831835691.sql"
+psql:<tmp>/migrate-lab3-injected-16296-1789831835691.sql:43: ERROR:  division by zero
+
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > SEC-MIG-01: a failing psql migration never leaks the DB credential into captured output 36670ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+psql:<tmp>/migrate-lab3-injected-15060-1789831872353.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_11332" --single-transaction -v ON_ERROR_STOP=1 -f "<tmp>\migrate-lab3-injected-15060-1789831872353.sql"
+psql:<tmp>/migrate-lab3-injected-15060-1789831872353.sql:43: ERROR:  division by zero
+
+Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 1. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-08: resume aborts when an attachment uploaderUserId diverges from uploaderRequesterId 40721ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+psql:<tmp>/migrate-lab3-injected-25756-1789831908603.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_11332" --single-transaction -v ON_ERROR_STOP=1 -f "<tmp>\migrate-lab3-injected-25756-1789831908603.sql"
+psql:<tmp>/migrate-lab3-injected-25756-1789831908603.sql:43: ERROR:  division by zero
+
+Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 2. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-09: resume aborts when removedByUserId is NULL while removedByRequesterId is set 35803ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+psql:<tmp>/migrate-lab3-injected-21324-1789831944598.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://kitti@localhost:5432/tocktick_lab3_mig05_11332" --single-transaction -v ON_ERROR_STOP=1 -f "<tmp>\migrate-lab3-injected-21324-1789831944598.sql"
+psql:<tmp>/migrate-lab3-injected-21324-1789831944598.sql:43: ERROR:  division by zero
+
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-10: a correct backfill-complete fixture resumes and completes Phase C 52954ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+[test-only] simulated crash right after backfill commit.
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-11: a crash after the backfill commit is repaired by the next run (sequence re-sync) 49902ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-12: an uninterrupted run leaves the sequence at max legacy id + 1 49284ms
+NOTICE:  database "tocktick_lab3_mig05_11332" does not exist, skipping
+ ✓ tests/lab-03/migration.integration.test.ts > DB-MIG-01..05: DevRequester -> User migration > DB-MIG-13: zero legacy requesters — the sync does not error and the first user gets id 1 44349ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  22:23:14
+   Duration  715.65s (transform 450ms, setup 0ms, import 1.33s, tests 713.84s, environment 0ms)
+
