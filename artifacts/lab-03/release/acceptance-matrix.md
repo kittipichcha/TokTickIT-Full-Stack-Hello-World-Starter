@@ -41,4 +41,6 @@ Browser totals describe distinct scopes and runs: historical full regression 183
 Lab 3 runs 27/27 and 42/42, final-head Lab 3 suite 54/54, and final-head configured regression
 210/210. Final-head evidence is linked above and in [`playwright-full-final-head.txt`](playwright-full-final-head.txt).
 See [`verification-summary.md`](verification-summary.md) for server/client/build evidence. Human
-reviewer approval, user-owned PDF completion, and Kanban update remain outstanding.
+reviewer @oangsa approved PR #56 current head `466695c` with `LGTM!` on 2026-09-26. PDF Parts
+1–9 and Kanban completion remain user-owned; final merge and post-merge verification remain
+incomplete.

@@ -25,15 +25,13 @@ ticket and attachment behavior remains supported under session identity.
 > routes require an authenticated session. The Lab 2 details below are historical implementation
 > notes; the current contract is in `docs/lab-03/`.
 
-The recorded 598 server tests, 252 client tests, and full Playwright runs are historical
-pre-merge evidence, not verification of the current review worktree. Historical browser counts
-refer to distinct runs: 183/183 full configured, 27/27 earlier Lab 3, and 42/42 later Lab 3.
-The current focused responsive suite passed 12/12 and the keyboard suite passed 12/12 across
-desktop, tablet, and mobile. PostgreSQL role `kitti` has `CREATEDB`, and `lab3e2e` is the
-disposable target. REL-12 has passed 19/19 migration integration tests against a Lab 2-shaped
-scratch database created through the disposable `E2E_DATABASE_URL` connection; see
-`artifacts/lab-03/release/rel-12-migration.md`. Full current-head client/server suites and
-configured Playwright regression remain pending, so release approval is not recorded. See
+Issue #42 final-head evidence at implementation SHA `ce2e40ddf049cf7cf62b43280a563b750622a0a4`
+records 598/598 server tests, 252/252 client tests, 34/34 UI style tests, 54/54 Lab 3 Playwright
+tests, 210/210 configured Playwright tests, 19/19 REL-12 migration tests, successful builds, and
+Prisma validation. Historical browser counts refer to distinct runs: 183/183 full configured,
+27/27 earlier Lab 3, and 42/42 later Lab 3. Human reviewer @oangsa approved PR #56 current head
+`466695c` with `LGTM!` on 2026-09-26. PDF Parts 1–9 and Kanban completion remain user-owned;
+final merge and post-merge verification remain incomplete. See
 `artifacts/lab-03/release/verification-summary.md` for evidence scope.
 
 Historical Lab 2 implementation details follow:

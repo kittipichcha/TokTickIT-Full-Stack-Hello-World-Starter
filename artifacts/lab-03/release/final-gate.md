@@ -20,11 +20,11 @@ full 181/183, clean full 183/183, earlier Lab 3 27/27, and later Lab 3 42/42.
 | Complete §9.3 integrated catalog audit | Historical pass | `schema-catalog-audit.md` records catalog shape, native types, indexes, constraints, enums, and legacy residue on the temporary Lab 3 database. |
 | Test-DD §5 frozen-path existence audit | Historical pass | 32 referenced automated test paths were present in `test-dd-path-audit.txt`. |
 | Acceptance matrix and evidence reconciliation | Updated with final-head results | AC-01 through AC-26 have individual rows; automated evidence is linked in `acceptance-matrix.md`. |
-| Reviewer/AI-use entries, PDF, Kanban, human review, submission | Human/user-owned actions pending | PR #56 reviewer re-review is pending; user owns PDF Parts 1–9 and Kanban closeout. No approval is claimed. |
-| Repository clean and final-head evidence | Evidence current; commit pending review | Final-head artifacts verify source SHA above. Worktree still contains documentation and other authorized changes awaiting review/commit. |
+| Reviewer/AI-use entries and PR #56 review | Review recorded | Reviewer @oangsa approved current PR head `466695c` with `LGTM!` on 2026-09-26. |
+| PDF, Kanban, final merge, submission | User-owned/incomplete | User owns PDF Parts 1–9 and Kanban completion. Final merge and post-merge verification remain incomplete. |
+| Repository status and final-head evidence | Evidence current; documentation update uncommitted | Worktree was clean before this documentation reconciliation; current edits await review/commit. Final-head artifacts verify implementation SHA above. |
 | Post-merge main checks | Not applicable yet | Requires a reviewed and merged release PR, which has not been opened. |
 
-**Gate result: automated verification passed; release/sign-off remains open.** Human re-review,
-user-owned PDF and Kanban closeout, and post-merge main verification remain pending. The human
-review is changes requested, not approved. Do not represent this table as approval to merge or
-submit.
+**Gate result: automated verification and human PR review are recorded; release/sign-off remains
+open.** PR approval does not complete PDF Parts 1–9, Kanban closeout, final merge, or post-merge
+main verification. Do not represent this table as approval to merge or submit.

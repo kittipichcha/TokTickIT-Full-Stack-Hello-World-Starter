@@ -61,6 +61,18 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-26 — Issue #42 PR #56 review and partner-review log reconciliation**
+  - Scope: record human approval on PR #56 current head `466695c` and partner PR review history
+    for PRs #66–#74; reconcile current release-status references.
+  - Tests changed/run: none. This was a documentation-only reconciliation; no tests were executed.
+  - Commands run: `git status --porcelain` (clean before edits); `git diff --check` (exit 0 after
+    edits). Test result: **0 run, 0 passed, 0 failed, 0 skipped**; no tests were requested or
+    executed for this documentation-only task.
+  - Result: reviewer @oangsa approved PR #56 with `LGTM!` on 2026-09-26. Partner review records
+    show outcomes for #66–#71; no submitted/recorded GitHub reviews for #72–#74.
+  - Follow-up: PDF Parts 1–9, Kanban completion, final merge, and post-merge verification remain
+    user-owned or incomplete.
+
 - **2026-09-26 — Issue #42 PR #56 final-head release verification**
   - Scope: reconcile browser, visual, keyboard, application, and migration evidence for
     implementation SHA `ce2e40ddf049cf7cf62b43280a563b750622a0a4`.
@@ -78,8 +90,8 @@ assertions inside `auth.api.test.ts`.
   - Evidence: final logs under `artifacts/lab-03/release/`, including
     `responsive-visual-final.txt`, `playwright-lab3-final.txt`,
     `playwright-full-final-head.txt`, and `rel-12-migration.md`.
-  - Follow-up: human reviewer approval, user-owned PDF completion, and Kanban update remain
-    outstanding.
+  - Follow-up: human reviewer approval was recorded afterward; PDF completion and Kanban update
+    remain outstanding for the user.
 
 - **2026-09-26 — Issue #42 REL-12 integrated migration verification**
   - Scope: run the complete Lab 2-shaped migration integration file against the disposable
@@ -92,7 +104,8 @@ assertions inside `auth.api.test.ts`.
     diagnostics appeared; the command exited 0.
   - Evidence: `artifacts/lab-03/release/rel-12-migration.md`.
   - Follow-up at that time: REL-12 passed. Full current-head suites completed afterward; see
-    the newer final-head verification entry above. Human review, PDF, and Kanban closeout remain.
+    the newer final-head verification entry above. Human approval was recorded afterward; PDF
+    and Kanban closeout remain for the user.
 
 - **2026-09-26 — Issue #42 PR #56 review response: responsive and keyboard coverage**
   - Scope: extend responsive and keyboard coverage for major Lab 3 screens; reconcile
