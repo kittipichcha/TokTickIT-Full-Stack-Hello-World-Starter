@@ -1,0 +1,24 @@
+
+> toktickit-client@1.0.0 test
+> vitest run
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-42-worktree/client
+
+Error: Not implemented: window.open
+    at module.exports (C:\Users\kitti\CPE334\issue-42-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at C:\Users\kitti\CPE334\issue-42-worktree\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at onClick (C:/Users/kitti/CPE334/issue-42-worktree/client/src/App.tsx:487:42) undefined
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (C:\Users\kitti\CPE334\issue-42-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (C:\Users\kitti\CPE334\issue-42-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (C:\Users\kitti\CPE334\issue-42-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (C:\Users\kitti\CPE334\issue-42-worktree\client\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at listOnTimeout (node:internal/timers:605:17)
+    at processTimers (node:internal/timers:541:7) undefined
+
+ Test Files  18 passed (18)
+      Tests  252 passed (252)
+   Start at  16:52:07
+   Duration  56.59s (transform 11.52s, setup 0ms, import 175.77s, tests 88.02s, environment 363.22s)
+

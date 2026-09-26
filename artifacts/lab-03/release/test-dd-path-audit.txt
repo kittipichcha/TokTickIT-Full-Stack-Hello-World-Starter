@@ -1,0 +1,36 @@
+Test DD ?5 Automated Test File physical existence audit
+Unique referenced paths: 32
+Present: 32
+Missing: 0
+PRESENT server/tests/lab-03/auth.api.test.ts
+PRESENT server/tests/lab-03/auth-error-handling.api.test.ts
+PRESENT server/tests/lab-03/session-secret.unit.test.ts
+PRESENT server/tests/lab-03/auth-timing.unit.test.ts
+PRESENT server/tests/lab-03/ticket-priority.integration.test.ts
+PRESENT server/tests/lab-03/authorization.api.test.ts
+PRESENT server/tests/lab-03/comments-notes.api.test.ts
+PRESENT server/tests/lab-03/users-admin.api.test.ts
+PRESENT server/tests/lab-03/requester.api.test.ts
+PRESENT server/tests/lab-03/staff-queue.api.test.ts
+PRESENT server/tests/lab-03/staff-ticket-detail.api.test.ts
+PRESENT server/tests/lab-03/auth.unit.test.ts
+PRESENT server/tests/lab-03/comments-notes.unit.test.ts
+PRESENT server/tests/lab-03/migration.integration.test.ts
+PRESENT server/tests/lab-03/seed.integration.test.ts
+PRESENT client/src/lab-03-tests/ApiClient.test.ts
+PRESENT client/src/lab-03-tests/Login.test.tsx
+PRESENT client/src/lab-03-tests/ChangePassword.test.tsx
+PRESENT client/src/lab-03-tests/AuthGate.test.tsx
+PRESENT client/src/lab-03-tests/StaffTicketQueue.test.tsx
+PRESENT client/src/lab-03-tests/StaffTicketDetail.test.tsx
+PRESENT client/src/lab-03-tests/CommentThread.test.tsx
+PRESENT client/src/lab-03-tests/InternalNoteThread.test.tsx
+PRESENT client/src/App.test.tsx
+PRESENT client/src/lab-03-tests/UserManagement.test.tsx
+PRESENT client/src/lab-03-tests/UiStyles.test.tsx
+PRESENT e2e/lab-03/responsive-visual.spec.ts
+PRESENT e2e/lab-03/keyboard-access.spec.ts
+PRESENT e2e/lab-03/authentication.spec.ts
+PRESENT e2e/lab-03/staff-ticket-flow.spec.ts
+PRESENT e2e/lab-03/user-administration.spec.ts
+PRESENT e2e/lab-03/requester-regression.spec.ts

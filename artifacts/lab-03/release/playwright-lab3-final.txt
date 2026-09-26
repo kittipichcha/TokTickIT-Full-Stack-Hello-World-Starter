@@ -1,0 +1,66 @@
+◇ injected env (4) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+
+Running 54 tests using 1 worker
+
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+
+[1/54] [desktop] › e2e\lab-03\authentication.spec.ts:15:7 › E2E-01: authentication and mandatory password change › forced-change user completes the same-session flow and can log out
+[2/54] [desktop] › e2e\lab-03\authentication.spec.ts:40:7 › E2E-01: authentication and mandatory password change › invalid credentials show a safe message
+[3/54] [desktop] › e2e\lab-03\authentication.spec.ts:46:7 › E2E-01: authentication and mandatory password change › inactive credentials show the same safe failure and no application shell
+[4/54] [desktop] › e2e\lab-03\keyboard-access.spec.ts:10:7 › A11Y-01: keyboard and focus behavior › login controls expose labels and visible keyboard focus
+[5/54] [desktop] › e2e\lab-03\keyboard-access.spec.ts:22:7 › A11Y-01: keyboard and focus behavior › status confirmation traps keyboard focus, Escape cancels, and focus returns
+[6/54] [desktop] › e2e\lab-03\keyboard-access.spec.ts:58:7 › A11Y-01: keyboard and focus behavior › forced password change is reachable and submittable by keyboard
+[7/54] [desktop] › e2e\lab-03\keyboard-access.spec.ts:77:7 › A11Y-01: keyboard and focus behavior › primary controls are reachable by Tab across Requester, Staff, and Admin screens
+[8/54] [desktop] › e2e\lab-03\requester-regression.spec.ts:12:7 › E2E-04: authenticated Requester continuity › creates, lists, opens, comments, and marks a ticket appears resolved
+[9/54] [desktop] › e2e\lab-03\responsive-visual.spec.ts:36:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Ticket Queue presents all ticket content without page-level horizontal overflow
+[10/54] [desktop] › e2e\lab-03\responsive-visual.spec.ts:57:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › User Management switches between desktop table and labeled mobile cards
+[11/54] [desktop] › e2e\lab-03\responsive-visual.spec.ts:76:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › authentication and Requester screens keep primary controls in the viewport
+[12/54] [desktop] › e2e\lab-03\responsive-visual.spec.ts:107:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Staff Ticket Detail keeps ownership and comment controls in the viewport
+[13/54] [desktop] › e2e\lab-03\staff-ticket-flow.spec.ts:28:7 › E2E-02: Staff ticket queue and detail operations › searches, assigns, prioritizes, transitions, comments, and records a private note
+[14/54] [desktop] › e2e\lab-03\user-administration.spec.ts:13:7 › E2E-03: Administrator user management › searches, creates, edits, resets, and completes an Administrator self-reset
+[15/54] [desktop] › e2e\lab-03\user-administration.spec.ts:76:7 › E2E-03: Administrator user management › rejects invalid email input through the real user-management API
+[16/54] [desktop] › e2e\lab-03\user-administration.spec.ts:88:7 › E2E-03: Administrator user management › rejects Administrator self-deactivation while the peer Administrator remains active
+[17/54] [desktop] › e2e\lab-03\user-administration.spec.ts:105:7 › E2E-03: Administrator user management › rejects demoting the sole active Administrator and keeps the account authorized
+[18/54] [desktop] › e2e\lab-03\user-administration.spec.ts:130:7 › E2E-03: Administrator user management › denies user-management access to a non-Administrator
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+
+[19/54] [tablet] › e2e\lab-03\authentication.spec.ts:15:7 › E2E-01: authentication and mandatory password change › forced-change user completes the same-session flow and can log out
+[20/54] [tablet] › e2e\lab-03\authentication.spec.ts:40:7 › E2E-01: authentication and mandatory password change › invalid credentials show a safe message
+[21/54] [tablet] › e2e\lab-03\authentication.spec.ts:46:7 › E2E-01: authentication and mandatory password change › inactive credentials show the same safe failure and no application shell
+[22/54] [tablet] › e2e\lab-03\keyboard-access.spec.ts:10:7 › A11Y-01: keyboard and focus behavior › login controls expose labels and visible keyboard focus
+[23/54] [tablet] › e2e\lab-03\keyboard-access.spec.ts:22:7 › A11Y-01: keyboard and focus behavior › status confirmation traps keyboard focus, Escape cancels, and focus returns
+[24/54] [tablet] › e2e\lab-03\keyboard-access.spec.ts:58:7 › A11Y-01: keyboard and focus behavior › forced password change is reachable and submittable by keyboard
+[25/54] [tablet] › e2e\lab-03\keyboard-access.spec.ts:77:7 › A11Y-01: keyboard and focus behavior › primary controls are reachable by Tab across Requester, Staff, and Admin screens
+[26/54] [tablet] › e2e\lab-03\requester-regression.spec.ts:12:7 › E2E-04: authenticated Requester continuity › creates, lists, opens, comments, and marks a ticket appears resolved
+[27/54] [tablet] › e2e\lab-03\responsive-visual.spec.ts:36:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Ticket Queue presents all ticket content without page-level horizontal overflow
+[28/54] [tablet] › e2e\lab-03\responsive-visual.spec.ts:57:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › User Management switches between desktop table and labeled mobile cards
+[29/54] [tablet] › e2e\lab-03\responsive-visual.spec.ts:76:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › authentication and Requester screens keep primary controls in the viewport
+[30/54] [tablet] › e2e\lab-03\responsive-visual.spec.ts:107:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Staff Ticket Detail keeps ownership and comment controls in the viewport
+[31/54] [tablet] › e2e\lab-03\staff-ticket-flow.spec.ts:28:7 › E2E-02: Staff ticket queue and detail operations › searches, assigns, prioritizes, transitions, comments, and records a private note
+[32/54] [tablet] › e2e\lab-03\user-administration.spec.ts:13:7 › E2E-03: Administrator user management › searches, creates, edits, resets, and completes an Administrator self-reset
+[33/54] [tablet] › e2e\lab-03\user-administration.spec.ts:76:7 › E2E-03: Administrator user management › rejects invalid email input through the real user-management API
+[34/54] [tablet] › e2e\lab-03\user-administration.spec.ts:88:7 › E2E-03: Administrator user management › rejects Administrator self-deactivation while the peer Administrator remains active
+[35/54] [tablet] › e2e\lab-03\user-administration.spec.ts:105:7 › E2E-03: Administrator user management › rejects demoting the sole active Administrator and keeps the account authorized
+[36/54] [tablet] › e2e\lab-03\user-administration.spec.ts:130:7 › E2E-03: Administrator user management › denies user-management access to a non-Administrator
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+
+[37/54] [mobile] › e2e\lab-03\authentication.spec.ts:15:7 › E2E-01: authentication and mandatory password change › forced-change user completes the same-session flow and can log out
+[38/54] [mobile] › e2e\lab-03\authentication.spec.ts:40:7 › E2E-01: authentication and mandatory password change › invalid credentials show a safe message
+[39/54] [mobile] › e2e\lab-03\authentication.spec.ts:46:7 › E2E-01: authentication and mandatory password change › inactive credentials show the same safe failure and no application shell
+[40/54] [mobile] › e2e\lab-03\keyboard-access.spec.ts:10:7 › A11Y-01: keyboard and focus behavior › login controls expose labels and visible keyboard focus
+[41/54] [mobile] › e2e\lab-03\keyboard-access.spec.ts:22:7 › A11Y-01: keyboard and focus behavior › status confirmation traps keyboard focus, Escape cancels, and focus returns
+[42/54] [mobile] › e2e\lab-03\keyboard-access.spec.ts:58:7 › A11Y-01: keyboard and focus behavior › forced password change is reachable and submittable by keyboard
+[43/54] [mobile] › e2e\lab-03\keyboard-access.spec.ts:77:7 › A11Y-01: keyboard and focus behavior › primary controls are reachable by Tab across Requester, Staff, and Admin screens
+[44/54] [mobile] › e2e\lab-03\requester-regression.spec.ts:12:7 › E2E-04: authenticated Requester continuity › creates, lists, opens, comments, and marks a ticket appears resolved
+[45/54] [mobile] › e2e\lab-03\responsive-visual.spec.ts:36:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Ticket Queue presents all ticket content without page-level horizontal overflow
+[46/54] [mobile] › e2e\lab-03\responsive-visual.spec.ts:57:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › User Management switches between desktop table and labeled mobile cards
+[47/54] [mobile] › e2e\lab-03\responsive-visual.spec.ts:76:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › authentication and Requester screens keep primary controls in the viewport
+[48/54] [mobile] › e2e\lab-03\responsive-visual.spec.ts:107:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Staff Ticket Detail keeps ownership and comment controls in the viewport
+[49/54] [mobile] › e2e\lab-03\staff-ticket-flow.spec.ts:28:7 › E2E-02: Staff ticket queue and detail operations › searches, assigns, prioritizes, transitions, comments, and records a private note
+[50/54] [mobile] › e2e\lab-03\user-administration.spec.ts:13:7 › E2E-03: Administrator user management › searches, creates, edits, resets, and completes an Administrator self-reset
+[51/54] [mobile] › e2e\lab-03\user-administration.spec.ts:76:7 › E2E-03: Administrator user management › rejects invalid email input through the real user-management API
+[52/54] [mobile] › e2e\lab-03\user-administration.spec.ts:88:7 › E2E-03: Administrator user management › rejects Administrator self-deactivation while the peer Administrator remains active
+[53/54] [mobile] › e2e\lab-03\user-administration.spec.ts:105:7 › E2E-03: Administrator user management › rejects demoting the sole active Administrator and keeps the account authorized
+[54/54] [mobile] › e2e\lab-03\user-administration.spec.ts:130:7 › E2E-03: Administrator user management › denies user-management access to a non-Administrator
+  54 passed (3.2m)

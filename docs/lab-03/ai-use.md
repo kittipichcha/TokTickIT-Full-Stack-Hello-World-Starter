@@ -2,6 +2,125 @@
 
 **LLM/agent used:** GitHub Copilot (DeepSeek V4 Flash 0731)
 
+## Issue #42 PR #56 review and partner-review log reconciliation (2026-09-26)
+
+- Prompt summary: update the Issue #42 review record after human approval and record partner PR
+  review outcomes for PRs #66–#74.
+- Agent used: OpenAI Codex.
+- Work performed: recorded @oangsa's `LGTM!` approval on PR #56 current head `466695c`, added
+  factual partner-review rows for PRs #66–#74, and aligned current release-status statements.
+- Verification: no tests were run or changed. The worktree was clean before edits; `git diff
+  --check` was run after edits. PR #56 approval and review statuses are from the supplied verified
+  GitHub review evidence.
+- Reflection: separating approval from remaining user-owned release steps keeps the review record
+  accurate without implying merge or submission completion.
+
+## Issue #42 PR #56 final-head verification (2026-09-26)
+
+- Prompt summary: continue the authorized review response, reconcile final test evidence, and
+  record responsive and keyboard status accurately while leaving PDF and Kanban closeout to
+  the user.
+- Agent used: OpenAI Codex.
+- Work performed: updated `VISUAL-01`, `VISUAL-02`, and `A11Y-01` in the Test DD matrix;
+  added a newest-first final-head results entry; aligned prior follow-up text with the later
+  completed verification.
+- Verification: at implementation SHA `ce2e40ddf049cf7cf62b43280a563b750622a0a4`, recorded
+  results were server 598/598, client 252/252, UI style 34/34, Lab 3 Playwright 54/54,
+  configured Playwright 210/210, and REL-12 19/19, with zero failures and skips. Responsive
+  focused run passed 12/12 across desktop, tablet, and mobile. Evidence is in
+  `artifacts/lab-03/release/*-final.txt`, `responsive-visual-final.txt`, and
+  `rel-12-migration.md`. No formal accessibility conformance audit is claimed.
+- Reflection: linking each status to a run and implementation SHA prevents older partial runs
+  from being mistaken for final evidence. Automated keyboard checks and screenshot review
+  provide useful coverage, but do not replace formal accessibility certification or human review.
+
+## Issue #42 REL-12 review response (2026-09-26)
+
+- Prompt summary: complete the integrated Lab 2-to-Lab 3 migration gate and update related
+  release documentation and the PR description with the verified result.
+- Agent used: OpenAI Codex.
+- Work performed: ran the migration integration file with the disposable `E2E_DATABASE_URL`
+  supplied as the test process's `DATABASE_URL`; updated the Test DD results log, README,
+  reviewer record, acceptance matrix, integration results, verification summary, and final gate.
+- Verification: 1 Vitest file passed, **19 passed, 0 failed, 0 skipped**, in 644.26 seconds at
+  implementation SHA `ce2e40ddf049cf7cf62b43280a563b750622a0a4`. Evidence:
+  `artifacts/lab-03/release/rel-12-migration.md`. Credentials and connection URLs were not logged.
+- Reflection at that time: REL-12 added integrated migration and preservation evidence; later
+  final-head client/server and Playwright regressions are recorded in the newer entry above.
+
+## Issue #42 PR #56 documentation review response (2026-09-26)
+
+- Prompt summary: coordinate the authorized response to human PR #56 review; preserve user-owned
+  PDF and Kanban work; document the confirmed disposable E2E database and current evidence.
+- Agent used: OpenAI Codex.
+- Work performed: replaced grouped acceptance evidence with one row for each AC-01 through
+  AC-26; reconciled historical browser totals by run and scope; updated verification, integration,
+  and final-gate records; recorded the human changes-requested review and response; documented
+  the confirmed `kitti` `CREATEDB` / `lab3e2e` setup. Preserved parallel README and `.env.example`
+  edits, including the explicit E2E URL.
+- Verification at that time: final-head suites passed at implementation SHA
+  `ce2e40ddf049cf7cf62b43280a563b750622a0a4`: server 598/598, client 252/252, UI style 34/34,
+  Lab 3 Playwright 54/54, full Playwright 210/210, and REL-12 19/19. Server/client builds and
+  Prisma validation passed. Raw outputs are linked in `artifacts/lab-03/release/`. `git diff
+  --check` was run after this reconciliation and exited 0.
+- Reflection: evidence must identify its implementation SHA, scope, and actual outcome. Automated
+  verification does not replace human re-review or user-owned PDF/Kanban completion.
+
+## Issue #42 E2E review follow-up (2026-09-26)
+
+- Prompt summary: address observed attachment download filename and mobile admin-dialog failures
+  in the authorized Issue #42 E2E review packet; retain scope and do not commit or push.
+- Agent used: OpenAI Codex.
+- Work performed: Added API-ATT-05 assertions for configured-origin CORS, credentials, exposed
+  `X-CSRF-Token`/`Content-Disposition`, and original filename. Exposed `Content-Disposition` in
+  app CORS configuration. The two rejected admin-edit tests now cancel and close their dialogs
+  before checking mobile navigation. Updated E2E-01..04 statuses after the complete passing run.
+- Verification: the pre-fix API-ATT-05 assertion failed because `Content-Disposition` was not
+  exposed; afterward API-ATT-05 passed 5/5 and the full attachment API file passed 41/41. A prior
+  browser rerun had 34 passed/8 failed (six filename mismatches and two mobile overlay timeouts).
+  Final `npx.cmd playwright test e2e/lab-03 --workers=1` passed 42/42 across desktop, tablet, and
+  mobile. `git diff --check` exited 0 with Git line-ending normalization warnings. E2E_DATABASE_URL was derived for isolated `lab3e2e`, set
+  only in the test process, and never printed. REL-12 was not run.
+- Reflection: browser evidence now covers attachment filename access and dialog dismissal across
+  all three projects; release/REL-12 gates remain separate.
+
+## Issue #42 E2E safety and coverage (2026-09-25)
+
+- Prompt summary: User requested review, fixes, and PR preparation for Issue #42. The authorized
+  patch addresses the E2E database fallback, missing planned coverage, and unsupported Passed
+  statuses without changing product behavior.
+- Agent used: OpenAI Codex.
+- Work performed: Removed Playwright's fallback from `DATABASE_URL` to `E2E_DATABASE_URL`;
+  added inactive-login coverage, Staff sort/pagination and attachment-read assertions, Admin
+  invalid-input/authorization/guard assertions, and Requester attachment and removed-selector
+  assertions. Changed E2E-01..04 to Implemented and recorded this verification state.
+- Verification: `npm.cmd exec playwright test -- --list` exited 1 at config load because
+  `E2E_DATABASE_URL` was absent; test discovery did not begin. `npm.cmd --prefix server run build`
+  passed. `npm.cmd --prefix client run build` passed when parent reran it outside the sandbox
+  after an ancestor-directory access denial. `git diff --check` passed. Playwright execution and
+  REL-12 remain not run without an isolated E2E database.
+- Reflection: E2E rows now describe implemented assertions without claiming database-backed runs.
+
+## Issue #42 final verification reconciliation (2026-09-25)
+
+- Prompt summary: reconcile final Issue #42 verification documents using confirmed run evidence,
+  preserve unresolved release gates, and do not report release/sign-off as green.
+- Work performed: updated the newest-first test results entry, this AI-use log, regression summary,
+  verification summary, acceptance matrix, and final gate. Recorded the latest full Playwright
+  run at 183/183 across desktop/tablet/mobile, plus the test synchronization guard and other
+  validated counts.
+- Verification: full client suite 252/252 across 18 files; server 598/598 across 39 files;
+  combined UI style 34 passed; focused style 18 passed; SEC-AUTHZ-07 52 passed; Lab 3 Playwright
+  27/27; Test-DD §5 paths 32/32. Type checks, builds, and Prisma validation passed. Full browser
+  raw output is `artifacts/lab-03/release/playwright-full-final.txt`.
+- Caveats at the time: REL-12 could not start because the temporary DB role lacked `CREATEDB`;
+  #38's historical smoke artifact gate remained unresolved. The user has since confirmed role
+  `kitti` has `CREATEDB` and disposable database `lab3e2e` is available, but REL-12 remains
+  unrun. Human review, submission, and post-merge checks remain outstanding. The §9.3 audit used
+  the existing temporary Lab 3 DB and does not clear REL-12.
+- Reflection: a clean full browser run resolves the earlier flaky-run gate, while database
+  isolation and historical evidence requirements remain independent release blockers.
+
 ## Issue #41 cached authentication-state remediation (2026-09-25)
 
 - Prompt summary: Follow the supplied detailed Issue #41 remediation plan for the stale

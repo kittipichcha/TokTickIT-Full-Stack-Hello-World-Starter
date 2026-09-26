@@ -1,0 +1,59 @@
+
+> toktickit-server@1.0.0 test
+> vitest run
+
+◇ injected env (3) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-42-worktree/server
+
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+MigrationCollisionError: 1 collision(s) block the migration.
+  - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
+Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-22612-1790419769009.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[redacted]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-22612-1790419769009.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-22612-1790419769009.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-15584-1790419999442.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[redacted]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-15584-1790419999442.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-15584-1790419999442.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-26288-1790420028721.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[redacted]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-26288-1790420028721.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-26288-1790420028721.sql:43: ERROR:  division by zero
+
+Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 1. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-3740-1790420061690.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[redacted]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-3740-1790420061690.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-3740-1790420061690.sql:43: ERROR:  division by zero
+
+Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 2. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-28216-1790420094554.sql:43: ERROR:  division by zero
+Command failed: psql "postgresql://[redacted]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-28216-1790420094554.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-28216-1790420094554.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+[test-only] simulated crash right after backfill commit.
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_20648" does not exist, skipping
+
+ Test Files  39 passed (39)
+      Tests  598 passed (598)
+   Start at  17:45:26
+   Duration  768.21s (transform 1.60s, setup 0ms, import 23.43s, tests 730.22s, environment 8ms)
+

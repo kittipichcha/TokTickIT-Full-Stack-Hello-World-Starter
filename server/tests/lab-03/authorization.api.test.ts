@@ -120,9 +120,22 @@ afterAll(async () => {
   const prisma = getPrisma();
   const ticket = await prisma.ticket.findUnique({ where: { ticketNumber: ownedTicketNumber } });
   if (ticket) {
+    await prisma.comment.deleteMany({ where: { ticketId: ticket.id } });
+    await prisma.internalNote.deleteMany({ where: { ticketId: ticket.id } });
     await prisma.attachment.deleteMany({ where: { ticketId: ticket.id } });
     await prisma.ticket.delete({ where: { id: ticket.id } });
   }
+  const controlTickets = await prisma.ticket.findMany({
+    where: { requesterId: owner.userId, summary: { startsWith: "CSRF control " } },
+    select: { id: true },
+  });
+  for (const controlTicket of controlTickets) {
+    await prisma.comment.deleteMany({ where: { ticketId: controlTicket.id } });
+    await prisma.internalNote.deleteMany({ where: { ticketId: controlTicket.id } });
+    await prisma.attachment.deleteMany({ where: { ticketId: controlTicket.id } });
+    await prisma.ticket.delete({ where: { id: controlTicket.id } });
+  }
+  await prisma.user.deleteMany({ where: { email: { startsWith: "csrf-control-" } } });
   await disconnectPrisma();
 });
 
@@ -288,7 +301,7 @@ describe("SEC-AUTHZ-07 (frozen row — full coverage): CSRF on every protected m
    */
   const mutationRoutes: Array<{
     label: string;
-    method: "post" | "delete";
+    method: "post" | "patch" | "delete";
     path: () => string;
     session: () => TestSession;
     body?: () => unknown;
@@ -331,11 +344,94 @@ describe("SEC-AUTHZ-07 (frozen row — full coverage): CSRF on every protected m
       path: () => `/api/attachments/${ownedAttachmentId}`,
       session: () => owner,
     },
+    {
+      label: "POST /api/staff/tickets/:ticketNumber/owner",
+      method: "post",
+      path: () => `/api/staff/tickets/${ownedTicketNumber}/owner`,
+      session: () => staff,
+      body: () => ({ ownerId: admin.userId }),
+    },
+    {
+      label: "PATCH /api/staff/tickets/:ticketNumber/priority",
+      method: "patch",
+      path: () => `/api/staff/tickets/${ownedTicketNumber}/priority`,
+      session: () => staff,
+      body: () => ({ itPriority: "HIGH" }),
+    },
+    {
+      label: "PATCH /api/staff/tickets/:ticketNumber/status",
+      method: "patch",
+      path: () => `/api/staff/tickets/${ownedTicketNumber}/status`,
+      session: () => staff,
+      body: () => ({ status: "OPEN" }),
+    },
+    {
+      label: "POST /api/tickets/:ticketNumber/comments",
+      method: "post",
+      path: () => `/api/tickets/${ownedTicketNumber}/comments`,
+      session: () => staff,
+      body: () => ({ content: "SEC-AUTHZ-07 CSRF comment probe." }),
+    },
+    {
+      label: "POST /api/staff/tickets/:ticketNumber/notes",
+      method: "post",
+      path: () => `/api/staff/tickets/${ownedTicketNumber}/notes`,
+      session: () => staff,
+      body: () => ({ content: "SEC-AUTHZ-07 CSRF private note probe." }),
+    },
+    {
+      label: "POST /api/tickets/:ticketNumber/appears-resolved",
+      method: "post",
+      path: () => `/api/tickets/${ownedTicketNumber}/appears-resolved`,
+      session: () => owner,
+      body: () => ({ appearsResolved: true }),
+    },
+    {
+      label: "POST /api/admin/users",
+      method: "post",
+      path: () => "/api/admin/users",
+      session: () => admin,
+      body: () => ({
+        name: "CSRF Created User",
+        email: `csrf-created-${Date.now()}@example.com`,
+        role: "REQUESTER",
+        isActive: true,
+        initialPassword: "InitialPass123!xyz",
+      }),
+    },
+    {
+      label: "PATCH /api/admin/users/:userId",
+      method: "patch",
+      path: () => `/api/admin/users/${other.userId}`,
+      session: () => admin,
+      body: () => ({ name: "Authz Other Updated" }),
+    },
+    {
+      label: "POST /api/admin/users/:userId/initial-password",
+      method: "post",
+      path: () => `/api/admin/users/${other.userId}/initial-password`,
+      session: () => admin,
+      body: () => ({ initialPassword: "ResetPass123!xyz" }),
+    },
   ];
+
+  async function persistedMutationState(): Promise<string> {
+    const prisma = getPrisma();
+    const [users, tickets, attachments, comments, notes, sequences] = await Promise.all([
+      prisma.user.findMany({ orderBy: { id: "asc" } }),
+      prisma.ticket.findMany({ orderBy: { id: "asc" } }),
+      prisma.attachment.findMany({ orderBy: { id: "asc" } }),
+      prisma.comment.findMany({ orderBy: { id: "asc" } }),
+      prisma.internalNote.findMany({ orderBy: { id: "asc" } }),
+      prisma.ticketSequence.findMany({ orderBy: { year: "asc" } }),
+    ]);
+    return JSON.stringify({ users, tickets, attachments, comments, notes, sequences });
+  }
 
   for (const route of mutationRoutes) {
     itIfDb(`${route.label}: missing CSRF token -> 403 FORBIDDEN, no state change`, async () => {
       const session = route.session();
+      const before = await persistedMutationState();
       const req = request(app)[route.method](route.path());
       withSession(req, session); // session cookie only — no CSRF header
       if (route.body) req.send(route.body() as object);
@@ -343,10 +439,13 @@ describe("SEC-AUTHZ-07 (frozen row — full coverage): CSRF on every protected m
       const res = await req;
       expect(res.status).toBe(403);
       expect(res.body.error.code).toBe("FORBIDDEN");
+      expect(await persistedMutationState()).toBe(before);
+      expect((await withSession(request(app).get("/api/auth/me"), session)).status).toBe(200);
     });
 
     itIfDb(`${route.label}: invalid CSRF token -> 403 FORBIDDEN, no state change`, async () => {
       const session = route.session();
+      const before = await persistedMutationState();
       const req = request(app)[route.method](route.path());
       req.set("Cookie", session.cookie);
       req.set("X-CSRF-Token", "invalid-token-value");
@@ -355,6 +454,8 @@ describe("SEC-AUTHZ-07 (frozen row — full coverage): CSRF on every protected m
       const res = await req;
       expect(res.status).toBe(403);
       expect(res.body.error.code).toBe("FORBIDDEN");
+      expect(await persistedMutationState()).toBe(before);
+      expect((await withSession(request(app).get("/api/auth/me"), session)).status).toBe(200);
     });
   }
 
@@ -403,6 +504,100 @@ describe("SEC-AUTHZ-07 (frozen row — full coverage): CSRF on every protected m
     const prisma = getPrisma();
     const created = await prisma.ticket.findUnique({ where: { ticketNumber: res.body.data.ticketNumber } });
     if (created) await prisma.ticket.delete({ where: { id: created.id } });
+  });
+
+  itIfDb("valid-token controls reach every additional mutation handler", async () => {
+    const upload = Buffer.from("89504E470D0A1A0A0000000D4948445200000001000000010802000000907753DE0000000C4944415408D76360F8CF00000002010158A80000000049454E44AE426082", "hex");
+    const createRes = await withSession(request(app).post("/api/tickets"), owner, { csrf: true }).send({
+      categoryId,
+      relatedSystemId: systemId,
+      summary: `CSRF control ${Date.now()}`,
+      description: "Valid-token control ticket for the mutation route matrix.",
+      requestedPriority: "LOW",
+    });
+    expect(createRes.status).toBe(201);
+
+    const uploadRes = await withSession(
+      request(app).post(`/api/tickets/${ownedTicketNumber}/attachments`), owner, { csrf: true },
+    ).attach("file", upload, "csrf-control.png");
+    expect(uploadRes.status).toBe(201);
+
+    const deleteRes = await withSession(
+      request(app).delete(`/api/attachments/${ownedAttachmentId}`), owner, { csrf: true },
+    );
+    expect(deleteRes.status).toBe(200);
+
+    const ownerRes = await withSession(
+      request(app).post(`/api/staff/tickets/${ownedTicketNumber}/owner`), staff, { csrf: true },
+    ).send({ ownerId: admin.userId });
+    expect(ownerRes.status).toBe(200);
+
+    const priorityRes = await withSession(
+      request(app).patch(`/api/staff/tickets/${ownedTicketNumber}/priority`), staff, { csrf: true },
+    ).send({ itPriority: "HIGH" });
+    expect(priorityRes.status).toBe(200);
+
+    const statusRes = await withSession(
+      request(app).patch(`/api/staff/tickets/${ownedTicketNumber}/status`), staff, { csrf: true },
+    ).send({ status: "OPEN" });
+    expect(statusRes.status).toBe(200);
+
+    const commentRes = await withSession(
+      request(app).post(`/api/tickets/${ownedTicketNumber}/comments`), staff, { csrf: true },
+    ).send({ content: "Valid-token public comment control." });
+    expect(commentRes.status).toBe(201);
+
+    const noteRes = await withSession(
+      request(app).post(`/api/staff/tickets/${ownedTicketNumber}/notes`), staff, { csrf: true },
+    ).send({ content: "Valid-token internal note control." });
+    expect(noteRes.status).toBe(201);
+
+    const resolvedRes = await withSession(
+      request(app).post(`/api/tickets/${ownedTicketNumber}/appears-resolved`), owner, { csrf: true },
+    ).send({ appearsResolved: true });
+    expect(resolvedRes.status).toBe(200);
+
+    const createUserRes = await withSession(request(app).post("/api/admin/users"), admin, { csrf: true }).send({
+      name: "CSRF Control User",
+      email: `csrf-control-${Date.now()}@example.com`,
+      role: "REQUESTER",
+      isActive: true,
+      initialPassword: "InitialPass123!xyz",
+    });
+    expect(createUserRes.status).toBe(201);
+
+    const updateUserRes = await withSession(
+      request(app).patch(`/api/admin/users/${other.userId}`), admin, { csrf: true },
+    ).send({ name: "Authz Other Control Updated" });
+    expect(updateUserRes.status).toBe(200);
+
+    const resetUserRes = await withSession(
+      request(app).post(`/api/admin/users/${other.userId}/initial-password`), admin, { csrf: true },
+    ).send({ initialPassword: "ResetPass123!xyz" });
+    expect(resetUserRes.status).toBe(200);
+
+    const prisma = getPrisma();
+    const resolvedTicket = await prisma.ticket.findUnique({ where: { ticketNumber: ownedTicketNumber } });
+    expect(resolvedTicket?.itPriority).toBe("HIGH");
+    expect(resolvedTicket?.ticketOwnerId).toBe(admin.userId);
+    expect(resolvedTicket?.currentStatus).toBe("OPEN");
+    expect(resolvedTicket?.appearsResolved).toBe(true);
+    expect(await prisma.comment.count({ where: { ticketId: resolvedTicket!.id, content: "Valid-token public comment control." } })).toBe(1);
+    expect(await prisma.internalNote.count({ where: { ticketId: resolvedTicket!.id, content: "Valid-token internal note control." } })).toBe(1);
+  });
+
+  itIfDb("valid CSRF tokens authorize password change and logout", async () => {
+    const changed = await withSession(request(app).post("/api/auth/change-password"), owner, { csrf: true }).send({
+      currentPassword: "TestPass123!xyz",
+      newPassword: "AuthzChanged123!xyz",
+    });
+    expect(changed.status).toBe(200);
+
+    const logoutSession = await ensureAndLogin({ email: OWNER_EMAIL, name: "Authz Owner", role: "REQUESTER" });
+    const loggedOut = await withSession(request(app).post("/api/auth/logout"), logoutSession, { csrf: true });
+    expect(loggedOut.status).toBe(200);
+    const me = await withSession(request(app).get("/api/auth/me"), logoutSession);
+    expect(me.status).toBe(401);
   });
 });
 

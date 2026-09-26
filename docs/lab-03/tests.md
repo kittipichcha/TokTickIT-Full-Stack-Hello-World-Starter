@@ -21,6 +21,16 @@ E2E/Responsive/Keyboard (planned):
 - Planned folder: `e2e/lab-03/`
 
 ## 2a. Execution Evidence
+Issue #42 final-head verification at implementation SHA
+`ce2e40ddf049cf7cf62b43280a563b750622a0a4` passed 39 server test files (598 tests), 18 client
+test files (252 tests), the combined Lab 2/Lab 3 UI-style gate (34 tests), 54 Lab 3 Playwright
+tests, and 210 configured Playwright tests. All recorded browser runs had zero skipped tests;
+Lab 3 structured totals also report zero unexpected and zero flaky tests. REL-12 passed 19/19
+with zero skips. Raw final-head evidence is in `artifacts/lab-03/release/*-final.txt`,
+`playwright-lab3-final.txt`, `playwright-full-final-head.txt`, and `rel-12-migration.md`.
+Server/client production builds and Prisma validation passed. No final-head TypeScript check is
+claimed here.
+
 Issue #35 (Identity, Database Migration & Authentication) implemented the identity/auth
 foundation and executed its frozen test rows. Statuses are evidence-driven. The rows
 updated to `Passed` by #35 are: DB-MIG-01..10, SEC-MIG-01, SEED-01, API-AUTH-01..12,
@@ -50,6 +60,124 @@ owned by **#37** (`authorization.api.test.ts`); #35 contributes only supplementa
 assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
+
+- **2026-09-26 — Issue #42 PR #56 review and partner-review log reconciliation**
+  - Scope: record human approval on PR #56 current head `466695c` and partner PR review history
+    for PRs #66–#74; reconcile current release-status references.
+  - Tests changed/run: none. This was a documentation-only reconciliation; no tests were executed.
+  - Commands run: `git status --porcelain` (clean before edits); `git diff --check` (exit 0 after
+    edits). Test result: **0 run, 0 passed, 0 failed, 0 skipped**; no tests were requested or
+    executed for this documentation-only task.
+  - Result: reviewer @oangsa approved PR #56 with `LGTM!` on 2026-09-26. Partner review records
+    show outcomes for #66–#71; no submitted/recorded GitHub reviews for #72–#74.
+  - Follow-up: PDF Parts 1–9, Kanban completion, final merge, and post-merge verification remain
+    user-owned or incomplete.
+
+- **2026-09-26 — Issue #42 PR #56 final-head release verification**
+  - Scope: reconcile browser, visual, keyboard, application, and migration evidence for
+    implementation SHA `ce2e40ddf049cf7cf62b43280a563b750622a0a4`.
+  - Tests changed: no test code changed in this verification pass. `VISUAL-01`, `VISUAL-02`,
+    and `A11Y-01` now reflect the passing final-head Lab 3 browser run.
+  - Commands recorded: `npm test` in `server/` and `client/`; `npm run test:client:ui`;
+    `npm run test:e2e` (logged command `npx playwright test --workers=1 --reporter=dot`);
+    focused responsive Playwright run (12 tests). The focused responsive log does not record
+    its exact invocation; no command is inferred for it.
+  - Result: server **598/598**, client **252/252**, UI style **34/34**, Lab 3 Playwright
+    **54/54**, full configured Playwright **210/210**, and REL-12 **19/19**; all recorded
+    totals have 0 failures and 0 skips. The responsive focused run passed **12/12** across
+    desktop, tablet, and mobile. The Lab 3 full run includes all keyboard-access cases across
+    those three projects. Server/client builds and Prisma validation passed.
+  - Evidence: final logs under `artifacts/lab-03/release/`, including
+    `responsive-visual-final.txt`, `playwright-lab3-final.txt`,
+    `playwright-full-final-head.txt`, and `rel-12-migration.md`.
+  - Follow-up: human reviewer approval was recorded afterward; PDF completion and Kanban update
+    remain outstanding for the user.
+
+- **2026-09-26 — Issue #42 REL-12 integrated migration verification**
+  - Scope: run the complete Lab 2-shaped migration integration file against the disposable
+    PostgreSQL target using implementation SHA `ce2e40ddf049cf7cf62b43280a563b750622a0a4`.
+  - Command: from `server/`, load ignored `.env`, override `DATABASE_URL` with
+    `E2E_DATABASE_URL` in-process, then run Vitest on
+    `tests/lab-03/migration.integration.test.ts`.
+  - Result: **1 file passed; 19 passed, 0 failed, 0 skipped** in 644.26 seconds. The fixture
+    created and cleaned up its unique Lab 2-shaped scratch database. Expected injected-failure
+    diagnostics appeared; the command exited 0.
+  - Evidence: `artifacts/lab-03/release/rel-12-migration.md`.
+  - Follow-up at that time: REL-12 passed. Full current-head suites completed afterward; see
+    the newer final-head verification entry above. Human approval was recorded afterward; PDF
+    and Kanban closeout remain for the user.
+
+- **2026-09-26 — Issue #42 PR #56 review response: responsive and keyboard coverage**
+  - Scope: extend responsive and keyboard coverage for major Lab 3 screens; reconcile
+    acceptance and release evidence without claiming final approval.
+  - Tests changed: `e2e/lab-03/responsive-visual.spec.ts` and
+    `e2e/lab-03/keyboard-access.spec.ts` (working-tree changes). Focused responsive run:
+    **12 passed, 0 failed, 0 skipped** across desktop, tablet, and mobile. Focused keyboard
+    run: **12 passed, 0 failed, 0 skipped** across those projects. Exact invocation and raw
+    outputs were not included in the handoff evidence, so this log does not invent them.
+  - Other validation: `git diff --check` exited 0. A static acceptance-matrix check confirmed
+    26 unique ordered AC rows and the required seven columns. No full server/client suite,
+    complete Playwright regression, or REL-12 run is claimed here.
+  - Follow-up at that time: run full current-head verification and REL-12. REL-12 was completed
+    afterward; see the newer result above. User owns PDF and Kanban closeout.
+
+- **2026-09-26 — Issue #42 E2E review follow-up (attachment filename CORS and mobile admin dialogs; historical)**
+  - Scope: exposed `Content-Disposition` alongside `X-CSRF-Token`; asserted configured-origin
+    CORS headers and original attachment filename; closed rejected edit dialogs before mobile
+    navigation. E2E-01..04 statuses now reflect the complete passing 42-test browser run.
+  - Tests changed: `server/tests/lab-02/attachments.api.test.ts` API-ATT-05 and
+    `e2e/lab-03/user-administration.spec.ts`; prior E2E coverage changes remain in
+    `e2e/lab-03/authentication.spec.ts`, `helpers.ts`, `requester-regression.spec.ts`, and
+    `staff-ticket-flow.spec.ts`.
+  - Earlier full-run evidence: **26 passed, 16 failed**; subsequent visible run: **34 passed,
+    8 failed**. The latter showed six attachment downloads returning `download.png` instead of
+    `issue-42-continuity.png`, and two mobile admin checks timing out because the edit-dialog
+    overlay intercepted the hamburger click.
+  - Red/green verification: API-ATT-05 failed as expected before the app fix because
+    `Content-Disposition` was not exposed. After the fix, the focused API-ATT-05 test passed
+    **5/5**, and the full attachment API file passed **41/41**.
+  - Final browser verification: `npx.cmd playwright test e2e/lab-03 --workers=1` exited 0;
+    **42 passed, 0 failed, 0 skipped** across desktop, tablet, and mobile. `git diff --check`
+    exited 0; only Git line-ending normalization warnings were emitted.
+  - Follow-up: none for these test failures. This is not a REL-12 run or release approval.
+
+- **2026-09-25 — Issue #42 E2E safety and coverage patch**
+  - Scope: removed implicit `DATABASE_URL` adoption; expanded E2E-01..04 assertions and changed
+    only those four Test-DD statuses to `Implemented`.
+  - Test paths changed: `e2e/lab-03/authentication.spec.ts`, `staff-ticket-flow.spec.ts`,
+    `user-administration.spec.ts`, and `requester-regression.spec.ts`.
+  - Playwright tests: **0 passed, 0 failed, 0 skipped; not run**. `npm.cmd exec playwright test --
+    --list` exited 1 at config load with `Set E2E_DATABASE_URL to a disposable PostgreSQL
+    database before running Playwright.`; discovery did not begin. No isolated `E2E_DATABASE_URL`
+    was supplied.
+  - Other verification: `npm.cmd --prefix server run build` passed (exit 0). The client command,
+    `npm.cmd --prefix client run build`, initially hit a sandbox-only ancestor-directory access
+    denial; parent reran it outside the sandbox and confirmed exit 0. `git diff --check` passed
+    (exit 0).
+  - Follow-up: provide an isolated E2E database before running Playwright or REL-12. No E2E or
+    REL-12 pass is claimed.
+
+- **2026-09-25 — Issue #42 final verification evidence reconciliation**
+  - Prompt scope: reconcile final Issue #42 verification and acceptance evidence; preserve all
+    release blockers and do not mark release/sign-off green.
+  - The test synchronization guard for A11Y-01 now asserts enabled/focused state before Enter.
+    Latest full Playwright command, `npm.cmd run test:e2e -- --workers=1 --reporter=dot`, passed
+    **183/183** across desktop, tablet, and mobile in 22.7 minutes (0 failed, 0 skipped).
+    Lab 3 structured browser report passed **27/27**.
+  - Other verification: full client **252/252 across 18 files**; full server **598/598 across 39
+    files**; combined Lab 2 + Lab 3 UI style **34 passed**; focused style **18 passed**;
+    SEC-AUTHZ-07 **52 passed**. Type checks, builds, and Prisma schema validation passed.
+    Test-DD §5 path audit found **32/32** referenced paths.
+  - At the time of this entry, REL-12 was not run because the available temporary database role
+    lacked `CREATEDB`, and the plan requires an isolated owned scratch database. The user has
+    since confirmed role `kitti` now has `CREATEDB` and the disposable target is `lab3e2e`; REL-12
+    still has not run. The upstream #38
+    historical server-start/client-dev smoke artifact-presence gate remains unresolved despite
+    fresh equivalent smoke checks. Human review, PDF/Kanban/submission, and post-merge checks remain
+    outstanding. §9.3 catalog audit passed only on the existing temporary Lab 3 database and does
+    not clear REL-12.
+  - Raw full browser output: `artifacts/lab-03/release/playwright-full-final.txt`; summary:
+    `artifacts/lab-03/release/playwright-full-regression-summary.txt`. No release approval is claimed.
 
 - **2026-09-25 — Issue #41 UI-AUTHGATE-05 forced-password-change reconciliation**
   - Added the full Administrator self-reset → Change Password → successful change → later profile
@@ -922,14 +1050,14 @@ security/authorization, migration/regression, and end-to-end coverage.
 | UI-ADM-02 | UI | Admin user search zero results | Empty-state message shown; no error | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-22 | BR-31 | AC-15 | Passed |
 | UI-48-NAV | UI | Integrated role navigation | Administrator starts at Ticket Queue and can open User Management; IT Staff cannot see User Management or Requester destinations; Requesters retain Requester destinations | `client/src/App.test.tsx` | FR-08, FR-21 | BR-28 | AC-10, AC-15 | Passed |
 | UI-48-SELF-DEMOTION | UI | Self-edit identity reconciliation | Successful self-edit immediately publishes returned name/email/role without `/auth/me`; other-user edit does not change identity | `client/src/lab-03-tests/UserManagement.test.tsx` | FR-25 | BR-34 | AC-19 | Passed |
-| UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Planned |
-| VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Planned |
-| VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Planned |
-| A11Y-01 | Accessibility | Keyboard/focus/aria | Keyboard-operable; focus visible | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-23 | Planned |
-| E2E-01 | E2E | Authentication flow | Login → change password → app → logout | `e2e/lab-03/authentication.spec.ts` | FR-01–06 | BR-01–10 | AC-01, AC-02, AC-05, AC-06 | Planned |
-| E2E-02 | E2E | Staff ticket flow | Queue → detail → claim → priority → status → comments/notes | `e2e/lab-03/staff-ticket-flow.spec.ts` | FR-14–20 | BR-14–18 | AC-10–14 | Planned |
-| E2E-03 | E2E | User administration | List → search → create → edit → initial password | `e2e/lab-03/user-administration.spec.ts` | FR-21–26 | BR-25–30 | AC-15–19 | Planned |
-| E2E-04 | E2E | Requester regression | Create → My Tickets → detail → comments → appears resolved (removes Dev Requester selector) | `e2e/lab-03/requester-regression.spec.ts` | FR-10–13 | BR-05, BR-11, BR-19 | AC-07–09 | Planned |
+| UI-STYLE-01 | UI Style | Zen Green tokens | No ad-hoc colors | `client/src/lab-03-tests/UiStyles.test.tsx` | FR-08 | — | AC-21 | Passed |
+| VISUAL-01 | Responsive | Major-screen controls and layout | Final-head Lab 3 browser run passed across desktop, tablet, and mobile; responsive assertions cover primary controls on authentication, Requester, Staff, and Admin screens | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Passed |
+| VISUAL-02 | Responsive | Staff Queue presentation | Final-head Lab 3 browser run passed across desktop, tablet, and mobile; assertions cover desktop table, tablet condensation, mobile cards, viewport bounds, and no horizontal overflow | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Passed |
+| A11Y-01 | Accessibility | Keyboard traversal and visible focus | Final-head Lab 3 browser run passed keyboard focus and traversal cases across desktop, tablet, and mobile | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-23 | Passed |
+| E2E-01 | E2E | Authentication flow | Login → change password → app → logout; inactive account safe failure/no shell | `e2e/lab-03/authentication.spec.ts` | FR-01–06 | BR-01–10 | AC-01, AC-02, AC-05, AC-06 | Passed |
+| E2E-02 | E2E | Staff ticket flow | Queue → sort/pagination → detail → claim → priority → status → comments/notes/attachment read | `e2e/lab-03/staff-ticket-flow.spec.ts` | FR-14–20 | BR-14–18 | AC-10–14 | Passed |
+| E2E-03 | E2E | User administration | List → search → create → edit → reset; invalid input, self-deactivation, last-admin demotion, non-admin denial | `e2e/lab-03/user-administration.spec.ts` | FR-21–26 | BR-25–30 | AC-15–19 | Passed |
+| E2E-04 | E2E | Requester regression | Create/list/detail/comments/appears-resolved and attachment continuity; no Dev Requester controls | `e2e/lab-03/requester-regression.spec.ts` | FR-10–13 | BR-05, BR-11, BR-19 | AC-07–09 | Passed |
 
 ## 6. Requirement → Test Mapping Summary
 Every Acceptance Criterion maps to at least one planned test:
@@ -947,7 +1075,7 @@ Every Acceptance Criterion maps to at least one planned test:
 - AC-12 → API-STAFF-02, API-STAFF-06, API-49-FAIL-02, UI-STAFF-01, E2E-02
 - AC-13 → API-STAFF-03, API-STAFF-04, API-STAFF-07, API-STAFF-08, UI-STAFF-01, UI-STAFF-02, UI-49-MODAL-01, UI-49-MODAL-02, UI-49-MODAL-03, UI-49-MODAL-08, UI-49-MODAL-09, E2E-02
 - AC-14 → API-STAFF-05, API-STAFF-10, API-49-FAIL-03, API-49-FAIL-04, UI-STAFF-01, UI-49-SAFE-01, UI-49-SAFE-02, UI-49-RACE-01, E2E-02
-- AC-15 → API-ADM-01, API-ADM-02, API-ADM-09, UI-ADM-01, UI-ADM-02, E2E-03
+- AC-15 → API-ADM-01, API-ADM-02, UI-ADM-01, UI-ADM-02, E2E-03
 - AC-16 → API-ADM-03, API-ADM-08, API-ADM-09, UI-ADM-01, UI-48-SELF-RESET, UI-AUTHGATE-04, UI-AUTHGATE-05, E2E-03
 - AC-17 → API-ADM-04, API-ADM-05, API-ADM-09, UI-ADM-01, UI-ADM-FEEDBACK-01, E2E-03
 - AC-18 → API-ADM-06, UI-ADM-01
