@@ -1,0 +1,22 @@
+◇ injected env (4) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+Running 12 tests using 1 worker
+
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ✓   1 [desktop] › e2e\lab-03\responsive-visual.spec.ts:36:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Ticket Queue presents all ticket content without page-level horizontal overflow (3.9s)
+  ✓   2 [desktop] › e2e\lab-03\responsive-visual.spec.ts:57:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › User Management switches between desktop table and labeled mobile cards (2.2s)
+  ✓   3 [desktop] › e2e\lab-03\responsive-visual.spec.ts:76:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › authentication and Requester screens keep primary controls in the viewport (4.3s)
+  ✓   4 [desktop] › e2e\lab-03\responsive-visual.spec.ts:107:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Staff Ticket Detail keeps ownership and comment controls in the viewport (3.0s)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ✓   5 [tablet] › e2e\lab-03\responsive-visual.spec.ts:36:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Ticket Queue presents all ticket content without page-level horizontal overflow (3.0s)
+  ✓   6 [tablet] › e2e\lab-03\responsive-visual.spec.ts:57:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › User Management switches between desktop table and labeled mobile cards (2.5s)
+  ✓   7 [tablet] › e2e\lab-03\responsive-visual.spec.ts:76:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › authentication and Requester screens keep primary controls in the viewport (4.6s)
+  ✓   8 [tablet] › e2e\lab-03\responsive-visual.spec.ts:107:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Staff Ticket Detail keeps ownership and comment controls in the viewport (3.0s)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ✓   9 [mobile] › e2e\lab-03\responsive-visual.spec.ts:36:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Ticket Queue presents all ticket content without page-level horizontal overflow (3.9s)
+  ✓  10 [mobile] › e2e\lab-03\responsive-visual.spec.ts:57:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › User Management switches between desktop table and labeled mobile cards (2.1s)
+  ✓  11 [mobile] › e2e\lab-03\responsive-visual.spec.ts:76:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › authentication and Requester screens keep primary controls in the viewport (5.1s)
+  ✓  12 [mobile] › e2e\lab-03\responsive-visual.spec.ts:107:7 › VISUAL-01/02: integrated Lab 3 responsive layouts › Staff Ticket Detail keeps ownership and comment controls in the viewport (3.8s)
+
+  12 passed (52.9s)

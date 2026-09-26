@@ -2,6 +2,39 @@
 
 **LLM/agent used:** GitHub Copilot (DeepSeek V4 Flash 0731)
 
+## Issue #42 PR #56 final-head verification (2026-09-26)
+
+- Prompt summary: continue the authorized review response, reconcile final test evidence, and
+  record responsive and keyboard status accurately while leaving PDF and Kanban closeout to
+  the user.
+- Agent used: OpenAI Codex.
+- Work performed: updated `VISUAL-01`, `VISUAL-02`, and `A11Y-01` in the Test DD matrix;
+  added a newest-first final-head results entry; aligned prior follow-up text with the later
+  completed verification.
+- Verification: at implementation SHA `ce2e40ddf049cf7cf62b43280a563b750622a0a4`, recorded
+  results were server 598/598, client 252/252, UI style 34/34, Lab 3 Playwright 54/54,
+  configured Playwright 210/210, and REL-12 19/19, with zero failures and skips. Responsive
+  focused run passed 12/12 across desktop, tablet, and mobile. Evidence is in
+  `artifacts/lab-03/release/*-final.txt`, `responsive-visual-final.txt`, and
+  `rel-12-migration.md`. No formal accessibility conformance audit is claimed.
+- Reflection: linking each status to a run and implementation SHA prevents older partial runs
+  from being mistaken for final evidence. Automated keyboard checks and screenshot review
+  provide useful coverage, but do not replace formal accessibility certification or human review.
+
+## Issue #42 REL-12 review response (2026-09-26)
+
+- Prompt summary: complete the integrated Lab 2-to-Lab 3 migration gate and update related
+  release documentation and the PR description with the verified result.
+- Agent used: OpenAI Codex.
+- Work performed: ran the migration integration file with the disposable `E2E_DATABASE_URL`
+  supplied as the test process's `DATABASE_URL`; updated the Test DD results log, README,
+  reviewer record, acceptance matrix, integration results, verification summary, and final gate.
+- Verification: 1 Vitest file passed, **19 passed, 0 failed, 0 skipped**, in 644.26 seconds at
+  implementation SHA `ce2e40ddf049cf7cf62b43280a563b750622a0a4`. Evidence:
+  `artifacts/lab-03/release/rel-12-migration.md`. Credentials and connection URLs were not logged.
+- Reflection at that time: REL-12 added integrated migration and preservation evidence; later
+  final-head client/server and Playwright regressions are recorded in the newer entry above.
+
 ## Issue #42 PR #56 documentation review response (2026-09-26)
 
 - Prompt summary: coordinate the authorized response to human PR #56 review; preserve user-owned
@@ -10,16 +43,15 @@
 - Work performed: replaced grouped acceptance evidence with one row for each AC-01 through
   AC-26; reconciled historical browser totals by run and scope; updated verification, integration,
   and final-gate records; recorded the human changes-requested review and response; documented
-  the focused responsive/keyboard results and the `kitti` `CREATEDB` / `lab3e2e` prerequisite.
-  Preserved existing README and `.env.example` edits, including the explicit E2E URL.
-- Verification: focused responsive run reported 12/12 and focused keyboard run reported 12/12
-  across desktop, tablet, and mobile in the execution handoff. Full current-head server/client
-  suites, full configured Playwright regression, and REL-12 were not run as part of this
-  documentation pass. `git diff --check` exited 0. A static check confirmed 26 unique ordered
-  acceptance rows and the required seven columns.
-- Reflection: historical release artifacts remain useful only when their source boundary and
-  run scope are explicit. Focused accessibility/responsive passes do not establish full release
-  readiness.
+  the confirmed `kitti` `CREATEDB` / `lab3e2e` setup. Preserved parallel README and `.env.example`
+  edits, including the explicit E2E URL.
+- Verification at that time: final-head suites passed at implementation SHA
+  `ce2e40ddf049cf7cf62b43280a563b750622a0a4`: server 598/598, client 252/252, UI style 34/34,
+  Lab 3 Playwright 54/54, full Playwright 210/210, and REL-12 19/19. Server/client builds and
+  Prisma validation passed. Raw outputs are linked in `artifacts/lab-03/release/`. `git diff
+  --check` was run after this reconciliation and exited 0.
+- Reflection: evidence must identify its implementation SHA, scope, and actual outcome. Automated
+  verification does not replace human re-review or user-owned PDF/Kanban completion.
 
 ## Issue #42 E2E review follow-up (2026-09-26)
 

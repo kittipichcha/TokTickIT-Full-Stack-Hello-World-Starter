@@ -121,12 +121,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3296,
+                      "duration": 1959,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:01.322Z",
+                      "startTime": "2026-09-26T12:54:17.779Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -155,12 +155,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1393,
+                      "duration": 916,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:04.947Z",
+                      "startTime": "2026-09-26T12:54:19.897Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -171,6 +171,40 @@
               "id": "2f8f92484edc49dc7cac-bada98cb333cdd48edcb",
               "file": "lab-03/authentication.spec.ts",
               "line": 40,
+              "column": 7
+            },
+            {
+              "title": "inactive credentials show the same safe failure and no application shell",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1060,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:54:20.827Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-5682feda21843e018a9f",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 46,
               "column": 7
             },
             {
@@ -189,12 +223,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2467,
+                      "duration": 3314,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:30.701Z",
+                      "startTime": "2026-09-26T12:55:06.113Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -223,12 +257,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1400,
+                      "duration": 1409,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:33.433Z",
+                      "startTime": "2026-09-26T12:55:09.877Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -239,6 +273,40 @@
               "id": "2f8f92484edc49dc7cac-7aa0bccfe2c8db313283",
               "file": "lab-03/authentication.spec.ts",
               "line": 40,
+              "column": 7
+            },
+            {
+              "title": "inactive credentials show the same safe failure and no application shell",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1988,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:55:11.327Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-407ebb9ae81147372e7b",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 46,
               "column": 7
             },
             {
@@ -257,12 +325,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2604,
+                      "duration": 1826,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:58.277Z",
+                      "startTime": "2026-09-26T12:56:05.335Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -291,12 +359,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1292,
+                      "duration": 1308,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:29:01.131Z",
+                      "startTime": "2026-09-26T12:56:07.330Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -307,6 +375,40 @@
               "id": "2f8f92484edc49dc7cac-b96ebb20ade759c55729",
               "file": "lab-03/authentication.spec.ts",
               "line": 40,
+              "column": 7
+            },
+            {
+              "title": "inactive credentials show the same safe failure and no application shell",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1595,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:56:08.665Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2f8f92484edc49dc7cac-228ad018b7f2eebbf393",
+              "file": "lab-03/authentication.spec.ts",
+              "line": 46,
               "column": 7
             }
           ]
@@ -342,12 +444,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1448,
+                      "duration": 939,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:06.386Z",
+                      "startTime": "2026-09-26T12:54:21.908Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -376,12 +478,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2947,
+                      "duration": 2040,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:07.862Z",
+                      "startTime": "2026-09-26T12:54:22.860Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -391,7 +493,75 @@
               ],
               "id": "f63a53f1a4a913e1e8e2-c7b9c6d23d3c913f1f42",
               "file": "lab-03/keyboard-access.spec.ts",
-              "line": 24,
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "forced password change is reachable and submittable by keyboard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1719,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:54:24.912Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f63a53f1a4a913e1e8e2-56707e3f274866d89be5",
+              "file": "lab-03/keyboard-access.spec.ts",
+              "line": 58,
+              "column": 7
+            },
+            {
+              "title": "primary controls are reachable by Tab across Requester, Staff, and Admin screens",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4843,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:54:26.644Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f63a53f1a4a913e1e8e2-a83dcf0f635230409d8b",
+              "file": "lab-03/keyboard-access.spec.ts",
+              "line": 77,
               "column": 7
             },
             {
@@ -410,12 +580,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1476,
+                      "duration": 1659,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:34.872Z",
+                      "startTime": "2026-09-26T12:55:13.376Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -444,12 +614,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3039,
+                      "duration": 3496,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:36.374Z",
+                      "startTime": "2026-09-26T12:55:15.098Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -459,7 +629,75 @@
               ],
               "id": "f63a53f1a4a913e1e8e2-5bd1eee4bd761fb4bbf2",
               "file": "lab-03/keyboard-access.spec.ts",
-              "line": 24,
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "forced password change is reachable and submittable by keyboard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3128,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:55:18.637Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f63a53f1a4a913e1e8e2-96b3b46de3a8043f0c6a",
+              "file": "lab-03/keyboard-access.spec.ts",
+              "line": 58,
+              "column": 7
+            },
+            {
+              "title": "primary controls are reachable by Tab across Requester, Staff, and Admin screens",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5845,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:55:21.804Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f63a53f1a4a913e1e8e2-6c6df7a0f4d0d23616eb",
+              "file": "lab-03/keyboard-access.spec.ts",
+              "line": 77,
               "column": 7
             },
             {
@@ -478,12 +716,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1337,
+                      "duration": 1465,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:29:02.477Z",
+                      "startTime": "2026-09-26T12:56:10.305Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -512,12 +750,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3847,
+                      "duration": 4176,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:29:03.843Z",
+                      "startTime": "2026-09-26T12:56:11.800Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -527,7 +765,75 @@
               ],
               "id": "f63a53f1a4a913e1e8e2-0663f9435cad064d7f75",
               "file": "lab-03/keyboard-access.spec.ts",
-              "line": 24,
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "forced password change is reachable and submittable by keyboard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2799,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:56:16.008Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f63a53f1a4a913e1e8e2-af4707f225f97e8a59a6",
+              "file": "lab-03/keyboard-access.spec.ts",
+              "line": 58,
+              "column": 7
+            },
+            {
+              "title": "primary controls are reachable by Tab across Requester, Staff, and Admin screens",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7903,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:56:18.838Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f63a53f1a4a913e1e8e2-b636571288da2505ce90",
+              "file": "lab-03/keyboard-access.spec.ts",
+              "line": 77,
               "column": 7
             }
           ]
@@ -563,12 +869,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3068,
+                      "duration": 2051,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:10.849Z",
+                      "startTime": "2026-09-26T12:54:31.503Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -597,12 +903,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2637,
+                      "duration": 3654,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:39.450Z",
+                      "startTime": "2026-09-26T12:55:27.691Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -631,12 +937,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3802,
+                      "duration": 4605,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:29:07.745Z",
+                      "startTime": "2026-09-26T12:56:26.775Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -663,7 +969,7 @@
         {
           "title": "VISUAL-01/02: integrated Lab 3 responsive layouts",
           "file": "lab-03/responsive-visual.spec.ts",
-          "line": 4,
+          "line": 29,
           "column": 6,
           "specs": [
             {
@@ -682,12 +988,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2793,
+                      "duration": 2065,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:13.950Z",
+                      "startTime": "2026-09-26T12:54:33.574Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -697,7 +1003,7 @@
               ],
               "id": "2079094d052158af847d-7e43884724932a0dd8a3",
               "file": "lab-03/responsive-visual.spec.ts",
-              "line": 11,
+              "line": 36,
               "column": 7
             },
             {
@@ -716,12 +1022,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2020,
+                      "duration": 1415,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:16.768Z",
+                      "startTime": "2026-09-26T12:54:35.653Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -731,7 +1037,75 @@
               ],
               "id": "2079094d052158af847d-4dc0f97e51d83671333a",
               "file": "lab-03/responsive-visual.spec.ts",
-              "line": 31,
+              "line": 57,
+              "column": 7
+            },
+            {
+              "title": "authentication and Requester screens keep primary controls in the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3000,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:54:37.085Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2079094d052158af847d-290674e7da20ffd3d8f4",
+              "file": "lab-03/responsive-visual.spec.ts",
+              "line": 76,
+              "column": 7
+            },
+            {
+              "title": "Staff Ticket Detail keeps ownership and comment controls in the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2000,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:54:40.098Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2079094d052158af847d-d0870ad2b6389f08d810",
+              "file": "lab-03/responsive-visual.spec.ts",
+              "line": 107,
               "column": 7
             },
             {
@@ -750,12 +1124,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2789,
+                      "duration": 2779,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:42.120Z",
+                      "startTime": "2026-09-26T12:55:31.379Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -765,7 +1139,7 @@
               ],
               "id": "2079094d052158af847d-e79febc03ed1b83698ca",
               "file": "lab-03/responsive-visual.spec.ts",
-              "line": 11,
+              "line": 36,
               "column": 7
             },
             {
@@ -784,12 +1158,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1992,
+                      "duration": 2070,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:44.936Z",
+                      "startTime": "2026-09-26T12:55:34.181Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -799,7 +1173,75 @@
               ],
               "id": "2079094d052158af847d-8eac1981c734bc31bae0",
               "file": "lab-03/responsive-visual.spec.ts",
-              "line": 31,
+              "line": 57,
+              "column": 7
+            },
+            {
+              "title": "authentication and Requester screens keep primary controls in the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4163,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:55:36.273Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2079094d052158af847d-fac30bd959d378b4749b",
+              "file": "lab-03/responsive-visual.spec.ts",
+              "line": 76,
+              "column": 7
+            },
+            {
+              "title": "Staff Ticket Detail keeps ownership and comment controls in the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3046,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:55:40.457Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2079094d052158af847d-0df4b2770aa036031d55",
+              "file": "lab-03/responsive-visual.spec.ts",
+              "line": 107,
               "column": 7
             },
             {
@@ -818,12 +1260,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3842,
+                      "duration": 3864,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:29:11.585Z",
+                      "startTime": "2026-09-26T12:56:31.416Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -833,7 +1275,7 @@
               ],
               "id": "2079094d052158af847d-ae3e0498f86b9bf0093b",
               "file": "lab-03/responsive-visual.spec.ts",
-              "line": 11,
+              "line": 36,
               "column": 7
             },
             {
@@ -852,12 +1294,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2035,
+                      "duration": 2431,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:29:15.452Z",
+                      "startTime": "2026-09-26T12:56:35.307Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -867,7 +1309,75 @@
               ],
               "id": "2079094d052158af847d-0bd259e6b7b5adc837ce",
               "file": "lab-03/responsive-visual.spec.ts",
-              "line": 31,
+              "line": 57,
+              "column": 7
+            },
+            {
+              "title": "authentication and Requester screens keep primary controls in the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5546,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:56:37.764Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2079094d052158af847d-f65c73979bf55348c3c1",
+              "file": "lab-03/responsive-visual.spec.ts",
+              "line": 76,
+              "column": 7
+            },
+            {
+              "title": "Staff Ticket Detail keeps ownership and comment controls in the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4055,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:56:43.336Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2079094d052158af847d-26a9370e58cdc4548bdb",
+              "file": "lab-03/responsive-visual.spec.ts",
+              "line": 107,
               "column": 7
             }
           ]
@@ -903,12 +1413,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6185,
+                      "duration": 8152,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:18.825Z",
+                      "startTime": "2026-09-26T12:54:42.122Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -937,12 +1447,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5651,
+                      "duration": 7625,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:46.960Z",
+                      "startTime": "2026-09-26T12:55:43.537Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -971,12 +1481,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7119,
+                      "duration": 19446,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:29:17.526Z",
+                      "startTime": "2026-09-26T12:56:47.430Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1022,12 +1532,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4559,
+                      "duration": 4772,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:25.045Z",
+                      "startTime": "2026-09-26T12:54:50.303Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1038,6 +1548,142 @@
               "id": "a11dbb5c18e1b3541c6b-a551ae3c0244f75dd0c9",
               "file": "lab-03/user-administration.spec.ts",
               "line": 13,
+              "column": 7
+            },
+            {
+              "title": "rejects invalid email input through the real user-management API",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2504,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:54:55.102Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-f9b0b5a55c387bd38a22",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 76,
+              "column": 7
+            },
+            {
+              "title": "rejects Administrator self-deactivation while the peer Administrator remains active",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2306,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:54:57.639Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-a8653631b259d1b22117",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 88,
+              "column": 7
+            },
+            {
+              "title": "rejects demoting the sole active Administrator and keeps the account authorized",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2784,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:54:59.976Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-d7fa8e21cd3ad917ef9f",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 105,
+              "column": 7
+            },
+            {
+              "title": "denies user-management access to a non-Administrator",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1955,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:55:02.789Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-3458c05c79eab9970bf8",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 130,
               "column": 7
             },
             {
@@ -1056,12 +1702,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4571,
+                      "duration": 4820,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:28:52.648Z",
+                      "startTime": "2026-09-26T12:55:51.199Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1072,6 +1718,142 @@
               "id": "a11dbb5c18e1b3541c6b-817fbcd24756e6e44683",
               "file": "lab-03/user-administration.spec.ts",
               "line": 13,
+              "column": 7
+            },
+            {
+              "title": "rejects invalid email input through the real user-management API",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2263,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:55:56.038Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-75bd4984355d2bf6e0bb",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 76,
+              "column": 7
+            },
+            {
+              "title": "rejects Administrator self-deactivation while the peer Administrator remains active",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2281,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:55:58.329Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-04739cf8a202f48da3b8",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 88,
+              "column": 7
+            },
+            {
+              "title": "rejects demoting the sole active Administrator and keeps the account authorized",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2626,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:56:00.636Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-c7753b84f822c9e53902",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 105,
+              "column": 7
+            },
+            {
+              "title": "denies user-management access to a non-Administrator",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1388,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:56:03.286Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-0a0dcdf6739bc2f11686",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 130,
               "column": 7
             },
             {
@@ -1090,12 +1872,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4565,
+                      "duration": 4554,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-09-25T15:29:24.682Z",
+                      "startTime": "2026-09-26T12:57:06.913Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1107,6 +1889,142 @@
               "file": "lab-03/user-administration.spec.ts",
               "line": 13,
               "column": 7
+            },
+            {
+              "title": "rejects invalid email input through the real user-management API",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2219,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:57:11.490Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-cabe034f26f8eda0f945",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 76,
+              "column": 7
+            },
+            {
+              "title": "rejects Administrator self-deactivation while the peer Administrator remains active",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2372,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:57:13.733Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-50f1535d21f249d967dd",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 88,
+              "column": 7
+            },
+            {
+              "title": "rejects demoting the sole active Administrator and keeps the account authorized",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2676,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:57:16.128Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-30df9334697c7f3b2168",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 105,
+              "column": 7
+            },
+            {
+              "title": "denies user-management access to a non-Administrator",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1820,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-26T12:57:18.831Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a11dbb5c18e1b3541c6b-e7be8ce08425b3cf2d10",
+              "file": "lab-03/user-administration.spec.ts",
+              "line": 130,
+              "column": 7
             }
           ]
         }
@@ -1115,9 +2033,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-09-25T15:27:53.789Z",
-    "duration": 96348.92599999999,
-    "expected": 27,
+    "startTime": "2026-09-26T12:54:12.446Z",
+    "duration": 189114.58,
+    "expected": 54,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

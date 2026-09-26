@@ -21,10 +21,15 @@ and a REL-12 database-role prerequisite. PDF Parts 1–9 and Kanban closeout rem
 
 How I responded: expanded the acceptance matrix to one row per AC-01 through AC-26; labeled
 historical runs by scope and reconciled their counts; recorded focused responsive and keyboard
-runs as 12/12 each without asserting full-suite or current-head completion; documented that role
-`kitti` now has `CREATEDB` and database `lab3e2e` is the disposable E2E target while REL-12 remains
-unrun; and clarified the README's required `E2E_DATABASE_URL` setup. PDF and Kanban work remain
-for the author. This response records no approval; reviewer re-review is pending.
+runs as 12/12 each without asserting full-suite completion; documented the README's required
+`E2E_DATABASE_URL` setup; and ran REL-12 on implementation SHA `ce2e40d` using the disposable E2E
+connection. The migration integration file passed 19/19 with zero skips, including preservation
+and migrated-user password checks. Subsequent final-head verification on the same implementation
+SHA passed server 598/598, client 252/252, UI style 34/34, Lab 3 Playwright 54/54, and full
+Playwright 210/210; server/client builds and Prisma validation also passed. The current artifacts
+are listed in `artifacts/lab-03/release/verification-summary.md`. AC-01..26 now reflect current
+automated evidence. PDF and Kanban work remain for the author. This response records no approval;
+reviewer re-review is pending.
 
 **Issue #41/#38 integration and PR #48 review fix (2026-09-24):** `origin/lab3-staging` at
 `bde221f` was fetched and merged into `feature/issue-41-admin-user-management` at merge commit

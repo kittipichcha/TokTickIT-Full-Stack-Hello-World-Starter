@@ -1,27 +1,30 @@
 # Issue #42 final gate — current review-response status
 
-This document includes historical pre-merge runs. They do not verify current uncommitted
-review-response changes or grant release approval. Focused responsive and keyboard suites each
-report 12/12 passes across desktop, tablet, and mobile; full current-head verification remains
-pending. Historical Playwright counts are distinct runs: 181/183 initial full run, 183/183 clean
-full run, 27/27 earlier Lab 3 run, and 42/42 later Lab 3 review-fix run.
+This document records final-head automated evidence, not human release approval. Implementation
+source SHA is `ce2e40ddf049cf7cf62b43280a563b750622a0a4`. Final-head checks passed: server 598/598,
+client 252/252, UI style 34/34, Lab 3 Playwright 54/54, full configured Playwright 210/210,
+REL-12 migration 19/19, server/client builds, and Prisma validation. Lab 3 JSON totals: 54
+expected, 0 unexpected, 0 skipped, 0 flaky. Historical browser totals remain distinct: initial
+full 181/183, clean full 183/183, earlier Lab 3 27/27, and later Lab 3 42/42.
 
 | Gate | Status | Evidence / remaining work |
 |---|---|---|
-| Integrated harness isolation and process readiness | Historical pass; current-head pending | Playwright owns API/Vite servers and requires the disposable DB setting. Historical Lab 3 runs recorded 27/27 and later 42/42; see `verification-summary.md`. |
-| Built server start command and Vite dev readiness | Passed | Corrected `server` start path after reproducing failure; fresh API and Vite probes are recorded in `verification-summary.md`. |
-| SEC-AUTHZ-07 integrated route coverage | Passed | 14 routes, missing/invalid token persistence assertions, valid-token controls; 52 tests passed. |
-| Lab 3 journeys, responsive and keyboard checks | Partial current evidence | Historical journeys passed. Focused current responsive suite: 12/12; focused keyboard suite: 12/12 across desktop/tablet/mobile. Full current-head suites remain pending. |
-| Full client/server suites and builds | Passed | Client 252/252 across 18 files; server 598/598 across 39 files; type checks/builds/schema validation passed. Combined Lab 2 + Lab 3 style gate: 34 passed. |
-| Full three-project Lab 2 regression | Historical pass; current-head pending | Historical run: 183/183 passed, 0 failed/skipped, across desktop/tablet/mobile. Raw output: `playwright-full-final.txt`. |
-| REL-12 integrated Lab 2 → Lab 3 upgrade | Not run; prerequisite available | PostgreSQL role `kitti` now has `CREATEDB`; disposable target is `lab3e2e`. No REL-12 run is evidenced. See `integration-flow-results.md`. |
-| Complete upstream evidence gate | Blocked | #38's historical server-start/client-dev smoke-gate records are absent; fresh integrated smoke checks do not reproduce that source-linked upstream artifact. |
-| Complete §9.3 integrated catalog audit | Passed on the existing temporary Lab 3 database | `schema-catalog-audit.md` records current catalog shape, native types, indexes, constraints, enums, and legacy residue. REL-12 remains independently blocked. |
-| Test-DD §5 frozen-path existence audit | Passed | 32 referenced test paths checked; 32 present in `test-dd-path-audit.txt`. |
-| Acceptance matrix and evidence reconciliation | In progress | AC-01 through AC-26 now have individual rows. Current-head and REL-12 gaps remain explicit. |
-| Reviewer/AI-use entries, PDF, Kanban, human review, submission | In progress / user-owned items pending | PR #56 human reviewer requested changes; this response does not claim approval. User will complete PDF and Kanban manually and notify reviewer. |
+| Integrated harness isolation and process readiness | Passed on final head | Configured Playwright full run passed 210/210; Lab 3 run passed 54/54. See `playwright-full-final-head.txt` and `playwright-lab3-final.txt`. |
+| Built server start command and Vite dev readiness | Historical pass | Corrected `server` start path; built API and Vite smoke probes are recorded in `verification-summary.md`. |
+| SEC-AUTHZ-07 integrated route coverage | Historical pass | 14 routes, missing/invalid token persistence assertions, valid-token controls; 52 tests passed. |
+| Lab 3 journeys, responsive and keyboard checks | Passed on final head | 54/54 across desktop/tablet/mobile, including responsive and keyboard specs; `playwright-lab3-final.txt`. |
+| Full client/server suites, builds, and Prisma validation | Passed on final head | Client 252/252, server 598/598, builds and schema validation passed. Evidence: `client-vitest-final.txt`, `server-vitest-final.txt`, `*-build-final.txt`, and `prisma-validate-final.txt`. Typecheck is not claimed. |
+| Full three-project Lab 2 regression | Passed on final head | 210/210 passed, 0 failed/skipped across desktop/tablet/mobile; `playwright-full-final-head.txt`. |
+| REL-12 integrated Lab 2 → Lab 3 upgrade | Passed | 19/19 migration integration tests, 0 skipped, against the disposable E2E PostgreSQL connection at implementation SHA `ce2e40d`. Evidence: `rel-12-migration.md`. |
+| Integrated server/client smoke evidence | Passed | Built server and client-dev smoke checks are recorded in `server-start-smoke.txt` and `client-dev-smoke.txt`; fresh equivalent evidence satisfies this smoke check. |
+| Complete §9.3 integrated catalog audit | Historical pass | `schema-catalog-audit.md` records catalog shape, native types, indexes, constraints, enums, and legacy residue on the temporary Lab 3 database. |
+| Test-DD §5 frozen-path existence audit | Historical pass | 32 referenced automated test paths were present in `test-dd-path-audit.txt`. |
+| Acceptance matrix and evidence reconciliation | Updated with final-head results | AC-01 through AC-26 have individual rows; automated evidence is linked in `acceptance-matrix.md`. |
+| Reviewer/AI-use entries, PDF, Kanban, human review, submission | Human/user-owned actions pending | PR #56 reviewer re-review is pending; user owns PDF Parts 1–9 and Kanban closeout. No approval is claimed. |
+| Repository clean and final-head evidence | Evidence current; commit pending review | Final-head artifacts verify source SHA above. Worktree still contains documentation and other authorized changes awaiting review/commit. |
 | Post-merge main checks | Not applicable yet | Requires a reviewed and merged release PR, which has not been opened. |
 
-**Gate result: BLOCKED for release/sign-off.** Current-head full verification and REL-12 remain
-pending. The human review is changes requested, not approved. Do not represent this table as
-approval to merge or submit.
+**Gate result: automated verification passed; release/sign-off remains open.** Human re-review,
+user-owned PDF and Kanban closeout, and post-merge main verification remain pending. The human
+review is changes requested, not approved. Do not represent this table as approval to merge or
+submit.

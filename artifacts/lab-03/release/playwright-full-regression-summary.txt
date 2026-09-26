@@ -1,6 +1,11 @@
 Command: npm.cmd run test:e2e -- --workers=1 --reporter=dot
 Configured projects: desktop, tablet, mobile
-Latest full run: 183 passed, 0 failed, 0 skipped (183 total), duration 22.7 minutes.
-The run completed after the A11Y-01 keyboard test synchronization guard was added. Raw output: playwright-full-final.txt.
-Lab 3-only structured report: lab3-playwright.json (27/27 passed).
-Earlier full runs had transient Lab 2 visual/network failures and an A11Y-01 focus-timing failure; those are superseded by this clean full run.
+Historical full run: 183 passed, 0 failed, 0 skipped (183 total), duration 22.7 minutes.
+Historical raw output: playwright-full-final.txt. Historical Lab 3-only structured report:
+lab3-playwright.json (27/27 passed). These results predate implementation SHA `ce2e40d` and
+are not final-source verification.
+
+Final-head integrated verification completed: 210 passed, 0 failed, 0 skipped in 23.6 minutes
+across desktop, tablet, and mobile. Raw output: `playwright-full-final-head.txt`. Earlier full runs
+had transient Lab 2 visual/network failures and an A11Y-01 focus-timing failure; those were not
+present in this completed run.

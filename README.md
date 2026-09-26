@@ -29,9 +29,12 @@ The recorded 598 server tests, 252 client tests, and full Playwright runs are hi
 pre-merge evidence, not verification of the current review worktree. Historical browser counts
 refer to distinct runs: 183/183 full configured, 27/27 earlier Lab 3, and 42/42 later Lab 3.
 The current focused responsive suite passed 12/12 and the keyboard suite passed 12/12 across
-desktop, tablet, and mobile. Full current-head verification and REL-12 remain pending. PostgreSQL
-role `kitti` now has `CREATEDB`, and `lab3e2e` is the disposable target; release approval is not
-recorded. See `artifacts/lab-03/release/verification-summary.md` for evidence scope.
+desktop, tablet, and mobile. PostgreSQL role `kitti` has `CREATEDB`, and `lab3e2e` is the
+disposable target. REL-12 has passed 19/19 migration integration tests against a Lab 2-shaped
+scratch database created through the disposable `E2E_DATABASE_URL` connection; see
+`artifacts/lab-03/release/rel-12-migration.md`. Full current-head client/server suites and
+configured Playwright regression remain pending, so release approval is not recorded. See
+`artifacts/lab-03/release/verification-summary.md` for evidence scope.
 
 Historical Lab 2 implementation details follow:
 - `GET /api/categories` (active-only; **requires an authenticated session** in Lab 3)
@@ -558,15 +561,16 @@ implemented and documented:
 Focused Issue #38 remediation verification: client **178 passed** across 14 files, including the
 52 Queue/Detail tests; server Staff Detail API **41 passed**. The server suite excluding the
 known migration harness passed **514 tests across 37 files**; client and server TypeScript builds
-also pass. The migration harness remains an environment/test-runner limitation because it stops
-after its deliberate collision probe without emitting a Vitest summary. E2E and final responsive
-evidence remain owned by Issue #42.
+also pass. Those are historical Issue #38 results. Issue #42 later ran the complete migration
+integration file on a disposable Lab 2-shaped database: **19/19 passed**, including the deliberate
+collision and recovery cases. See `artifacts/lab-03/release/rel-12-migration.md`.
 
 ## 13. Lab 3 integrated browser verification (Issue #42)
 
 Playwright starts its own API and Vite servers and refuses to reuse an existing server. Set
-`E2E_DATABASE_URL` to the disposable `lab3e2e` PostgreSQL database in `server/.env`. The suite
-requires the documented Lab 3 schema before it runs and does not use `DATABASE_URL` as fallback.
+`E2E_DATABASE_URL` to the disposable `lab3e2e` PostgreSQL database in `server/.env`. This variable
+is required; setting only `DATABASE_URL` does not satisfy Playwright configuration. The suite
+requires the documented Lab 3 schema before it runs and does not fall back to `DATABASE_URL`.
 The same URL is passed to
 the Lab 2 requester fixture setup and the API process; no suite should target a development or
 production database.
@@ -574,5 +578,5 @@ production database.
 Run `npm run test:e2e -- --workers=1` from the repository root. The initial suite is serial across
 desktop (1280×800), tablet (820×1180), and mobile (390×844). The API readiness probe is
 `/api/auth/me` and Vite readiness is the Login page at `http://127.0.0.1:5173`. Playwright owns
-both processes and stops them after the run. The configuration refuses to start fixtures without
-one of those database settings.
+both processes and stops them after the run. The configuration refuses to start fixtures unless
+`E2E_DATABASE_URL` is set.

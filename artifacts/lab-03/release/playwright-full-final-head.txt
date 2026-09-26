@@ -1,0 +1,19 @@
+
+> issue-18-integration-verification@1.0.0 test:e2e
+> npx playwright test --workers=1 --reporter=dot
+
+◇ injected env (4) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+
+Running 210 tests using 1 worker
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+······································································◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+··········
+····························································◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+····················
+··················································
+  Slow test file: [tablet] › e2e\lab-02\responsive-visual.spec.ts (6.4m)
+  Slow test file: [mobile] › e2e\lab-02\responsive-visual.spec.ts (6.4m)
+  Slow test file: [desktop] › e2e\lab-02\responsive-visual.spec.ts (6.4m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  210 passed (23.6m)

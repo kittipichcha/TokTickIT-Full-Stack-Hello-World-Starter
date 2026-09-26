@@ -1,4 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
+import { mkdirSync } from "node:fs";
+import path from "node:path";
 import { CHANGED_PASSWORD, E2E_ATTACHMENT, FORCED_PASSWORD, USERS, createRequesterTicket, login, navigate, resetAccount } from "./helpers";
 
 async function expectControlInViewport(page: Page, control: Locator): Promise<void> {
@@ -13,6 +15,15 @@ async function expectControlInViewport(page: Page, control: Locator): Promise<vo
   expect(bounds!.y).toBeGreaterThanOrEqual(0);
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+}
+
+async function captureRequesterEvidence(page: Page, state: string): Promise<void> {
+  const directory = path.resolve("artifacts/lab-03/screenshots/authentication");
+  mkdirSync(directory, { recursive: true });
+  await page.screenshot({
+    path: path.join(directory, `${test.info().project.name}-${state}.png`),
+    fullPage: true,
+  });
 }
 
 test.describe("VISUAL-01/02: integrated Lab 3 responsive layouts", () => {
@@ -79,9 +90,11 @@ test.describe("VISUAL-01/02: integrated Lab 3 responsive layouts", () => {
     await login(page, USERS.requester.email);
     await navigate(page, "Create Ticket");
     await expectControlInViewport(page, page.locator("#summary"));
+    await captureRequesterEvidence(page, "create-ticket");
     const summary = `Issue 42 responsive requester ${Date.now()}`;
     const ticketNumber = await createRequesterTicket(page, summary, E2E_ATTACHMENT);
     await expect(page.getByText("Your ticket has been created successfully.", { exact: true })).toBeVisible();
+    await captureRequesterEvidence(page, "ticket-created");
     await expectControlInViewport(page, page.getByRole("heading", { name: "Ticket Created", exact: true }));
     await expect(page.locator(".success-panel .ticket-info-value").first()).toHaveText(ticketNumber);
 
