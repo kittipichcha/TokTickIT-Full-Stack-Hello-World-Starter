@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { test, expect } from "@playwright/test";
-import { CHANGED_PASSWORD, FORCED_PASSWORD, USERS, login, navigate, resetAccount } from "./helpers";
+import { CHANGED_PASSWORD, FORCED_PASSWORD, PASSWORD, USERS, login, navigate, resetAccount } from "./helpers";
 
 function savePath(file: string): string {
   const directory = path.resolve("artifacts/lab-03/screenshots/authentication");
@@ -39,6 +39,13 @@ test.describe("E2E-01: authentication and mandatory password change", () => {
 
   test("invalid credentials show a safe message", async ({ page }) => {
     await login(page, "unknown-issue-42@example.com", "WrongPass123!xyz", "none");
+    await expect(page.getByRole("alert")).toHaveText("Login failed. Please check your credentials and try again.");
+    await expect(page.locator(".app-shell")).toHaveCount(0);
+  });
+
+  test("inactive credentials show the same safe failure and no application shell", async ({ page }) => {
+    await resetAccount("inactive", false, undefined, false);
+    await login(page, USERS.inactive.email, PASSWORD, "none");
     await expect(page.getByRole("alert")).toHaveText("Login failed. Please check your credentials and try again.");
     await expect(page.locator(".app-shell")).toHaveCount(0);
   });

@@ -5,6 +5,11 @@ import path from "node:path";
 export const PASSWORD = "E2eTestPass123!xyz";
 export const CHANGED_PASSWORD = "E2eChangedPass456!abc";
 export const FORCED_PASSWORD = "ForcedStart123!abc";
+export const E2E_ATTACHMENT = {
+  name: "issue-42-continuity.png",
+  mimeType: "image/png",
+  buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jF5kAAAAASUVORK5CYII=", "base64"),
+};
 
 export const USERS = {
   requester: { email: "e2e-42-requester@example.com", name: "Issue 42 Requester", role: "REQUESTER" },
@@ -13,9 +18,15 @@ export const USERS = {
   admin: { email: "e2e-42-admin@example.com", name: "Issue 42 Admin", role: "ADMINISTRATOR" },
   adminPeer: { email: "e2e-42-admin-peer@example.com", name: "Issue 42 Admin Peer", role: "ADMINISTRATOR" },
   forced: { email: "e2e-42-forced@example.com", name: "Issue 42 Forced Change", role: "REQUESTER" },
+  inactive: { email: "e2e-42-inactive@example.com", name: "Issue 42 Inactive", role: "REQUESTER" },
 } as const;
 
-export async function resetAccount(key: keyof typeof USERS, mustChangePassword = false, password = PASSWORD): Promise<void> {
+export async function resetAccount(
+  key: keyof typeof USERS,
+  mustChangePassword = false,
+  password = PASSWORD,
+  isActive = true,
+): Promise<void> {
   const databaseUrl = process.env.E2E_DATABASE_URL;
   if (!databaseUrl) throw new Error("E2E_DATABASE_URL is required for the Lab 3 fixture reset.");
   process.env.DATABASE_URL = databaseUrl;
@@ -50,7 +61,7 @@ export async function resetAccount(key: keyof typeof USERS, mustChangePassword =
     }
     await prisma.user.update({
       where: { email: account.email },
-      data: { name: account.name, role: account.role, isActive: true, mustChangePassword, passwordHash: await bcrypt.hash(password, 10) },
+      data: { name: account.name, role: account.role, isActive, mustChangePassword, passwordHash: await bcrypt.hash(password, 10) },
     });
     if (key === "admin") {
       await prisma.user.deleteMany({ where: { email: { startsWith: "issue42-created-" } } });
@@ -58,6 +69,49 @@ export async function resetAccount(key: keyof typeof USERS, mustChangePassword =
   } finally {
     await prisma.$disconnect();
   }
+}
+
+/** Demote other active Administrators in the isolated E2E database, then restore their roles. */
+export async function makeSoleActiveAdmin(key: "admin" | "adminPeer"): Promise<() => Promise<void>> {
+  const databaseUrl = process.env.E2E_DATABASE_URL;
+  if (!databaseUrl) throw new Error("E2E_DATABASE_URL is required for the Lab 3 fixture reset.");
+  process.env.DATABASE_URL = databaseUrl;
+  const serverRequire = createRequire(path.resolve(__dirname, "../../server/package.json"));
+  const { PrismaClient } = serverRequire("@prisma/client") as { PrismaClient: new () => {
+    user: {
+      findMany: (args: unknown) => Promise<Array<{ id: number }>>;
+      updateMany: (args: unknown) => Promise<unknown>;
+    };
+    $disconnect: () => Promise<void>;
+  } };
+  const prisma = new PrismaClient();
+  const actor = USERS[key];
+  let otherAdminIds: number[] = [];
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: "ADMINISTRATOR", isActive: true },
+      select: { id: true, email: true },
+    }) as Array<{ id: number; email: string }>;
+    const actorId = admins.find((user) => user.email === actor.email)?.id;
+    if (actorId === undefined) throw new Error(`Active Administrator fixture is missing: ${actor.email}`);
+    otherAdminIds = admins.filter((user) => user.id !== actorId).map((user) => user.id);
+    if (otherAdminIds.length > 0) {
+      await prisma.user.updateMany({ where: { id: { in: otherAdminIds } }, data: { role: "IT_STAFF" } });
+    }
+  } finally {
+    await prisma.$disconnect();
+  }
+
+  return async () => {
+    const restoreClient = new PrismaClient();
+    try {
+      if (otherAdminIds.length > 0) {
+        await restoreClient.user.updateMany({ where: { id: { in: otherAdminIds } }, data: { role: "ADMINISTRATOR" } });
+      }
+    } finally {
+      await restoreClient.$disconnect();
+    }
+  };
 }
 
 export async function login(
@@ -86,14 +140,32 @@ export async function navigate(page: Page, label: string): Promise<void> {
   await page.getByRole("link", { name: label, exact: true }).click();
 }
 
-export async function createRequesterTicket(page: Page, summary: string): Promise<string> {
+export async function createRequesterTicket(page: Page, summary: string, attachment?: { name: string; mimeType: string; buffer: Buffer }): Promise<string> {
   await navigate(page, "Create Ticket");
+  const createAnother = page.getByRole("button", { name: "Create Another", exact: true });
+  if (await createAnother.isVisible()) await createAnother.click();
   await page.locator("#categoryId").selectOption({ index: 1 });
   await page.locator("#relatedSystemId").selectOption({ index: 1 });
   await page.locator("#summary").fill(summary);
   await page.locator("#description").fill("Issue 42 integrated verification ticket description.");
+  if (attachment) await page.locator('input[type="file"]').setInputFiles(attachment);
   await page.getByRole("button", { name: "Submit" }).click();
   const ticketNumber = (await page.locator(".ticket-info-value").first().innerText()).trim();
   expect(ticketNumber).toMatch(/^TKT-\d{4}-\d{6}$/);
   return ticketNumber;
+}
+
+export async function readAttachmentFromDetail(page: Page, filename: string): Promise<void> {
+  const row = page.locator(".attachment-row").filter({ hasText: filename });
+  await expect(row).toBeVisible();
+  const popupPromise = page.waitForEvent("popup");
+  await row.getByRole("button", { name: "Preview" }).click();
+  const preview = await popupPromise;
+  await expect.poll(() => preview.url()).toMatch(/^blob:/);
+  await preview.close();
+
+  const downloadPromise = page.waitForEvent("download");
+  await row.getByRole("button", { name: "Download" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe(filename);
 }

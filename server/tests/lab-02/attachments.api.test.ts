@@ -312,11 +312,18 @@ describe("API-ATT-05: Preview/download for active vs removed", () => {
       originalFilename: "test.jpg",
     });
 
+    const origin = process.env.CORS_ORIGIN ?? "http://localhost:5173";
     const res = await request(app)
       .get("/api/attachments/1/download")
+      .set("Origin", origin);
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/jpeg");
+    expect(res.headers["access-control-allow-origin"]).toBe(origin);
+    expect(res.headers["access-control-allow-credentials"]).toBe("true");
+    expect(res.headers["access-control-expose-headers"]).toContain("Content-Disposition");
+    expect(res.headers["access-control-expose-headers"]).toContain("X-CSRF-Token");
+    expect(res.headers["content-disposition"]).toContain('filename="test.jpg"');
   });
 
   it("download returns 410 ATTACHMENT_REMOVED for removed attachment", async () => {

@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { test, expect } from "@playwright/test";
-import { USERS, createRequesterTicket, login, navigate, resetAccount } from "./helpers";
+import { E2E_ATTACHMENT, USERS, createRequesterTicket, login, navigate, readAttachmentFromDetail, resetAccount } from "./helpers";
 
 function screenshot(folder: string, file: string): string {
   const directory = path.resolve(`artifacts/lab-03/screenshots/${folder}`);
@@ -26,21 +26,38 @@ test.describe("E2E-02: Staff ticket queue and detail operations", () => {
   });
 
   test("searches, assigns, prioritizes, transitions, comments, and records a private note", async ({ page }) => {
-    const summary = `Issue 42 staff ${Date.now()}`;
+    const summaries = Array.from({ length: 11 }, (_, index) => `Issue 42 staff ${String(index).padStart(2, "0")} ${Date.now()}`);
+    let ticketNumber = "";
     await login(page, USERS.requester.email);
-    const ticketNumber = await createRequesterTicket(page, summary);
+    for (const [index, summary] of summaries.entries()) {
+      const createdNumber = await createRequesterTicket(page, summary, index === 0 ? E2E_ATTACHMENT : undefined);
+      if (index === 0) ticketNumber = createdNumber;
+    }
     await page.getByRole("button", { name: "Logout" }).click();
     await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 
     await login(page, USERS.staff.email);
     await navigate(page, "Ticket Queue");
     await expect(page.getByRole("heading", { name: "Ticket Queue" })).toBeVisible();
-    await page.getByLabel("Search tickets").fill(summary);
-    await expect(page.locator(".tickets-table-wrapper:visible, .tickets-cards:visible").getByText(summary, { exact: true })).toBeVisible();
+    await page.getByLabel("Search tickets").fill("Issue 42 staff");
+    await expect(page.locator(".pagination-info")).toHaveText("Showing 1–10 of 11 tickets");
+    const summaryHeader = page.getByRole("columnheader", { name: "Summary" });
+    if (await summaryHeader.isVisible()) {
+      await summaryHeader.click();
+      await summaryHeader.click();
+      await expect(summaryHeader).toHaveAttribute("aria-sort", "ascending");
+      await expect(page.locator(".tickets-table-wrapper:visible tbody tr").first()).toContainText(summaries[0]);
+    }
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(page.locator(".pagination-info")).toHaveText("Showing 11–11 of 11 tickets");
+    await page.getByRole("button", { name: "Previous" }).click();
+    await page.getByLabel("Search tickets").fill(summaries[0]);
+    await expect(page.locator(".tickets-table-wrapper:visible, .tickets-cards:visible").getByText(summaries[0], { exact: true })).toBeVisible();
     await page.screenshot({ path: screenshot("staff-queue", "queue-filtered") });
     await page.getByRole("button", { name: "Open Detail" }).click();
     await expect(page.getByRole("heading", { name: ticketNumber })).toBeVisible();
     await page.screenshot({ path: screenshot("staff-ticket-detail", "detail-unassigned") });
+    await readAttachmentFromDetail(page, E2E_ATTACHMENT.name);
 
     await page.getByLabel("Ticket Owner").selectOption({ label: `${USERS.adminPeer.name} — Administrator` });
     await page.getByRole("button", { name: "Assign", exact: true }).click();

@@ -5,7 +5,6 @@ import path from "node:path";
 const serverRequire = createRequire(path.resolve("server/package.json"));
 const dotenv = serverRequire("dotenv") as { config: (options: { path: string }) => void };
 dotenv.config({ path: path.resolve("server/.env") });
-process.env.E2E_DATABASE_URL ??= process.env.DATABASE_URL;
 
 const e2eDatabaseUrl = process.env.E2E_DATABASE_URL;
 if (!e2eDatabaseUrl) {

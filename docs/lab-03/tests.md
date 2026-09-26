@@ -51,6 +51,42 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-26 — Issue #42 E2E review follow-up (attachment filename CORS and mobile admin dialogs)**
+  - Scope: exposed `Content-Disposition` alongside `X-CSRF-Token`; asserted configured-origin
+    CORS headers and original attachment filename; closed rejected edit dialogs before mobile
+    navigation. E2E-01..04 statuses now reflect the complete passing 42-test browser run.
+  - Tests changed: `server/tests/lab-02/attachments.api.test.ts` API-ATT-05 and
+    `e2e/lab-03/user-administration.spec.ts`; prior E2E coverage changes remain in
+    `e2e/lab-03/authentication.spec.ts`, `helpers.ts`, `requester-regression.spec.ts`, and
+    `staff-ticket-flow.spec.ts`.
+  - Earlier full-run evidence: **26 passed, 16 failed**; subsequent visible run: **34 passed,
+    8 failed**. The latter showed six attachment downloads returning `download.png` instead of
+    `issue-42-continuity.png`, and two mobile admin checks timing out because the edit-dialog
+    overlay intercepted the hamburger click.
+  - Red/green verification: API-ATT-05 failed as expected before the app fix because
+    `Content-Disposition` was not exposed. After the fix, the focused API-ATT-05 test passed
+    **5/5**, and the full attachment API file passed **41/41**.
+  - Final browser verification: `npx.cmd playwright test e2e/lab-03 --workers=1` exited 0;
+    **42 passed, 0 failed, 0 skipped** across desktop, tablet, and mobile. `git diff --check`
+    exited 0; only Git line-ending normalization warnings were emitted.
+  - Follow-up: none for these test failures. This is not a REL-12 run or release approval.
+
+- **2026-09-25 — Issue #42 E2E safety and coverage patch**
+  - Scope: removed implicit `DATABASE_URL` adoption; expanded E2E-01..04 assertions and changed
+    only those four Test-DD statuses to `Implemented`.
+  - Test paths changed: `e2e/lab-03/authentication.spec.ts`, `staff-ticket-flow.spec.ts`,
+    `user-administration.spec.ts`, and `requester-regression.spec.ts`.
+  - Playwright tests: **0 passed, 0 failed, 0 skipped; not run**. `npm.cmd exec playwright test --
+    --list` exited 1 at config load with `Set E2E_DATABASE_URL to a disposable PostgreSQL
+    database before running Playwright.`; discovery did not begin. No isolated `E2E_DATABASE_URL`
+    was supplied.
+  - Other verification: `npm.cmd --prefix server run build` passed (exit 0). The client command,
+    `npm.cmd --prefix client run build`, initially hit a sandbox-only ancestor-directory access
+    denial; parent reran it outside the sandbox and confirmed exit 0. `git diff --check` passed
+    (exit 0).
+  - Follow-up: provide an isolated E2E database before running Playwright or REL-12. No E2E or
+    REL-12 pass is claimed.
+
 - **2026-09-25 — Issue #42 final verification evidence reconciliation**
   - Prompt scope: reconcile final Issue #42 verification and acceptance evidence; preserve all
     release blockers and do not mark release/sign-off green.
@@ -946,10 +982,10 @@ security/authorization, migration/regression, and end-to-end coverage.
 | VISUAL-01 | Responsive | All major screens | Desktop/tablet/mobile screenshots | `e2e/lab-03/responsive-visual.spec.ts` | FR-08 | — | AC-22 | Passed |
 | VISUAL-02 | Responsive | Staff Queue presentation | Desktop readable table (no horizontal overflow); tablet condensed; mobile cards; all required info accessible | `e2e/lab-03/responsive-visual.spec.ts` | FR-14 | — | AC-10, AC-22 | Passed |
 | A11Y-01 | Accessibility | Keyboard/focus/aria | Keyboard-operable; focus visible | `e2e/lab-03/keyboard-access.spec.ts` | FR-08 | — | AC-23 | Passed |
-| E2E-01 | E2E | Authentication flow | Login → change password → app → logout | `e2e/lab-03/authentication.spec.ts` | FR-01–06 | BR-01–10 | AC-01, AC-02, AC-05, AC-06 | Passed |
-| E2E-02 | E2E | Staff ticket flow | Queue → detail → claim → priority → status → comments/notes | `e2e/lab-03/staff-ticket-flow.spec.ts` | FR-14–20 | BR-14–18 | AC-10–14 | Passed |
-| E2E-03 | E2E | User administration | List → search → create → edit → initial password | `e2e/lab-03/user-administration.spec.ts` | FR-21–26 | BR-25–30 | AC-15–19 | Passed |
-| E2E-04 | E2E | Requester regression | Create → My Tickets → detail → comments → appears resolved (removes Dev Requester selector) | `e2e/lab-03/requester-regression.spec.ts` | FR-10–13 | BR-05, BR-11, BR-19 | AC-07–09 | Passed |
+| E2E-01 | E2E | Authentication flow | Login → change password → app → logout; inactive account safe failure/no shell | `e2e/lab-03/authentication.spec.ts` | FR-01–06 | BR-01–10 | AC-01, AC-02, AC-05, AC-06 | Passed |
+| E2E-02 | E2E | Staff ticket flow | Queue → sort/pagination → detail → claim → priority → status → comments/notes/attachment read | `e2e/lab-03/staff-ticket-flow.spec.ts` | FR-14–20 | BR-14–18 | AC-10–14 | Passed |
+| E2E-03 | E2E | User administration | List → search → create → edit → reset; invalid input, self-deactivation, last-admin demotion, non-admin denial | `e2e/lab-03/user-administration.spec.ts` | FR-21–26 | BR-25–30 | AC-15–19 | Passed |
+| E2E-04 | E2E | Requester regression | Create/list/detail/comments/appears-resolved and attachment continuity; no Dev Requester controls | `e2e/lab-03/requester-regression.spec.ts` | FR-10–13 | BR-05, BR-11, BR-19 | AC-07–09 | Passed |
 
 ## 6. Requirement → Test Mapping Summary
 Every Acceptance Criterion maps to at least one planned test:

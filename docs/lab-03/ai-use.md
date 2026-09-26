@@ -2,6 +2,41 @@
 
 **LLM/agent used:** GitHub Copilot (DeepSeek V4 Flash 0731)
 
+## Issue #42 E2E review follow-up (2026-09-26)
+
+- Prompt summary: address observed attachment download filename and mobile admin-dialog failures
+  in the authorized Issue #42 E2E review packet; retain scope and do not commit or push.
+- Agent used: OpenAI Codex.
+- Work performed: Added API-ATT-05 assertions for configured-origin CORS, credentials, exposed
+  `X-CSRF-Token`/`Content-Disposition`, and original filename. Exposed `Content-Disposition` in
+  app CORS configuration. The two rejected admin-edit tests now cancel and close their dialogs
+  before checking mobile navigation. Updated E2E-01..04 statuses after the complete passing run.
+- Verification: the pre-fix API-ATT-05 assertion failed because `Content-Disposition` was not
+  exposed; afterward API-ATT-05 passed 5/5 and the full attachment API file passed 41/41. A prior
+  browser rerun had 34 passed/8 failed (six filename mismatches and two mobile overlay timeouts).
+  Final `npx.cmd playwright test e2e/lab-03 --workers=1` passed 42/42 across desktop, tablet, and
+  mobile. `git diff --check` exited 0 with Git line-ending normalization warnings. E2E_DATABASE_URL was derived for isolated `lab3e2e`, set
+  only in the test process, and never printed. REL-12 was not run.
+- Reflection: browser evidence now covers attachment filename access and dialog dismissal across
+  all three projects; release/REL-12 gates remain separate.
+
+## Issue #42 E2E safety and coverage (2026-09-25)
+
+- Prompt summary: User requested review, fixes, and PR preparation for Issue #42. The authorized
+  patch addresses the E2E database fallback, missing planned coverage, and unsupported Passed
+  statuses without changing product behavior.
+- Agent used: OpenAI Codex.
+- Work performed: Removed Playwright's fallback from `DATABASE_URL` to `E2E_DATABASE_URL`;
+  added inactive-login coverage, Staff sort/pagination and attachment-read assertions, Admin
+  invalid-input/authorization/guard assertions, and Requester attachment and removed-selector
+  assertions. Changed E2E-01..04 to Implemented and recorded this verification state.
+- Verification: `npm.cmd exec playwright test -- --list` exited 1 at config load because
+  `E2E_DATABASE_URL` was absent; test discovery did not begin. `npm.cmd --prefix server run build`
+  passed. `npm.cmd --prefix client run build` passed when parent reran it outside the sandbox
+  after an ancestor-directory access denial. `git diff --check` passed. Playwright execution and
+  REL-12 remain not run without an isolated E2E database.
+- Reflection: E2E rows now describe implemented assertions without claiming database-backed runs.
+
 ## Issue #42 final verification reconciliation (2026-09-25)
 
 - Prompt summary: reconcile final Issue #42 verification documents using confirmed run evidence,
