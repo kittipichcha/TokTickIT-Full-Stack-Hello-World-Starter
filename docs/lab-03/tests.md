@@ -61,6 +61,17 @@ assertions inside `auth.api.test.ts`.
 
 ### Results Log (newest first)
 
+- **2026-09-27 — Issue #50 Lab 4 contract documentation audit**
+  - Scope: document only the Lab 4 contract task; no Lab 3 requirements or test statuses changed.
+  - Tests changed/run: no executable Lab 3 test code changed. Added planned Lab 4 matrix rows
+    `API-WF-04` and `UI-WF-02`; no Lab 4 executable tests were run. Result: **0 run, 0 passed,
+    0 failed, 0 skipped**.
+  - Commands run: `git status --short --branch` confirmed the expected Issue #50 worktree and
+    clean starting state; documentation consistency/search checks and `git diff --check` were
+    run after the edits. No runtime or full test suite was run.
+  - Follow-up: human review of the four Lab 4 contract files remains pending. This record does
+    not claim Lab 4 implementation, integration, or test evidence.
+
 - **2026-09-26 — Issue #42 PR #56 review and partner-review log reconciliation**
   - Scope: record human approval on PR #56 current head `466695c` and partner PR review history
     for PRs #66–#74; reconcile current release-status references.

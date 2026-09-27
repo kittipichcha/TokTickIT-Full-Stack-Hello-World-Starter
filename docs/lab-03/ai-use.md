@@ -2,6 +2,20 @@
 
 **LLM/agent used:** GitHub Copilot (DeepSeek V4 Flash 0731)
 
+## Issue #50 Lab 4 contract documentation audit (2026-09-27)
+
+- Prompt summary: coordinate documentation for GitHub Issue #50 using the Lab 4 handout and
+  source drafts, reconcile with the integrated Lab 3 contract, and avoid runtime implementation
+  claims.
+- Agent used: OpenAI Codex.
+- Work performed: drafted Lab 4 specification, API contract, UI contract, planned tests, and
+  pending human-review record. Added only a factual Lab 4 audit entry to this Lab 3 AI-use log;
+  no Lab 3 product behavior or test status changed.
+- Verification: documentation checks and `git diff --check` were run; no executable tests were
+  run. Review and test evidence limitations are recorded in the Lab 4 files.
+- Reflection: keeping the Lab 3 log limited to this contract audit preserves the boundary between
+  planned Lab 4 behavior and verified Lab 3 runtime evidence.
+
 ## Issue #42 PR #56 review and partner-review log reconciliation (2026-09-26)
 
 - Prompt summary: update the Issue #42 review record after human approval and record partner PR
