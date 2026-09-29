@@ -1,6 +1,6 @@
-**# TokTickIT Lab 3 Agent Working Agreement**
+**# TokTickIT Lab Agent Working Agreement**
 
-This file defines how the coding agent must operate for Lab 3 work in this repository.
+This file defines how the coding agent must operate for Lab 3 and Lab 4 work in this repository.
 
 ## 0. Requirement Primacy and User Prompt Rule
 
@@ -173,10 +173,14 @@ Outsider-perspective end-to-end review discipline for plans, code changes, and P
 
 ## 7. Test Logging Requirement
 
-After each completed task, insert the newest result entry at the **top** of the Results Log
-(prepend each completed task result under the Results Log heading — newest first):
+After each completed task, log results in the documentation for the Lab that owns the task.
+Insert the newest result at the top of that Lab's Results Log (newest first):
 
-* `docs/lab-03/tests.md` (Section: Results Log, newest first)
+* Lab 3 tasks: `docs/lab-03/tests.md` (Results Log)
+* Lab 4 tasks: `docs/lab-04/tests.md` (Results Log)
+
+Keep historic Lab 3 test evidence in Lab 3 records. Do not append a Lab 4 task result to a
+Lab 3 log solely because the task touches a shared workflow document.
 
 Each entry must include:
 
@@ -189,9 +193,10 @@ Each entry must include:
 
 ## 8. AI Usage Log Requirement
 
-After each completed task, update:
+After each completed task, update the AI-use log for the Lab that owns the task:
 
-* `docs/lab-03/ai-use.md`
+* Lab 3 tasks: `docs/lab-03/ai-use.md`
+* Lab 4 tasks: `docs/lab-04/ai-use.md`
 
 Format must match Lab 1 style in:
 
@@ -267,9 +272,9 @@ No autonomous PR creation or Kanban state changes without user approval.
 6. Run project formatters and linters (e.g., `npm run lint`, `npm run format`) to ensure code style compliance.
 7. Perform double-check alignment method (Section 4) to verify own work.
 8. Report results and alignment status.
-9. Update `docs/lab-03/tests.md` (newest log entry; set initial status to `Planned` before verification).
-10. Update `docs/lab-03/ai-use.md` in Lab 1 style.
-11. **Update `docs/lab-03/reviewer.md**` — whenever changes are made in response to peer review feedback, you must append it to the review record using this exact format:
+9. Update the owning Lab's `tests.md` Results Log (newest first; initialize new test rows as `Planned`).
+10. Update the owning Lab's `ai-use.md` in Lab 1 style.
+11. **Update the owning Lab's `reviewer.md`** — whenever changes are made in response to peer review feedback, append it to that Lab's review record using its existing format:
 * **Rule:** Only log feedback if it comes directly from a **human reviewer**. Do NOT log automated comments from CI bots, agents, or unknown sources.
 * **Format:**
 ```md

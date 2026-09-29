@@ -19,6 +19,7 @@ payloads, or workflow races. Never expose Internal Notes or audit metadata to Re
 Integer IDs, versions, pages, and limits use non-negative decimal integer syntax. JSON bodies
 must be objects with `Content-Type: application/json`; unknown fields are ignored, consistent
 with Lab 3. The maximum Action list page size is 50. Dashboard summary lists are bounded to 10.
+Ticket identifiers use canonical form such as `TKT-2026-000001`.
 
 ## 2. Action data contract
 
@@ -59,7 +60,7 @@ Response `200`:
 
 ```json
 {
-  "data": [{ "id": 1, "ticketNumber": "TK-2026-0001", "description": "Replaced cable",
+  "data": [{ "id": 1, "ticketNumber": "TKT-2026-000001", "description": "Replaced cable",
     "result": null, "followUpRequired": false, "followUpNote": null,
     "attachmentNotes": null, "status": "PENDING",
     "performedBy": { "id": 4, "name": "Staff One" }, "assignee": null,
@@ -79,12 +80,21 @@ above.
 Auth: IT Staff/Administrator. Ticket must be accessible under the Lab 3 staff scope and not be
 `RESOLVED`, `CLOSED`, or `CANCELLED`. A Pending Action is not created on a terminal Ticket.
 
-Header `Idempotency-Key` is required; 1–128 printable ASCII characters. Repeating the same key
-and canonical request for the same authenticated actor returns the original `201` response and
-creates no second row; every successful identical replay uses `201` consistently. Reusing the key
-with a different payload returns `409 CONFLICT`. Keys are
-scoped to actor and endpoint; retain them for at least 24 hours. Client must reuse the key only
-for retry of the same operation.
+Header `Idempotency-Key` is required; 1–128 printable ASCII characters. Normalize the recognized
+ordered fields `description`, `result`, `followUpRequired`, `followUpNote`, `attachmentNotes`,
+`assigneeUserId` before validation and hashing. Trim text; normalize absent, null, or blank optional
+text to `null`; default absent `followUpRequired` to `false` (explicit null or non-boolean fails);
+normalize absent/null `assigneeUserId` to `null`, otherwise require a positive JSON integer.
+Ignore unknown and server-owned fields. Validate normalized values. Hash UTF-8
+`JSON.stringify` of the normalized ordered fields with SHA-256.
+
+Persist an idempotency record atomically with the Action for 24 hours, uniquely scoped by
+authenticated actor, concrete route (including Ticket number), and key. Store the normalized
+request hash, Action identity, original `201` response, creation time, and expiry. Repeating the
+same key and hash returns the original `201` response and creates no row; a different hash returns
+`409 CONFLICT`. Failed requests create no record. Concurrent identical requests create only one
+Action. Actors and concrete routes have independent key scopes. An expired key is atomically
+replaced by a fresh operation.
 
 Body:
 
@@ -126,28 +136,55 @@ increments version, and appends one immutable `ActionTakenRevision` containing a
 version before/after, and complete before/after editable-field snapshots. A mismatch returns
 `409 CONFLICT` and changes nothing. Response `200`: `{ "data": <updated Action response> }`.
 
-## 7. Ticket status compatibility extension
+## 7. Shared Ticket concurrency
 
-Retain `PATCH /api/staff/tickets/:ticketNumber/status` and its Lab 3 role, ownership, body, and
-response semantics. Accept optional positive integer `expectedVersion`. Old clients that send
-only `{ "status": "IN_PROGRESS" }` remain valid. The Lab 4 UI must always send the current
-Ticket `version`; supplied stale versions return `409 CONFLICT` without mutation. Return
+The existing `POST /api/staff/tickets/:ticketNumber/owner`,
+`PATCH /api/staff/tickets/:ticketNumber/priority`, and
+`PATCH /api/staff/tickets/:ticketNumber/status` accept optional positive integer
+`expectedVersion`. An invalid supplied value returns `400 VALIDATION_ERROR`; a stale value returns
+`409 CONFLICT` without mutation. Omission preserves Lab 3 compatibility. Compare, mutation, and
+version increment are atomic across these endpoints. Every successful owner, priority, or status
+request increments shared `Ticket.version` exactly once, even when the requested value equals the
+current value. Initialize `Ticket.version` to 1 for new and existing Tickets. Include `version` in
+staff Ticket Detail and successful mutation responses.
+
+The owner endpoint retains its existing assignment body. A Ticket must have a non-null owner
+before a status change, but any authorized IT Staff or Administrator may make the change; the
+acting user need not be the Ticket Owner. The Lab 4 UI sends current version for all three
+mutations. On conflict, preserve recoverable input, refresh the Ticket, and do not retry
+automatically.
+
+## 8. Ticket status compatibility extension
+
+Retain status route's Lab 3 body and response semantics. Old clients that send only
+`{ "status": "IN_PROGRESS" }` remain valid. Successful status response is
 `{ "data": { "currentStatus": "IN_PROGRESS", "version": 3 } }`; `version` is additive.
-
-Add integer `Ticket.version`, initially 1. Increment it on each formal Ticket status transition.
-Include `version` in the staff Ticket Detail response and in the successful status response. This
-field is additive; existing clients may ignore it. The Lab 4 UI reads it from staff Ticket Detail.
 The status update and Pending Action resolution check run atomically. Serialize against Action
 creation and completion/cancellation so no committed state can have a `RESOLVED` Ticket with a
 Pending Action. A Pending Action blocks only transition to `RESOLVED`; zero Actions or all
-terminal Actions permit resolution when the Lab 3 transition and ownership rules permit it.
+terminal Actions permit resolution when Lab 3 transition and owner-presence rules permit it.
 
 Each successful status change appends immutable `TicketStatusChange` with Ticket ID, actor ID,
 UTC timestamp, from/to status, and version before/after. The Ticket's current status remains the
-source of truth. Do not change unrelated Lab 3 response fields. Reopening a Ticket does not
-restore old Actions to Pending; a new Action is a distinct record.
+source of truth. Reopening a Ticket does not restore old Actions to Pending; a new Action is a
+distinct record.
 
-## 8. GET /api/requester/dashboard
+## 9. GET /api/staff/tickets/:ticketNumber/status-history
+
+Auth: IT Staff/Administrator. Requesters receive `403 FORBIDDEN`; unauthenticated callers receive
+`401 UNAUTHENTICATED`; an absent Ticket returns `404 NOT_FOUND`.
+
+Query: `page` defaults to 1; `pageSize` defaults to 10 and has maximum 50. Both must be positive
+integers. Invalid values return `400 VALIDATION_ERROR`. Results have fixed ascending
+`(changedAt, id)` order.
+
+Response `200` contains `data` entries with exactly `id`, `ticketNumber`,
+`changedBy: { id, name }`, `changedAt`, `fromStatus`, `toStatus`, `versionBefore`, and
+`versionAfter`, plus `pagination: { page, pageSize, totalItems, totalPages }`. No Requester
+history route or projection exists. Each successful formal status change writes exactly one
+immutable row; failed changes write none.
+
+## 10. GET /api/requester/dashboard
 
 Auth: Requester. Every query uses the session Requester ID. Response has `data.generatedAt` UTC,
 `windowStart` UTC, numeric `counts`, and bounded `lists`; an empty count is 0 and an empty list is
@@ -201,7 +238,7 @@ Response shape:
   } } }
 ```
 
-## 9. GET /api/staff/dashboard
+## 11. GET /api/staff/dashboard
 
 Auth: IT Staff/Administrator. Counts use the authenticated user for “mine”; no user ID query is
 accepted. `generatedAt` and `windowStart` follow the Requester dashboard UTC rule. Counts:
@@ -283,14 +320,37 @@ Response shape:
   } } }
 ```
 
-## 10. Concurrency, migration, and regression requirements
+## 12. Concurrency, migration, and regression requirements
 
-Action updates use version compare-and-swap. Ticket status writes, Action creation, and Action
-status writes must use a database transaction/locking strategy that serializes the resolution
-invariant. Idempotency persistence is unique by actor/key/route. Migration adds Action,
-ActionTakenRevision, TicketStatusChange, Ticket version, and nullable `resolvedAt`; it preserves
-existing row IDs and values. Do not infer historical `resolvedAt` from `updatedAt`. Seed is
-repeatable. Recovery and backup/restore steps must be documented and tested by the owning
-implementation issue. No Lab 3 endpoint response changes except the additive optional status
-version contract; dashboard filter query extensions for Requester Tickets and the staff Queue
-are additive and preserve all existing query behavior when omitted.
+Action updates use version compare-and-swap. Ticket owner/priority/status writes, Action creation,
+and Action status writes must use a database transaction/locking strategy that serializes the
+shared version and resolution invariant. Persist `ActionCreateIdempotency` rows with actor ID,
+concrete route, key, normalized request SHA-256, Action ID, original 201 response, creation time,
+and 24-hour expiry; enforce uniqueness on actor/route/key and create the row atomically with the
+Action. Migration adds Action, ActionTakenRevision, TicketStatusChange,
+ActionCreateIdempotency, Ticket version, and nullable `resolvedAt`; it preserves existing row IDs
+and values. Do not infer historical `resolvedAt` from `updatedAt`. Seed is repeatable.
+`ActionCreateIdempotency` is the durable record for Action-create idempotency: unique
+`(actorUserId, route, key)`, normalized request SHA-256, Action ID, original 201 response, created
+time, and expiry at least 24 hours after creation.
+
+Migration precondition is completed and verified Lab 3 Phase A, identity/attachment/priority
+backfill, and Phase C. Stop application writers; take a full custom-format PostgreSQL snapshot
+and paired attachment-storage snapshot; record identifiers, versions, counts, and hashes. Restore
+the database into a separate empty rehearsal DB and verify migration history, counts, IDs, foreign
+keys, and representative attachment references. Verify every attachment object hash. Only then
+apply additive Lab 4 migration and validate preserved records, relationships, attachment hashes,
+and zero-Action Ticket behavior before writers resume. Before any accepted Lab 4 write, a failed
+migration or validation restores the database and attachment snapshots together. After any Lab 4
+write is accepted, never restore the old snapshots; stop affected writes, preserve current state,
+and forward-recover through an approved corrective migration/fix. The implementation issue must
+test each gate and recovery boundary.
+
+Retain Lab 3 authentication/session, CSRF, role and ownership checks, existing Ticket routes and
+semantics, attachments, Public Comments, Internal Notes, and administrator operations. Add only
+the approved Action, status-history, concurrency, dashboard, and response-field behavior. Existing
+Lab 3 clients may omit optional `expectedVersion`; Lab 4 clients send current versions. Keep old
+Lab 1/Lab 2/Lab 3 automated test paths and assertions. Adapt an old expectation only when an
+explicit Lab 4 additive contract changes it; document the specific expectation and replacement
+assertion, then run the complete prior-lab API/integration/E2E regression set against the integrated
+branch.

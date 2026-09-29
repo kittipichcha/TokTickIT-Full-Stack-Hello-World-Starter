@@ -56,6 +56,13 @@ stable order. Show description, Result, follow-up indicator/note, Attachment Not
 assignee, performer, and created time to authorized staff. Keep Internal Notes visually and
 semantically separate.
 
+The dashboard is the first useful screen for each role, but it does not replace the Lab 3
+application shell or routes. Preserve existing navigation and working flows for Ticket Queue,
+Ticket Detail, ownership, priority, status, attachment upload/download, Public Comments, Internal
+Notes, and administrator functions. Dashboard cards link into those existing Queue or Ticket
+Detail destinations. Keep existing route behavior and controls available when a user navigates
+away from the dashboard; do not duplicate or strand prior-lab functions.
+
 Staff/Admin can create Actions, assign/unassign an eligible staff/Admin, and edit a Pending Action.
 Creation form fields: Description (required), Result, Follow-up Required, conditional Follow-up
 Note, Attachment Notes, and optional Assignee. Do not expose a client-editable performer, created
@@ -78,7 +85,18 @@ text, status, performer/assignee display names, and creation time. Do not show u
 role, version, revision history, Internal Notes, or Action write/assignment controls. Preserve
 ownership-safe 404 behavior.
 
-## 4. Ticket status control
+## 4. Ticket status history and concurrency
+
+Staff and Administrators can open formal Ticket status history from Ticket Detail. Show
+`changedAt`, previous/next status, actor name, and version before/after in paginated ascending
+chronological order with a stable tie-breaker. Requesters have no history control or history data.
+
+Ownership, priority, and status mutations send the current Ticket `expectedVersion`. On stale
+conflict, retain recoverable form data, explain that Ticket changed, and refresh before another
+attempt; never retry automatically. Status changes continue to show the pending-Action resolution
+conflict safely.
+
+## 5. Ticket status control
 
 Offer only transitions permitted by the specification matrix for the current status and role.
 Reopened offers In Progress and Cancelled; In Progress offers Waiting for Requester, Resolved,
@@ -92,7 +110,7 @@ Ticket summary. On stale version or resolution-gate conflict, preserve the curre
 explain that Ticket state changed; refresh before a retry. A requester “Problem Appears Resolved”
 control remains advisory and never changes status.
 
-## 5. Accessibility, responsive behavior, and state coverage
+## 6. Accessibility, responsive behavior, and state coverage
 
 Dashboard cards are links/buttons with meaningful accessible names that include metric and count.
 Do not make non-interactive card containers focusable. Action forms associate labels, required
