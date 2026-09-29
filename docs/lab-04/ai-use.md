@@ -1,5 +1,13 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #50 PR #58 re-review contract revision (2026-09-29)
+
+- Prompt summary: resolve remaining uncertainty in role navigation, staff dashboard response and Action destinations, Action completion/cancellation and inactive-assignee behavior, status-history authorization, schema indexes/idempotency expiry, and final hardening evidence.
+- Agent used: OpenAI Codex.
+- Work performed: froze exact role navigation, active parent, and mobile-menu behavior; specified all eight status and three priority mappings; separated Action metric counts from per-Action destinations; defined same-Ticket complete/cancel outcomes and inactive-assignee HTTP 409 with no mutation and retained inputs; clarified status-history access and non-null-owner requirement; listed exact non-Ticket indexes, unique idempotency constraint, bounded expiry cleanup, and no new Ticket indexes; expanded planned UI/E2E assertions, including the ordered E2E-01 sequence of inactive-assignee rejection while B is Pending, blocked resolution while Actions remain Pending, completion of A, cancellation of B, and successful resolution; and added planned `HARDEN-01` for all five README rehearsal procedures. The supplied review excerpt did not establish reviewer provenance, so no human-review attribution was added. No runtime, schema, migration, or executable test changed.
+- Verification: `git diff --check` passed; API JSON parse/key/destination audit passed; persistence/index/cleanup/authorization audit passed; 41-row Planned matrix, all 27 AC mappings, and exact five-path allowlist audits passed. No executable tests, browser, Prisma, migration, or database restore were run.
+- Reflection: defining visible destinations and persistence constraints with test evidence reduces implementation choices that affect behavior.
+
 ## Issue #50 migration fixture contract revision 3 (2026-09-29)
 
 - Prompt summary: close ambiguity in the Lab 3 Prisma fixture override validation and specify tests for both isolated historical and full normal migration paths.

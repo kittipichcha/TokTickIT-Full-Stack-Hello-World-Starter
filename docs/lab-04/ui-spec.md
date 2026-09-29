@@ -27,6 +27,20 @@ User Management navigation. Requester never sees staff cards, internal notes, Ac
 controls, user IDs, assignee role, or audit history. Requesters may see performer and assignee
 display names as read-only attribution. Staff dashboards never expose Admin user metrics.
 
+The application shell provides persistent, state-based primary navigation. Requesters see
+Dashboard, My Tickets, and Create Ticket in that order; Dashboard opens Requester Dashboard.
+IT Staff see Dashboard then Ticket Queue; Dashboard opens Staff Dashboard. Administrators see
+Dashboard, Ticket Queue, then User Management; Dashboard opens Staff Dashboard. Ticket Detail
+remains reachable from its role's Ticket list and dashboard results.
+The active destination is derived from the current route, not a separate toggle. Dashboard is
+active on the corresponding role dashboard; My Tickets is active for Requester Ticket Detail;
+Ticket Queue is active for Staff/Admin Ticket Detail; User Management is active on its page and
+descendant pages. Ticket Detail identifies its list parent without marking Dashboard active.
+Requesters never receive staff or administrator destinations. At widths below 768px, collapse
+primary navigation into a labeled, keyboard-operable menu; expose its expanded state, close it
+after navigation, and preserve the current-route active indication. At desktop and tablet widths,
+keep primary navigation visible.
+
 Requester cards show Open Tickets, Waiting for Requester, Recently Updated (rolling 7 days), and
 Recently Resolved (rolling 7 days). Staff cards show Unassigned, My Tickets, counts by each
 Ticket status, counts by IT Priority, My Pending Assigned Actions, My Recently Performed Actions,
@@ -34,13 +48,16 @@ Recently Updated, and Urgent. Dashboard count definitions, UTC window, zero beha
 summaries follow the API contract exactly. Show “0” for zero counts and concise empty copy; do not
 render an error for empty data.
 
-Each card/list provides a working drill-down with the exact API contract filters. Requester cards
+Each actionable card/list provides a working drill-down with the exact API contract filters.
+Count-only Action metrics are not interactive and are not presented as links or buttons. Requester cards
 open My Tickets using `scope=open`, `status=WAITING_FOR_REQUESTER`, `updatedSince=windowStart`,
 or `status=RESOLVED&resolvedSince=windowStart`, matching each count and list predicate; each item
 opens its owned Ticket Detail. Staff Ticket cards open the Queue using `ownerScope=unassigned`,
 `ownerScope=me`, exact `status`, exact `priority`, `updatedSince=windowStart`, or
-`priority=HIGH&openOnly=true`, matching each count. Action cards open the associated Ticket
-Detail, select the matching Action, and focus or anchor the Actions area.
+`priority=HIGH&openOnly=true`, matching each count. Action summary rows—not aggregate count cards—
+open the associated Ticket Detail, select the matching Action by that row's Action ID, and focus
+or anchor the Actions area. The aggregate Action metric has no single `actionId` destination. If
+there are no matching Action rows, show the numeric zero and empty guidance without an Action link.
 Show the UTC seven-day window in human-readable local display while preserving the server UTC
 boundary. State that the period is the last seven days; do not imply calendar-week dates.
 
@@ -75,6 +92,20 @@ Result. Terminal Actions are read-only. Every Lab 4 Action update sends current 
 on `409 CONFLICT`, retain recoverable form data, explain that the Action changed, and offer
 refresh/review before retry.
 
+Completion and cancellation are separate explicit choices. Completing a Pending Action requires a
+nonblank Result and saves `COMPLETED`; cancelling saves `CANCELLED` and does not require Result.
+Both choices show the resulting status before submission, send current Action `expectedVersion`,
+and retain the form on conflict. An inactive or otherwise ineligible existing assignee remains
+visible as the current value with an eligibility warning; do not silently clear it or submit it as
+a new assignment. The user must explicitly choose an eligible active Staff/Admin assignee or
+unassign before saving. A rejected ineligible assignee receives HTTP `409 CONFLICT`, leaves the
+persisted Action unchanged, and retains the submitted description, result, follow-up fields,
+attachment notes, and selected assignee so the user can correct and retry.
+
+On one Ticket, staff can complete one Pending Action and cancel a different Pending Action; each
+Action keeps its own status and audit history. The UI must not apply either outcome to every Action
+on that Ticket.
+
 For Tickets in Resolved, Closed, or Cancelled, hide/disable creation and explain that a permitted
 reopen/transition is needed before recording new work. The server remains authoritative. A Pending
 Action blocks Resolved; show clear guidance beside the status control and handle a backend conflict
@@ -87,7 +118,10 @@ ownership-safe 404 behavior.
 
 ## 4. Ticket status history and concurrency
 
-Staff and Administrators can open formal Ticket status history from Ticket Detail. Show
+Staff and Administrators can open formal Ticket status history from Ticket Detail. The history
+control and request are available only to IT Staff and Administrators; Requesters see neither the
+control nor history data. Unauthenticated requests show the sign-in state; authenticated Requester
+requests show access denied; a missing Ticket shows not found. Show
 `changedAt`, previous/next status, actor name, and version before/after in paginated ascending
 chronological order with a stable tie-breaker. Requesters have no history control or history data.
 
@@ -95,6 +129,10 @@ Ownership, priority, and status mutations send the current Ticket `expectedVersi
 conflict, retain recoverable form data, explain that Ticket changed, and refresh before another
 attempt; never retry automatically. Status changes continue to show the pending-Action resolution
 conflict safely.
+
+Status changes require a non-null primary Ticket owner; the authorized acting Staff/Admin need not
+be that owner. If no owner is assigned, disable status mutation and explain that an owner must be
+assigned first.
 
 ## 5. Ticket status control
 
@@ -112,8 +150,9 @@ control remains advisory and never changes status.
 
 ## 6. Accessibility, responsive behavior, and state coverage
 
-Dashboard cards are links/buttons with meaningful accessible names that include metric and count.
-Do not make non-interactive card containers focusable. Action forms associate labels, required
+Only dashboard cards with a defined drill-down are interactive and have meaningful accessible
+names including metric and count. Count-only Action metric cards are plain non-focusable
+containers; Action summary rows with destinations are individually named links. Action forms associate labels, required
 markers, errors, and conditional Follow-up Note using semantic markup and `aria-describedby`.
 Announce asynchronous success/failure politely; move focus to validation summary only when needed.
 Dialogs trap focus, start focus inside, close on Escape where safe, and restore focus to the

@@ -261,8 +261,8 @@ filter payloads for every card so the destination uses identical predicates:
 | My Tickets | `GET /api/staff/queue?ownerScope=me` | `ticketOwnerId = authenticated user`, any status |
 | Status | `GET /api/staff/queue?status={status}` | Exact current status |
 | Priority | `GET /api/staff/queue?priority={priority}` | Exact IT Priority, any status |
-| My Pending Actions | Ticket Detail Actions section | Action `assigneeUserId = authenticated user`, status `PENDING`; open each returned Action's Ticket Detail |
-| Recently Performed | Ticket Detail Actions section | Action `performedByUserId = authenticated user`, `createdAt >= windowStart`; open each returned Action's Ticket Detail |
+| My Pending Actions | Each matching row opens its associated Ticket Detail Actions section and selects that row's Action ID | Action `assigneeUserId = authenticated user`, status `PENDING` |
+| Recently Performed | Each matching row opens its associated Ticket Detail Actions section and selects that row's Action ID | Action `performedByUserId = authenticated user`, `createdAt >= windowStart` |
 | Recently Updated | Queue | `updatedAt >= windowStart`, any status |
 | Urgent | Queue | IT Priority HIGH, nonterminal |
 
@@ -281,12 +281,23 @@ filter and invalid-value semantics. `ownerScope` accepts only `me` or `unassigne
 accepts only `true` or `false`. `updatedSince` must be a valid ISO-8601 UTC timestamp.
 Invalid extension values return `400 VALIDATION_ERROR`. All supplied Queue filters combine with
 AND semantics; the dashboard response returns precisely the query values needed by each card.
-`byStatus` and `byPriority` return a count and matching `drillDowns` entry for every enum value.
-Status and priority links use exact matching values. `recentlyUpdatedTickets` has no status
+`byStatus` is an object with exactly these eight keys, each a non-negative integer count:
+`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`,
+`CANCELLED`. `drillDowns.byStatus` contains exactly the same eight keys. For each status key `S`,
+the value is `{ "path": "/api/staff/queue", "query": { "status": "S" } }` with that exact
+status value. `byPriority` is an object with exactly `LOW`, `MEDIUM`, and `HIGH`, each a
+non-negative integer count; `drillDowns.byPriority` contains exactly those three keys, mapped to
+the corresponding exact Queue priority query. No enum key may be omitted, renamed, or replaced
+with an aggregate. `recentlyUpdatedTickets` has no status
 restriction. `urgentTickets` uses `priority=HIGH&openOnly=true`. `myTickets` and
 `unassignedTickets` include terminal Tickets because their counts do. Action list rows are
 `{ "id": integer, "ticketNumber": string, "description": string, "status": ActionStatus,
-"createdAt": ISO-8601 UTC string }`; Ticket summary rows are `{ "ticketNumber": string,
+"createdAt": ISO-8601 UTC string }`; each Action row also includes `destination: { "path":
+"/api/tickets/:ticketNumber", "anchor": "actions", "actionId": integer }`, populated from that
+row's Ticket number and Action ID. The aggregate Action metric's `drillDowns` entry contains only
+its matching `filter`, with no `path` or `actionId`; the metric itself is not an interactive
+destination. Each Action row, not the aggregate card, has the Ticket Detail destination. Ticket
+summary rows are `{ "ticketNumber": string,
 "summary": string, "currentStatus": TicketStatus, "itPriority": LOW|MEDIUM|HIGH|null,
 "updatedAt": ISO-8601 UTC string }`. Lists are bounded at 10 and contain no Internal Notes
 or Action revision history. Action drill-down entries identify the exact matching Action and
@@ -309,12 +320,23 @@ Response shape:
   "drillDowns": {
     "unassignedTickets": { "path": "/api/staff/queue", "query": { "ownerScope": "unassigned" } },
     "myTickets": { "path": "/api/staff/queue", "query": { "ownerScope": "me" } },
-    "byStatus": { "NEW": { "path": "/api/staff/queue", "query": { "status": "NEW" } } },
-    "byPriority": { "HIGH": { "path": "/api/staff/queue", "query": { "priority": "HIGH" } } },
-    "myPendingAssignedActions": { "path": "/api/tickets/:ticketNumber", "anchor": "actions",
-      "actionId": 1, "filter": { "assignee": "me", "status": "PENDING" } },
-    "myRecentlyPerformedActions": { "path": "/api/tickets/:ticketNumber", "anchor": "actions",
-      "actionId": 1, "filter": { "performedBy": "me", "createdAtGte": "2026-09-01T10:00:00.000Z" } },
+    "byStatus": {
+      "NEW": { "path": "/api/staff/queue", "query": { "status": "NEW" } },
+      "OPEN": { "path": "/api/staff/queue", "query": { "status": "OPEN" } },
+      "IN_PROGRESS": { "path": "/api/staff/queue", "query": { "status": "IN_PROGRESS" } },
+      "WAITING_FOR_REQUESTER": { "path": "/api/staff/queue", "query": { "status": "WAITING_FOR_REQUESTER" } },
+      "RESOLVED": { "path": "/api/staff/queue", "query": { "status": "RESOLVED" } },
+      "CLOSED": { "path": "/api/staff/queue", "query": { "status": "CLOSED" } },
+      "REOPENED": { "path": "/api/staff/queue", "query": { "status": "REOPENED" } },
+      "CANCELLED": { "path": "/api/staff/queue", "query": { "status": "CANCELLED" } }
+    },
+    "byPriority": {
+      "LOW": { "path": "/api/staff/queue", "query": { "priority": "LOW" } },
+      "MEDIUM": { "path": "/api/staff/queue", "query": { "priority": "MEDIUM" } },
+      "HIGH": { "path": "/api/staff/queue", "query": { "priority": "HIGH" } }
+    },
+    "myPendingAssignedActions": { "filter": { "assignee": "me", "status": "PENDING" } },
+    "myRecentlyPerformedActions": { "filter": { "performedBy": "me", "createdAtGte": "2026-09-01T10:00:00.000Z" } },
     "recentlyUpdatedTickets": { "path": "/api/staff/queue", "query": { "updatedSince": "2026-09-01T10:00:00.000Z" } },
     "urgentTickets": { "path": "/api/staff/queue", "query": { "priority": "HIGH", "openOnly": "true" } }
   } } }
@@ -332,7 +354,19 @@ ActionCreateIdempotency, Ticket version, and nullable `resolvedAt`; it preserves
 and values. Do not infer historical `resolvedAt` from `updatedAt`. Seed is repeatable.
 `ActionCreateIdempotency` is the durable record for Action-create idempotency: unique
 `(actorUserId, route, key)`, normalized request SHA-256, Action ID, original 201 response, created
-time, and expiry at least 24 hours after creation.
+time, and expiry exactly 24 hours after creation. The unique constraint is on the ordered tuple
+`(actorUserId, route, key)`; `route` is the concrete Action-create route including Ticket number.
+Required indexes/constraints are: `ActionTaken(ticketId, createdAt, id)`;
+`ActionTaken(assigneeUserId, status, createdAt, id)` for assigned Action queries;
+`ActionTaken(performedByUserId, createdAt, id)` for recent performed Actions;
+`ActionTakenRevision(actionId, editedAt, id)`; `TicketStatusChange(ticketId, changedAt, id)`;
+`ActionCreateIdempotency(expiresAt, id)`; and the unique idempotency tuple above. An hourly
+cleanup invocation deletes at most 500 expired rows, ordered by `(expiresAt, id)`, using one
+transaction per batch. It emits the deleted-row count and a success/failure result; the next hourly
+invocation continues remaining expired rows. Each batch deletes only rows with `expiresAt <= now`
+evaluated once in UTC for that invocation. Expiry is enforced during key lookup even if cleanup
+has not run. Do not add Ticket indexes beyond those already
+present in the integrated Lab 3 schema; the Lab 4 migration creates no new index on `Ticket`.
 
 Migration precondition is completed and verified Lab 3 Phase A, identity/attachment/priority
 backfill, and Phase C. Stop application writers; take a full custom-format PostgreSQL snapshot
