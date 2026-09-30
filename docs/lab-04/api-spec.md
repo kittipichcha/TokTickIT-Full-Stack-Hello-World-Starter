@@ -91,10 +91,14 @@ Ignore unknown and server-owned fields. Validate normalized values. Hash UTF-8
 Persist an idempotency record atomically with the Action for 24 hours, uniquely scoped by
 authenticated actor, concrete route (including Ticket number), and key. Store the normalized
 request hash, Action identity, original `201` response, creation time, and expiry. Repeating the
-same key and hash returns the original `201` response and creates no row; a different hash returns
-`409 CONFLICT`. Failed requests create no record. Concurrent identical requests create only one
-Action. Actors and concrete routes have independent key scopes. An expired key is atomically
-replaced by a fresh operation.
+same key and hash before expiry returns the original `201` response and creates no row; a different
+hash returns `409 CONFLICT`. Treat a record as expired when `now >= expiresAt`, regardless of
+whether cleanup has run. At or after expiry, validate the current actor, Ticket, and request
+normally, then atomically replace the expired idempotency record with a record for a fresh Action,
+request hash, original `201` response, and 24-hour retention. Keep the old Action. Concurrent
+identical reuse of an expired key creates exactly one fresh Action; later requests replay its new
+`201` response and identity. Failed operations create neither a replacement record nor an Action.
+Actors and concrete routes have independent key scopes.
 
 Body:
 
@@ -143,10 +147,14 @@ The existing `POST /api/staff/tickets/:ticketNumber/owner`,
 `PATCH /api/staff/tickets/:ticketNumber/status` accept optional positive integer
 `expectedVersion`. An invalid supplied value returns `400 VALIDATION_ERROR`; a stale value returns
 `409 CONFLICT` without mutation. Omission preserves Lab 3 compatibility. Compare, mutation, and
-version increment are atomic across these endpoints. Every successful owner, priority, or status
-request increments shared `Ticket.version` exactly once, even when the requested value equals the
-current value. Initialize `Ticket.version` to 1 for new and existing Tickets. Include `version` in
-staff Ticket Detail and successful mutation responses.
+version increment are atomic across these endpoints. Every accepted owner or priority mutation
+increments shared `Ticket.version` exactly once, including when the requested value equals the
+current value. Formal status changes follow the transition matrix: a request for the current status
+is forbidden and returns `409 CONFLICT` without mutation or version increment. Preserve the complete
+Ticket state, including `currentStatus`, `updatedAt`, and `resolvedAt`, and append no
+`TicketStatusChange` row. Each permitted status transition increments the version exactly once and
+appends one history row. Initialize `Ticket.version` to 1 for new and existing
+Tickets. Include `version` in staff Ticket Detail and successful mutation responses.
 
 The owner endpoint retains its existing assignment body. A Ticket must have a non-null owner
 before a status change, but any authorized IT Staff or Administrator may make the change; the

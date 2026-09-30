@@ -1,5 +1,21 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #50 PR #58 contract re-review refinement (2026-09-30)
+
+- Prompt summary: complete the specified contract refinements, clarify Lab-specific peer-review logging, and record current local verification without claiming remote PR publication or human approval.
+- Agent used: OpenAI Codex.
+- Work performed: clarified complete Ticket-state preservation for same-status conflicts; froze expired-key replacement behavior at exact expiry; specified fixed-size Actions pagination and page-boundary behavior; sharpened planned API/UI assertions; routed Lab 3 and Lab 4 review records to their owning directories; and changed the PR-body text to a local unpublished proposal. No runtime code or executable tests changed.
+- Verification: `git diff --check` and the seven-path allowlist passed. The corrected matrix audit found 41 unique rows, all `Planned`, with AC-01–AC-27 mapped. The corrected whitespace-normalized cross-document audit passed after an earlier checker failed on line-wrapped Markdown. No Lab 4 executable tests were run. The proposed PR-body replacement remains unpublished.
+- Reflection: whitespace-normalized checks handle wrapped Markdown without requiring edits to correct prose.
+
+## Issue #50 PR #58 human-review revision (2026-09-30)
+
+- Prompt summary: resolve the latest human review findings, record all human reviews, update the PR verification wording, and fix identified test traceability.
+- Agent used: OpenAI Codex.
+- Work performed: clarified same-value owner/priority writes versus forbidden same-status writes in BR-30, API §7, AC-27, and `API-WF-04`; defined Actions Taken pagination and its planned UI assertion; made expired-key behavior a fresh atomic create; corrected forged performer/time test expectations; updated Lab 4 test ownership and API detail AC coverage; recorded all three `@oangsa` reviews. No runtime code or executable tests changed.
+- Verification: the earlier pass recorded documentation-only consistency checks and `git diff --check` in `docs/lab-04/tests.md`; this local revision adds a separate entry for checks actually run. No executable tests were run. The proposed PR-body replacement remains local and unpublished.
+- Reflection: exact write outcomes, page navigation, and ownership make planned tests deterministic and reduce implementation choices.
+
 ## Issue #50 PR #58 re-review contract revision (2026-09-29)
 
 - Prompt summary: resolve remaining uncertainty in role navigation, staff dashboard response and Action destinations, Action completion/cancellation and inactive-assignee behavior, status-history authorization, schema indexes/idempotency expiry, and final hardening evidence.

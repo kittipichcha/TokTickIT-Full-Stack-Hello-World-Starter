@@ -275,10 +275,12 @@ No autonomous PR creation or Kanban state changes without user approval.
 9. Update the owning Lab's `tests.md` Results Log (newest first; initialize new test rows as `Planned`).
 10. Update the owning Lab's `ai-use.md` in Lab 1 style.
 11. **Update the owning Lab's `reviewer.md`** — whenever changes are made in response to peer review feedback, append it to that Lab's review record using its existing format:
+* Lab 3 tasks: `docs/lab-03/reviewer.md`
+* Lab 4 tasks: `docs/lab-04/reviewer.md`
 * **Rule:** Only log feedback if it comes directly from a **human reviewer**. Do NOT log automated comments from CI bots, agents, or unknown sources.
 * **Format:**
 ```md
-# Lab 3 — Peer Review Record  (fill this in)
+# Lab <owning lab number> — Peer Review Record  (fill this in)
 
 **Author:** <Kittipich Charoenthanachot> — <67070503405> — GitHub: @kittipichcha
 **Peer reviewer:** <SUTHANG SUKRUEANGKUN> — <67070503477> — GitHub: @oangsa

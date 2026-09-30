@@ -73,6 +73,13 @@ stable order. Show description, Result, follow-up indicator/note, Attachment Not
 assignee, performer, and created time to authorized staff. Keep Internal Notes visually and
 semantically separate.
 
+Load Actions with fixed `pageSize=10`; do not show a page-size selector. Use Previous/Next controls
+only when `totalPages > 1`, disable Previous on the first page and Next on the last page, and show
+`Page X of Y` for every nonempty result. Keep the existing empty state and hide pagination controls
+for zero results. This makes every Action reachable for Staff/Admin and Requesters in ascending
+`(createdAt, id)` order. After create or edit, reload the current page when it remains valid; if the
+page is now beyond `totalPages`, reload page 1.
+
 The dashboard is the first useful screen for each role, but it does not replace the Lab 3
 application shell or routes. Preserve existing navigation and working flows for Ticket Queue,
 Ticket Detail, ownership, priority, status, attachment upload/download, Public Comments, Internal
