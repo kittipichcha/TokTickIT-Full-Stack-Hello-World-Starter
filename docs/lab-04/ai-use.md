@@ -1,5 +1,13 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #50 review-blocker fixes (B1–B3) and N1 release follow-up (2026-10-01)
+
+- Prompt summary: fix the blocking review findings on the Lab 4 contract — Test DD authorization coverage (B1), the retired Lab 2 identity mechanism in `agent.md` (B2), and the contradictory `Planned` test-file rules (B3) — and record the non-blocking `ai-use.md` curation as a release follow-up (N1).
+- Agent used: GitHub Copilot.
+- Work performed: extended planned `API-DASH-01`, `API-DASH-02`, `SEC-ACT-01`, and `API-WF-04` with explicit AC-08/AC-18 authorization assertions and updated the AC-08/AC-18 coverage mappings; rewrote `agent.md §3.3` around authenticated Lab 3/4 identity and removed the retired Lab 2 `REQUESTER_STORAGE_KEY`/Dev-Requester requirements; froze one status-aware `Planned`/`Implemented`/`Passed` file rule across `agent.md §3.1`, §4.2, and §4.3; and added the final `ai-use.md` curation (6–10 key prompts plus “My Reflection”) to the specification release gate as an Issue #6 follow-up. No runtime implementation or executable Lab 4 test changed.
+- Verification: `git diff --check` passed with only an LF-to-CRLF normalization notice. The inline audit passed: 41 unique `Planned` rows, AC-01 through AC-27 mapped, AC-08 and AC-18 mappings updated, and the three `agent.md` rules consistent. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
+- Reflection: a nominal AC-to-test ID mapping is not coverage; the planned rows must name the exact authorization assertions, and a working agreement must not mandate a mechanism the frozen baseline removed.
+
 ## Issue #50 governance acceptance and AC-03 coverage correction (2026-10-01)
 
 - Prompt summary: record the peer reviewer's acceptance of the `agent.md` workflow exception from direct discussion with the author, and correct the AC-03 coverage table.

@@ -222,6 +222,7 @@ Each AC maps to at least one planned executable test in `docs/lab-04/tests.md`.
 - [ ] Actions, workflow, dashboards, migration/seed, API, and UI satisfy the frozen contract.
 - [ ] Prior-lab regression, security, concurrency, migration, UI, responsive, accessibility, performance smoke, and end-to-end evidence is recorded.
 - [ ] README, reviewer record, AI-use record, and required lab submission evidence reflect actual work, with no fabricated results.
+- [ ] Final `docs/lab-04/ai-use.md` submission is curated to the handout format: 6–10 selected key prompts plus a brief “My Reflection” section. This is a required release follow-up owned by Issue #6, not a contract-freeze blocker; the chronological work log is retained as the source for that curation.
 - [ ] Kanban issue states reflect verified completion, not merely drafted documentation.
 
 ## 11. Assumptions and Decisions

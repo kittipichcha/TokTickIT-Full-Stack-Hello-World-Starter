@@ -60,7 +60,8 @@ For any functionally changed behavior:
 
 The agent must continuously verify that executable test code and the owning Lab's `tests.md` are strictly aligned (`docs/lab-03/tests.md` for Lab 3; `docs/lab-04/tests.md` for Lab 4):
 
-* Exact planned test paths and test IDs specified in `tests.md` and issue contracts must exist and match. The agent must never replace or redirect required test paths in `tests.md` to different files.
+* Exact planned test paths and test IDs specified in `tests.md` and issue contracts must match the canonical paths. The agent must never replace or redirect required test paths in `tests.md` to different files.
+* Test status follows one status-aware rule everywhere: `Planned` reserves the canonical ID/path and may legitimately have no file yet (or an explicitly skipped scaffold); `Implemented` requires the canonical file to exist and execute; `Passed` requires the complete assertion set to execute successfully with evidence.
 * Whenever a test or row is newly created or added to `tests.md`, its initial status MUST be set to `Planned` first. It may only be updated to `Passed` after executable test evidence confirms that it actually passes.
 * Test statuses in `tests.md` (`Planned`, `Implemented`, `Passed`) must accurately reflect executable test evidence.
 * A test status must NOT be marked `Passed` if only a partial matrix is covered or if dependent flows/data do not yet exist.
@@ -82,8 +83,10 @@ The Plan phase does not edit production code. The Act phase does not broaden sco
 
 
 2. **Frontend UI Integration Testing**:
-* UI tests must cover end-to-end component rendering and client storage persistence (`sessionStorage` with `REQUESTER_STORAGE_KEY`).
-* Validate full identity lifecycle: initial requester list fetching, selection persistence, context validation, and switching requesters.
+* UI tests must cover end-to-end component rendering and the current authenticated session flow.
+* Authenticated identity derives from the server session; UI tests use the current credentialed session flow, and mutations follow the current CSRF contract.
+* Role and shell tests derive identity from `/api/auth/me` or the established authenticated fixture.
+* `REQUESTER_STORAGE_KEY`, Dev-Requester list fetching, requester-context selection, and “switch requester” behavior are retired Lab 2 mechanisms and must not be mandatory Lab 3/4 requirements. Legacy Lab 2 files may remain only as adapted regression tests of the authenticated replacement behavior.
 
 
 
@@ -120,7 +123,7 @@ Perform the following checks in parallel (or rapid sequence) across all governin
 | Requirements → Code | `specification.md` FR/BR list | Actual source files | Every implemented FR/BR has corresponding code; no extra behaviors beyond spec |
 | API Spec → Routes | `api-spec.md` endpoints | `server/src/module.ts` routes | Endpoints claimed as implemented for the current issue scope exist and match the contract; implemented routes are documented. Planned/downstream endpoints that belong to future issues are explicitly not required to exist yet and must not cause a gate failure. |
 | API Spec → README | `api-spec.md` endpoints | `README.md` "API Implemented Today" | README lists only implemented endpoints; no stale/removed endpoints documented |
-| Tests.md → Test Files | Owning Lab's `tests.md` test IDs and file paths | Actual test files on disk | Every test file path listed in the owning Lab's `tests.md` exists on disk. Test files outside that Lab's contract matrix (e.g. legacy Lab 1 tests, supporting utilities) are intentionally excluded from this check and do not need to appear in the matrix. |
+| Tests.md → Test Files | Owning Lab's `tests.md` test IDs and file paths | Actual test files on disk | Every `Implemented` or `Passed` test file path listed in the owning Lab's `tests.md` exists on disk. A `Planned` row reserves its canonical path and may legitimately have no file yet (or an explicitly skipped scaffold). Test files outside that Lab's contract matrix (e.g. legacy Lab 1 tests, supporting utilities) are intentionally excluded from this check and do not need to appear in the matrix. |
 | Tests.md → Status | `tests.md` Final column | Actual test run output | Every `Passed` row has passing evidence; newly added tests are set to `Planned` before execution and only updated to `Passed` after verified test evidence; no `Planned` row is prematurely marked `Passed`. |
 | UI Spec → CSS | `ui-spec.md` color tokens, styles | `client/src/App.css` | CSS uses only Zen Green tokens; no ad-hoc colors or removed component styles |
 | Issue AC → Evidence | Issue acceptance criteria | grep results, test output, file listings | Every AC is satisfied with concrete evidence |
@@ -131,7 +134,7 @@ Run the full test suite and compare every test result against `tests.md`:
 
 * For each row in `tests.md` marked `Passed`: confirm the test file exists and the test actually passes in the latest run.
 * For each row marked `Implemented`: confirm the test file exists and the test runs (pass or fail).
-* For each row marked `Planned`: confirm the test file does NOT yet exist (or exists but is skipped), and the status is accurate.
+* For each row marked `Planned`: confirm the canonical file does NOT yet exist (or exists but is skipped), and the status is accurate. A `Planned` row with no file is valid and is not a discrepancy.
 * If any discrepancy is found, update `tests.md` to reflect reality — never falsify status.
 
 ### 4.4 Step 4: Cleanup Verification
