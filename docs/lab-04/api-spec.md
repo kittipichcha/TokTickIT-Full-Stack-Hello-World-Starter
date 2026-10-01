@@ -7,8 +7,10 @@
 Base path is `/api`. Preserve Lab 3 authentication sessions, CSRF checks, canonical JSON error
 shape, role checks, safe ownership behavior, JSON parsing, and unknown-property handling. Every
 mutation requires the authenticated session and the Lab 3 CSRF token. Requester identity always
-comes from the session. Action writes and staff dashboard reads are IT Staff/Administrator only;
-Requester dashboard and Action reads are Requester-only and ownership-scoped.
+comes from the session. Action reads are available to IT Staff/Administrators for accessible
+Tickets and to Requesters only for their owned Tickets. Action writes and Staff Dashboard reads
+are IT Staff/Administrator-only. Requester Dashboard reads are Requester-only and
+ownership-scoped.
 
 Errors use Lab 3's `{ "error": { "code", "message", "fields?" } }` shape. Use `400
 VALIDATION_ERROR` for invalid supplied values, `401 UNAUTHENTICATED` for missing session,
@@ -16,9 +18,11 @@ VALIDATION_ERROR` for invalid supplied values, `401 UNAUTHENTICATED` for missing
 CONFLICT` for forbidden transitions, stale versions, duplicate idempotency keys with different
 payloads, or workflow races. Never expose Internal Notes or audit metadata to Requesters.
 
-Integer IDs, versions, pages, and limits use non-negative decimal integer syntax. JSON bodies
-must be objects with `Content-Type: application/json`; unknown fields are ignored, consistent
-with Lab 3. The maximum Action list page size is 50. Dashboard summary lists are bounded to 10.
+Integer fields use decimal integer syntax. IDs, versions, page numbers, page sizes, and limits
+must satisfy the positive or range constraints defined by their endpoint; zero is invalid where
+the field is documented as positive. JSON bodies must be objects with
+`Content-Type: application/json`; unknown fields are ignored, consistent with Lab 3. The maximum
+Action list page size is 50. Dashboard summary lists are bounded to 10.
 Ticket identifiers use canonical form such as `TKT-2026-000001`.
 
 ## 2. Action data contract

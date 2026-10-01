@@ -13,6 +13,7 @@
 | Issue #50 Lab 4 contract re-review | @oangsa | Changes Requested | [PR #58 review #5352441580](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/58#pullrequestreview-5352441580) |
 | Issue #50 Lab 4 contract re-review | @oangsa | Changes Requested | [PR #58 review #5361703082](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/58#pullrequestreview-5361703082) |
 | Issue #50 Lab 4 contract re-review | @oangsa | Changes Requested | [PR #58 review #5374244874](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/58#pullrequestreview-5374244874) |
+| Issue #50 Lab 4 contract re-review | @oangsa | Changes Requested | [PR #58 review #5374801503](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/58#pullrequestreview-5374801503) |
 
 ### Response to PR #58 review
 
@@ -33,7 +34,7 @@
 | Cover Action cancellation and inactive-assignee rejection | Expanded planned UI and E2E assertions for multiple Actions, completion, cancellation, rejection, blocked resolution, and successful resolution. |
 | Complete status-history access and hardening coverage | Added history authorization, ordering, UI evidence, and planned `HARDEN-01` for README procedures, console errors, navigation, dead controls, and placeholders. |
 | Freeze model indexes and ownership | Specified required indexes/constraints and Lab 4 issue ownership; kept all planned tests `Planned`. |
-| Correct PR verification wording | Prepared local replacement wording that says human re-review remains pending; it has not been published to the PR body. |
+| Correct PR verification wording | The live PR body now states that human review remains pending and no runtime implementation is included. |
 
 ### Response to PR #58 review #5361703082
 
@@ -42,7 +43,7 @@
 | Resolve same-value status contradiction | BR-30, API §7, AC-27, and `API-WF-04` now allow accepted same-value owner/priority writes but reject same-status requests with `409` and no mutation/version increment. |
 | Define Actions Taken pagination | UI contract and `UI-ACT-01` now specify page size, maximum, controls, all-page access, and post-mutation refresh behavior. |
 | Make expired-key behavior deterministic | `API-ACT-02` now requires an atomic fresh Action and fresh `201` after expiry, even before cleanup. |
-| Record human reviews and correct PR wording | At the time of this response, the record listed the three reviews then submitted, with reviewer, verdict, and links. The local PR-body replacement below remains unpublished. |
+| Record human reviews and correct PR wording | The live PR body states that human review remains pending and no runtime implementation is included; this record now tracks each submitted review and verdict. |
 | Update test ownership | Lab 4 #4 owns workflow API/concurrency/unit/UI rows; #6 owns hardening and final evidence/status work. |
 
 ### Response to PR #58 review #5374244874
@@ -53,17 +54,20 @@
 | Add security and validation coverage to Test DD | Planned tests cover CSRF rejection, idempotency-key validation, Action text limits and pagination, dashboard/Queue filter validation, and exact workflow response shapes. |
 | Specify status-history UI pagination | `ui-spec.md` §4 and `UI-WF-HISTORY-01` define fixed page size 10, Previous/Next boundary behavior, `Page X of Y`, zero/one-page behavior, and reachability across all pages. |
 | Align Action wording | FR-02 identifies initial status as server-set `PENDING`; BR-25 requires the `Idempotency-Key` header. |
+| Reconcile Action-read authorization wording | Replaced the conflicting global rule with explicit Staff/Admin access for accessible Tickets and Requester access for owned Tickets; list/detail endpoint rules remain unchanged. |
+| Clarify global integer syntax | Replaced the global non-negative convention with decimal syntax plus the positive/range constraints owned by each endpoint; endpoint-specific rules remain unchanged. |
+| Reconcile live PR evidence | Removed the obsolete unpublished replacement proposal and aligned this record with PR #58's current body and review state. |
+| Add a final cross-layer consistency gate | Added the requested mandatory sweep before the review-pr final verdict to the available local skill draft, covering global/specific rules, live external evidence, and summary/matrix contracts with explicit completion states. |
 
 The first review requested status-history contract/evidence, actor-versus-owner clarification,
 shared concurrency protection, durable canonical idempotency, Action detail coverage, reproducible
 performance criteria, and Lab 4-only evidence routing. The later review responses above record the
-contract changes. All four submitted human reviews remain Changes Requested; no human approval is recorded.
+contract changes. All five submitted human reviews remain Changes Requested; no human approval is recorded.
 The supplied Lab 4 handout remains the governing source; this record does not claim independent
 handout verification.
 
-Proposed local PR-body replacement (not published):
-
-> Documentation-only contract revision responding to the four recorded human reviews. Local automated review does not constitute human approval. Human re-review remains pending, and all Lab 4 executable tests remain Planned; none were run for this documentation change.
+The live PR body now states that human review remains pending and that no runtime implementation
+is included. No unpublished PR-body replacement remains pending.
 
 The specification, API contract, UI contract, and planned test matrix require human re-review
 before dependent Lab 4 implementation work begins. Automated agent review, if later performed,

@@ -1,5 +1,13 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #50 PR #58 human review #5374801503 response (2026-10-01)
+
+- Prompt summary: address the fifth human Changes Requested review and reconcile the local contract and evidence with PR #58's live body and submitted reviews.
+- Agent used: GitHub Copilot.
+- Work performed: clarified global Action-read authorization for Staff/Admin and owned-Ticket Requester reads; replaced the global non-negative integer wording with endpoint-owned positive/range constraints; recorded review #5374801503 and the live PR-body state; and added the requested final cross-layer consistency sweep to the available local `review-pr` skill draft. No runtime implementation, migration, schema, Test DD row, or executable test changed.
+- Verification: `git diff --check` and focused audits confirm both Action GET endpoint rules and the authorization matrix agree with §1; endpoint-specific pagination, version, owner, and assignee constraints remain intact; all 41 Test DD rows remain `Planned`; AC-01 through AC-27 remain mapped; five live reviews are `CHANGES_REQUESTED`; and the live PR body says human review remains pending with no runtime implementation. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
+- Reflection: explicit cross-layer gates make a global-versus-endpoint contradiction harder to miss during the final review pass.
+
 ## Issue #50 PR #58 human review #5374244874 record update (2026-10-01)
 
 - Prompt summary: record the fourth human Changes Requested review on PR #58 and summarize the contract responses already present at head `473972d791f4787516fc50d5b8172bab535c198b`.
