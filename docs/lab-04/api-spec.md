@@ -156,16 +156,38 @@ Ticket state, including `currentStatus`, `updatedAt`, and `resolvedAt`, and appe
 appends one history row. Initialize `Ticket.version` to 1 for new and existing
 Tickets. Include `version` in staff Ticket Detail and successful mutation responses.
 
-The owner endpoint retains its existing assignment body. A Ticket must have a non-null owner
-before a status change, but any authorized IT Staff or Administrator may make the change; the
-acting user need not be the Ticket Owner. The Lab 4 UI sends current version for all three
-mutations. On conflict, preserve recoverable input, refresh the Ticket, and do not retry
-automatically.
+`expectedVersion` is an optional JSON body field, not a query parameter or header. The exact
+additive owner request is:
+
+```json
+{ "ownerId": 5, "expectedVersion": 2 }
+```
+
+Omitting `expectedVersion` preserves the Lab 3 request `{ "ownerId": 5 }`. On success, the exact
+`200` response is `{ "data": { "ticketOwnerId": 5, "version": 3 } }`.
+
+The exact additive priority request is:
+
+```json
+{ "itPriority": "HIGH", "expectedVersion": 2 }
+```
+
+Omitting `expectedVersion` preserves the Lab 3 request `{ "itPriority": "HIGH" }`. On success,
+the exact `200` response is `{ "data": { "itPriority": "HIGH", "version": 3 } }`. The status
+request and response shapes are frozen in §8. The `version` in each success response is the
+post-mutation Ticket version; no other response fields are added to these mutation responses.
+
+A Ticket must have a non-null owner before a status change, but any authorized IT Staff or
+Administrator may make the change; the acting user need not be the Ticket Owner. The Lab 4 UI
+sends current version for all three mutations. On conflict, preserve recoverable input, refresh
+the Ticket, and do not retry automatically.
 
 ## 8. Ticket status compatibility extension
 
 Retain status route's Lab 3 body and response semantics. Old clients that send only
-`{ "status": "IN_PROGRESS" }` remain valid. Successful status response is
+`{ "status": "IN_PROGRESS" }` remain valid. The exact Lab 4 request with version is
+`{ "status": "IN_PROGRESS", "expectedVersion": 2 }`; omission remains compatible. A successful
+status request returns exactly
 `{ "data": { "currentStatus": "IN_PROGRESS", "version": 3 } }`; `version` is additive.
 The status update and Pending Action resolution check run atomically. Serialize against Action
 creation and completion/cancellation so no committed state can have a `RESOLVED` Ticket with a

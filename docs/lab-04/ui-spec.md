@@ -130,7 +130,11 @@ control and request are available only to IT Staff and Administrators; Requester
 control nor history data. Unauthenticated requests show the sign-in state; authenticated Requester
 requests show access denied; a missing Ticket shows not found. Show
 `changedAt`, previous/next status, actor name, and version before/after in paginated ascending
-chronological order with a stable tie-breaker. Requesters have no history control or history data.
+chronological order with a stable tie-breaker. Load `pageSize=10`; do not show a page-size
+selector. When `totalPages > 1`, show Previous and Next controls and `Page X of Y`; disable
+Previous on page 1 and Next on the last page. Hide pagination controls for zero or one page. All
+history pages must be reachable to Staff/Admin. Requesters have no history control or history
+data.
 
 Ownership, priority, and status mutations send the current Ticket `expectedVersion`. On stale
 conflict, retain recoverable form data, explain that Ticket changed, and refresh before another
