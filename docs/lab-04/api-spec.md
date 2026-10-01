@@ -114,8 +114,9 @@ Body:
 
 `description` required. `result`, `followUpNote`, `attachmentNotes`, and `assigneeUserId` are
 optional and nullable as shown. `followUpRequired` defaults to false and must be boolean.
-Assignee, if present, must be an active IT Staff or Administrator. It need not be the Ticket
-Owner or performer. Assignment does not change the Ticket Owner. The selector uses the existing
+Assignee, if present, must be an active IT Staff or Administrator at the time the assignment is
+made. It need not be the Ticket Owner or performer. Assignment does not change the Ticket Owner.
+A later deactivation or role change does not rewrite an existing Action assignment. The selector uses the existing
 `GET /api/staff/owners` eligible-user list.
 
 Response `201`: `{ "data": <Action response> }`. Malformed assignee ID returns `400
@@ -137,7 +138,11 @@ integer `expectedVersion` and at least one editable field. Allowed fields are `d
 `result`, `followUpRequired`, `followUpNote`, `attachmentNotes`, `assigneeUserId`, and `status`.
 `status` may remain `PENDING` or transition once to `COMPLETED` or `CANCELLED`; terminal states
 cannot be edited or reopened. Completion requires nonblank Result. A partial patch validates the
-combined resulting Action, including follow-up dependency.
+combined resulting Action, including follow-up dependency. If the current assignee became inactive
+or changed away from Staff/Administrator after assignment, the PATCH must explicitly set
+`assigneeUserId` to an eligible active Staff/Administrator or `null`. A PATCH that retains the
+now-ineligible assignee returns `409 CONFLICT` without changing the Action, version, or revision
+history; the caller may retry with the explicit repair and retained recoverable input.
 
 The backend atomically compares `expectedVersion` with current version, writes the fields,
 increments version, and appends one immutable `ActionTakenRevision` containing actor, UTC time,

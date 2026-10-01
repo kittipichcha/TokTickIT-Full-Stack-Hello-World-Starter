@@ -105,8 +105,9 @@ Both choices show the resulting status before submission, send current Action `e
 and retain the form on conflict. An inactive or otherwise ineligible existing assignee remains
 visible as the current value with an eligibility warning; do not silently clear it or submit it as
 a new assignment. The user must explicitly choose an eligible active Staff/Admin assignee or
-unassign before saving. A rejected ineligible assignee receives HTTP `409 CONFLICT`, leaves the
-persisted Action unchanged, and retains the submitted description, result, follow-up fields,
+unassign before any Action PATCH can persist, including an edit to another field. A rejected
+ineligible assignee receives HTTP `409 CONFLICT`, leaves the persisted Action, version, and
+revision history unchanged, and retains the submitted description, result, follow-up fields,
 attachment notes, and selected assignee so the user can correct and retry.
 
 On one Ticket, staff can complete one Pending Action and cancel a different Pending Action; each

@@ -1,5 +1,13 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #50 PR #58 B2–B4 contract revision (2026-10-01)
+
+- Prompt summary: follow the supplied Issue #50 revision plan for temporal Action-assignee validity, explicit Action authorization/validation/UI Test DD coverage, and accurate human-review evidence.
+- Agent used: GitHub Copilot.
+- Work performed: made the intentional `agent.md` Lab 4 workflow inclusion explicit and pending peer-review acceptance; aligned `specification.md`, `api-spec.md`, and `ui-spec.md` on the assignee lifecycle; expanded existing Action API/security/UI rows without adding test IDs; and moved the cross-layer consistency-gate item out of human-review feedback. No runtime implementation, schema, migration, database operation, or executable test changed.
+- Verification: documentation-only checks must confirm `API-ACT-01`, `API-ACT-04`, `API-ACT-06`, `API-ACT-DETAIL-01`, `SEC-ACT-01`, `SEC-ACT-02`, and `UI-ACT-01` remain `Planned`, all 41 rows are unique, AC-01 through AC-27 remain mapped, and no approval is recorded. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
+- Reflection: separating assignment-time eligibility from later account lifecycle changes gives the implementation one deterministic repair path without rewriting historical/current Action state.
+
 ## Issue #50 PR #58 human review #5374801503 response (2026-10-01)
 
 - Prompt summary: address the fifth human Changes Requested review and reconcile the local contract and evidence with PR #58's live body and submitted reviews.

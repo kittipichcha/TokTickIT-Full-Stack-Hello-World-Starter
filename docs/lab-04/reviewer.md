@@ -57,7 +57,13 @@
 | Reconcile Action-read authorization wording | Replaced the conflicting global rule with explicit Staff/Admin access for accessible Tickets and Requester access for owned Tickets; list/detail endpoint rules remain unchanged. |
 | Clarify global integer syntax | Replaced the global non-negative convention with decimal syntax plus the positive/range constraints owned by each endpoint; endpoint-specific rules remain unchanged. |
 | Reconcile live PR evidence | Removed the obsolete unpublished replacement proposal and aligned this record with PR #58's current body and review state. |
-| Add a final cross-layer consistency gate | Added the requested mandatory sweep before the review-pr final verdict to the available local skill draft, covering global/specific rules, live external evidence, and summary/matrix contracts with explicit completion states. |
+### Response to PR #58 review #5374801503
+
+| Review request | Contract response |
+|---|---|
+| Reconcile Action-read authorization wording | The global API rule and Action list/detail routes now agree: authenticated IT Staff/Administrators read accessible Tickets, Requesters read only owned Tickets, and unauthenticated callers are rejected. The authorization matrix and planned security rows state the same backend behavior. |
+| Clarify global integer syntax | The global rule requires decimal integer syntax and delegates positive/range constraints to each endpoint; Action IDs, assignee IDs, versions, paging, and limits retain their endpoint-specific validation. |
+| Reconcile live PR evidence | The repository record does not claim unpublished PR-body changes or human approval; the live PR body now states the intentional `agent.md` workflow scope, `Refs #50`, documentation-only scope, and pending human review. |
 
 The first review requested status-history contract/evidence, actor-versus-owner clarification,
 shared concurrency protection, durable canonical idempotency, Action detail coverage, reproducible
@@ -67,7 +73,9 @@ The supplied Lab 4 handout remains the governing source; this record does not cl
 handout verification.
 
 The live PR body now states that human review remains pending and that no runtime implementation
-is included. No unpublished PR-body replacement remains pending.
+is included. The `agent.md` workflow inclusion remains a scope exception awaiting explicit peer-review
+acceptance. The separate cross-layer consistency sweep is agent/process work recorded in `ai-use.md`,
+not human-review feedback. No approval is recorded.
 
 The specification, API contract, UI contract, and planned test matrix require human re-review
 before dependent Lab 4 implementation work begins. Automated agent review, if later performed,
