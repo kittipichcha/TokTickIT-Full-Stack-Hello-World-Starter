@@ -66,7 +66,7 @@ Test the Lab 4 behavior in `docs/lab-04/specification.md` against the supplied `
 | --- | --- |
 | AC-01 | API-ACT-01, API-ACT-02, E2E-01 |
 | AC-02 | API-ACT-03 |
-| AC-03 | API-ACT-04 |
+| AC-03 | API-ACT-04, API-ACT-06, UI-ACT-01 |
 | AC-04 | API-ACT-05, API-ACT-DETAIL-01, UI-ACT-01 |
 | AC-05 | API-ACT-06, UI-ACT-01 |
 | AC-06 | API-ACT-07, UI-ACT-01 |
@@ -97,6 +97,12 @@ Test the Lab 4 behavior in `docs/lab-04/specification.md` against the supplied `
 Statuses are `Planned`, `Implemented`, `Passed`, `Failed`, `Blocked`, `Environment Failure`, or `Not Applicable`. A row moves to `Implemented` only when its test exists and runs; it moves to `Passed` only after its full assertion set passes on the intended branch. A partial test is not Passed. Database-dependent tests record database setup and migration version. For every run, log command, branch/SHA, passed/failed/skipped counts, and evidence path here, newest first.
 
 ### Results Log (newest first)
+
+- **2026-10-01 — Issue #50 governance acceptance and AC-03 coverage correction**
+  - Scope: record the peer reviewer's acceptance of the `agent.md` scope exception from direct off-platform discussion with the author in `specification.md` and `reviewer.md`; correct the AC-03 coverage mapping to include `API-ACT-06` and `UI-ACT-01`. No runtime implementation or executable Lab 4 test changed.
+  - Tests changed/run: no Test DD rows added; all 41 unique rows remain `Planned`; AC-01 through AC-27 remain mapped. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
+  - Verification: `git diff --check` and focused AC-03 traceability/status audit.
+  - Follow-up: formal GitHub PR re-review and approval remain pending; the scope acceptance is separate from that review state.
 
 - **2026-10-01 — Issue #50 PR #58 B2/B4 traceability correction**
   - Scope: extend AC-03 with the later-ineligible-assignee PATCH transition and map `API-ACT-06` to `AC-03`/`BR-03`; remove the three #5374801503 findings duplicated under the preceding reviewer section. Documentation and Test DD traceability only; no runtime implementation or executable Lab 4 test changed.

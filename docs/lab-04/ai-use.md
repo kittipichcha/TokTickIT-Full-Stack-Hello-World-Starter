@@ -1,19 +1,27 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #50 governance acceptance and AC-03 coverage correction (2026-10-01)
+
+- Prompt summary: record the peer reviewer's acceptance of the `agent.md` workflow exception from direct discussion with the author, and correct the AC-03 coverage table.
+- Agent used: GitHub Copilot.
+- Work performed: recorded the scope acceptance in Issue #50 and PR #58, updated `specification.md` and `reviewer.md` to state that the `agent.md` exception was accepted off-platform on 2026-10-01 while formal GitHub PR approval remains pending, and retained the AC-03 mapping to `API-ACT-04`, `API-ACT-06`, and `UI-ACT-01`. No runtime implementation or executable Lab 4 test changed.
+- Verification: `git diff --check` and focused governance/AC-03 traceability/status audit; all 41 Lab 4 rows remain `Planned`; AC-01 through AC-27 remain mapped. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
+- Reflection: scope acceptance and formal PR approval are separate governance states; the reviewer record should state the off-platform scope acceptance while keeping the five GitHub reviews `CHANGES_REQUESTED` and formal re-review pending.
+
 ## Issue #50 PR #58 B2/B4 traceability correction (2026-10-01)
 
 - Prompt summary: resolve the remaining AC-03/API-ACT-06 traceability gap and remove duplicated #5374801503 findings from the preceding human-review section.
 - Agent used: GitHub Copilot.
 - Work performed: extended AC-03 with the preserved ineligible-assignee state and explicit PATCH repair/clear rule; mapped `API-ACT-06` to `AC-03` and `BR-03`; and retained the three #5374801503 responses only under their dedicated heading. No runtime implementation or executable test changed.
-- Verification: `git diff --check` and focused traceability/reviewer-section audits passed. All 41 Lab 4 rows remain `Planned`; AC-01 through AC-27 remain mapped; human approval remains absent. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
+- Verification: `git diff --check` and focused traceability/reviewer-section audits passed. All 41 Lab 4 rows remain `Planned`; AC-01 through AC-27 remain mapped; final GitHub PR approval remains absent. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
 - Reflection: keeping the transition in the authoritative AC as well as the planned API row prevents the implementation contract from splitting across documents.
 
 ## Issue #50 PR #58 B2–B4 contract revision (2026-10-01)
 
 - Prompt summary: follow the supplied Issue #50 revision plan for temporal Action-assignee validity, explicit Action authorization/validation/UI Test DD coverage, and accurate human-review evidence.
 - Agent used: GitHub Copilot.
-- Work performed: made the intentional `agent.md` Lab 4 workflow inclusion explicit and pending peer-review acceptance; aligned `specification.md`, `api-spec.md`, and `ui-spec.md` on the assignee lifecycle; expanded existing Action API/security/UI rows without adding test IDs; and moved the cross-layer consistency-gate item out of human-review feedback. No runtime implementation, schema, migration, database operation, or executable test changed.
-- Verification: documentation-only checks must confirm `API-ACT-01`, `API-ACT-04`, `API-ACT-06`, `API-ACT-DETAIL-01`, `SEC-ACT-01`, `SEC-ACT-02`, and `UI-ACT-01` remain `Planned`, all 41 rows are unique, AC-01 through AC-27 remain mapped, and no approval is recorded. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
+- Work performed: made the intentional `agent.md` Lab 4 workflow inclusion explicit, pending its off-platform acceptance report; aligned `specification.md`, `api-spec.md`, and `ui-spec.md` on the assignee lifecycle; expanded existing Action API/security/UI rows without adding test IDs; and moved the cross-layer consistency-gate item out of human-review feedback. No runtime implementation, schema, migration, database operation, or executable test changed.
+- Verification: documentation-only checks must confirm `API-ACT-01`, `API-ACT-04`, `API-ACT-06`, `API-ACT-DETAIL-01`, `SEC-ACT-01`, `SEC-ACT-02`, and `UI-ACT-01` remain `Planned`, all 41 rows are unique, AC-01 through AC-27 remain mapped, and formal GitHub PR approval is not claimed. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
 - Reflection: separating assignment-time eligibility from later account lifecycle changes gives the implementation one deterministic repair path without rewriting historical/current Action state.
 
 ## Issue #50 PR #58 human review #5374801503 response (2026-10-01)

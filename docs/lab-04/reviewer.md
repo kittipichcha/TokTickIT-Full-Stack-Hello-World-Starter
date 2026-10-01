@@ -5,7 +5,7 @@
 
 ## Issue #50 contract review
 
-**Human review status:** Changes Requested. Re-review remains pending; no approval is recorded.
+**GitHub review status:** Five submitted reviews are Changes Requested; final PR re-review and approval remain pending.
 
 | Review | Reviewer | Verdict | Evidence |
 |---|---|---|---|
@@ -65,14 +65,17 @@
 The first review requested status-history contract/evidence, actor-versus-owner clarification,
 shared concurrency protection, durable canonical idempotency, Action detail coverage, reproducible
 performance criteria, and Lab 4-only evidence routing. The later review responses above record the
-contract changes. All five submitted human reviews remain Changes Requested; no human approval is recorded.
+contract changes. All five submitted GitHub reviews remain Changes Requested; no final PR approval is recorded.
 The supplied Lab 4 handout remains the governing source; this record does not claim independent
 handout verification.
 
-The live PR body now states that human review remains pending and that no runtime implementation
-is included. The `agent.md` workflow inclusion remains a scope exception awaiting explicit peer-review
-acceptance. The separate cross-layer consistency sweep is agent/process work recorded in `ai-use.md`,
-not human-review feedback. No approval is recorded.
+The `agent.md` workflow inclusion is a scope exception to the normal governance-isolation rule; the
+peer reviewer accepted that exception in direct off-platform discussion with the author on
+2026-10-01. This scope acceptance is separate from formal GitHub PR approval: all five submitted
+GitHub reviews remain `CHANGES_REQUESTED`, and formal GitHub re-review and approval remain pending.
+
+The separate cross-layer consistency sweep is agent/process work recorded in `ai-use.md`, not
+human-review feedback.
 
 The specification, API contract, UI contract, and planned test matrix require human re-review
 before dependent Lab 4 implementation work begins. Automated agent review, if later performed,
