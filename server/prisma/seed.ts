@@ -52,6 +52,8 @@ const RELATED_SYSTEMS = [
  */
 const SEED_MARKER_PREFIX = '[seed:';
 const seedMarker = (key: string): string => `${SEED_MARKER_PREFIX}${key}]`;
+const ACTION_SEED_MARKER_PREFIX = '[seed-action:';
+const actionSeedMarker = (key: string): string => `${ACTION_SEED_MARKER_PREFIX}${key}]`;
 
 /**
  * Creates a predefined account if it does not already exist.
@@ -197,6 +199,87 @@ async function main() {
         data: { ticketId: ticket.id, authorId: staff.id, content: noteContent },
       });
     }
+  }
+
+  // Actions: marker-owned fixtures cover zero/one/many Actions, all lifecycle
+  // states, and distinct performer/assignee identities without claiming real rows.
+  const actionFixtures = [
+    {
+      key: 'pending-unassigned',
+      ticket: createdTickets[0],
+      performer: staffUsers[0],
+      assignee: null,
+      status: 'PENDING' as const,
+      result: null,
+    },
+    {
+      key: 'completed-assigned',
+      ticket: createdTickets[1],
+      performer: staffUsers[1],
+      assignee: staffUsers[2],
+      status: 'COMPLETED' as const,
+      result: 'Replaced the faulty network adapter.',
+    },
+    {
+      key: 'cancelled-admin',
+      ticket: createdTickets[2],
+      performer: staffUsers[2],
+      assignee: adminUsers[0],
+      status: 'CANCELLED' as const,
+      result: null,
+    },
+  ];
+
+  for (const fixture of actionFixtures) {
+    const marker = actionSeedMarker(fixture.key);
+    const existing = await prisma.actionTaken.findFirst({
+      where: { description: { contains: marker } },
+    });
+    if (existing) continue;
+
+    await prisma.$transaction(async (tx) => {
+      const action = await tx.actionTaken.create({
+        data: {
+          ticketId: fixture.ticket.id,
+          description: `${marker} ${fixture.key.replaceAll('-', ' ')}`,
+          result: fixture.result,
+          followUpRequired: false,
+          status: fixture.status,
+          performedByUserId: fixture.performer.id,
+          assigneeUserId: fixture.assignee?.id ?? null,
+          version: fixture.status === 'PENDING' ? 1 : 2,
+        },
+      });
+
+      if (fixture.status !== 'PENDING') {
+        await tx.actionTakenRevision.create({
+          data: {
+            actionId: action.id,
+            editedByUserId: fixture.performer.id,
+            versionBefore: 1,
+            versionAfter: 2,
+            beforeSnapshot: {
+              description: action.description,
+              result: null,
+              followUpRequired: false,
+              followUpNote: null,
+              attachmentNotes: null,
+              status: 'PENDING',
+              assigneeUserId: fixture.assignee?.id ?? null,
+            },
+            afterSnapshot: {
+              description: action.description,
+              result: fixture.result,
+              followUpRequired: false,
+              followUpNote: null,
+              attachmentNotes: null,
+              status: fixture.status,
+              assigneeUserId: fixture.assignee?.id ?? null,
+            },
+          },
+        });
+      }
+    });
   }
 
   console.log('Seed completed. Users, categories, related systems, tickets, comments, and internal notes inserted/verified.');
