@@ -41,13 +41,13 @@
 | Resolve same-value status contradiction | BR-30, API §7, AC-27, and `API-WF-04` now allow accepted same-value owner/priority writes but reject same-status requests with `409` and no mutation/version increment. |
 | Define Actions Taken pagination | UI contract and `UI-ACT-01` now specify page size, maximum, controls, all-page access, and post-mutation refresh behavior. |
 | Make expired-key behavior deterministic | `API-ACT-02` now requires an atomic fresh Action and fresh `201` after expiry, even before cleanup. |
-| Record human reviews and correct PR wording | This record lists all three reviews with reviewer, verdict, and links. The local PR-body replacement below remains unpublished. |
+| Record human reviews and correct PR wording | At the time of this response, the record listed the three reviews then submitted, with reviewer, verdict, and links. The local PR-body replacement below remains unpublished. |
 | Update test ownership | Lab 4 #4 owns workflow API/concurrency/unit/UI rows; #6 owns hardening and final evidence/status work. |
 
 The first review requested status-history contract/evidence, actor-versus-owner clarification,
 shared concurrency protection, durable canonical idempotency, Action detail coverage, reproducible
 performance criteria, and Lab 4-only evidence routing. The later review responses above record the
-contract changes. All three human reviews remain Changes Requested; no human approval is recorded.
+contract changes. All three submitted human reviews remain Changes Requested; no human approval is recorded.
 The supplied Lab 4 handout remains the governing source; this record does not claim independent
 handout verification.
 
