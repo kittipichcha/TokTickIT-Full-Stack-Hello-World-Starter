@@ -50,6 +50,12 @@ import {
   updateUserHandler,
   setInitialPasswordHandler,
 } from "./admin-controller.js";
+import {
+  listActionsHandler,
+  getActionDetailHandler,
+  createActionHandler,
+  updateActionHandler,
+} from "./action-controller.js";
 
 export const router = Router();
 
@@ -294,3 +300,37 @@ router.get("/admin/users", requireAuth, requirePasswordChanged, requireRole(["AD
 router.post("/admin/users", requireAuth, requirePasswordChanged, requireCsrf, requireRole(["ADMINISTRATOR"]), createUserHandler);
 router.patch("/admin/users/:userId", requireAuth, requirePasswordChanged, requireCsrf, requireRole(["ADMINISTRATOR"]), updateUserHandler);
 router.post("/admin/users/:userId/initial-password", requireAuth, requirePasswordChanged, requireCsrf, requireRole(["ADMINISTRATOR"]), setInitialPasswordHandler);
+
+// ---- Actions Taken (Issue #51 — Lab 4) ----
+// Reads: owner Requester or IT Staff/Administrator (api-spec §3/§5).
+router.get(
+  "/tickets/:ticketNumber/actions",
+  requireAuth,
+  requirePasswordChanged,
+  requireTicketReadAccess,
+  listActionsHandler,
+);
+router.get(
+  "/tickets/:ticketNumber/actions/:actionId",
+  requireAuth,
+  requirePasswordChanged,
+  requireTicketReadAccess,
+  getActionDetailHandler,
+);
+// Writes: IT Staff/Administrator only; state-changing -> CSRF (api-spec §4/§6).
+router.post(
+  "/tickets/:ticketNumber/actions",
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["IT_STAFF", "ADMINISTRATOR"]),
+  createActionHandler,
+);
+router.patch(
+  "/tickets/:ticketNumber/actions/:actionId",
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["IT_STAFF", "ADMINISTRATOR"]),
+  updateActionHandler,
+);
