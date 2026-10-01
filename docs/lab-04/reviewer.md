@@ -12,6 +12,7 @@
 | Issue #50 Lab 4 contract | @oangsa | Changes Requested | [PR #58 review #5341087376](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/58#pullrequestreview-5341087376) |
 | Issue #50 Lab 4 contract re-review | @oangsa | Changes Requested | [PR #58 review #5352441580](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/58#pullrequestreview-5352441580) |
 | Issue #50 Lab 4 contract re-review | @oangsa | Changes Requested | [PR #58 review #5361703082](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/58#pullrequestreview-5361703082) |
+| Issue #50 Lab 4 contract re-review | @oangsa | Changes Requested | [PR #58 review #5374244874](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/58#pullrequestreview-5374244874) |
 
 ### Response to PR #58 review
 
@@ -44,16 +45,25 @@
 | Record human reviews and correct PR wording | At the time of this response, the record listed the three reviews then submitted, with reviewer, verdict, and links. The local PR-body replacement below remains unpublished. |
 | Update test ownership | Lab 4 #4 owns workflow API/concurrency/unit/UI rows; #6 owns hardening and final evidence/status work. |
 
+### Response to PR #58 review #5374244874
+
+| Review request | Contract response |
+|---|---|
+| Freeze exact owner/priority/status version API shapes | `api-spec.md` §§7–8 define `expectedVersion` in the JSON request body and freeze the exact success response fields; `API-WF-04` asserts each request/response shape and Lab 3 omission compatibility. |
+| Add security and validation coverage to Test DD | Planned tests cover CSRF rejection, idempotency-key validation, Action text limits and pagination, dashboard/Queue filter validation, and exact workflow response shapes. |
+| Specify status-history UI pagination | `ui-spec.md` §4 and `UI-WF-HISTORY-01` define fixed page size 10, Previous/Next boundary behavior, `Page X of Y`, zero/one-page behavior, and reachability across all pages. |
+| Align Action wording | FR-02 identifies initial status as server-set `PENDING`; BR-25 requires the `Idempotency-Key` header. |
+
 The first review requested status-history contract/evidence, actor-versus-owner clarification,
 shared concurrency protection, durable canonical idempotency, Action detail coverage, reproducible
 performance criteria, and Lab 4-only evidence routing. The later review responses above record the
-contract changes. All three submitted human reviews remain Changes Requested; no human approval is recorded.
+contract changes. All four submitted human reviews remain Changes Requested; no human approval is recorded.
 The supplied Lab 4 handout remains the governing source; this record does not claim independent
 handout verification.
 
 Proposed local PR-body replacement (not published):
 
-> Documentation-only contract revision responding to the three recorded human reviews. Local automated review does not constitute human approval. Human re-review remains pending, and all Lab 4 executable tests remain Planned; none were run for this documentation change.
+> Documentation-only contract revision responding to the four recorded human reviews. Local automated review does not constitute human approval. Human re-review remains pending, and all Lab 4 executable tests remain Planned; none were run for this documentation change.
 
 The specification, API contract, UI contract, and planned test matrix require human re-review
 before dependent Lab 4 implementation work begins. Automated agent review, if later performed,
