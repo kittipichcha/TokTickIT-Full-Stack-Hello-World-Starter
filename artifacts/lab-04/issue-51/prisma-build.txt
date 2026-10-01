@@ -1,0 +1,6 @@
+Commands:
+  npx prisma validate
+  npm run build
+
+Result: both passed.
+No credentials or environment values are recorded.

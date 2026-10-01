@@ -1,0 +1,5 @@
+Command:
+  npx vitest run tests/lab-04/actions-taken.api.test.ts
+
+Result: 1 file, 18 tests passed, 0 failed.
+Coverage: API-ACT-01..08, API-ACT-DETAIL-01, SEC-ACT-01/02, CONC-ACT-01.

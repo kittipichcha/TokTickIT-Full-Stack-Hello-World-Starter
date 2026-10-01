@@ -1,6 +1,6 @@
-# Lab 4 Sprint Engineering Specification — Contract Draft
+# Lab 4 Sprint Engineering Specification — Approved Contract
 
-> **Status:** Contract draft for human review. This document defines Lab 4 behavior; it does not claim Lab 4 implementation or test results. No Lab 4 implementation issue may start until this contract is approved against the integrated Lab 3 baseline.
+> **Status:** Approved contract. PR #58 was approved and merged into `lab4-staging`; this document defines Lab 4 behavior and does not by itself claim implementation or test results.
 
 ## 1. Sprint Goal
 

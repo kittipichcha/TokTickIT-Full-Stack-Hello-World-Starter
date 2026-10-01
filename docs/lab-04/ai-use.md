@@ -1,5 +1,13 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #51 Actions Taken foundation (2026-10-01)
+
+- Prompt summary: implement the approved Issue #51 Actions Taken persistence/API foundation in `feature/lab4-actions-taken-foundation`, commit feature-by-feature, push it, and prepare a PR targeting `lab4-staging`.
+- Agent used: GitHub Copilot.
+- Work performed: added additive Action persistence and migration/recovery fixtures, authorized Action list/detail/create/update APIs with idempotency and concurrency handling, marker-owned seed Actions with immutable terminal revisions, and focused integration tests. The UI, Ticket workflow, dashboards, and final release work remain deferred.
+- Verification: DB-MIG-01/02/03 passed (3 tests), DB-MIG-04 passed within the 26-test Lab 3 migration suite, Actions API/security/concurrency passed (18 tests), DB-SEED-01 passed (2 tests), Prisma validation/build passed, and full server regression passed with 42 files and 628 tests.
+- Reflection: keeping persistence, API, seed, and evidence commits separate made each acceptance gate independently reviewable and exposed the missing seed slice before publishing.
+
 ## Issue #50 review-blocker fixes (B1–B3) and N1 release follow-up (2026-10-01)
 
 - Prompt summary: fix the blocking review findings on the Lab 4 contract — Test DD authorization coverage (B1), the retired Lab 2 identity mechanism in `agent.md` (B2), and the contradictory `Planned` test-file rules (B3) — and record the non-blocking `ai-use.md` curation as a release follow-up (N1).

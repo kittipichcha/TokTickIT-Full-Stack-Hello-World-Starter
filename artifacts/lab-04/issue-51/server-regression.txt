@@ -1,0 +1,5 @@
+Command:
+  npm test -- --reporter=verbose
+
+Result: 42 test files, 628 tests passed, 0 failed.
+Duration: 1160.15 seconds.

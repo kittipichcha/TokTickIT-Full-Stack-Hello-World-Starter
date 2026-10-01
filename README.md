@@ -16,6 +16,33 @@ and Ticket Detail operations, Administrator User Management, role/ownership auth
 public comments, internal notes, and the Lab 3 migration/seed contract. The Lab 2 requester
 ticket and attachment behavior remains supported under session identity.
 
+Issue #51 adds the Lab 4 Actions Taken backend foundation: additive persistence and migration,
+immutable Action revisions, requester/staff/admin authorization, paginated list/detail/create/
+update APIs, assignment validation, idempotent creation, optimistic concurrency, recovery tests,
+and repeatable Action seed fixtures. Actions UI, Ticket resolution workflow changes, dashboards,
+and final Lab 4 E2E/release work remain owned by later issues.
+
+Issue #51 API routes:
+- `GET /api/tickets/:ticketNumber/actions`
+- `GET /api/tickets/:ticketNumber/actions/:actionId`
+- `POST /api/tickets/:ticketNumber/actions`
+- `PATCH /api/tickets/:ticketNumber/actions/:actionId`
+
+Run the backend checks from `server/` with a disposable PostgreSQL `DATABASE_URL`:
+
+```bash
+npx prisma validate
+npm run build
+npx vitest run tests/lab-04/migration.integration.test.ts
+npx vitest run tests/lab-04/actions-taken.api.test.ts
+npx vitest run tests/lab-04/seed.integration.test.ts
+npm test
+```
+
+The migration/recovery tests create and drop disposable databases and use temporary attachment
+fixtures. Never point them at a production-like database or commit `.env`, database dumps, or
+attachment snapshots.
+
 ## 2. Verification Status
 
 > **Superseded in Lab 3 (Issues #35 / #37).** The Development Requester selector,

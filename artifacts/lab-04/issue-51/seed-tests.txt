@@ -1,0 +1,5 @@
+Command:
+  npx vitest run tests/lab-04/seed.integration.test.ts
+
+Result: 1 file, 2 tests passed, 0 failed.
+Coverage: marker-owned varied Action statuses, assignee identities, revisions, and two-run idempotency.
