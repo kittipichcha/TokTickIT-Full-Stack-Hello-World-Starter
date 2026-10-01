@@ -54,9 +54,6 @@
 | Add security and validation coverage to Test DD | Planned tests cover CSRF rejection, idempotency-key validation, Action text limits and pagination, dashboard/Queue filter validation, and exact workflow response shapes. |
 | Specify status-history UI pagination | `ui-spec.md` §4 and `UI-WF-HISTORY-01` define fixed page size 10, Previous/Next boundary behavior, `Page X of Y`, zero/one-page behavior, and reachability across all pages. |
 | Align Action wording | FR-02 identifies initial status as server-set `PENDING`; BR-25 requires the `Idempotency-Key` header. |
-| Reconcile Action-read authorization wording | Replaced the conflicting global rule with explicit Staff/Admin access for accessible Tickets and Requester access for owned Tickets; list/detail endpoint rules remain unchanged. |
-| Clarify global integer syntax | Replaced the global non-negative convention with decimal syntax plus the positive/range constraints owned by each endpoint; endpoint-specific rules remain unchanged. |
-| Reconcile live PR evidence | Removed the obsolete unpublished replacement proposal and aligned this record with PR #58's current body and review state. |
 ### Response to PR #58 review #5374801503
 
 | Review request | Contract response |

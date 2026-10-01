@@ -1,5 +1,13 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #50 PR #58 B2/B4 traceability correction (2026-10-01)
+
+- Prompt summary: resolve the remaining AC-03/API-ACT-06 traceability gap and remove duplicated #5374801503 findings from the preceding human-review section.
+- Agent used: GitHub Copilot.
+- Work performed: extended AC-03 with the preserved ineligible-assignee state and explicit PATCH repair/clear rule; mapped `API-ACT-06` to `AC-03` and `BR-03`; and retained the three #5374801503 responses only under their dedicated heading. No runtime implementation or executable test changed.
+- Verification: `git diff --check` and focused traceability/reviewer-section audits passed. All 41 Lab 4 rows remain `Planned`; AC-01 through AC-27 remain mapped; human approval remains absent. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped**.
+- Reflection: keeping the transition in the authoritative AC as well as the planned API row prevents the implementation contract from splitting across documents.
+
 ## Issue #50 PR #58 B2–B4 contract revision (2026-10-01)
 
 - Prompt summary: follow the supplied Issue #50 revision plan for temporal Action-assignee validity, explicit Action authorization/validation/UI Test DD coverage, and accurate human-review evidence.
