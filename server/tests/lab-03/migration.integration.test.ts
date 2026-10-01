@@ -1,11 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { execSync, execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma, disconnectPrisma } from "../../src/prisma.js";
-import { deriveInitialPassword } from "../../src/migrate-lab3.js";
+import { deriveInitialPassword, resolveMigrationTestSchemaArg } from "../../src/migrate-lab3.js";
+import {
+  createHistoricalMigrationContext,
+  HISTORICAL_MIGRATIONS,
+} from "./helpers/historical-migration-context.js";
 import bcrypt from "bcrypt";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
@@ -71,6 +77,20 @@ function run(command: string, env: NodeJS.ProcessEnv = process.env): string {
   return execSync(command, { cwd: serverRoot, encoding: "utf-8", env }).toString();
 }
 
+/**
+ * Runs a command and returns its combined output even when it exits non-zero.
+ * `prisma migrate status` exits 1 when migrations are pending, so the "pending"
+ * assertion must read the output rather than rely on a zero exit code.
+ */
+function runCapture(command: string, env: NodeJS.ProcessEnv = process.env): string {
+  try {
+    return run(command, env);
+  } catch (err) {
+    const e = err as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string };
+    return `${e.stdout ?? ""}${e.stderr ?? ""}${e.message ?? ""}`;
+  }
+}
+
 /** Runs psql with an argument array (no shell quoting; safe on Windows). */
 function psql(url: string, args: string[]): string {
   return execFileSync("psql", [url, ...args], { cwd: serverRoot, encoding: "utf-8" }).toString();
@@ -85,6 +105,7 @@ function runOrchestrator(
     const output = run("npx tsx src/migrate-lab3.ts run", {
       ...process.env,
       DATABASE_URL: fixtureUrlWithSchema,
+      ...historicalEnv(),
       ...extraEnv,
     });
     return { ok: true, output };
@@ -93,6 +114,29 @@ function runOrchestrator(
     const output = `${e.stdout ?? ""}${e.stderr ?? ""}${e.message ?? ""}`;
     return { ok: false, output: String(output) };
   }
+}
+
+/**
+ * Per-run isolated historical schema context (Issue #51, DB-MIG-04).
+ *
+ * The Lab 3 migration fixture must run the REAL orchestrator against the copied
+ * historical schema tree, not the repository schema (which now also contains the
+ * Lab 4 migration). The context is created lazily and removed in the top-level
+ * `afterAll`.
+ */
+let historicalContext: ReturnType<typeof createHistoricalMigrationContext> | null = null;
+
+/** Environment overrides that activate the verified historical-schema override. */
+function historicalEnv(): Record<string, string> {
+  if (!historicalContext) {
+    historicalContext = createHistoricalMigrationContext();
+  }
+  return historicalContext.env;
+}
+
+/** The verified historical schema path for direct Prisma CLI calls in this suite. */
+function historicalSchemaPath(): string {
+  return historicalEnv().MIGRATION_TEST_SCHEMA_PATH;
 }
 
 /** Queries the fixture DB directly (bypasses the cached Prisma client). */
@@ -381,6 +425,8 @@ function buildBackfillCompleteFixture(): {
 describe("DB-MIG-01..05: DevRequester -> User migration", () => {
   beforeAll(async () => {
     if (!process.env.DATABASE_URL) return;
+    // Create the isolated historical schema context used by every orchestrator run.
+    historicalEnv();
     // Ensure the database is in the finalized (Phase-C-complete) state with migrated Users.
     // The orchestrator (migrate-lab3.ts) performs the migration; these tests assert the result.
     const prisma = getPrisma();
@@ -602,7 +648,7 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
         expect(await fixtureCount(urls.fixtureUrl, "User")).toBe(2);
         expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(true);
 
-        const status = run("npx prisma migrate status", {
+        const status = run(`npx prisma migrate status --schema "${historicalSchemaPath()}"`, {
           ...process.env,
           DATABASE_URL: urls.fixtureUrlWithSchema,
         });
@@ -765,7 +811,7 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
         expect(await fixtureCount(urls.fixtureUrl, "Ticket")).toBe(4);
         expect(await fixtureCount(urls.fixtureUrl, "Attachment")).toBe(3);
 
-        const status = run("npx prisma migrate status", {
+        const status = run(`npx prisma migrate status --schema "${historicalSchemaPath()}"`, {
           ...process.env,
           DATABASE_URL: urls.fixtureUrlWithSchema,
         });
@@ -1085,7 +1131,7 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
         expect(rows.find((r) => r.id === 2)).toMatchObject({ uploaderUserId: 2, removedByUserId: 3 });
         expect(rows.find((r) => r.id === 3)).toMatchObject({ uploaderUserId: 4, removedByUserId: null });
 
-        const status = run("npx prisma migrate status", {
+        const status = run(`npx prisma migrate status --schema "${historicalSchemaPath()}"`, {
           ...process.env,
           DATABASE_URL: urls.fixtureUrlWithSchema,
         });
@@ -1188,4 +1234,170 @@ describe("DB-MIG-01..05: DevRequester -> User migration", () => {
     },
     240000,
   );
+});
+
+// ---------------------------------------------------------------------------
+// DB-MIG-04 — isolated historical migration fixture (Issue #51)
+//
+// The Lab 3 migration fixture must run the REAL orchestrator against a copied,
+// byte-verified historical schema tree, never the repository schema (which now
+// also contains the Lab 4 migration). The override is fail-closed: it is honored
+// only under NODE_ENV=test, only for an absolute schema path inside the fixture
+// root, and only against an explicitly disposable database URL. The normal path
+// (no override) must still apply the full repository migration history.
+// ---------------------------------------------------------------------------
+
+describe("DB-MIG-04: isolated historical migration fixture", () => {
+  itIfDb("copies and hash-verifies the historical schema and seven migrations", () => {
+    const ctx = createHistoricalMigrationContext();
+    try {
+      expect(existsSync(ctx.schemaPath)).toBe(true);
+      expect(existsSync(join(ctx.migrationsDir, "migration_lock.toml"))).toBe(true);
+      for (const dir of HISTORICAL_MIGRATIONS) {
+        expect(existsSync(join(ctx.migrationsDir, dir, "migration.sql"))).toBe(true);
+      }
+      // The copied tree must NOT contain the Lab 4 migration.
+      expect(
+        existsSync(join(ctx.migrationsDir, "20261001000000_lab4_actions_foundation")),
+      ).toBe(false);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  itIfDb("rejects the override outside NODE_ENV=test", () => {
+    const ctx = createHistoricalMigrationContext();
+    try {
+      expect(() =>
+        resolveMigrationTestSchemaArg({ ...ctx.env, NODE_ENV: "production" }),
+      ).toThrow(/NODE_ENV/);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  itIfDb("rejects a missing, relative, or outside-root schema override", () => {
+    const ctx = createHistoricalMigrationContext();
+    try {
+      expect(() =>
+        resolveMigrationTestSchemaArg({
+          ...ctx.env,
+          MIGRATION_TEST_SCHEMA_PATH: join(ctx.root, "does-not-exist.prisma"),
+        }),
+      ).toThrow();
+      expect(() =>
+        resolveMigrationTestSchemaArg({ ...ctx.env, MIGRATION_TEST_SCHEMA_PATH: "relative.prisma" }),
+      ).toThrow();
+      expect(() =>
+        resolveMigrationTestSchemaArg({
+          ...ctx.env,
+          MIGRATION_TEST_SCHEMA_PATH: join(ctx.root, "..", "outside.prisma"),
+        }),
+      ).toThrow();
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  itIfDb("rejects a missing or production-like database URL", () => {
+    const ctx = createHistoricalMigrationContext();
+    try {
+      expect(() =>
+        resolveMigrationTestSchemaArg({ ...ctx.env, DATABASE_URL: undefined }),
+      ).toThrow();
+      expect(() =>
+        resolveMigrationTestSchemaArg({
+          ...ctx.env,
+          DATABASE_URL: "postgresql://u:p@localhost:5432/production",
+        }),
+      ).toThrow(/production-like/);
+      expect(() =>
+        resolveMigrationTestSchemaArg({
+          ...ctx.env,
+          DATABASE_URL: "postgresql://u:p@localhost:5432/tocktick",
+        }),
+      ).toThrow(/not marked disposable/);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  itIfDb("accepts the verified override and returns an explicit --schema argument", () => {
+    const ctx = createHistoricalMigrationContext();
+    try {
+      const arg = resolveMigrationTestSchemaArg({
+        ...ctx.env,
+        DATABASE_URL: "postgresql://u:p@localhost:5432/tocktick_mig_test",
+      });
+      expect(arg).toContain("--schema");
+      expect(arg).toContain(ctx.schemaPath);
+    } finally {
+      ctx.cleanup();
+    }
+  });
+
+  itIfDb(
+    "runs the real orchestrator against the copied historical schema",
+    async () => {
+      const ctx = createHistoricalMigrationContext();
+      const urls = buildPopulatedFixture();
+      try {
+        const result = runOrchestrator(urls.fixtureUrlWithSchema, ctx.env);
+        expect(result.ok).toBe(true);
+        expect(result.output).toContain("Migration complete");
+
+        // The historical run must NOT have applied the Lab 4 migration.
+        expect(
+          await fixtureMigrationApplied(urls.fixtureUrl, "20261001000000_lab4_actions_foundation"),
+        ).toBe(false);
+        expect(await fixtureMigrationApplied(urls.fixtureUrl, PHASE_C_DIR)).toBe(true);
+      } finally {
+        dropFixture(urls.adminUrl);
+        ctx.cleanup();
+      }
+    },
+    240000,
+  );
+
+  itIfDb(
+    "normal path: Lab 4 migration pending, then deploy, then up to date",
+    async () => {
+      const urls = buildPopulatedFixture();
+      try {
+        // Bring the fixture to the Lab 3 baseline (7 migrations) via the real orchestrator.
+        const migrated = runOrchestrator(urls.fixtureUrlWithSchema);
+        expect(migrated.ok).toBe(true);
+        expect(migrated.output).toContain("Migration complete");
+
+        // Normal path: no override; explicit --schema on the repository schema.
+        const statusBefore = runCapture("npx prisma migrate status --schema prisma/schema.prisma", {
+          ...process.env,
+          DATABASE_URL: urls.fixtureUrlWithSchema,
+        });
+        expect(statusBefore).toContain("20261001000000_lab4_actions_foundation");
+        expect(statusBefore).toContain("not yet been applied");
+        expect(statusBefore).not.toContain("failed migration");
+
+        run("npx prisma migrate deploy --schema prisma/schema.prisma", {
+          ...process.env,
+          DATABASE_URL: urls.fixtureUrlWithSchema,
+        });
+
+        const statusAfter = run("npx prisma migrate status --schema prisma/schema.prisma", {
+          ...process.env,
+          DATABASE_URL: urls.fixtureUrlWithSchema,
+        });
+        expect(statusAfter).toContain("up to date");
+      } finally {
+        dropFixture(urls.adminUrl);
+      }
+    },
+    240000,
+  );
+});
+
+// Remove the per-run isolated historical schema tree after the whole suite.
+afterAll(() => {
+  historicalContext?.cleanup();
+  historicalContext = null;
 });
