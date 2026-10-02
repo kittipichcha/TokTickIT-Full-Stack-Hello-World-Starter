@@ -160,7 +160,7 @@ describe("API-ACT-01: create Action with server-derived fields", () => {
     const beforeActions = await prisma.actionTaken.count({ where: { ticketId: fx.ticketId } });
     const beforeKeys = await prisma.actionCreateIdempotency.count({ where: { actorUserId: fx.staff.id, route } });
 
-    for (const [suffix, token] of [["decimal", "1.0"], ["exponent", "1e0"]]) {
+    for (const [suffix, token] of [["decimal", "1.0"], ["exponent", "1e0"], ["overflow", "2147483648"]]) {
       const invalid = await postRawAction(
         fx.staff.session,
         fx.ticketNumber,
@@ -178,7 +178,7 @@ describe("API-ACT-01: create Action with server-derived fields", () => {
     const original = await prisma.actionTaken.findUniqueOrThrow({ where: { id: actionId } });
     const revisionCount = await prisma.actionTakenRevision.count({ where: { actionId } });
 
-    for (const [suffix, token] of [["decimal", "1.0"], ["exponent", "1e0"]]) {
+    for (const [suffix, token] of [["decimal", "1.0"], ["exponent", "1e0"], ["overflow", "2147483648"]]) {
       const invalid = await withSession(
         request(app)
           .patch(`/api/tickets/${fx.ticketNumber}/actions/${actionId}`)
