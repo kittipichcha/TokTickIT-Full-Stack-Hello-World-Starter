@@ -1,9 +1,12 @@
 # Issue #51 Verification Evidence
 
 Branch: `feature/lab4-actions-taken-foundation`
+Head: `3997f4e036a9265ed4c01d6264fee97d4d43a414`
 Parent: `lab4-staging` at `eb7c5f6`
 
 All checks used the repository server `.env` with a disposable local PostgreSQL database. Credentials, database dumps, attachment contents, and snapshots are not stored here.
+
+Every count below was produced by a single verification set rerun on the exact head above; the raw full-suite output is preserved in `server-regression.txt`.
 
 - Prisma validation: passed
 - Server build: passed

@@ -28,9 +28,9 @@ Issue #51 API routes:
 - `POST /api/tickets/:ticketNumber/actions`
 - `PATCH /api/tickets/:ticketNumber/actions/:actionId`
 
-Issue #51 review-fix verification (2026-10-02): Actions API/security/concurrency 22 passed,
-Lab 4 migration/recovery 3 passed, Lab 3 migration plus DB-MIG-04 26 passed, Actions seed
-idempotency 2 passed, and full server regression 42 files / 632 passed / 0 failed. DB-MIG-04
+Issue #51 review-fix verification (2026-10-02, head `3997f4e`): Actions API/security/concurrency
+23 passed, Lab 4 migration/recovery 3 passed, Lab 3 migration plus DB-MIG-04 26 passed, Actions
+seed idempotency 2 passed, and full server regression 42 files / 633 passed / 0 failed. DB-MIG-04
 pins `server/tests/lab-03/fixtures/lab3-final-schema.prisma` (SHA-256
 `7b5c5aceb173a4198731de90d3492d1f38861943099ea1fc5c2c85f6b31b5070`) as the immutable PR #58
 Lab 3 schema.
