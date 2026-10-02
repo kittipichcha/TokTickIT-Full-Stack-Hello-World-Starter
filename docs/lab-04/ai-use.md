@@ -1,5 +1,13 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #51 review-fix pass (2026-10-02)
+
+- Prompt summary: follow the supplied Issue #51 review/fix plan in `issue-51-worktree`, resolve the two contract decisions (pinned historical Lab 3 schema fixture; keep downstream Test DD clauses `Planned`), and commit and push the fixes.
+- Agent used: GitHub Copilot.
+- Work performed: enforced the frozen raw JSON integer grammar for Action `assigneeUserId`/`expectedVersion` by reusing `inspectIntegerFields()`; reordered `createAction()` so an unexpired idempotency record is authoritative before current Ticket-state validation while expired keys revalidate current state; persisted `createdAt`/`expiresAt` from one timestamp with an exact 24-hour difference and an equality-is-expired predicate; redistributed seed Actions to explicit zero/one/many per-Ticket counts with reconciliation of existing marker-owned rows; pinned `server/tests/lab-03/fixtures/lab3-final-schema.prisma` (SHA-256 `7b5c5aceb173a4198731de90d3492d1f38861943099ea1fc5c2c85f6b31b5070`) as the immutable PR #58 baseline schema; added paired synthetic attachment snapshot/restore and a Staff-performed accepted-write forward-recovery fixture; and expanded the Action API/seed/migration regression assertions. `API-ACT-08` and `SEC-ACT-02` remain `Planned` because their downstream clauses are owned by later issues.
+- Verification: `npx prisma validate` and `npm run build` passed; `tests/lab-04/actions-taken.api.test.ts` 22 passed; `tests/lab-04/seed.integration.test.ts` 2 passed; `tests/lab-04/migration.integration.test.ts` 3 passed; `tests/lab-03/migration.integration.test.ts` DB-MIG-04 passed. Full server regression recorded in `tests.md` after completion.
+- Reflection: the review’s blockers were ordering and evidence gaps rather than missing features; making the unexpired idempotency record authoritative before Ticket-state checks, and pinning the historical schema instead of copying the mutable Lab 4 schema, were the two changes that removed the most ambiguity.
+
 ## Issue #51 Actions Taken foundation (2026-10-01)
 
 - Prompt summary: implement the approved Issue #51 Actions Taken persistence/API foundation in `feature/lab4-actions-taken-foundation`, commit feature-by-feature, push it, and prepare a PR targeting `lab4-staging`.
