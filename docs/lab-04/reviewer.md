@@ -5,7 +5,7 @@
 
 ## Issue #50 contract review
 
-**GitHub review status:** Five submitted reviews are Changes Requested; final PR re-review and approval remain pending.
+**GitHub review status:** PR #58 received final human approval and was merged into `lab4-staging`. The historical review table below preserves the five earlier Changes Requested events.
 
 | Review | Reviewer | Verdict | Evidence |
 |---|---|---|---|
@@ -65,18 +65,17 @@
 The first review requested status-history contract/evidence, actor-versus-owner clarification,
 shared concurrency protection, durable canonical idempotency, Action detail coverage, reproducible
 performance criteria, and Lab 4-only evidence routing. The later review responses above record the
-contract changes. All five submitted GitHub reviews remain Changes Requested; no final PR approval is recorded.
+contract changes. Those five earlier GitHub reviews remain recorded as Changes Requested; the later final approval and merge are recorded above.
 The supplied Lab 4 handout remains the governing source; this record does not claim independent
 handout verification.
 
 The `agent.md` workflow inclusion is a scope exception to the normal governance-isolation rule; the
 peer reviewer accepted that exception in direct off-platform discussion with the author on
-2026-10-01. This scope acceptance is separate from formal GitHub PR approval: all five submitted
-GitHub reviews remain `CHANGES_REQUESTED`, and formal GitHub re-review and approval remain pending.
+2026-10-01. This scope acceptance is separate from the later formal GitHub PR approval and merge.
 
 The separate cross-layer consistency sweep is agent/process work recorded in `ai-use.md`, not
 human-review feedback.
 
 The specification, API contract, UI contract, and planned test matrix require human re-review
-before dependent Lab 4 implementation work begins. Automated agent review, if later performed,
-does not substitute for human approval.
+before dependent Lab 4 implementation work begins. That gate was satisfied when PR #58 received
+final human approval and merged; automated agent review does not substitute for human approval.

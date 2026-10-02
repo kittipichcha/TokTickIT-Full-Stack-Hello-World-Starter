@@ -1,0 +1,8 @@
+Command:
+  npm test -- --reporter=verbose
+
+Branch: feature/lab4-actions-taken-foundation
+Head: 3997f4e036a9265ed4c01d6264fee97d4d43a414
+
+Result: 42 test files, 633 tests passed, 0 failed.
+Duration: 1033.52 seconds.

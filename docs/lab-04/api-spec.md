@@ -1,6 +1,6 @@
-# Lab 4 API Contract — Draft for Human Review
+# Lab 4 API Contract
 
-> This is a contract only. No Lab 4 route, model, migration, seed, or test is claimed as implemented.
+> Status: Approved Lab 4 API contract. PR #58 was approved and merged into `lab4-staging`; implementation and evidence status are tracked by the owning issues and `tests.md`.
 
 ## 1. Compatibility and conventions
 

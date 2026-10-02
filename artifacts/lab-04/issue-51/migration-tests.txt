@@ -1,0 +1,9 @@
+Commands:
+  npx vitest run tests/lab-04/migration.integration.test.ts --reporter=verbose
+  npx vitest run tests/lab-03/migration.integration.test.ts --reporter=verbose
+
+Results: Lab 4 migration/recovery 3 passed; Lab 3 migration plus DB-MIG-04 26 passed; 0 failed.
+Expected injected failure diagnostics were asserted recovery paths.
+DB-MIG-04 uses the pinned server/tests/lab-03/fixtures/lab3-final-schema.prisma
+(SHA-256 7b5c5aceb173a4198731de90d3492d1f38861943099ea1fc5c2c85f6b31b5070) and the
+server-local Prisma CLI for the normal pending/deploy/up-to-date path.

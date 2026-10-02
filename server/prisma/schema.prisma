@@ -49,6 +49,13 @@ enum Role {
   ADMINISTRATOR
 }
 
+// Lab 4 — Actions Taken lifecycle (specification.md §7).
+enum ActionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id                 Int      @id @default(autoincrement())
   name               String
@@ -60,37 +67,53 @@ model User {
   createdAt          DateTime @default(now()) @db.Timestamptz(3)
   updatedAt          DateTime @updatedAt @db.Timestamptz(3)
 
-  requesterTickets   Ticket[]      @relation("TicketRequester")
-  ownedTickets       Ticket[]      @relation("TicketOwner")
-  uploadedAttachments Attachment[] @relation("AttachmentUserUploader")
-  removedAttachments  Attachment[] @relation("AttachmentUserRemover")
-  comments           Comment[]
-  internalNotes      InternalNote[]
+  requesterTickets    Ticket[]       @relation("TicketRequester")
+  ownedTickets        Ticket[]       @relation("TicketOwner")
+  uploadedAttachments Attachment[]   @relation("AttachmentUserUploader")
+  removedAttachments  Attachment[]   @relation("AttachmentUserRemover")
+  comments            Comment[]
+  internalNotes       InternalNote[]
+
+  // Lab 4 — Actions Taken relations (specification.md §7).
+  performedActions    ActionTaken[]             @relation("ActionPerformer")
+  assignedActions     ActionTaken[]             @relation("ActionAssignee")
+  actionRevisions     ActionTakenRevision[]     @relation("ActionRevisionEditor")
+  ticketStatusChanges TicketStatusChange[]      @relation("TicketStatusChanger")
+  actionIdempotency   ActionCreateIdempotency[] @relation("ActionIdempotencyActor")
 }
 
 model Ticket {
-  id               Int          @id @default(autoincrement())
-  ticketNumber     String       @unique
-  requesterId      Int
-  categoryId       Int
-  relatedSystemId  Int
-  summary          String
-  description      String
+  id                Int          @id @default(autoincrement())
+  ticketNumber      String       @unique
+  requesterId       Int
+  categoryId        Int
+  relatedSystemId   Int
+  summary           String
+  description       String
   requestedPriority Priority
-  itPriority       Priority?
-  ticketOwnerId    Int?
-  currentStatus    TicketStatus @default(NEW)
-  appearsResolved  Boolean      @default(false)
-  createdAt        DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt        DateTime     @updatedAt @db.Timestamptz(3)
+  itPriority        Priority?
+  ticketOwnerId     Int?
+  currentStatus     TicketStatus @default(NEW)
+  appearsResolved   Boolean      @default(false)
+  // Lab 4 — shared optimistic-concurrency version (specification.md §7).
+  // Initialized to 1 for new and existing Tickets; no new Ticket index is added.
+  version           Int          @default(1)
+  // Lab 4 — nullable UTC resolution timestamp. Legacy Resolved Tickets stay NULL.
+  resolvedAt        DateTime?    @db.Timestamptz(3)
+  createdAt         DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime     @updatedAt @db.Timestamptz(3)
 
-  requester      User            @relation("TicketRequester", fields: [requesterId], references: [id])
-  owner          User?           @relation("TicketOwner", fields: [ticketOwnerId], references: [id])
-  category       Category        @relation(fields: [categoryId], references: [id])
-  relatedSystem  RelatedSystem   @relation(fields: [relatedSystemId], references: [id])
-  attachments    Attachment[]
-  comments       Comment[]
-  internalNotes  InternalNote[]
+  requester     User           @relation("TicketRequester", fields: [requesterId], references: [id])
+  owner         User?          @relation("TicketOwner", fields: [ticketOwnerId], references: [id])
+  category      Category       @relation(fields: [categoryId], references: [id])
+  relatedSystem RelatedSystem  @relation(fields: [relatedSystemId], references: [id])
+  attachments   Attachment[]
+  comments      Comment[]
+  internalNotes InternalNote[]
+
+  // Lab 4 — Actions Taken and immutable status history (specification.md §7).
+  actions       ActionTaken[]
+  statusChanges TicketStatusChange[]
 
   @@index([requesterId])
   @@index([currentStatus])
@@ -99,22 +122,22 @@ model Ticket {
 }
 
 model Attachment {
-  id                    Int           @id @default(autoincrement())
-  ticketId              Int
-  originalFilename      String
-  storedFilename        String        @unique
-  mimeType              String
-  fileSizeBytes         Int
-  uploaderUserId        Int
-  isRemoved             Boolean       @default(false)
-  removedAt             DateTime?     @db.Timestamptz(3)
-  removalReason         String?
-  removedByUserId       Int?
-  uploadedAt            DateTime      @default(now()) @db.Timestamptz(3)
+  id               Int       @id @default(autoincrement())
+  ticketId         Int
+  originalFilename String
+  storedFilename   String    @unique
+  mimeType         String
+  fileSizeBytes    Int
+  uploaderUserId   Int
+  isRemoved        Boolean   @default(false)
+  removedAt        DateTime? @db.Timestamptz(3)
+  removalReason    String?
+  removedByUserId  Int?
+  uploadedAt       DateTime  @default(now()) @db.Timestamptz(3)
 
-  ticket            Ticket        @relation(fields: [ticketId], references: [id])
-  uploaderUser      User          @relation("AttachmentUserUploader", fields: [uploaderUserId], references: [id])
-  removedByUser     User?         @relation("AttachmentUserRemover", fields: [removedByUserId], references: [id])
+  ticket        Ticket @relation(fields: [ticketId], references: [id])
+  uploaderUser  User   @relation("AttachmentUserUploader", fields: [uploaderUserId], references: [id])
+  removedByUser User?  @relation("AttachmentUserRemover", fields: [removedByUserId], references: [id])
 
   @@index([ticketId])
 }
@@ -146,6 +169,97 @@ model InternalNote {
 }
 
 model TicketSequence {
-  year     Int @id
-  lastSeq  Int @default(0)
+  year    Int @id
+  lastSeq Int @default(0)
+}
+
+// ---------------------------------------------------------------------------
+// Lab 4 — Actions Taken persistence (specification.md §7, api-spec.md §2–§6)
+// ---------------------------------------------------------------------------
+
+/// An Action Taken on a Ticket. One Ticket has zero or many Actions (BR-01).
+/// `performedByUserId` and `createdAt` are backend-derived and immutable (BR-03).
+/// `assigneeUserId` is a separate, nullable identity (BR-02).
+model ActionTaken {
+  id                Int          @id @default(autoincrement())
+  ticketId          Int
+  description       String
+  result            String?
+  followUpRequired  Boolean      @default(false)
+  followUpNote      String?
+  attachmentNotes   String?
+  status            ActionStatus @default(PENDING)
+  performedByUserId Int
+  assigneeUserId    Int?
+  version           Int          @default(1)
+  createdAt         DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime     @updatedAt @db.Timestamptz(3)
+
+  ticket      Ticket                    @relation(fields: [ticketId], references: [id])
+  performedBy User                      @relation("ActionPerformer", fields: [performedByUserId], references: [id])
+  assignee    User?                     @relation("ActionAssignee", fields: [assigneeUserId], references: [id])
+  revisions   ActionTakenRevision[]
+  idempotency ActionCreateIdempotency[]
+
+  @@index([ticketId, createdAt, id])
+  @@index([assigneeUserId, status, createdAt, id])
+  @@index([performedByUserId, createdAt, id])
+}
+
+/// Immutable before/after audit snapshot for every accepted Action edit (BR-06).
+/// Prior revisions can never be edited or deleted.
+model ActionTakenRevision {
+  id             Int      @id @default(autoincrement())
+  actionId       Int
+  editedByUserId Int
+  editedAt       DateTime @default(now()) @db.Timestamptz(3)
+  versionBefore  Int
+  versionAfter   Int
+  beforeSnapshot Json
+  afterSnapshot  Json
+
+  action   ActionTaken @relation(fields: [actionId], references: [id])
+  editedBy User        @relation("ActionRevisionEditor", fields: [editedByUserId], references: [id])
+
+  @@index([actionId, editedAt, id])
+}
+
+/// Immutable formal Ticket status history (BR-28). The Ticket's current status
+/// remains the source of truth; history is never edited or deleted.
+model TicketStatusChange {
+  id              Int          @id @default(autoincrement())
+  ticketId        Int
+  changedByUserId Int
+  changedAt       DateTime     @default(now()) @db.Timestamptz(3)
+  fromStatus      TicketStatus
+  toStatus        TicketStatus
+  versionBefore   Int
+  versionAfter    Int
+
+  ticket    Ticket @relation(fields: [ticketId], references: [id])
+  changedBy User   @relation("TicketStatusChanger", fields: [changedByUserId], references: [id])
+
+  @@index([ticketId, changedAt, id])
+}
+
+/// Durable Action-create idempotency record (BR-25, api-spec.md §4).
+/// Unique on the ordered tuple (actorUserId, route, key); `route` is the concrete
+/// Action-create route including the Ticket number. Expiry is exactly 24 hours
+/// after creation; expired keys are invalid during lookup even before cleanup.
+model ActionCreateIdempotency {
+  id           Int      @id @default(autoincrement())
+  actorUserId  Int
+  route        String
+  key          String
+  requestHash  String
+  actionId     Int
+  responseBody Json
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt    DateTime @db.Timestamptz(3)
+
+  actor  User        @relation("ActionIdempotencyActor", fields: [actorUserId], references: [id])
+  action ActionTaken @relation(fields: [actionId], references: [id])
+
+  @@unique([actorUserId, route, key])
+  @@index([expiresAt, id])
 }

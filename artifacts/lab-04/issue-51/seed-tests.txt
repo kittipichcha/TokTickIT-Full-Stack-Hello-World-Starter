@@ -1,0 +1,7 @@
+Command:
+  npx vitest run tests/lab-04/seed.integration.test.ts --reporter=verbose
+
+Result: 1 file, 2 tests passed, 0 failed.
+Coverage: marker-owned zero/one/many per-Ticket Action counts, assigned/unassigned
+Tickets, varied status/priority, terminal revisions, and two-run idempotency with
+identical Action IDs, descriptions, versions, per-Ticket counts, and revisions.

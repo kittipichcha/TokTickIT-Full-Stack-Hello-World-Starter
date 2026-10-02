@@ -1,5 +1,21 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #51 review-fix pass (2026-10-02)
+
+- Prompt summary: follow the supplied Issue #51 review/fix plan in `issue-51-worktree`, resolve the two contract decisions (pinned historical Lab 3 schema fixture; keep downstream Test DD clauses `Planned`), and commit and push the fixes.
+- Agent used: GitHub Copilot.
+- Work performed: enforced the frozen raw JSON integer grammar for Action `assigneeUserId`/`expectedVersion` by reusing `inspectIntegerFields()`; reordered `createAction()` so an unexpired idempotency record is authoritative before current Ticket-state validation while expired keys revalidate current state; made the expired-record replacement tolerate the hourly cleanup deleting the record mid-request (`deleteMany` instead of `delete`); persisted `createdAt`/`expiresAt` from one timestamp with an exact 24-hour difference and an equality-is-expired predicate; redistributed seed Actions to explicit zero/one/many per-Ticket counts with reconciliation of existing marker-owned rows; pinned `server/tests/lab-03/fixtures/lab3-final-schema.prisma` (SHA-256 `7b5c5aceb173a4198731de90d3492d1f38861943099ea1fc5c2c85f6b31b5070`) as the immutable PR #58 baseline schema; rewrote `DB-MIG-02` to fail through the real `prisma migrate deploy` path using a disposable failing migration tree; added paired synthetic attachment snapshot/restore and a Staff-performed accepted-write forward-recovery fixture; and expanded the Action API/seed/migration regression assertions. Issue #51 executes the terminal-Ticket create rejection clause of `API-ACT-08` and the Action authorization/CSRF clause of `SEC-ACT-02`; both rows remain `Planned` as complete Test DD rows because their downstream workflow/dashboard clauses are owned by later issues.
+- Verification: `npx prisma validate` and `npm run build` passed; `tests/lab-04/actions-taken.api.test.ts` 23 passed; `tests/lab-04/seed.integration.test.ts` 2 passed; `tests/lab-04/migration.integration.test.ts` 3 passed; `tests/lab-03/migration.integration.test.ts` 26 passed including DB-MIG-04. Full server regression rerun on head `3997f4e`: 42 files, 633 passed, 0 failed.
+- Reflection: the review’s blockers were ordering and evidence gaps rather than missing features; making the unexpired idempotency record authoritative before Ticket-state checks, and pinning the historical schema instead of copying the mutable Lab 4 schema, were the two changes that removed the most ambiguity.
+
+## Issue #51 Actions Taken foundation (2026-10-01)
+
+- Prompt summary: implement the approved Issue #51 Actions Taken persistence/API foundation in `feature/lab4-actions-taken-foundation`, commit feature-by-feature, push it, and prepare a PR targeting `lab4-staging`.
+- Agent used: GitHub Copilot.
+- Work performed: added additive Action persistence and migration/recovery fixtures, authorized Action list/detail/create/update APIs with idempotency and concurrency handling, marker-owned seed Actions with immutable terminal revisions, and focused integration tests. The UI, Ticket workflow, dashboards, and final release work remain deferred.
+- Verification: DB-MIG-01/02/03 passed (3 tests), DB-MIG-04 passed within the 26-test Lab 3 migration suite, Actions API/security/concurrency passed (18 tests), DB-SEED-01 passed (2 tests), Prisma validation/build passed, and full server regression passed with 42 files and 628 tests.
+- Reflection: keeping persistence, API, seed, and evidence commits separate made each acceptance gate independently reviewable and exposed the missing seed slice before publishing.
+
 ## Issue #50 review-blocker fixes (B1–B3) and N1 release follow-up (2026-10-01)
 
 - Prompt summary: fix the blocking review findings on the Lab 4 contract — Test DD authorization coverage (B1), the retired Lab 2 identity mechanism in `agent.md` (B2), and the contradictory `Planned` test-file rules (B3) — and record the non-blocking `ai-use.md` curation as a release follow-up (N1).
