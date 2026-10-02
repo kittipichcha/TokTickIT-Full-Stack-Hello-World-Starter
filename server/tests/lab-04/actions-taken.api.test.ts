@@ -43,7 +43,6 @@ function postAction(
   );
 }
 
-/** POSTs raw JSON so decimal/exponent number syntax is preserved on the wire. */
 function postRawAction(session: TestSession, ticketNumber: string, key: string, rawBody: string) {
   return withSession(
     request(app)
@@ -483,6 +482,8 @@ describe("API-ACT-04: assignee eligibility", () => {
       assigneeUserId: fx.admin.id,
     });
     expect(admin.status).toBe(201);
+    expect(admin.body.data.assignee.id).toBe(fx.admin.id);
+    expect(admin.body.data.performedBy.id).toBe(fx.staff.id);
 
     const prisma = getPrisma();
     const before = await prisma.actionTaken.count({ where: { ticketId: fx.ticketId } });
@@ -659,6 +660,24 @@ describe("API-ACT-06: audited updates", () => {
     expect(secondEdit.body.data.version).toBe(3);
     expect(await prisma.actionTakenRevision.findUniqueOrThrow({ where: { id: firstRevision.id } })).toEqual(firstRevision);
     expect(await prisma.actionTakenRevision.count({ where: { actionId } })).toBe(2);
+
+    const maxLengthPatch = await withSession(
+      request(app).patch(`/api/tickets/${fx.ticketNumber}/actions/${actionId}`).send({
+        expectedVersion: 3,
+        description: "d".repeat(2000),
+        result: "r".repeat(2000),
+        followUpRequired: true,
+        followUpNote: "f".repeat(1000),
+        attachmentNotes: "a".repeat(1000),
+      }),
+      fx.staff.session,
+      { csrf: true },
+    );
+    expect(maxLengthPatch.status).toBe(200);
+    expect(maxLengthPatch.body.data.description).toHaveLength(2000);
+    expect(maxLengthPatch.body.data.result).toHaveLength(2000);
+    expect(maxLengthPatch.body.data.followUpNote).toHaveLength(1000);
+    expect(maxLengthPatch.body.data.attachmentNotes).toHaveLength(1000);
   });
 
   itIfDb("requires explicit repair when the current assignee became ineligible", async () => {
@@ -882,6 +901,10 @@ describe("SEC-ACT-01: authorization matrix", () => {
     expect(unauthList.status).toBe(401);
     const unauthDetail = await request(app).get(`/api/tickets/${fx.ticketNumber}/actions/${actionId}`);
     expect(unauthDetail.status).toBe(401);
+    const unauthPatch = await request(app)
+      .patch(`/api/tickets/${fx.ticketNumber}/actions/${actionId}`)
+      .send({ expectedVersion: 1, description: "unauthenticated" });
+    expect(unauthPatch.status).toBe(401);
 
     // Cross-requester read -> ownership-safe 404.
     const cross = await withSession(
