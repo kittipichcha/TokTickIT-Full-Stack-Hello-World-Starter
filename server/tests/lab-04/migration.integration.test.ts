@@ -15,11 +15,9 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   buildLab3Baseline,
   applyLab4Migration,
@@ -29,19 +27,20 @@ import {
   createSyntheticAttachmentStore,
   snapshotSyntheticAttachmentStore,
   verifyAttachmentHashes,
+  createFailingMigrationTree,
+  runPrismaMigrateDeploy,
   query,
   count,
   tableExists,
   migrationApplied,
   indexNames,
   LAB4_MIGRATION_NAME,
+  FAILING_MIGRATION_NAME,
   LAB3_PHASE_A,
   LAB3_PHASE_C,
-  type DisposableDb,
 } from "./helpers/migration-fixture.js";
 
 const itIfDb = process.env.DATABASE_URL ? it : it.skip;
-const serverRoot = fileURLToPath(new URL("../../", import.meta.url));
 
 /** The synthetic attachment store mirrors the fixture's single Attachment row. */
 const ATTACHMENT_FILES = { "stored-normal.txt": "synthetic attachment contents" };
@@ -154,7 +153,7 @@ describe("DB-MIG-01: additive Lab 4 migration preserves Lab 3 data", () => {
 
 describe("DB-MIG-02: pre-write failure restores the paired snapshots", () => {
   itIfDb(
-    "a failing Lab 4 migration rolls back fully, then the DB + attachment snapshots restore exactly",
+    "a real prisma migrate deploy failure is recovered by restoring the paired DB + attachment snapshots",
     async () => {
       const db = buildLab3Baseline("lab4mig02");
       const restoreTarget = createDisposableDb("lab4mig02restore");
@@ -162,56 +161,75 @@ describe("DB-MIG-02: pre-write failure restores the paired snapshots", () => {
       const attachmentSnapshot = snapshotSyntheticAttachmentStore(store);
       const tmp = mkdtempSync(join(tmpdir(), "lab4-mig02-"));
       const dumpPath = join(tmp, "baseline.dump");
+      const failingTree = createFailingMigrationTree();
       try {
+        // 1. The verified Lab 3 database is built by `buildLab3Baseline`.
+        // 4. Record the pre-cutover baseline: IDs, values, counts, FKs/references,
+        //    migration state, and attachment hashes.
         const before = await snapshotPreserved(db.dbUrl);
         const ticketIndexesBefore = await indexNames(db.dbUrl, "Ticket");
+        const migrationStateBefore = await query<{ migration_name: string; finished_at: string | null }>(
+          db.dbUrl,
+          `SELECT migration_name, finished_at FROM _prisma_migrations ORDER BY migration_name`,
+        );
 
-        // Snapshot the verified pre-cutover database and attachment store.
+        // 2. Snapshot the complete DB; 3. snapshot the synthetic attachment storage.
         dumpDatabase(db.dbUrl, dumpPath);
         expect(verifyAttachmentHashes(store)).toBe(true);
 
-        // Inject a late failure into the REAL Lab 4 migration SQL and apply it
-        // through the same psql --single-transaction mechanism.
-        const migrationSql = readFileSync(
-          join(serverRoot, "prisma", "migrations", LAB4_MIGRATION_NAME, "migration.sql"),
-          "utf-8",
+        // 5. Run the isolated Prisma migration history containing the deliberately
+        //    failing migration through the REAL `prisma migrate deploy` path.
+        const deploy = runPrismaMigrateDeploy(failingTree.schemaPath, db.dbUrlWithSchema);
+
+        // 6. Require `prisma migrate deploy` to fail.
+        expect(deploy.ok).toBe(false);
+
+        // 7. Inspect and record the actual failed state rather than assuming
+        //    complete rollback. The failed migration must be recorded as unfinished.
+        const failedMigration = await query<{ migration_name: string; finished_at: string | null }>(
+          db.dbUrl,
+          `SELECT migration_name, finished_at FROM _prisma_migrations WHERE migration_name = $1`,
+          [FAILING_MIGRATION_NAME],
         );
-        const failingPath = join(tmp, "failing-lab4.sql");
-        writeFileSync(failingPath, `${migrationSql}\n\n-- [test-only] deliberate late failure\nSELECT 1/0;\n`, "utf-8");
+        expect(failedMigration).toHaveLength(1);
+        expect(failedMigration[0].finished_at).toBeNull();
+        // Record (do not assert) whether partial DDL left the probe object behind;
+        // this test must not depend on a particular partial-DDL result.
+        const probeExistsAfterFailure = await tableExists(db.dbUrl, "Lab4FailureProbe");
 
-        let failed = false;
-        try {
-          execFileSync(
-            "psql",
-            [db.dbUrl, "--single-transaction", "-v", "ON_ERROR_STOP=1", "-f", failingPath],
-            { cwd: serverRoot, encoding: "utf-8" },
-          );
-        } catch {
-          failed = true;
-        }
-        expect(failed).toBe(true);
+        // 8. Application writers remain conceptually stopped throughout recovery:
+        //    no writer is started between the failure above and the restore below.
 
-        // The failure rolled back every Lab 4 DDL statement: no Lab 4 tables exist.
-        expect(await tableExists(db.dbUrl, "ActionTaken")).toBe(false);
-        expect(await tableExists(db.dbUrl, "ActionCreateIdempotency")).toBe(false);
-        expect(await migrationApplied(db.dbUrl, LAB4_MIGRATION_NAME)).toBe(false);
-
+        // 9. Restore the verified database snapshot into a clean disposable DB.
+        restoreDatabase(restoreTarget.dbUrl, dumpPath);
+        // 10. Restore the paired attachment snapshot.
         writeFileSync(join(store.dir, "stored-normal.txt"), "damaged attachment");
         expect(verifyAttachmentHashes(store)).toBe(false);
-        // Writers remain stopped; restore the paired snapshots together into a
-        // separate empty database and verify exact preservation.
-        restoreDatabase(restoreTarget.dbUrl, dumpPath);
         attachmentSnapshot.restore();
         expect(verifyAttachmentHashes(store)).toBe(true);
         expect(store.hashes).toEqual(attachmentSnapshot.hashes);
 
+        // 11. Verify the restored state exactly equals the pre-cutover baseline.
         const restored = await snapshotPreserved(restoreTarget.dbUrl);
         expect(restored).toEqual(before);
         expectAttachmentReferences(restored, attachmentSnapshot.hashes);
         expect(await indexNames(restoreTarget.dbUrl, "Ticket")).toEqual(ticketIndexesBefore);
+        const migrationStateAfter = await query<{ migration_name: string; finished_at: string | null }>(
+          restoreTarget.dbUrl,
+          `SELECT migration_name, finished_at FROM _prisma_migrations ORDER BY migration_name`,
+        );
+        expect(migrationStateAfter).toEqual(migrationStateBefore);
         expect(await migrationApplied(restoreTarget.dbUrl, LAB4_MIGRATION_NAME)).toBe(false);
         expect(await migrationApplied(restoreTarget.dbUrl, LAB3_PHASE_C)).toBe(true);
+
+        // 12. No failed-test migration state or probe object survives in the restored DB.
+        expect(await migrationApplied(restoreTarget.dbUrl, FAILING_MIGRATION_NAME)).toBe(false);
+        expect(
+          await tableExists(restoreTarget.dbUrl, "Lab4FailureProbe"),
+          `probe existed in the failed source DB: ${probeExistsAfterFailure}`,
+        ).toBe(false);
       } finally {
+        failingTree.cleanup();
         rmSync(tmp, { recursive: true, force: true });
         attachmentSnapshot.cleanup();
         store.cleanup();

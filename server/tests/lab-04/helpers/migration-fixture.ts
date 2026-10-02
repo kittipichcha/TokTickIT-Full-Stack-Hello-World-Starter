@@ -218,6 +218,84 @@ export function applyLab4Migration(db: DisposableDb): void {
   }
 }
 
+/** The complete real migration history through the Lab 4 Actions migration. */
+const REAL_MIGRATIONS = [...LAB2_MIGRATIONS, PHASE_A_DIR, PHASE_C_DIR, LAB4_MIGRATION] as const;
+
+/** The test-only migration name appended after the real Lab 4 migration. */
+export const FAILING_MIGRATION_NAME = "99999999999999_lab4_deliberate_failure";
+
+export interface FailingMigrationTree {
+  root: string;
+  schemaPath: string;
+  cleanup: () => void;
+}
+
+/**
+ * Builds an isolated, disposable Prisma migration tree in a temp directory:
+ * the current approved schema, `migration_lock.toml`, the complete real
+ * migration history through the Lab 4 Actions migration, and a deliberately
+ * failing test-only migration appended after it.
+ *
+ * This exercises the REAL `prisma migrate deploy` failure path without ever
+ * mutating `server/prisma/migrations/`.
+ */
+export function createFailingMigrationTree(): FailingMigrationTree {
+  const root = mkdtempSync(join(tmpdir(), "lab4-failing-migration-"));
+  const migrationsDir = join(root, "migrations");
+  mkdirSync(migrationsDir, { recursive: true });
+  copyFileSync(join(serverRoot, "prisma", "schema.prisma"), join(root, "schema.prisma"));
+  copyFileSync(
+    join(serverRoot, "prisma", "migrations", "migration_lock.toml"),
+    join(migrationsDir, "migration_lock.toml"),
+  );
+  for (const dir of REAL_MIGRATIONS) {
+    const destDir = join(migrationsDir, dir);
+    mkdirSync(destDir, { recursive: true });
+    copyFileSync(
+      join(serverRoot, "prisma", "migrations", dir, "migration.sql"),
+      join(destDir, "migration.sql"),
+    );
+  }
+  const failingDir = join(migrationsDir, FAILING_MIGRATION_NAME);
+  mkdirSync(failingDir, { recursive: true });
+  writeFileSync(
+    join(failingDir, "migration.sql"),
+    `-- [test-only] deliberate failure appended after the real Lab 4 migration\n` +
+      `CREATE TABLE "Lab4FailureProbe" (\n  "id" INTEGER PRIMARY KEY\n);\n\nSELECT 1 / 0;\n`,
+    "utf-8",
+  );
+  return {
+    root,
+    schemaPath: join(root, "schema.prisma"),
+    cleanup: () => {
+      try {
+        rmSync(root, { recursive: true, force: true });
+      } catch {
+        // Best-effort cleanup.
+      }
+    },
+  };
+}
+
+/**
+ * Runs the REAL `prisma migrate deploy` against an explicit schema and database,
+ * returning whether it succeeded plus its combined output. Never throws.
+ */
+export function runPrismaMigrateDeploy(schemaPath: string, dbUrl: string): { ok: boolean; output: string } {
+  const command = `npx prisma migrate deploy --schema "${schemaPath}"`;
+  try {
+    const output = execSync(command, {
+      cwd: serverRoot,
+      encoding: "utf-8",
+      env: { ...process.env, DATABASE_URL: dbUrl },
+    }).toString();
+    return { ok: true, output };
+  } catch (err) {
+    const e = err as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string };
+    return { ok: false, output: `${e.stdout ?? ""}${e.stderr ?? ""}${e.message ?? ""}` };
+  }
+}
+
 /** Takes a custom-format PostgreSQL snapshot into a temp file. Returns the path. */
 export function dumpDatabase(dbUrl: string, filePath: string): void {
   execFileSync("pg_dump", ["--format=custom", "--file", filePath, dbUrl], {
