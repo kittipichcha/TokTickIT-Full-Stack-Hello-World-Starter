@@ -116,6 +116,45 @@ export async function createActionFixture(): Promise<ActionFixture> {
   };
 }
 
+/** Creates an additional accessible Ticket with cleanup for list/detail tests. */
+export async function createAdditionalActionTicket(
+  fixture: ActionFixture,
+  label: string,
+): Promise<{ id: number; ticketNumber: string; cleanup: () => Promise<void> }> {
+  const prisma = getPrisma();
+  const source = await prisma.ticket.findUniqueOrThrow({ where: { id: fixture.ticketId } });
+  const ticketNumber = await allocateTicketNumber(new Date().getUTCFullYear());
+  const ticket = await prisma.ticket.create({
+    data: {
+      ticketNumber,
+      requesterId: fixture.requester.id,
+      categoryId: source.categoryId,
+      relatedSystemId: source.relatedSystemId,
+      summary: `Action fixture ${label}`,
+      description: `Action fixture ${label}`,
+      requestedPriority: source.requestedPriority,
+      itPriority: source.itPriority,
+      ticketOwnerId: fixture.staff.id,
+      currentStatus: "IN_PROGRESS",
+    },
+  });
+
+  return {
+    id: ticket.id,
+    ticketNumber: ticket.ticketNumber,
+    cleanup: async () => {
+      const actions = await prisma.actionTaken.findMany({ where: { ticketId: ticket.id }, select: { id: true } });
+      const actionIds = actions.map((action) => action.id);
+      if (actionIds.length > 0) {
+        await prisma.actionTakenRevision.deleteMany({ where: { actionId: { in: actionIds } } });
+        await prisma.actionCreateIdempotency.deleteMany({ where: { actionId: { in: actionIds } } });
+        await prisma.actionTaken.deleteMany({ where: { id: { in: actionIds } } });
+      }
+      await prisma.ticket.delete({ where: { id: ticket.id } });
+    },
+  };
+}
+
 /** Creates an Action directly through Prisma (for read/authorization tests). */
 export async function seedAction(options: {
   ticketId: number;
@@ -128,6 +167,7 @@ export async function seedAction(options: {
   followUpNote?: string | null;
   attachmentNotes?: string | null;
   version?: number;
+  createdAt?: Date;
 }): Promise<number> {
   const prisma = getPrisma();
   const action = await prisma.actionTaken.create({
@@ -142,6 +182,7 @@ export async function seedAction(options: {
       performedByUserId: options.performedByUserId,
       assigneeUserId: options.assigneeUserId ?? null,
       version: options.version ?? 1,
+      ...(options.createdAt ? { createdAt: options.createdAt } : {}),
     },
   });
   return action.id;

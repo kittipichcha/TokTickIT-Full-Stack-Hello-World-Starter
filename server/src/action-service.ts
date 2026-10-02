@@ -35,6 +35,11 @@ import {
 /** Idempotency retention: exactly 24 hours (api-spec.md §4). */
 export const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
 
+/** Equality with expiry is expired (api-spec.md §4). */
+export function isIdempotencyRecordExpired(expiresAt: Date, now: Date): boolean {
+  return expiresAt.getTime() <= now.getTime();
+}
+
 /** Ticket statuses on which a new Pending Action is forbidden (BR-27). */
 const TERMINAL_TICKET_STATUSES = ["RESOLVED", "CLOSED", "CANCELLED"] as const;
 
@@ -264,9 +269,8 @@ async function lockTicket(
 /**
  * `createAction` — idempotent Action creation (api-spec.md §4).
  *
- * The parent Ticket row is locked first, then the Ticket state is checked, the
- * assignee (if any) is validated under a User lock, and the Action plus its
- * idempotency record are written in one transaction.
+ * The parent Ticket row is locked first. Unexpired idempotency records decide
+ * retries before current Ticket state is validated for a fresh operation.
  *
  * Replay: the same actor/route/key with the same normalized hash returns the
  * original `201` body and creates no row. A different hash returns `409`. An
@@ -286,29 +290,27 @@ export async function createAction(
 
   return prisma.$transaction(async (tx) => {
     const ticket = await lockTicket(tx, ticketNumber);
-
-    if ((TERMINAL_TICKET_STATUSES as readonly string[]).includes(ticket.currentStatus)) {
-      throw new ConflictError("A Pending Action cannot be created on a resolved, closed, or cancelled Ticket.");
-    }
-
-    // Idempotency lookup (expired records are treated as absent).
     const existing = await tx.actionCreateIdempotency.findUnique({
       where: { actorUserId_route_key: { actorUserId, route, key: idempotencyKey } },
     });
     const now = new Date();
-    if (existing && existing.expiresAt > now) {
+    if (existing && !isIdempotencyRecordExpired(existing.expiresAt, now)) {
       if (existing.requestHash === requestHash) {
         return { status: 201, body: existing.responseBody as unknown as { data: StaffActionDto } };
       }
       throw new ConflictError("This Idempotency-Key was already used with a different request payload.");
     }
-    if (existing) {
-      // Expired: remove the stale record so the fresh one can be inserted.
-      await tx.actionCreateIdempotency.delete({ where: { id: existing.id } });
+
+    if ((TERMINAL_TICKET_STATUSES as readonly string[]).includes(ticket.currentStatus)) {
+      throw new ConflictError("A Pending Action cannot be created on a resolved, closed, or cancelled Ticket.");
     }
 
     if (normalized.assigneeUserId !== null) {
       await assertEligibleAssignee(tx, normalized.assigneeUserId);
+    }
+
+    if (existing) {
+      await tx.actionCreateIdempotency.delete({ where: { id: existing.id } });
     }
 
     const created = await tx.actionTaken.create({
@@ -337,6 +339,7 @@ export async function createAction(
         requestHash,
         actionId: created.id,
         responseBody: responseBody as unknown as Prisma.InputJsonValue,
+        createdAt: now,
         expiresAt: new Date(now.getTime() + IDEMPOTENCY_TTL_MS),
       },
     });

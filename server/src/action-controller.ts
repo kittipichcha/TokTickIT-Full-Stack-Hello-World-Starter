@@ -20,6 +20,7 @@ import {
 import { validateIdempotencyKey } from "./action-validation.js";
 import { ValidationError, NotFoundError, ConflictError, type AccessContext } from "./service.js";
 import { MAX_DATABASE_ID } from "./id-domain.js";
+import { inspectIntegerFields } from "./integer-validation.js";
 
 const INTERNAL_ERROR_BODY = {
   error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
@@ -54,6 +55,31 @@ function respondWithError(res: Response, err: unknown): void {
     return;
   }
   res.status(500).json(INTERNAL_ERROR_BODY);
+}
+
+/** Rejects JSON integer tokens that JSON.parse would otherwise normalize. */
+function validateRawActionIntegerFields(
+  req: Request,
+  res: Response,
+  body: Record<string, unknown>,
+  candidateFields: string[],
+): boolean {
+  const fieldsToInspect = candidateFields.filter((field) =>
+    field === "assigneeUserId" ? body[field] !== undefined && body[field] !== null : body[field] !== undefined,
+  );
+  if (fieldsToInspect.length === 0) return true;
+
+  const rawBody = (req as unknown as Record<string, unknown>).rawBody as string | undefined;
+  const inspection = inspectIntegerFields(rawBody, fieldsToInspect);
+  const invalidFields = new Set([...inspection.invalidFields, ...inspection.outOfRangeFields]);
+  if (invalidFields.size === 0) return true;
+
+  const fields: Record<string, string> = {};
+  for (const field of invalidFields) {
+    fields[field] = `${field} must be a valid positive integer.`;
+  }
+  res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields } });
+  return false;
 }
 
 /** Parses a positive-integer path parameter within the PostgreSQL INTEGER range. */
@@ -130,6 +156,7 @@ export async function createActionHandler(req: Request, res: Response): Promise<
   try {
     const idempotencyKey = validateIdempotencyKey(req.headers["idempotency-key"]);
     const body = (req.body ?? {}) as Record<string, unknown>;
+    if (!validateRawActionIntegerFields(req, res, body, ["assigneeUserId"])) return;
     const actorUserId = res.locals.userId as number;
     const result = await createAction(req.params.ticketNumber, actorUserId, idempotencyKey, body);
     res.status(result.status).json(result.body);
@@ -147,6 +174,7 @@ export async function updateActionHandler(req: Request, res: Response): Promise<
       return;
     }
     const body = (req.body ?? {}) as Record<string, unknown>;
+    if (!validateRawActionIntegerFields(req, res, body, ["expectedVersion", "assigneeUserId"])) return;
     const actorUserId = res.locals.userId as number;
     const action = await updateAction(req.params.ticketNumber, actionId, actorUserId, body);
     res.status(200).json({ data: action });
