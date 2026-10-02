@@ -214,7 +214,7 @@ async function main() {
     },
     {
       key: 'completed-assigned',
-      ticket: createdTickets[1],
+      ticket: createdTickets[0],
       performer: staffUsers[1],
       assignee: staffUsers[2],
       status: 'COMPLETED' as const,
@@ -222,7 +222,7 @@ async function main() {
     },
     {
       key: 'cancelled-admin',
-      ticket: createdTickets[2],
+      ticket: createdTickets[1],
       performer: staffUsers[2],
       assignee: adminUsers[0],
       status: 'CANCELLED' as const,
@@ -235,7 +235,12 @@ async function main() {
     const existing = await prisma.actionTaken.findFirst({
       where: { description: { contains: marker } },
     });
-    if (existing) continue;
+    if (existing) {
+      if (existing.ticketId !== fixture.ticket.id) {
+        await prisma.actionTaken.update({ where: { id: existing.id }, data: { ticketId: fixture.ticket.id } });
+      }
+      continue;
+    }
 
     await prisma.$transaction(async (tx) => {
       const action = await tx.actionTaken.create({
