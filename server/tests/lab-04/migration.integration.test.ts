@@ -27,6 +27,7 @@ import {
   dumpDatabase,
   restoreDatabase,
   createSyntheticAttachmentStore,
+  snapshotSyntheticAttachmentStore,
   verifyAttachmentHashes,
   query,
   count,
@@ -47,22 +48,24 @@ const ATTACHMENT_FILES = { "stored-normal.txt": "synthetic attachment contents" 
 
 /** Captures the preserved Lab 3 data that must survive the Lab 4 migration. */
 async function snapshotPreserved(dbUrl: string) {
-  const users = await query(dbUrl, `SELECT id, name, email, role, "isActive" FROM "User" ORDER BY id`);
+  const users = await query(dbUrl, `SELECT * FROM "User" ORDER BY id`);
   const tickets = await query(
     dbUrl,
     `SELECT id, "ticketNumber", "requesterId", "categoryId", "relatedSystemId", summary, description,
-            "requestedPriority", "itPriority", "ticketOwnerId", "currentStatus"
+            "requestedPriority", "itPriority", "ticketOwnerId", "currentStatus", "appearsResolved", "createdAt", "updatedAt"
      FROM "Ticket" ORDER BY id`,
   );
-  const attachments = await query(
-    dbUrl,
-    `SELECT id, "ticketId", "originalFilename", "storedFilename", "mimeType", "fileSizeBytes",
-            "uploaderUserId", "isRemoved"
-     FROM "Attachment" ORDER BY id`,
-  );
-  const comments = await query(dbUrl, `SELECT id, "ticketId", "authorId", content FROM "Comment" ORDER BY id`);
-  const notes = await query(dbUrl, `SELECT id, "ticketId", "authorId", content FROM "InternalNote" ORDER BY id`);
+  const attachments = await query(dbUrl, `SELECT * FROM "Attachment" ORDER BY id`);
+  const comments = await query(dbUrl, `SELECT * FROM "Comment" ORDER BY id`);
+  const notes = await query(dbUrl, `SELECT * FROM "InternalNote" ORDER BY id`);
   return { users, tickets, attachments, comments, notes };
+}
+
+function expectAttachmentReferences(
+  snapshot: Awaited<ReturnType<typeof snapshotPreserved>>,
+  hashes: Map<string, string>,
+): void {
+  expect(snapshot.attachments.map((attachment) => attachment.storedFilename)).toEqual([...hashes.keys()]);
 }
 
 describe("DB-MIG-01: additive Lab 4 migration preserves Lab 3 data", () => {
@@ -71,6 +74,7 @@ describe("DB-MIG-01: additive Lab 4 migration preserves Lab 3 data", () => {
     async () => {
       const db = buildLab3Baseline("lab4mig01");
       const store = createSyntheticAttachmentStore(ATTACHMENT_FILES);
+      const attachmentSnapshot = snapshotSyntheticAttachmentStore(store);
       try {
         // A legacy Resolved Ticket: status set before Lab 4, resolvedAt column does not exist yet.
         await query(db.dbUrl, `UPDATE "Ticket" SET "currentStatus" = 'RESOLVED' WHERE id = 2`);
@@ -131,12 +135,15 @@ describe("DB-MIG-01: additive Lab 4 migration preserves Lab 3 data", () => {
 
         // --- Attachment storage hashes are unchanged ---
         expect(verifyAttachmentHashes(store)).toBe(true);
+        expect(store.hashes).toEqual(attachmentSnapshot.hashes);
+        expectAttachmentReferences(after, attachmentSnapshot.hashes);
 
         // --- Migration history records the Lab 4 migration ---
         expect(await migrationApplied(db.dbUrl, LAB4_MIGRATION_NAME)).toBe(true);
         expect(await migrationApplied(db.dbUrl, LAB3_PHASE_A)).toBe(true);
         expect(await migrationApplied(db.dbUrl, LAB3_PHASE_C)).toBe(true);
       } finally {
+        attachmentSnapshot.cleanup();
         store.cleanup();
         db.drop();
       }
@@ -152,6 +159,7 @@ describe("DB-MIG-02: pre-write failure restores the paired snapshots", () => {
       const db = buildLab3Baseline("lab4mig02");
       const restoreTarget = createDisposableDb("lab4mig02restore");
       const store = createSyntheticAttachmentStore(ATTACHMENT_FILES);
+      const attachmentSnapshot = snapshotSyntheticAttachmentStore(store);
       const tmp = mkdtempSync(join(tmpdir(), "lab4-mig02-"));
       const dumpPath = join(tmp, "baseline.dump");
       try {
@@ -188,18 +196,24 @@ describe("DB-MIG-02: pre-write failure restores the paired snapshots", () => {
         expect(await tableExists(db.dbUrl, "ActionCreateIdempotency")).toBe(false);
         expect(await migrationApplied(db.dbUrl, LAB4_MIGRATION_NAME)).toBe(false);
 
+        writeFileSync(join(store.dir, "stored-normal.txt"), "damaged attachment");
+        expect(verifyAttachmentHashes(store)).toBe(false);
         // Writers remain stopped; restore the paired snapshots together into a
         // separate empty database and verify exact preservation.
         restoreDatabase(restoreTarget.dbUrl, dumpPath);
+        attachmentSnapshot.restore();
         expect(verifyAttachmentHashes(store)).toBe(true);
+        expect(store.hashes).toEqual(attachmentSnapshot.hashes);
 
         const restored = await snapshotPreserved(restoreTarget.dbUrl);
         expect(restored).toEqual(before);
+        expectAttachmentReferences(restored, attachmentSnapshot.hashes);
         expect(await indexNames(restoreTarget.dbUrl, "Ticket")).toEqual(ticketIndexesBefore);
         expect(await migrationApplied(restoreTarget.dbUrl, LAB4_MIGRATION_NAME)).toBe(false);
         expect(await migrationApplied(restoreTarget.dbUrl, LAB3_PHASE_C)).toBe(true);
       } finally {
         rmSync(tmp, { recursive: true, force: true });
+        attachmentSnapshot.cleanup();
         store.cleanup();
         restoreTarget.drop();
         db.drop();
@@ -216,6 +230,7 @@ describe("DB-MIG-03: snapshot rehearsal and post-write forward recovery", () => 
       const db = buildLab3Baseline("lab4mig03");
       const rehearsal = createDisposableDb("lab4mig03rehearsal");
       const store = createSyntheticAttachmentStore(ATTACHMENT_FILES);
+      const attachmentSnapshot = snapshotSyntheticAttachmentStore(store);
       const tmp = mkdtempSync(join(tmpdir(), "lab4-mig03-"));
       const dumpPath = join(tmp, "baseline.dump");
       try {
@@ -224,16 +239,26 @@ describe("DB-MIG-03: snapshot rehearsal and post-write forward recovery", () => 
         expect(await migrationApplied(db.dbUrl, LAB3_PHASE_C)).toBe(true);
         expect(await tableExists(db.dbUrl, "DevRequester")).toBe(false);
 
+        await query(
+          db.dbUrl,
+          `INSERT INTO "User" (name, email, role, "passwordHash", "isActive", "mustChangePassword", "createdAt", "updatedAt")
+           VALUES ('Forward Recovery Staff', 'forward-recovery-staff@example.test', 'IT_STAFF', repeat('x', 60), true, false, now(), now())`,
+        );
+
         const before = await snapshotPreserved(db.dbUrl);
         dumpDatabase(db.dbUrl, dumpPath);
         expect(verifyAttachmentHashes(store)).toBe(true);
 
         // --- Rehearsal: restore into a separate empty database and verify ---
         restoreDatabase(rehearsal.dbUrl, dumpPath);
+        writeFileSync(join(store.dir, "stored-normal.txt"), "rehearsal mutation");
+        attachmentSnapshot.restore();
         const rehearsed = await snapshotPreserved(rehearsal.dbUrl);
         expect(rehearsed).toEqual(before);
         expect(await migrationApplied(rehearsal.dbUrl, LAB3_PHASE_C)).toBe(true);
         expect(verifyAttachmentHashes(store)).toBe(true);
+        expect(store.hashes).toEqual(attachmentSnapshot.hashes);
+        expectAttachmentReferences(rehearsed, attachmentSnapshot.hashes);
 
         // --- Apply the additive Lab 4 migration and validate preserved data ---
         applyLab4Migration(db);
@@ -242,9 +267,10 @@ describe("DB-MIG-03: snapshot rehearsal and post-write forward recovery", () => 
         expect(await count(db.dbUrl, "ActionTaken")).toBe(0);
 
         // --- Simulate an ACCEPTED Lab 4 write (a real Action row) ---
-        const staff = await query<{ id: number }>(
+        const performer = await query<{ id: number; role: string; isActive: boolean }>(
           db.dbUrl,
-          `SELECT id FROM "User" WHERE role = 'REQUESTER' ORDER BY id LIMIT 1`,
+          `SELECT id, role::text AS role, "isActive" FROM "User"
+           WHERE role = 'IT_STAFF' AND "isActive" = true ORDER BY id LIMIT 1`,
         );
         const ticket = await query<{ id: number }>(
           db.dbUrl,
@@ -254,8 +280,10 @@ describe("DB-MIG-03: snapshot rehearsal and post-write forward recovery", () => 
           db.dbUrl,
           `INSERT INTO "ActionTaken" ("ticketId","description","performedByUserId","status","version","updatedAt")
            VALUES ($1, 'Accepted Lab 4 write', $2, 'PENDING', 1, now()) RETURNING id`,
-          [ticket[0].id, staff[0].id],
+          [ticket[0].id, performer[0].id],
         );
+        expect(performer[0].role).toBe("IT_STAFF");
+        expect(performer[0].isActive).toBe(true);
         const actionId = actionRows[0].id;
 
         // --- Simulate a post-write schema defect and forward-recover ---
@@ -276,8 +304,17 @@ describe("DB-MIG-03: snapshot rehearsal and post-write forward recovery", () => 
         // The preserved Lab 3 data is still intact after forward recovery.
         const afterRecovery = await snapshotPreserved(db.dbUrl);
         expect(afterRecovery).toEqual(before);
+        expect(verifyAttachmentHashes(store)).toBe(true);
+        expectAttachmentReferences(afterRecovery, attachmentSnapshot.hashes);
+        expect(await count(db.dbUrl, "ActionTaken")).toBe(1);
+        expect((await query<{ description: string }>(
+          db.dbUrl,
+          `SELECT description FROM "ActionTaken" WHERE id = $1`,
+          [actionId],
+        ))[0].description).toBe("Accepted Lab 4 write");
       } finally {
         rmSync(tmp, { recursive: true, force: true });
+        attachmentSnapshot.cleanup();
         store.cleanup();
         rehearsal.drop();
         db.drop();

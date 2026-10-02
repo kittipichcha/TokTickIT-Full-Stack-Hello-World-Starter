@@ -42,6 +42,7 @@ export const HISTORICAL_MIGRATIONS = [
 
 const serverRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const sourcePrismaDir = resolve(serverRoot, "prisma");
+const historicalSchemaPath = resolve(serverRoot, "tests/lab-03/fixtures/lab3-final-schema.prisma");
 
 /** SHA-256 hex digest of a file's bytes. */
 function sha256File(path: string): string {
@@ -87,9 +88,8 @@ export function createHistoricalMigrationContext(): HistoricalMigrationContext {
     }
   };
 
-  // schema.prisma + migration_lock.toml
   const schemaPath = join(root, "schema.prisma");
-  copyVerified(join(sourcePrismaDir, "schema.prisma"), schemaPath);
+  copyVerified(historicalSchemaPath, schemaPath);
   copyVerified(join(sourcePrismaDir, "migrations", "migration_lock.toml"), join(migrationsDir, "migration_lock.toml"));
 
   // The seven historical migration directories.

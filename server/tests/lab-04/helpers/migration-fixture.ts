@@ -18,7 +18,7 @@
 
 import { execFileSync, execSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from "node:fs";
+import { copyFileSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -241,6 +241,12 @@ export interface SyntheticAttachmentStore {
   cleanup: () => void;
 }
 
+export interface SyntheticAttachmentSnapshot {
+  hashes: Map<string, string>;
+  restore: () => void;
+  cleanup: () => void;
+}
+
 /**
  * Creates a synthetic attachment-storage directory with deterministic file
  * contents and records each file's SHA-256. Never uses real attachment data.
@@ -259,6 +265,31 @@ export function createSyntheticAttachmentStore(files: Record<string, string>): S
     cleanup: () => {
       try {
         rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // Best-effort cleanup.
+      }
+    },
+  };
+}
+
+/** Captures a paired synthetic attachment snapshot with an explicit restore operation. */
+export function snapshotSyntheticAttachmentStore(store: SyntheticAttachmentStore): SyntheticAttachmentSnapshot {
+  const snapshotDir = mkdtempSync(join(tmpdir(), "lab4-attachment-snapshot-"));
+  for (const name of store.hashes.keys()) {
+    copyFileSync(join(store.dir, name), join(snapshotDir, name));
+  }
+  return {
+    hashes: new Map(store.hashes),
+    restore: () => {
+      rmSync(store.dir, { recursive: true, force: true });
+      mkdirSync(store.dir, { recursive: true });
+      for (const name of store.hashes.keys()) {
+        copyFileSync(join(snapshotDir, name), join(store.dir, name));
+      }
+    },
+    cleanup: () => {
+      try {
+        rmSync(snapshotDir, { recursive: true, force: true });
       } catch {
         // Best-effort cleanup.
       }

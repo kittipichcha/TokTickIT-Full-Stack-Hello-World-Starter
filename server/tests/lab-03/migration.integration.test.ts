@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { execSync, execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -22,6 +23,7 @@ process.env.SESSION_SECRET = "test-only-session-secret-not-for-production";
 process.env.NODE_ENV = "test";
 
 const VALID_NEW_PASSWORD = "NewPass123!xyz";
+const HISTORICAL_LAB3_SCHEMA_SHA256 = "7b5c5aceb173a4198731de90d3492d1f38861943099ea1fc5c2c85f6b31b5070";
 
 /** Extracts the session cookie value from a supertest response (set-cookie may be an array). */
 function extractSessionCookie(res: { headers: Record<string, unknown> }): string {
@@ -89,6 +91,11 @@ function runCapture(command: string, env: NodeJS.ProcessEnv = process.env): stri
     const e = err as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string };
     return `${e.stdout ?? ""}${e.stderr ?? ""}${e.message ?? ""}`;
   }
+}
+
+function localPrismaCommand(args: string): string {
+  const executable = process.platform === "win32" ? "node_modules/.bin/prisma.cmd" : "node_modules/.bin/prisma";
+  return `"${executable}" ${args}`;
 }
 
 /** Runs psql with an argument array (no shell quoting; safe on Windows). */
@@ -1253,6 +1260,11 @@ describe("DB-MIG-04: isolated historical migration fixture", () => {
     try {
       expect(existsSync(ctx.schemaPath)).toBe(true);
       expect(existsSync(join(ctx.migrationsDir, "migration_lock.toml"))).toBe(true);
+      const schemaBytes = readFileSync(ctx.schemaPath);
+      expect(createHash("sha256").update(schemaBytes).digest("hex")).toBe(HISTORICAL_LAB3_SCHEMA_SHA256);
+      const schemaText = schemaBytes.toString("utf-8");
+      expect(schemaText).not.toMatch(/\b(?:enum\s+ActionStatus|model\s+ActionTaken|model\s+ActionTakenRevision|model\s+TicketStatusChange|model\s+ActionCreateIdempotency)\b/);
+      expect(schemaText).not.toMatch(/\bresolvedAt\b|\bversion\s+Int\b/);
       for (const dir of HISTORICAL_MIGRATIONS) {
         expect(existsSync(join(ctx.migrationsDir, dir, "migration.sql"))).toBe(true);
       }
@@ -1370,23 +1382,19 @@ describe("DB-MIG-04: isolated historical migration fixture", () => {
         expect(migrated.output).toContain("Migration complete");
 
         // Normal path: no override; explicit --schema on the repository schema.
-        const statusBefore = runCapture("npx prisma migrate status --schema prisma/schema.prisma", {
+        const normalEnv: NodeJS.ProcessEnv = {
           ...process.env,
           DATABASE_URL: urls.fixtureUrlWithSchema,
-        });
+        };
+        delete normalEnv.MIGRATION_TEST_SCHEMA_PATH;
+        const statusBefore = runCapture(localPrismaCommand("migrate status --schema prisma/schema.prisma"), normalEnv);
         expect(statusBefore).toContain("20261001000000_lab4_actions_foundation");
         expect(statusBefore).toContain("not yet been applied");
         expect(statusBefore).not.toContain("failed migration");
 
-        run("npx prisma migrate deploy --schema prisma/schema.prisma", {
-          ...process.env,
-          DATABASE_URL: urls.fixtureUrlWithSchema,
-        });
+        run(localPrismaCommand("migrate deploy --schema prisma/schema.prisma"), normalEnv);
 
-        const statusAfter = run("npx prisma migrate status --schema prisma/schema.prisma", {
-          ...process.env,
-          DATABASE_URL: urls.fixtureUrlWithSchema,
-        });
+        const statusAfter = run(localPrismaCommand("migrate status --schema prisma/schema.prisma"), normalEnv);
         expect(statusAfter).toContain("up to date");
       } finally {
         dropFixture(urls.adminUrl);
