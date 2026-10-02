@@ -55,6 +55,42 @@ function postRawAction(session: TestSession, ticketNumber: string, key: string, 
   );
 }
 
+/**
+ * Runs `start()` while holding a `FOR UPDATE` row lock on one idempotency
+ * record, so a concurrent POST and cleanup both contend for the same deletion.
+ * Either side may win; the caller asserts the resulting invariant.
+ */
+async function raceWithIdempotencyRowLock<T>(
+  where: { actorUserId: number; route: string; key: string },
+  start: () => Promise<T>,
+): Promise<T> {
+  const prisma = getPrisma();
+  let releaseLock!: () => void;
+  const lockReleased = new Promise<void>((resolve) => {
+    releaseLock = resolve;
+  });
+  let lockAcquired!: () => void;
+  const lockHeld = new Promise<void>((resolve) => {
+    lockAcquired = resolve;
+  });
+  const lockTx = prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "ActionCreateIdempotency" WHERE "actorUserId" = ${where.actorUserId} AND "route" = ${where.route} AND "key" = ${where.key} FOR UPDATE`;
+    lockAcquired();
+    await lockReleased;
+  });
+  const lockGuard = lockTx.then(() => {
+    throw new Error("idempotency row lock transaction ended before acquiring the lock");
+  });
+  lockGuard.catch(() => undefined);
+  await Promise.race([lockHeld, lockGuard]);
+  const result = start();
+  // Let both operations reach the blocked delete before releasing the lock.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  releaseLock();
+  await lockTx;
+  return result;
+}
+
 beforeAll(async () => {
   if (!process.env.DATABASE_URL) return;
   fx = await createActionFixture();
@@ -377,6 +413,67 @@ describe("API-ACT-02: idempotency", () => {
     expect(await prisma.actionCreateIdempotency.count({
       where: { actorUserId: fx.staff.id, route: `/api/tickets/${fx.ticketNumber}/actions`, key },
     })).toBe(1);
+  });
+
+  itIfDb("tolerates cleanup deleting an expired key during reuse", async () => {
+    const prisma = getPrisma();
+    const route = `/api/tickets/${fx.ticketNumber}/actions`;
+
+    // Race an expired-key POST against the hourly cleanup. Either side may win
+    // the deletion race; both legal interleavings must produce the same
+    // invariant: one fresh Action, one replacement idempotency record that
+    // references it, and never a 500.
+    for (let i = 0; i < 5; i += 1) {
+      const key = `key-02c-cleanup-race-${fx.suffix}-${i}`;
+
+      // 1. Create Action A with key K.
+      const first = await postAction(fx.staff.session, fx.ticketNumber, key, { description: `cleanup race ${i}` });
+      expect(first.status).toBe(201);
+
+      // 2. Expire K.
+      await prisma.actionCreateIdempotency.updateMany({
+        where: { actorUserId: fx.staff.id, route, key },
+        data: { expiresAt: new Date(Date.now() - 1000) },
+      });
+
+      // 3. Race an expired-key POST against cleanup.
+      const [retry, cleanup] = await raceWithIdempotencyRowLock(
+        { actorUserId: fx.staff.id, route, key },
+        () =>
+          Promise.all([
+            postAction(fx.staff.session, fx.ticketNumber, key, { description: `cleanup race ${i}` }),
+            cleanupExpiredIdempotency(),
+          ]),
+      );
+
+      // 4. The POST must succeed, never 500.
+      expect(retry.status).toBe(201);
+      expect(cleanup.ok).toBe(true);
+
+      // 5. One fresh Action B exists in addition to A.
+      const actions = await prisma.actionTaken.findMany({
+        where: { ticketId: fx.ticketId, description: `cleanup race ${i}` },
+        orderBy: { id: "asc" },
+      });
+      expect(actions).toHaveLength(2);
+      const freshId = retry.body.data.id;
+      expect(freshId).not.toBe(first.body.data.id);
+      expect(actions.map((action) => action.id)).toContain(freshId);
+
+      // 6. Exactly one (actorUserId, route, key) idempotency record remains.
+      const records = await prisma.actionCreateIdempotency.findMany({
+        where: { actorUserId: fx.staff.id, route, key },
+      });
+      expect(records).toHaveLength(1);
+
+      // 7. That record references B.
+      expect(records[0].actionId).toBe(freshId);
+
+      // 8. Retry K again and assert identical replay of B.
+      const replay = await postAction(fx.staff.session, fx.ticketNumber, key, { description: `cleanup race ${i}` });
+      expect(replay.status).toBe(201);
+      expect(replay.body).toEqual(retry.body);
+    }
   });
 
   itIfDb("cleanup deletes at most 500 expired rows ordered by (expiresAt,id)", async () => {

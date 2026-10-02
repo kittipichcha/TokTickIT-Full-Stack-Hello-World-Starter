@@ -275,7 +275,8 @@ async function lockTicket(
  * Replay: the same actor/route/key with the same normalized hash returns the
  * original `201` body and creates no row. A different hash returns `409`. An
  * expired record is replaced by a fresh Action and record; the old Action is
- * retained.
+ * retained. The hourly cleanup may delete the expired record concurrently, so
+ * the replacement tolerates the record already being absent.
  */
 export async function createAction(
   ticketNumber: string,
@@ -310,7 +311,9 @@ export async function createAction(
     }
 
     if (existing) {
-      await tx.actionCreateIdempotency.delete({ where: { id: existing.id } });
+      // Cleanup may have already removed this expired record; tolerate the
+      // record being absent (count === 0) rather than failing the request.
+      await tx.actionCreateIdempotency.deleteMany({ where: { id: existing.id } });
     }
 
     const created = await tx.actionTaken.create({
