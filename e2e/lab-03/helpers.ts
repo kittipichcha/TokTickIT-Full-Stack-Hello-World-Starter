@@ -44,6 +44,10 @@ export async function resetAccount(
     attachment: { deleteMany: (args: unknown) => Promise<unknown> };
     comment: { deleteMany: (args: unknown) => Promise<unknown> };
     internalNote: { deleteMany: (args: unknown) => Promise<unknown> };
+    actionCreateIdempotency: { deleteMany: (args: unknown) => Promise<unknown> };
+    actionTakenRevision: { deleteMany: (args: unknown) => Promise<unknown> };
+    actionTaken: { deleteMany: (args: unknown) => Promise<unknown> };
+    ticketStatusChange: { deleteMany: (args: unknown) => Promise<unknown> };
     $disconnect: () => Promise<void>;
   } };
   const bcrypt = serverRequire("bcrypt") as { hash: (password: string, rounds: number) => Promise<string> };
@@ -54,6 +58,13 @@ export async function resetAccount(
     if (!user) throw new Error(`Fixture account is missing: ${account.email}`);
     const tickets = await prisma.ticket.findMany({ where: { requesterId: user.id }, select: { id: true } });
     for (const ticket of tickets) {
+      // Issue #52 — Lab 4 adds Action child rows. Delete them in FK-safe order
+      // (idempotency -> revisions -> Actions -> status history) before the
+      // Ticket, otherwise repeated Playwright projects hit FK violations.
+      await prisma.actionCreateIdempotency.deleteMany({ where: { action: { ticketId: ticket.id } } });
+      await prisma.actionTakenRevision.deleteMany({ where: { action: { ticketId: ticket.id } } });
+      await prisma.actionTaken.deleteMany({ where: { ticketId: ticket.id } });
+      await prisma.ticketStatusChange.deleteMany({ where: { ticketId: ticket.id } });
       await prisma.comment.deleteMany({ where: { ticketId: ticket.id } });
       await prisma.internalNote.deleteMany({ where: { ticketId: ticket.id } });
       await prisma.attachment.deleteMany({ where: { ticketId: ticket.id } });
