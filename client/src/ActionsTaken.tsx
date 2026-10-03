@@ -37,6 +37,18 @@ const TERMINAL_TICKET_STATUSES = new Set(["RESOLVED", "CLOSED", "CANCELLED"]);
 type LoadState = "loading" | "loaded" | "error";
 type LoadErrorKind = "forbidden" | "not-found" | "unexpected";
 
+/**
+ * The last committed mutation, captured from the successful POST/PATCH
+ * response BEFORE any list refresh is attempted (FR-18/AC-21).
+ *
+ * The section owns this snapshot so a successful edit is still announced
+ * after the edit form unmounts, and a newly created Action stays represented
+ * even when the immediate follow-up GET fails.
+ */
+interface MutationOutcome {
+  operation: "create" | "edit";
+  action: StaffActionDto;
+}
 /** A single label/value line inside an Action card. */
 function ActionField({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -171,6 +183,7 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
   const [loadError, setLoadError] = useState<{ kind: LoadErrorKind; message: string } | null>(null);
   const [page, setPage] = useState(1);
   const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
+  const [committed, setCommitted] = useState<MutationOutcome | null>(null);
   const [mode, setMode] = useState<"list" | "create" | "edit">("list");
   const [editingAction, setEditingAction] = useState<StaffActionDto | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
@@ -222,6 +235,7 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
     setMode("list");
     setEditingAction(null);
     setRefreshWarning(null);
+    setCommitted(null);
   }, [ticketNumber]);
 
   useEffect(() => {
@@ -285,9 +299,16 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
    * returned Action, so a failed list refresh only produces a warning and is
    * never reported as a failed mutation (FR-18/FR-19) — the committed value
    * stays on screen and the read state is left untouched.
+   *
+   * The committed snapshot is recorded FIRST, from the mutation response
+   * itself, so it survives a failed refresh. A newly created Action is never
+   * optimistically appended to `items`: it may belong on another page, and the
+   * authoritative list is re-read below.
    */
   const handleSaved = useCallback(
-    async (saved: StaffActionDto) => {
+    async (saved: StaffActionDto, operation: "create" | "edit") => {
+      setCommitted({ operation, action: saved });
+      setRefreshWarning(null);
       setItems((current) =>
         current.some((action) => action.id === saved.id)
           ? current.map((action) => (action.id === saved.id ? saved : action))
@@ -335,12 +356,32 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
           <button
             type="button"
             className="primary-button"
-            onClick={() => setMode("create")}
+            onClick={() => {
+              // Starting a new mutation retires the previous success snapshot
+              // so stale success is never shown during a new attempt.
+              setCommitted(null);
+              setMode("create");
+            }}
           >
             Add Action
           </button>
         ) : null}
       </div>
+
+      {committed && (
+        <div className="success-box" role="status">
+          <p>
+            {committed.operation === "create"
+              ? "Action recorded successfully"
+              : "Action updated successfully"}
+          </p>
+          <p>
+            {committed.action.description} — {ACTION_STATUS_LABELS[committed.action.status]} ·
+            Performed by {committed.action.performedBy.name} ·{" "}
+            {formatUtcDate(committed.action.createdAt)}
+          </p>
+        </div>
+      )}
 
       {refreshWarning && (
         <div className="error-box" role="alert">
@@ -361,6 +402,8 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
             action={mode === "edit" ? editingAction : null}
             onSaved={handleSaved}
             onCancel={() => {
+              // Closing the form does NOT retire the success snapshot: a
+              // committed create must stay announced on the list surface.
               setMode("list");
               setEditingAction(null);
             }}
@@ -426,6 +469,8 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
                     type="button"
                     className="secondary-button"
                     onClick={() => {
+                      // A new edit attempt retires the previous success snapshot.
+                      setCommitted(null);
                       setEditingAction(action);
                       setMode("edit");
                     }}

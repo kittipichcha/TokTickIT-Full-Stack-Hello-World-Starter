@@ -426,6 +426,21 @@ describe("UI-ACT-01 — Create save and list refresh (FR-18, FR-19)", () => {
     );
     expect(within(alert).getByRole("button", { name: "Retry" })).toBeTruthy();
     expect(api.createTicketAction).toHaveBeenCalledTimes(1);
+
+    // B2 — the newly committed Action stays represented by the section-level
+    // success snapshot even though the list refresh failed.
+    const notice = await screen.findByText("Action recorded successfully");
+    const box = notice.closest('[role="status"]') as HTMLElement;
+    expect(box).toBeTruthy();
+    expect(box.textContent).toContain("New action text");
+    expect(box.textContent).toContain("Pending");
+    expect(box.textContent).toContain("Alice");
+
+    // Retry re-reads only; it never replays the POST.
+    await userEvent.click(within(alert).getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(api.fetchStaffActions).toHaveBeenCalledTimes(3));
+    expect(api.createTicketAction).toHaveBeenCalledTimes(1);
+    expect(api.updateTicketAction).not.toHaveBeenCalled();
   });
 
   it("FR-18 — a stale page read resolving AFTER the post-mutation refresh never overwrites the fresh list", async () => {
@@ -527,6 +542,85 @@ describe("UI-ACT-01 — Create save and list refresh (FR-18, FR-19)", () => {
     // The committed write is never repeated because a refresh failed.
     expect(api.createTicketAction).toHaveBeenCalledTimes(1);
     expect(api.updateTicketAction).not.toHaveBeenCalled();
+
+    // B2 — the committed Action is still represented by the success snapshot.
+    const notice = await screen.findByText("Action recorded successfully");
+    expect(notice.closest('[role="status"]')!.textContent).toContain("Committed action");
+  });
+
+  it("FR-18/AC-21 — a successful edit announces success at the section level after the form closes", async () => {
+    const existing = staffAction({ id: 1, description: "Existing action" });
+    const updated = staffAction({
+      id: 1,
+      description: "Existing action",
+      result: "Fixed",
+      status: "COMPLETED",
+      version: 2,
+      performedBy: { id: 5, name: "Alice" },
+      updatedAt: "2026-09-12T09:00:00Z",
+    });
+    vi.mocked(api.fetchStaffActions)
+      .mockResolvedValueOnce({
+        data: [existing],
+        pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+      })
+      .mockResolvedValueOnce({
+        data: [updated],
+        pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+      });
+    vi.mocked(api.updateTicketAction).mockResolvedValue(updated);
+    render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" />);
+
+    await screen.findByText("Existing action");
+    await userEvent.click(screen.getByRole("button", { name: "Edit Action" }));
+    await screen.findByRole("heading", { level: 3, name: "Edit Action" });
+    await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
+
+    await waitFor(() => expect(api.updateTicketAction).toHaveBeenCalledTimes(1));
+    // B1 — the form is gone, yet the success announcement survives it.
+    await waitFor(() =>
+      expect(screen.queryByRole("heading", { level: 3, name: "Edit Action" })).toBeNull(),
+    );
+    const notice = await screen.findByText("Action updated successfully");
+    const box = notice.closest('[role="status"]') as HTMLElement;
+    expect(box).toBeTruthy();
+    expect(box.textContent).toContain("Existing action");
+    expect(box.textContent).toContain("Completed");
+    expect(box.textContent).toContain("Alice");
+    expect(box.textContent).toContain("2026-09-10 00:00:00 UTC");
+    expect(api.updateTicketAction).toHaveBeenCalledTimes(1);
+  });
+
+  it("FR-18 — an edit whose refresh fails keeps the committed success and never repeats PATCH", async () => {
+    const existing = staffAction({ id: 1, description: "Existing action" });
+    const updated = staffAction({ id: 1, description: "Edited action", version: 2 });
+    vi.mocked(api.fetchStaffActions)
+      .mockResolvedValueOnce({
+        data: [existing],
+        pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+      })
+      .mockRejectedValueOnce(new Error("Refresh failed"));
+    vi.mocked(api.updateTicketAction).mockResolvedValue(updated);
+    render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" />);
+
+    await screen.findByText("Existing action");
+    await userEvent.click(screen.getByRole("button", { name: "Edit Action" }));
+    await screen.findByRole("heading", { level: 3, name: "Edit Action" });
+    await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
+
+    await waitFor(() => expect(api.updateTicketAction).toHaveBeenCalledTimes(1));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(
+      "The Action was saved, but the list could not be refreshed.",
+    );
+    const notice = await screen.findByText("Action updated successfully");
+    expect(notice.closest('[role="status"]')!.textContent).toContain("Edited action");
+    expect(api.updateTicketAction).toHaveBeenCalledTimes(1);
+
+    // Retry re-reads only; the PATCH is never replayed.
+    await userEvent.click(within(alert).getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(api.fetchStaffActions).toHaveBeenCalledTimes(3));
+    expect(api.updateTicketAction).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -737,7 +831,7 @@ describe("UI-ACT-01 — ActionForm client validation (AC-21, BR-05, BR-04)", () 
 // ---------------------------------------------------------------------------
 
 describe("UI-ACT-01 — Create success and payload normalization (AC-21, BR-05, BR-25)", () => {
-  it("AC-21 — successful create clears the form and announces performer and createdAt", async () => {
+  it("AC-21 — successful create clears the form and hands the committed Action to the section", async () => {
     const saved = staffAction({
       id: 77,
       description: "New action text",
@@ -764,9 +858,10 @@ describe("UI-ACT-01 — Create success and payload normalization (AC-21, BR-05, 
       },
       expect.any(String),
     );
-    const notice = await screen.findByText("Action recorded by Alice at 2026-09-12T08:30:00Z.");
-    expect(notice.closest('[role="status"]')).toBeTruthy();
-    expect(onSaved).toHaveBeenCalledWith(saved);
+    // Success is owned by the Actions section (so it survives this form);
+    // the form only reports the committed server response and clears itself.
+    expect(screen.queryByText(/Action recorded/)).toBeNull();
+    expect(onSaved).toHaveBeenCalledWith(saved, "create");
     expect((document.getElementById("action-description") as HTMLTextAreaElement).value).toBe("");
     expect((document.getElementById("action-assignee") as HTMLSelectElement).value).toBe("");
   });
@@ -795,23 +890,30 @@ describe("UI-ACT-01 — Create success and payload normalization (AC-21, BR-05, 
     );
   });
 
-  it("FR-18 — a stale success notice from a previous create never shows alongside a later failure", async () => {
+  it("FR-18 — starting another create retires the previous success so stale success never shows with a later failure", async () => {
     vi.mocked(api.createTicketAction)
       .mockResolvedValueOnce(staffAction({ id: 77, description: "First" }))
       .mockRejectedValueOnce(apiError(500, "Second attempt failed"));
-    render(<ActionForm ticketNumber={TICKET} action={null} onSaved={vi.fn()} onCancel={vi.fn()} />);
+    render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" />);
+    await screen.findByText("No Actions recorded for this Ticket.");
 
-    // First create succeeds and shows the success notice; the form stays open.
+    // First create succeeds: the SECTION announces it and it survives Cancel.
+    await userEvent.click(screen.getByRole("button", { name: "Add Action" }));
     await userEvent.type(screen.getByLabelText(/Description/), "First");
     await userEvent.click(screen.getByRole("button", { name: "Record Action" }));
-    await screen.findByText(/Action recorded by Alice/);
+    await screen.findByText("Action recorded successfully");
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText("Action recorded successfully")).toBeTruthy();
 
-    // The next logical create fails: the old success box must be gone, so the
-    // user never sees a success and an error for different attempts at once.
+    // Starting another create retires the old success snapshot.
+    await userEvent.click(screen.getByRole("button", { name: "Add Action" }));
+    expect(screen.queryByText("Action recorded successfully")).toBeNull();
+
+    // The next logical create fails: no success may appear beside the error.
     await userEvent.type(screen.getByLabelText(/Description/), "Second");
     await userEvent.click(screen.getByRole("button", { name: "Record Action" }));
     expect(await screen.findByText("Second attempt failed")).toBeTruthy();
-    expect(screen.queryByText(/Action recorded by Alice/)).toBeNull();
+    expect(screen.queryByText("Action recorded successfully")).toBeNull();
     expect(screen.getByRole("alert").textContent).toContain("Second attempt failed");
   });
 });

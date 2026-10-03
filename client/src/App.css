@@ -439,7 +439,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   padding: 12px 14px;
   border: 1px solid var(--color-warning);
   border-radius: 4px;
-  background: #fff8e6;
+  background: var(--color-field-readonly-bg);
   color: var(--color-text);
 }
 .success-box {
@@ -456,7 +456,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   padding: 12px 14px;
   border: 1px solid var(--color-warning);
   border-radius: 4px;
-  background: #fff8e6;
+  background: var(--color-field-readonly-bg);
 }
 .conflict-box p { margin: 0 0 10px; }
 .conflict-latest {
@@ -497,7 +497,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   font-weight: 700;
   border: 1px solid currentColor;
 }
-.action-status-pending { color: var(--color-warning); background: #fff8e6; }
+.action-status-pending { color: var(--color-warning); background: var(--color-field-readonly-bg); }
 .action-status-completed { color: var(--color-success); background: var(--color-pale-green); }
 .action-status-cancelled { color: var(--text-secondary); background: var(--color-field-readonly-bg); }
 

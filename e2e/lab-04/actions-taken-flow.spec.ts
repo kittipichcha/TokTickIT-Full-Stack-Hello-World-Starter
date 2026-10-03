@@ -18,6 +18,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
   test.beforeEach(async () => {
     await resetAccount("requester");
     await resetAccount("staff");
+    await resetAccount("admin");
     await resetAccount("adminPeer");
   });
 
@@ -40,6 +41,22 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
     await expect(actionsSection.getByRole("heading", { name: "Actions Taken" })).toBeVisible();
     await expect(actionsSection.getByText("No Actions recorded for this Ticket.")).toBeVisible();
 
+    // --- Ticket Owner is a THIRD identity, distinct from performer/assignee ---
+    await page.getByLabel("Ticket Owner").selectOption({
+      label: `${USERS.admin.name} — Administrator`,
+    });
+    const ownerOptionValue = await page
+      .locator("#owner-select option:checked")
+      .getAttribute("value");
+    expect(ownerOptionValue).toBeTruthy();
+    await page.getByRole("button", { name: "Assign", exact: true }).click();
+    await expect(page.locator(".ticket-info-row").filter({ hasText: "Owner" })).toContainText(
+      `User #${ownerOptionValue}`,
+    );
+    await expect(page.locator(".ticket-info-row").filter({ hasText: "Owner" })).not.toContainText(
+      "Unassigned",
+    );
+
     // --- Action A: Pending, assigned to a different eligible user ---
     await actionsSection.getByRole("button", { name: "Add Action" }).click();
     const createForm = page.locator('form[aria-label="Add Action"]');
@@ -50,7 +67,9 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
       label: `${USERS.adminPeer.name} — Administrator`,
     });
     await createForm.getByRole("button", { name: "Record Action" }).click();
-    await expect(createForm.locator(".success-box")).toContainText("Action recorded by");
+    await expect(actionsSection.locator(".success-box")).toContainText(
+      "Action recorded successfully",
+    );
     await createForm.getByRole("button", { name: "Cancel" }).click();
     await expect(createForm).toHaveCount(0);
 
@@ -68,7 +87,9 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
     await expect(createForm).toBeVisible();
     await createForm.locator("#action-description").fill("Action B — reseat the network cable");
     await createForm.getByRole("button", { name: "Record Action" }).click();
-    await expect(createForm.locator(".success-box")).toContainText("Action recorded by");
+    await expect(actionsSection.locator(".success-box")).toContainText(
+      "Action recorded successfully",
+    );
     await createForm.getByRole("button", { name: "Cancel" }).click();
     await expect(createForm).toHaveCount(0);
 
@@ -87,6 +108,10 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
     await editForm.locator("#action-status-completed").check();
     await editForm.getByRole("button", { name: "Save Action" }).click();
     await expect(editForm).toHaveCount(0);
+    // B1 — the success announcement survives the edit form closing.
+    await expect(actionsSection.locator(".success-box")).toContainText(
+      "Action updated successfully",
+    );
     await expect(cardA.locator(".action-status-badge")).toHaveText("Completed");
     await expect(cardA.locator(".action-field").filter({ hasText: "Result" }).first()).toContainText(
       "Queue cleared; test page printed.",
@@ -136,7 +161,11 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
     const assignee = requesterCardA.locator(".action-field").filter({ hasText: "Assignee" }).first();
     await expect(performer).toContainText(USERS.staff.name);
     await expect(assignee).toContainText(USERS.adminPeer.name);
+
+    // B3 — Ticket Owner, performer, and assignee are three DIFFERENT identities.
     expect(USERS.staff.name).not.toBe(USERS.adminPeer.name);
+    expect(USERS.admin.name).not.toBe(USERS.staff.name);
+    expect(USERS.admin.name).not.toBe(USERS.adminPeer.name);
 
     // No write controls of any kind reach the Requester surface.
     await expect(page.getByRole("button", { name: "Add Action" })).toHaveCount(0);
@@ -173,7 +202,9 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
         label: `${USERS.adminPeer.name} — Administrator`,
       });
       await createForm.getByRole("button", { name: "Record Action" }).click();
-      await expect(createForm.locator(".success-box")).toContainText("Action recorded by");
+      await expect(actionsSection.locator(".success-box")).toContainText(
+        "Action recorded successfully",
+      );
       await createForm.getByRole("button", { name: "Cancel" }).click();
 
       const cardC = actionsSection

@@ -144,7 +144,9 @@ test.describe("A11Y-01 (Actions portion): Actions Taken keyboard and focus behav
     await createForm.locator("#action-description").fill("Keyboard status smoke Action.");
     await tabTo(page, createForm.getByRole("button", { name: "Record Action" }));
     await page.keyboard.press("Enter");
-    await expect(createForm.locator(".success-box")).toContainText("Action recorded by");
+    await expect(actionsSection.locator(".success-box")).toContainText(
+      "Action recorded successfully",
+    );
     await tabTo(page, createForm.getByRole("button", { name: "Cancel" }));
     await page.keyboard.press("Enter");
     await expect(createForm).toHaveCount(0);

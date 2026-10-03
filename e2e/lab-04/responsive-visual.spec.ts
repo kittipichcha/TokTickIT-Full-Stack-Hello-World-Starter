@@ -71,7 +71,9 @@ test.describe("VISUAL-01 (Actions portion): Actions area responsive layout", () 
     await expectControlInViewport(page, createForm.locator("#action-assignee"));
     await createForm.locator("#action-description").fill("Responsive smoke Action for VISUAL-01.");
     await createForm.getByRole("button", { name: "Record Action" }).click();
-    await expect(createForm.locator(".success-box")).toContainText("Action recorded by");
+    await expect(actionsSection.locator(".success-box")).toContainText(
+      "Action recorded successfully",
+    );
     await createForm.getByRole("button", { name: "Cancel" }).click();
     await expect(createForm).toHaveCount(0);
 
@@ -105,7 +107,9 @@ test.describe("VISUAL-01 (Actions portion): Actions area responsive layout", () 
     const createForm = page.locator('form[aria-label="Add Action"]');
     await createForm.locator("#action-description").fill("Read-only snapshot Action for VISUAL-01.");
     await createForm.getByRole("button", { name: "Record Action" }).click();
-    await expect(createForm.locator(".success-box")).toContainText("Action recorded by");
+    await expect(staffSection.locator(".success-box")).toContainText(
+      "Action recorded successfully",
+    );
     await createForm.getByRole("button", { name: "Cancel" }).click();
     await page.getByRole("button", { name: "Logout" }).click();
 

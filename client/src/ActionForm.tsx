@@ -108,8 +108,12 @@ interface ActionFormProps {
   ticketNumber: string;
   /** `null` = create mode; otherwise the Pending Action being edited. */
   action: StaffActionDto | null;
-  /** Reports a committed server write (mutation success only, never refresh). */
-  onSaved: (saved: StaffActionDto) => void;
+  /**
+   * Reports a committed server write (mutation success only, never refresh).
+   * The operation kind lets the owning Actions section announce the correct
+   * outcome — success must survive this form closing (FR-18/AC-21).
+   */
+  onSaved: (saved: StaffActionDto, operation: "create" | "edit") => void;
   onCancel: () => void;
   /** Called after an edit closes so the list can settle. */
   onEditClosed?: () => void;
@@ -137,7 +141,6 @@ export default function ActionForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
   // Owner (eligible assignee) list.
   const [owners, setOwners] = useState<AssignableOwner[]>([]);
@@ -348,9 +351,6 @@ export default function ActionForm({
     setFieldErrors(errors);
     setFormError(null);
     setConflict(null);
-    // N4 — a success notice from a previous logical create must not survive
-    // into this attempt (it could otherwise show alongside a new error).
-    setSuccessNotice(null);
     if (Object.keys(errors).length > 0) return;
 
     inFlightRef.current = true;
@@ -368,10 +368,7 @@ export default function ActionForm({
         const created = await createTicketAction(ticketNumber, payload, key);
         // Only a confirmed success retires the pending key.
         pendingKeyRef.current = null;
-        setSuccessNotice(
-          `Action recorded by ${created.performedBy.name} at ${created.createdAt}.`,
-        );
-        onSaved(created);
+        onSaved(created, "create");
         // Clear the form but keep it open so the server-returned values show.
         setDescription("");
         setResult("");
@@ -390,8 +387,7 @@ export default function ActionForm({
         setCurrentAction(updated);
         setExpectedVersion(updated.version);
         setConflict(null);
-        setSuccessNotice(null);
-        onSaved(updated);
+        onSaved(updated, "edit");
         onEditClosed?.();
       }
     } catch (err) {
@@ -478,12 +474,6 @@ export default function ActionForm({
   return (
     <form className="action-form" aria-label={isEdit ? "Edit Action" : "Add Action"} onSubmit={(e) => void handleSubmit(e)}>
       <h3>{isEdit ? "Edit Action" : "Add Action"}</h3>
-
-      {successNotice && (
-        <div className="success-box" role="status">
-          <p>{successNotice}</p>
-        </div>
-      )}
 
       {formError && (
         <div className="error-box" role="alert">
