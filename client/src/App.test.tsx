@@ -10,6 +10,17 @@ import type { AuthUser } from "./api-client";
 vi.mock("./api");
 vi.mock("./api-client");
 
+// Issue #52 — default the new Actions Taken reads to a successfully loaded,
+// empty list so this pre-existing suite keeps asserting what it always did.
+vi.mocked(api.fetchRequesterActions).mockResolvedValue({
+  data: [],
+  pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+});
+vi.mocked(api.fetchStaffActions).mockResolvedValue({
+  data: [],
+  pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+});
+
 const TEST_ADMIN_USER: AuthUser = {
   id: 3,
   name: "Alan Turing",
