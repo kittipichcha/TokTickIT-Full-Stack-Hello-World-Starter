@@ -693,6 +693,26 @@ describe("UI-ACT-01 — Create success and payload normalization (AC-21, BR-05, 
       expect.any(String),
     );
   });
+
+  it("FR-18 — a stale success notice from a previous create never shows alongside a later failure", async () => {
+    vi.mocked(api.createTicketAction)
+      .mockResolvedValueOnce(staffAction({ id: 77, description: "First" }))
+      .mockRejectedValueOnce(apiError(500, "Second attempt failed"));
+    render(<ActionForm ticketNumber={TICKET} action={null} onSaved={vi.fn()} onCancel={vi.fn()} />);
+
+    // First create succeeds and shows the success notice; the form stays open.
+    await userEvent.type(screen.getByLabelText(/Description/), "First");
+    await userEvent.click(screen.getByRole("button", { name: "Record Action" }));
+    await screen.findByText(/Action recorded by Alice/);
+
+    // The next logical create fails: the old success box must be gone, so the
+    // user never sees a success and an error for different attempts at once.
+    await userEvent.type(screen.getByLabelText(/Description/), "Second");
+    await userEvent.click(screen.getByRole("button", { name: "Record Action" }));
+    expect(await screen.findByText("Second attempt failed")).toBeTruthy();
+    expect(screen.queryByText(/Action recorded by Alice/)).toBeNull();
+    expect(screen.getByRole("alert").textContent).toContain("Second attempt failed");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -776,7 +796,7 @@ describe("UI-ACT-01 — Edit conflict (AC-21, BR-24)", () => {
     await userEvent.clear(desc);
     await userEvent.type(desc, "Draft text");
     expect(screen.getByRole("button", { name: "Cancel" })).toBeTruthy(); // edit → Save + Cancel
-    vi.mocked(api.updateTicketAction).mockRejectedValue(apiError(409, "The Action was changed by someone else."));
+    vi.mocked(api.updateTicketAction).mockRejectedValueOnce(apiError(409, "The Action was changed by someone else."));
     await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
 
     expect(await screen.findByText("The Action was changed by someone else.")).toBeTruthy();
@@ -790,13 +810,30 @@ describe("UI-ACT-01 — Edit conflict (AC-21, BR-24)", () => {
 
     // Explicit review step fetches the authoritative latest Action.
     vi.mocked(api.fetchActionDetail).mockResolvedValue(
-      staffAction({ id: 42, version: 4, description: "Server latest", status: "COMPLETED", result: "Fixed" }),
+      staffAction({ id: 42, version: 4, description: "Server latest", status: "PENDING", result: "Fixed" }),
     );
     await userEvent.click(screen.getByRole("button", { name: "Review latest Action" }));
     expect(await screen.findByText("Server latest")).toBeTruthy();
     expect(document.querySelector(".conflict-latest")).toBeTruthy();
     expect(screen.getByText("4")).toBeTruthy(); // latest version shown
     expect(api.updateTicketAction).toHaveBeenCalledTimes(1); // still only one PATCH
+
+    // BR-24 lossless reconciliation: the dirty Description keeps the draft,
+    // the untouched Result takes the latest server value, and the retry sends
+    // both at the NEW version.
+    expect(desc.value).toBe("Draft text");
+    expect((screen.getByLabelText("Result") as HTMLTextAreaElement).value).toBe("Fixed");
+
+    vi.mocked(api.updateTicketAction).mockResolvedValue(
+      staffAction({ id: 42, version: 5, description: "Draft text", result: "Fixed" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
+    await waitFor(() => expect(api.updateTicketAction).toHaveBeenCalledTimes(2));
+    expect(api.updateTicketAction).toHaveBeenLastCalledWith(
+      TICKET,
+      42,
+      expect.objectContaining({ expectedVersion: 4, description: "Draft text", result: "Fixed" }),
+    );
   });
 
   it("BR-24 — a message-less 409 falls back to the Action-changed explanation", async () => {
@@ -816,6 +853,100 @@ describe("UI-ACT-01 — Edit conflict (AC-21, BR-24)", () => {
     expect((screen.getByLabelText(/Description/) as HTMLTextAreaElement).value).toBe(
       "Checked the print queue",
     );
+  });
+
+  it("BR-24 — conflict review reconciles untouched fields from the latest Action and keeps dirty draft fields", async () => {
+    render(
+      <ActionForm
+        ticketNumber={TICKET}
+        action={staffAction({ id: 42, version: 1, description: "Original" })}
+        onSaved={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    // The user changes ONLY the Description; Follow-up Note and Attachment
+    // Notes stay untouched.
+    const desc = screen.getByLabelText(/Description/) as HTMLTextAreaElement;
+    await userEvent.clear(desc);
+    await userEvent.type(desc, "My draft");
+
+    vi.mocked(api.updateTicketAction).mockRejectedValueOnce(apiError(409, "Stale version."));
+    await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
+    await screen.findByText("Stale version.");
+
+    // Another staff member meanwhile changed Follow-up Note + Attachment Notes
+    // (and flipped follow-up on), producing version 2.
+    vi.mocked(api.fetchActionDetail).mockResolvedValue(
+      staffAction({
+        id: 42,
+        version: 2,
+        description: "Original",
+        followUpRequired: true,
+        followUpNote: "Peer's newer note",
+        attachmentNotes: "Peer's newer attachment note",
+      }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Review latest Action" }));
+
+    // Dirty Description keeps the draft; untouched fields take the latest
+    // server values — including fields the review panel did not display.
+    await waitFor(() => expect(desc.value).toBe("My draft"));
+    expect(screen.getByLabelText("Follow-up Required")).toHaveProperty("checked", true);
+    expect((screen.getByLabelText(/Follow-up Note/) as HTMLTextAreaElement).value).toBe(
+      "Peer's newer note",
+    );
+    expect((screen.getByLabelText(/Attachment Notes/) as HTMLTextAreaElement).value).toBe(
+      "Peer's newer attachment note",
+    );
+
+    // The review panel shows ALL editable latest fields, not just a subset.
+    const panel = document.querySelector(".conflict-latest") as HTMLElement;
+    expect(panel.textContent).toContain("Peer's newer note");
+    expect(panel.textContent).toContain("Peer's newer attachment note");
+
+    // The retry sends the NEW version with latest untouched values and the
+    // user's dirty value — the peer's concurrent changes are not clobbered.
+    vi.mocked(api.updateTicketAction).mockResolvedValue(staffAction({ id: 42, version: 3 }));
+    await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
+    await waitFor(() => expect(api.updateTicketAction).toHaveBeenCalledTimes(2));
+    expect(api.updateTicketAction).toHaveBeenLastCalledWith(
+      TICKET,
+      42,
+      expect.objectContaining({
+        expectedVersion: 2,
+        description: "My draft",
+        followUpRequired: true,
+        followUpNote: "Peer's newer note",
+        attachmentNotes: "Peer's newer attachment note",
+      }),
+    );
+  });
+
+  it("BR-24 — a create-time 409 preserves the draft and never renders a dead Review-latest control", async () => {
+    render(<ActionForm ticketNumber={TICKET} action={null} onSaved={vi.fn()} onCancel={vi.fn()} />);
+
+    const desc = screen.getByLabelText(/Description/) as HTMLTextAreaElement;
+    await userEvent.type(desc, "Created after the Ticket closed");
+
+    // e.g. the Ticket became terminal, or the assignee became ineligible,
+    // between opening the Add form and submitting.
+    vi.mocked(api.createTicketAction).mockRejectedValue(
+      apiError(409, "A Pending Action cannot be created on a resolved, closed, or cancelled Ticket."),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Record Action" }));
+
+    // Canonical server message, draft retained, NO stale-Action review state.
+    expect(
+      await screen.findByText(
+        "A Pending Action cannot be created on a resolved, closed, or cancelled Ticket.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Review latest Action" })).toBeNull();
+    expect(document.querySelector(".conflict-box")).toBeNull();
+    expect(desc.value).toBe("Created after the Ticket closed");
+    expect(api.fetchActionDetail).not.toHaveBeenCalled();
+    expect(api.updateTicketAction).not.toHaveBeenCalled();
   });
 });
 
@@ -875,6 +1006,65 @@ describe("UI-ACT-01 — Assignee eligibility (AC-03, BR-03)", () => {
     expect(screen.queryByText(/Unable to load eligible assignees/)).toBeNull();
     expect(desc.value).toBe("Kept while owners fail"); // values survive the retry
   });
+
+  it("BR-03 — a mid-session deactivation rejected by the server (HTTP 409) refreshes owners and requires explicit repair", async () => {
+    // Owners are eligible when the form loads…
+    const action = staffAction({ id: 42, assignee: { id: 6, name: "Bob", role: "IT_STAFF" } });
+    render(<ActionForm ticketNumber={TICKET} action={action} onSaved={vi.fn()} onCancel={vi.fn()} />);
+
+    const select = screen.getByLabelText("Assignee") as HTMLSelectElement;
+    await waitFor(() => expect(select.disabled).toBe(false));
+    expect(screen.queryByText(/no longer an active Staff\/Administrator/)).toBeNull();
+
+    // …but Bob is deactivated before the PATCH lands. The server rejects the
+    // write with HTTP 409 (ineligible assignee), not a version conflict.
+    vi.mocked(api.updateTicketAction).mockRejectedValueOnce(
+      apiError(409, "The specified assignee is not an active IT Staff or Administrator user."),
+    );
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue([OWNERS[0], OWNERS[2]]); // Bob gone
+    await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
+
+    // Canonical server feedback and draft retained. This is an edit-mode
+    // 409, so the explicit Review-latest workflow stays available — and that
+    // review path is what refreshes the eligible-owner list (BR-03/BR-24).
+    expect(
+      await screen.findByText(
+        "The specified assignee is not an active IT Staff or Administrator user.",
+      ),
+    ).toBeTruthy();
+    expect((screen.getByLabelText(/Description/) as HTMLTextAreaElement).value).toBe(
+      "Checked the print queue",
+    );
+
+    // Review latest Action refreshes BOTH the Action and the owner list, so
+    // the stale assignee becomes visibly ineligible (BR-03).
+    vi.mocked(api.fetchActionDetail).mockResolvedValue(action);
+    await userEvent.click(screen.getByRole("button", { name: "Review latest Action" }));
+    await screen.findByText(/no longer an active Staff\/Administrator/);
+    expect(select.value).toBe("6");
+    expect(screen.getByRole("option", { name: "Bob (ineligible)" })).toBeTruthy();
+
+    // Resubmission stays blocked until the assignee is explicitly repaired.
+    vi.mocked(api.updateTicketAction).mockClear();
+    await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
+    expect(
+      await screen.findByText(
+        "The current assignee is no longer eligible. Choose an eligible assignee or unassign.",
+      ),
+    ).toBeTruthy();
+    expect(api.updateTicketAction).not.toHaveBeenCalled();
+
+    // Explicit repair unblocks the save.
+    await userEvent.selectOptions(select, "5");
+    vi.mocked(api.updateTicketAction).mockResolvedValue(staffAction({ id: 42, version: 2 }));
+    await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
+    await waitFor(() => expect(api.updateTicketAction).toHaveBeenCalledTimes(1));
+    expect(api.updateTicketAction).toHaveBeenCalledWith(
+      TICKET,
+      42,
+      expect.objectContaining({ assigneeUserId: 5, expectedVersion: 1 }),
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -882,29 +1072,107 @@ describe("UI-ACT-01 — Assignee eligibility (AC-03, BR-03)", () => {
 // ---------------------------------------------------------------------------
 
 describe("UI-ACT-01 — Terminal action (AC-06, BR-04)", () => {
-  it("BR-04 — a completed Action opens via View Action with disabled status radios and no status path", async () => {
+  it("BR-04 — a completed Action opens a genuine read-only View surface with no Save, no editable fields, and no owner lookup", async () => {
     vi.mocked(api.fetchStaffActions).mockResolvedValue({
-      data: [staffAction({ id: 9, description: "Finished work", status: "COMPLETED", result: "Done" })],
+      data: [
+        staffAction({
+          id: 9,
+          description: "Finished work",
+          status: "COMPLETED",
+          result: "Done",
+          followUpRequired: true,
+          followUpNote: "Watch the next 50 pages",
+          attachmentNotes: "Serial photo attached",
+        }),
+      ],
       pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
     });
     render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" />);
 
     await userEvent.click(await screen.findByRole("button", { name: "View Action" }));
-    expect(await screen.findByRole("heading", { level: 3, name: "Edit Action" })).toBeTruthy();
+    const view = await screen.findByRole("region", { name: "View Action" });
 
-    const pending = document.getElementById("action-status-pending") as HTMLInputElement;
-    const completed = document.getElementById("action-status-completed") as HTMLInputElement;
-    const cancelled = document.getElementById("action-status-cancelled") as HTMLInputElement;
-    expect(pending).toHaveProperty("disabled", true);
-    expect(completed).toHaveProperty("disabled", true);
-    expect(cancelled).toHaveProperty("disabled", true);
-    expect(completed.checked).toBe(true);
+    // No edit surface at all: no Save, no form controls, no status radios.
+    expect(screen.queryByRole("heading", { level: 3, name: "Edit Action" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save Action" })).toBeNull();
+    expect(screen.queryByLabelText(/Description/)).toBeNull();
+    expect(screen.queryByLabelText("Assignee")).toBeNull();
+    expect(document.getElementById("action-status-pending")).toBeNull();
+    expect(document.getElementById("action-status-completed")).toBeNull();
+    expect(document.getElementById("action-status-cancelled")).toBeNull();
+    expect(document.getElementById("action-description")).toBeNull();
 
-    // Attempting a status change has no effect and triggers no mutation.
-    await userEvent.click(screen.getByLabelText("Cancelled"));
-    expect(cancelled.checked).toBe(false);
-    expect(completed.checked).toBe(true);
+    // Current values are shown as text, including fields the old disabled
+    // edit form left interactive (Description, Result, Follow-up, Notes).
+    expect(view.textContent).toContain("Finished work");
+    expect(view.textContent).toContain("Done");
+    expect(view.textContent).toContain("Watch the next 50 pages");
+    expect(view.textContent).toContain("Serial photo attached");
+    expect(view.textContent).toContain("Completed");
+    expect(view.textContent).toContain("read-only");
+
+    // No mutation and no owner-list dependency for a terminal Action.
     expect(api.updateTicketAction).not.toHaveBeenCalled();
+    expect(api.createTicketAction).not.toHaveBeenCalled();
+    expect(api.fetchAssignableOwners).not.toHaveBeenCalled();
+
+    // Close returns to the list.
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("region", { name: "View Action" })).toBeNull();
+    expect(screen.getByRole("button", { name: "View Action" })).toBeTruthy();
+  });
+
+  it("BR-04/BR-27 — View Action works on a terminal Ticket while Add Action stays gated", async () => {
+    vi.mocked(api.fetchStaffActions).mockResolvedValue({
+      data: [staffAction({ id: 11, description: "Work on a resolved Ticket", status: "COMPLETED", result: "Done" })],
+      pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+    });
+    render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="RESOLVED" />);
+
+    // BR-27 — no new Action, reopen guidance shown.
+    await screen.findByText("Work on a resolved Ticket");
+    expect(screen.queryByRole("button", { name: "Add Action" })).toBeNull();
+    expect(screen.getByRole("note").textContent).toContain("Reopen it before recording new Actions.");
+
+    // BR-04 — the existing terminal Action is still viewable (the old
+    // implementation suppressed the form, making View a dead control).
+    await userEvent.click(screen.getByRole("button", { name: "View Action" }));
+    const view = await screen.findByRole("region", { name: "View Action" });
+    expect(view.textContent).toContain("Work on a resolved Ticket");
+    expect(screen.queryByRole("button", { name: "Save Action" })).toBeNull();
+  });
+
+  it("BR-04/BR-27 — a Pending Action remains editable on a Cancelled Ticket", async () => {
+    vi.mocked(api.fetchStaffActions).mockResolvedValue({
+      data: [staffAction({ id: 12, description: "Still pending on a cancelled Ticket" })],
+      pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+    });
+    render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="CANCELLED" />);
+
+    // BR-27 — creation is gated…
+    await screen.findByText("Still pending on a cancelled Ticket");
+    expect(screen.queryByRole("button", { name: "Add Action" })).toBeNull();
+
+    // …but the existing Pending Action keeps its edit path (the old
+    // implementation hid the form, making Edit a dead control).
+    await userEvent.click(await screen.findByRole("button", { name: "Edit Action" }));
+    await screen.findByRole("heading", { level: 3, name: "Edit Action" });
+    const desc = screen.getByLabelText(/Description/) as HTMLTextAreaElement;
+    expect(desc.value).toBe("Still pending on a cancelled Ticket");
+    expect(screen.getByRole("button", { name: "Save Action" })).toBeTruthy();
+
+    vi.mocked(api.updateTicketAction).mockResolvedValue(
+      staffAction({ id: 12, description: "Edited on a cancelled Ticket", version: 2 }),
+    );
+    await userEvent.clear(desc);
+    await userEvent.type(desc, "Edited on a cancelled Ticket");
+    await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
+    await waitFor(() => expect(api.updateTicketAction).toHaveBeenCalledTimes(1));
+    expect(api.updateTicketAction).toHaveBeenCalledWith(
+      TICKET,
+      12,
+      expect.objectContaining({ description: "Edited on a cancelled Ticket", expectedVersion: 1 }),
+    );
   });
 });
 

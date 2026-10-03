@@ -710,8 +710,9 @@ export async function fetchRequesterActions(
 /**
  * Fetches the current server state of a single Action (api-spec §5).
  *
- * Staff-only edit flow always starts from this so `expectedVersion` and the
- * editable values are never taken from a stale list response.
+ * Staff-only edit flow starts from the list DTO; this detail fetch is used
+ * during explicit conflict review so `expectedVersion` and the editable
+ * values are reconciled against the authoritative latest server state.
  */
 export async function fetchActionDetail(
   ticketNumber: string,

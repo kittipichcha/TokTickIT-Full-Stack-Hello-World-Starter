@@ -547,6 +547,19 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .action-form .field-error button { margin-left: 8px; }
 .form-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 
+/* Read-only View Action surface for terminal Actions (BR-04/AC-06). */
+.action-form-readonly { background: var(--color-surface); }
+.action-form-readonly .action-view-value {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  background: var(--color-page-bg, var(--color-surface));
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 /* Responsive: single column and no horizontal overflow below 768px. */
 @media (max-width: 767px) {
   .action-field { grid-template-columns: minmax(0, 1fr); gap: 2px; }

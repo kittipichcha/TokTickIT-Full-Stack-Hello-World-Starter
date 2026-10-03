@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { USERS, createRequesterTicket, login, navigate, resetAccount } from "../lab-03/helpers";
+import { PASSWORD, USERS, createRequesterTicket, login, navigate, resetAccount } from "../lab-03/helpers";
 
 /**
  * E2E-01 — Actions portion (Issue #52).
@@ -7,10 +7,10 @@ import { USERS, createRequesterTicket, login, navigate, resetAccount } from "../
  * Covers the Actions Taken half of the E2E-01 row: Staff creates two Pending
  * Actions on one Ticket, completes A with a Result, cancels B without a
  * Result, and the owning Requester then sees performer/assignee names on
- * read-only Actions.
+ * read-only Actions. It also covers the inactive-assignee HTTP 409 recovery
+ * path (assignee eligibility is Action behavior owned by Issue #52).
  *
  * Deliberately NOT covered here (owned by `ticket-resolution.spec.ts`, #53):
- *   - the inactive-assignee HTTP 409 assertion,
  *   - resolution being blocked while Pending Actions remain,
  *   - resolving the Ticket after the Pending Actions are cleared.
  */
@@ -148,6 +148,97 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
     await expect(page.locator('form[aria-label="Edit Action"]')).toHaveCount(0);
     await expect(page.locator("#action-description")).toHaveCount(0);
     await expect(page.locator("#action-status-completed")).toHaveCount(0);
+  });
+
+  test("an assignee deactivated mid-session is rejected by the server with safe 409 feedback and explicit repair", async ({ page }) => {
+    const summary = `Issue 52 assignee 409 ${Date.now()}`;
+    try {
+      // --- Arrange: a Ticket with one Pending Action assigned to adminPeer ---
+      await login(page, USERS.requester.email);
+      const ticketNumber = await createRequesterTicket(page, summary);
+      await page.getByRole("button", { name: "Logout" }).click();
+
+      await login(page, USERS.staff.email);
+      await navigate(page, "Ticket Queue");
+      await page.getByLabel("Search tickets").fill(summary);
+      await page.getByRole("button", { name: "Open Detail" }).click();
+      await expect(page.getByRole("heading", { name: ticketNumber })).toBeVisible();
+
+      const actionsSection = page.locator('section[aria-label="Actions Taken"]');
+      await actionsSection.getByRole("button", { name: "Add Action" }).click();
+      const createForm = page.locator('form[aria-label="Add Action"]');
+      await createForm.locator("#action-description").fill("Action C — rotate the service account");
+      await expect(createForm.locator("#action-assignee")).toBeEnabled();
+      await createForm.locator("#action-assignee").selectOption({
+        label: `${USERS.adminPeer.name} — Administrator`,
+      });
+      await createForm.getByRole("button", { name: "Record Action" }).click();
+      await expect(createForm.locator(".success-box")).toContainText("Action recorded by");
+      await createForm.getByRole("button", { name: "Cancel" }).click();
+
+      const cardC = actionsSection
+        .locator("li.action-card")
+        .filter({ hasText: "Action C — rotate the service account" });
+      await expect(cardC).toBeVisible();
+      await expect(cardC.locator(".action-status-badge")).toHaveText("Pending");
+
+      // --- The edit form learns the eligible owner state while adminPeer is active ---
+      await cardC.getByRole("button", { name: "Edit Action" }).click();
+      const editForm = page.locator('form[aria-label="Edit Action"]');
+      await expect(editForm).toBeVisible();
+      await expect(editForm.locator("#action-assignee")).toBeEnabled();
+      await expect(
+        editForm.locator("#action-assignee option", { hasText: `${USERS.adminPeer.name} — Administrator` }),
+      ).toHaveCount(1);
+
+      // Deactivate adminPeer AFTER the form has learned the eligible state.
+      await resetAccount("adminPeer", false, PASSWORD, false);
+
+      // --- Act: submit; the real server rejects the now-ineligible assignee (HTTP 409) ---
+      const draftDescription = "Action C — rotate the service account (edited draft)";
+      await editForm.locator("#action-description").fill(draftDescription);
+      await editForm.getByRole("button", { name: "Save Action" }).click();
+
+      // --- Assert: safe 409 feedback, draft retained, no persisted mutation ---
+      await expect(editForm.locator(".error-box")).toContainText(
+        "not an active IT Staff or Administrator",
+      );
+      await expect(editForm.locator("#action-description")).toHaveValue(draftDescription);
+
+      // The persisted Action is unchanged: original description, still Pending.
+      await expect(cardC.locator(".action-card-description")).toHaveText(
+        "Action C — rotate the service account",
+      );
+      await expect(cardC.locator(".action-status-badge")).toHaveText("Pending");
+
+      // --- Recovery: Review latest refreshes owners; ineligible stays visible ---
+      await editForm.getByRole("button", { name: "Review latest Action" }).click();
+      await expect(
+        editForm.locator("#action-assignee-ineligible"),
+      ).toContainText("no longer an active Staff/Administrator");
+      await expect(
+        editForm.locator("#action-assignee option:checked"),
+      ).toContainText("(ineligible)");
+
+      // Resubmission stays blocked until the assignee is explicitly repaired.
+      await editForm.getByRole("button", { name: "Save Action" }).click();
+      await expect(editForm.locator(".field-error")).toContainText(
+        "no longer eligible. Choose an eligible assignee or unassign.",
+      );
+
+      // Explicit repair (unassign) unblocks the save and commits the draft.
+      await editForm.locator("#action-assignee").selectOption("");
+      await editForm.getByRole("button", { name: "Save Action" }).click();
+      await expect(editForm).toHaveCount(0);
+      await expect(cardC.locator(".action-card-description")).toHaveText(draftDescription);
+      await expect(
+        cardC.locator(".action-field").filter({ hasText: "Assignee" }).first(),
+      ).toContainText("Unassigned");
+      await expect(cardC.locator(".action-status-badge")).toHaveText("Pending");
+    } finally {
+      // Restore adminPeer so later tests/projects stay deterministic.
+      await resetAccount("adminPeer");
+    }
   });
 
   test("terminal Ticket shows reopen guidance and hides Add Action", async ({ page }) => {

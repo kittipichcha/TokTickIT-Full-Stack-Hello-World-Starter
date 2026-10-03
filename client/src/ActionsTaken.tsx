@@ -4,13 +4,13 @@
  * Two deliberately separate entry components share only internal presentation:
  *
  *   - `StaffActionsTaken`   — Staff/Admin list, pagination, create/edit entry.
- *   - `RequesterActionsTaken` — read-only restricted projection, with no
- *     mutation functions, no owner-list dependency and no staff metadata types
- *     in scope at all.
+ *   - `RequesterActionsTaken` — read-only restricted projection. It never
+ *     invokes or renders any staff mutation behavior (create/edit form, owner
+ *     lookup, status controls); the backend remains the authorization boundary.
  *
- * Keeping the Requester branch structurally separate (rather than a `role`
- * flag inside one component) makes it much harder to leak a staff-only control
- * or field into the Requester surface (BR-09/BR-11).
+ * Keeping the Requester branch separate (rather than a `role` flag inside one
+ * component) makes it much harder to leak a staff-only control or field into
+ * the Requester surface (BR-09/BR-11).
  *
  * Reads use a request-generation guard so a slow response for a previously
  * selected page/Ticket can never overwrite newer state.
@@ -337,22 +337,23 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
         </div>
       )}
 
-      {(mode === "create" || mode === "edit") && !isTerminalTicket && (
-        <ActionForm
-          key={mode === "edit" && editingAction ? `edit-${editingAction.id}` : "create"}
-          ticketNumber={ticketNumber}
-          action={mode === "edit" ? editingAction : null}
-          onSaved={handleSaved}
-          onCancel={() => {
-            setMode("list");
-            setEditingAction(null);
-          }}
-          onEditClosed={() => {
-            setMode("list");
-            setEditingAction(null);
-          }}
-        />
-      )}
+      {(mode === "create" || mode === "edit") &&
+        (mode === "create" ? !isTerminalTicket : editingAction !== null) && (
+          <ActionForm
+            key={mode === "edit" && editingAction ? `edit-${editingAction.id}` : "create"}
+            ticketNumber={ticketNumber}
+            action={mode === "edit" ? editingAction : null}
+            onSaved={handleSaved}
+            onCancel={() => {
+              setMode("list");
+              setEditingAction(null);
+            }}
+            onEditClosed={() => {
+              setMode("list");
+              setEditingAction(null);
+            }}
+          />
+        )}
 
       {loadState === "loading" && (
         <p className="placeholder-text" role="status">
@@ -413,6 +414,8 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
                       setMode("edit");
                     }}
                   >
+                    {/* Terminal Actions open a read-only View surface; only
+                        Pending Actions expose an edit path (BR-04/AC-06). */}
                     {isPending ? "Edit Action" : "View Action"}
                   </button>
                 </div>

@@ -14,13 +14,24 @@
  *             payload changes or the previous request succeeded.
  *   - BR-24   every PATCH sends the current `expectedVersion`; a `409` is
  *             never auto-retried — the draft is kept and the user must
- *             explicitly review the latest Action and Save again.
+ *             explicitly review the latest Action and Save again. The review
+ *             step reconciles every field the user did NOT change from the
+ *             fetched latest Action, so a stale untouched value can never be
+ *             laundered into a new version. Create-mode `409`s (no Action
+ *             exists yet) never build the stale-Action review state.
  *   - BR-03   a current assignee who is no longer eligible stays visible and
- *             must be explicitly replaced or unassigned before saving.
+ *             must be explicitly replaced or unassigned before saving. The
+ *             eligible-owner list is refreshed during conflict recovery so a
+ *             mid-session deactivation becomes visible.
+ *   - BR-04   a terminal (Completed/Cancelled) Action renders a genuine
+ *             read-only View surface: no editable fields, no Save, no owner
+ *             lookup. Only Pending Actions are editable.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import {
+  ACTION_STATUS_LABELS,
   fetchActionDetail,
   fetchAssignableOwners,
   createTicketAction,
@@ -31,6 +42,7 @@ import {
   type UpdateActionPayload,
 } from "./api";
 import type { ApiError } from "./api-client";
+import { formatUtcDate } from "./format";
 
 /** Field bounds mirrored from api-spec §2 so the client fails fast. */
 const BOUNDS = {
@@ -42,6 +54,9 @@ const BOUNDS = {
 
 type OwnerLoadState = "loading" | "loaded" | "error";
 type SaveState = "idle" | "saving";
+
+/** Editable field keys tracked for dirty/reconcile bookkeeping (BR-24). */
+type NormalizedFieldKey = keyof NormalizedFields | "status";
 
 interface NormalizedFields {
   description: string;
@@ -142,6 +157,19 @@ export default function ActionForm({
   const [expectedVersion, setExpectedVersion] = useState<number | null>(action?.version ?? null);
   const [currentAction, setCurrentAction] = useState<StaffActionDto | null>(action);
 
+  /**
+   * BR-24 — fields the user actually edited since the form loaded. Conflict
+   * recovery keeps these values and reconciles every *untouched* field from
+   * the fetched latest Action, so a stale untouched value is never re-sent.
+   */
+  const dirtyRef = useRef<Set<NormalizedFieldKey>>(new Set());
+  const markDirty = (key: NormalizedFieldKey) => {
+    dirtyRef.current.add(key);
+  };
+
+  /** BR-04 — terminal Actions are read-only; only Pending is editable. */
+  const isTerminalAction = isEdit && currentAction !== null && currentAction.status !== "PENDING";
+
   const loadOwners = useCallback(async () => {
     const requestId = ++ownerSeqRef.current;
     setOwnersState("loading");
@@ -158,11 +186,14 @@ export default function ActionForm({
   }, []);
 
   useEffect(() => {
+    // BR-04 — a terminal Action renders read-only; there is no assignee
+    // control, so the eligible-owner list is never fetched for it.
+    if (action !== null && action.status !== "PENDING") return;
     void loadOwners();
     return () => {
       ownerSeqRef.current += 1;
     };
-  }, [loadOwners]);
+  }, [loadOwners, action]);
 
   const ownerIds = useMemo(() => new Set(owners.map((owner) => owner.id)), [owners]);
 
@@ -173,6 +204,7 @@ export default function ActionForm({
    */
   const currentIneligible =
     isEdit &&
+    !isTerminalAction &&
     ownersState === "loaded" &&
     assigneeUserId !== "" &&
     !ownerIds.has(Number(assigneeUserId));
@@ -227,12 +259,34 @@ export default function ActionForm({
     return errors;
   }
 
-  /** Fetches the authoritative latest version for the explicit review step. */
+  /**
+   * Fetches the authoritative latest version for the explicit review step.
+   *
+   * BR-24 lossless reconciliation: after the fetch, every editable field the
+   * user did NOT change is replaced with the latest server value, while dirty
+   * user fields keep the draft. `expectedVersion` advances only afterwards,
+   * so the next Save sends latest values for untouched fields and the user's
+   * intentional edits for the fields they changed. The eligible-owner list is
+   * refreshed too, so a mid-session assignee deactivation becomes visible.
+   */
   async function reviewLatest(): Promise<void> {
     if (!currentAction) return;
     setFormError(null);
     try {
-      const latest = await fetchActionDetail(ticketNumber, currentAction.id);
+      const [latest] = await Promise.all([
+        fetchActionDetail(ticketNumber, currentAction.id),
+        loadOwners(),
+      ]);
+      const dirty = dirtyRef.current;
+      if (!dirty.has("description")) setDescription(latest.description);
+      if (!dirty.has("result")) setResult(latest.result ?? "");
+      if (!dirty.has("followUpRequired")) setFollowUpRequired(latest.followUpRequired);
+      if (!dirty.has("followUpNote")) setFollowUpNote(latest.followUpNote ?? "");
+      if (!dirty.has("attachmentNotes")) setAttachmentNotes(latest.attachmentNotes ?? "");
+      if (!dirty.has("assigneeUserId")) {
+        setAssigneeUserId(latest.assignee ? latest.assignee.id : "");
+      }
+      if (!dirty.has("status")) setStatus(latest.status);
       setCurrentAction(latest);
       setExpectedVersion(latest.version);
       setConflict({ latest, reviewed: true });
@@ -251,6 +305,9 @@ export default function ActionForm({
     setFieldErrors(errors);
     setFormError(null);
     setConflict(null);
+    // N4 — a success notice from a previous logical create must not survive
+    // into this attempt (it could otherwise show alongside a new error).
+    setSuccessNotice(null);
     if (Object.keys(errors).length > 0) return;
 
     inFlightRef.current = true;
@@ -298,11 +355,22 @@ export default function ActionForm({
       const apiError = err as ApiError;
       if (apiError.status === 409) {
         // Never auto-retry a stale/conflicting write (BR-24).
-        setConflict({ latest: null, reviewed: false });
-        setFormError(
-          apiError.message ||
-            "The Action changed since you loaded it. Review the latest Action, then save again.",
-        );
+        if (isEdit && currentAction) {
+          // Edit conflict: offer the explicit latest-Action review workflow.
+          setConflict({ latest: null, reviewed: false });
+          setFormError(
+            apiError.message ||
+              "The Action changed since you loaded it. Review the latest Action, then save again.",
+          );
+        } else {
+          // Create conflict (Ticket became terminal, assignee became
+          // ineligible, idempotency-key reuse): there is no Action to review,
+          // so never build the stale-Action review state — that would render
+          // a dead control. The draft is preserved and only the canonical
+          // server message is shown.
+          setConflict(null);
+          setFormError(apiError.message || "The Action could not be recorded. Try again.");
+        }
       } else {
         setFormError(apiError.message || "The Action could not be saved. Try again.");
       }
@@ -327,6 +395,42 @@ export default function ActionForm({
   };
   const describedBy = (name: string, ...extra: Array<string | undefined>) =>
     [err(name) ? ERROR_ELEMENT_ID[name] : undefined, ...extra].filter(Boolean).join(" ") || undefined;
+
+  // BR-04 / AC-06 — a terminal Action is genuinely read-only: current values
+  // are shown as text, there is no Save, no status control, and no owner
+  // lookup. This is a View surface, not a disabled edit form.
+  if (isTerminalAction && currentAction) {
+    const viewField = (label: string, value: ReactNode) => (
+      <div className="action-field-row">
+        <span className="action-label">{label}</span>
+        <p className="action-view-value">{value}</p>
+      </div>
+    );
+    return (
+      <section className="action-form action-form-readonly" aria-label="View Action">
+        <h3>View Action</h3>
+        <p className="field-help" role="status">
+          This Action is {ACTION_STATUS_LABELS[currentAction.status].toLowerCase()} and read-only.
+        </p>
+        {viewField("Description", currentAction.description)}
+        {viewField("Result", currentAction.result ?? "—")}
+        {viewField("Follow-up Required", currentAction.followUpRequired ? "Yes" : "No")}
+        {currentAction.followUpRequired &&
+          viewField("Follow-up Note", currentAction.followUpNote ?? "—")}
+        {viewField("Attachment Notes", currentAction.attachmentNotes ?? "—")}
+        {viewField("Status", ACTION_STATUS_LABELS[currentAction.status])}
+        {viewField("Performed by", currentAction.performedBy.name)}
+        {viewField("Assignee", currentAction.assignee?.name ?? "Unassigned")}
+        {viewField("Created", formatUtcDate(currentAction.createdAt))}
+        {viewField("Last Updated", formatUtcDate(currentAction.updatedAt))}
+        <div className="form-actions">
+          <button type="button" className="secondary-button" onClick={onCancel}>
+            Close
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <form className="action-form" aria-label={isEdit ? "Edit Action" : "Add Action"} onSubmit={(e) => void handleSubmit(e)}>
@@ -357,8 +461,14 @@ export default function ActionForm({
               <dd>{conflict.latest.description}</dd>
               <dt>Result</dt>
               <dd>{conflict.latest.result ?? "—"}</dd>
+              <dt>Follow-up Required</dt>
+              <dd>{conflict.latest.followUpRequired ? "Yes" : "No"}</dd>
+              <dt>Follow-up Note</dt>
+              <dd>{conflict.latest.followUpNote ?? "—"}</dd>
+              <dt>Attachment Notes</dt>
+              <dd>{conflict.latest.attachmentNotes ?? "—"}</dd>
               <dt>Status</dt>
-              <dd>{conflict.latest.status}</dd>
+              <dd>{ACTION_STATUS_LABELS[conflict.latest.status]}</dd>
               <dt>Assignee</dt>
               <dd>{conflict.latest.assignee?.name ?? "Unassigned"}</dd>
               <dt>Version</dt>
@@ -385,7 +495,10 @@ export default function ActionForm({
         <textarea
           id="action-description"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            markDirty("description");
+            setDescription(e.target.value);
+          }}
           aria-required="true"
           aria-invalid={err("description") ? true : undefined}
           aria-describedby={describedBy("description")}
@@ -406,7 +519,10 @@ export default function ActionForm({
         <textarea
           id="action-result"
           value={result}
-          onChange={(e) => setResult(e.target.value)}
+          onChange={(e) => {
+            markDirty("result");
+            setResult(e.target.value);
+          }}
           aria-invalid={err("result") ? true : undefined}
           aria-describedby={describedBy("result")}
           disabled={isSaving}
@@ -424,7 +540,10 @@ export default function ActionForm({
           type="checkbox"
           id="action-followup"
           checked={followUpRequired}
-          onChange={(e) => setFollowUpRequired(e.target.checked)}
+          onChange={(e) => {
+            markDirty("followUpRequired");
+            setFollowUpRequired(e.target.checked);
+          }}
           disabled={isSaving}
         />
         <label className="action-label" htmlFor="action-followup">
@@ -441,7 +560,10 @@ export default function ActionForm({
           <textarea
             id="action-followup-note"
             value={followUpNote}
-            onChange={(e) => setFollowUpNote(e.target.value)}
+            onChange={(e) => {
+              markDirty("followUpNote");
+              setFollowUpNote(e.target.value);
+            }}
             aria-required="true"
             aria-invalid={err("followUpNote") ? true : undefined}
             aria-describedby={describedBy("followUpNote")}
@@ -463,7 +585,10 @@ export default function ActionForm({
         <textarea
           id="action-attachment-notes"
           value={attachmentNotes}
-          onChange={(e) => setAttachmentNotes(e.target.value)}
+          onChange={(e) => {
+            markDirty("attachmentNotes");
+            setAttachmentNotes(e.target.value);
+          }}
           aria-invalid={err("attachmentNotes") ? true : undefined}
           aria-describedby={describedBy("attachmentNotes", "action-attachment-notes-help")}
           disabled={isSaving}
@@ -487,9 +612,17 @@ export default function ActionForm({
         <select
           id="action-assignee"
           value={assigneeUserId === "" ? "" : String(assigneeUserId)}
-          onChange={(e) => setAssigneeUserId(e.target.value ? Number(e.target.value) : "")}
+          onChange={(e) => {
+            markDirty("assigneeUserId");
+            setAssigneeUserId(e.target.value ? Number(e.target.value) : "");
+          }}
           aria-invalid={err("assigneeUserId") ? true : undefined}
-          aria-describedby={describedBy("assigneeUserId", "action-assignee-help")}
+          aria-describedby={describedBy(
+            "assigneeUserId",
+            // N3 — only reference IDs that actually exist in the DOM.
+            ownersState === "error" ? "action-assignee-help" : undefined,
+            currentIneligible ? "action-assignee-ineligible" : undefined,
+          )}
           disabled={isSaving || ownersState === "loading"}
         >
           <option value="">Unassigned</option>
@@ -545,7 +678,10 @@ export default function ActionForm({
                 name="action-status"
                 value="PENDING"
                 checked={status === "PENDING"}
-                onChange={() => setStatus("PENDING")}
+                onChange={() => {
+                  markDirty("status");
+                  setStatus("PENDING");
+                }}
                 disabled={isSaving || (currentAction?.status !== "PENDING" && currentAction !== null)}
               />
               Pending
@@ -557,7 +693,10 @@ export default function ActionForm({
                 name="action-status"
                 value="COMPLETED"
                 checked={status === "COMPLETED"}
-                onChange={() => setStatus("COMPLETED")}
+                onChange={() => {
+                  markDirty("status");
+                  setStatus("COMPLETED");
+                }}
                 disabled={isSaving || (currentAction?.status !== "PENDING" && currentAction !== null)}
               />
               Completed
@@ -569,7 +708,10 @@ export default function ActionForm({
                 name="action-status"
                 value="CANCELLED"
                 checked={status === "CANCELLED"}
-                onChange={() => setStatus("CANCELLED")}
+                onChange={() => {
+                  markDirty("status");
+                  setStatus("CANCELLED");
+                }}
                 disabled={isSaving || (currentAction?.status !== "PENDING" && currentAction !== null)}
               />
               Cancelled
