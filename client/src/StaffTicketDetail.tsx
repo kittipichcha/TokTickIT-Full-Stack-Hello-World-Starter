@@ -27,6 +27,7 @@ import {
 import { formatUtcDate, formatFileSize } from "./format";
 import CommentThread from "./CommentThread";
 import InternalNoteThread from "./InternalNoteThread";
+import { StaffActionsTaken } from "./ActionsTaken";
 import { allowedTransitionsFrom, type TicketStatus } from "@shared/ticket-status";
 import type { ApiError } from "./api-client";
 
@@ -505,8 +506,11 @@ export default function StaffTicketDetail({
         </div>
       </div>
 
-      <section className="staff-actions" aria-label="Ticket actions">
-        <h2>Actions</h2>
+      {/* Issue #52 — the pre-existing owner/priority/status control block is
+          renamed to "Ticket controls" so it cannot be confused with the new
+          "Actions Taken" section below. Behaviour is unchanged. */}
+      <section className="staff-actions" aria-label="Ticket controls">
+        <h2>Ticket controls</h2>
 
         <div className="action-group">
           <span className="action-label">Ownership</span>
@@ -597,6 +601,10 @@ export default function StaffTicketDetail({
           )}
         </div>
       </section>
+
+      {/* Issue #52 — Actions Taken (ui-spec §3). Self-contained so Ticket
+          controls, comments, notes and attachments stay untouched. */}
+      <StaffActionsTaken ticketNumber={ticketNumber} ticketStatus={detail.currentStatus} />
 
       <CommentThread
         comments={detail.publicComments}

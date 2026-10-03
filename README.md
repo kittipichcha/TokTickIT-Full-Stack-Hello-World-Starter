@@ -19,8 +19,17 @@ ticket and attachment behavior remains supported under session identity.
 Issue #51 adds the Lab 4 Actions Taken backend foundation: additive persistence and migration,
 immutable Action revisions, requester/staff/admin authorization, paginated list/detail/create/
 update APIs, assignment validation, idempotent creation, optimistic concurrency, recovery tests,
-and repeatable Action seed fixtures. Actions UI, Ticket resolution workflow changes, dashboards,
-and final Lab 4 E2E/release work remain owned by later issues.
+and repeatable Action seed fixtures.
+
+Issue #52 adds the Actions Taken Ticket Detail UI: a dedicated `client/src/ActionsTaken.tsx`
+module exporting separate `StaffActionsTaken` and `RequesterActionsTaken` entry components, a
+Staff-only `client/src/ActionForm.tsx` (create/edit with idempotency-key lifecycle,
+`expectedVersion` conflict recovery, assignee eligibility, and Pending/Completed/Cancelled
+controls), typed Action functions in `client/src/api.ts`, Zen Green responsive/accessibility
+styling, and Lab 4 browser evidence under `e2e/lab-04/`. The existing Staff Ticket Detail
+"Actions" heading was renamed to "Ticket controls" (display label only, no behavior change).
+Ticket resolution workflow changes, dashboards, and final Lab 4 integrated E2E/release work
+remain owned by later issues (#53–#55).
 
 Issue #51 API routes:
 - `GET /api/tickets/:ticketNumber/actions`
@@ -136,6 +145,8 @@ Completed in Issue #18 (final integration/release verification) at the authorita
   |  |  |  |- lab3-final-schema.prisma  # pinned PR #58 Lab 3 migration schema
 |- client/
 |  |- src/
+|  |  |- ActionForm.tsx     # Staff-only Action create/edit form (#52)
+|  |  |- ActionsTaken.tsx   # Staff/Requester Actions Taken area (#52)
 |  |  |- api.ts
 |  |  |- App.css
 |  |  |- App.test.tsx
@@ -144,6 +155,7 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |- format.ts
 |  |  |- main.tsx
 |  |  |- MyTickets.tsx
+|  |  |- StaffTicketDetail.tsx
 |  |  |- vite-env.d.ts
 |  |  |- lab-02-tests/
 |  |  |  |- AttachmentSection.test.tsx
@@ -158,6 +170,8 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |  |- AuthGate.test.tsx
 |  |  |  |- ChangePassword.test.tsx
 |  |  |  |- Login.test.tsx
+|  |  |- lab-04-tests/
+|  |     |- ActionsTaken.test.tsx   # UI-ACT-01 component matrix (#52)
 |  |- package.json
 |  |- tsconfig.json
 |  |- vite.config.ts
@@ -172,6 +186,13 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |- tests.md
 |  |  |- ui-spec.md
 |  |- lab-03/
+|  |  |- ai-use.md
+|  |  |- api-spec.md
+|  |  |- reviewer.md
+|  |  |- specification.md
+|  |  |- tests.md
+|  |  |- ui-spec.md
+|  |- lab-04/                # frozen Lab 4 contract (#50) + Test DD
 |     |- ai-use.md
 |     |- api-spec.md
 |     |- reviewer.md
@@ -189,6 +210,10 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |- requester-ticket-flow.spec.ts
 |  |  |- responsive-visual.spec.ts
 |  |- lab-03/                 # owned by #42 (E2E-01..04); not created by #35
+|  |- lab-04/                 # Actions portions of E2E-01/VISUAL-01/A11Y-01 (#52)
+|     |- actions-taken-flow.spec.ts
+|     |- keyboard-access.spec.ts
+|     |- responsive-visual.spec.ts
 |- server/
 |  |- prisma/
 |  |  |- migrations/
