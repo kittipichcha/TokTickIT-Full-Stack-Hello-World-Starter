@@ -10,7 +10,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RequesterActionsTaken, StaffActionsTaken } from "../ActionsTaken";
 import ActionForm from "../ActionForm";
@@ -426,6 +426,107 @@ describe("UI-ACT-01 — Create save and list refresh (FR-18, FR-19)", () => {
     );
     expect(within(alert).getByRole("button", { name: "Retry" })).toBeTruthy();
     expect(api.createTicketAction).toHaveBeenCalledTimes(1);
+  });
+
+  it("FR-18 — a stale page read resolving AFTER the post-mutation refresh never overwrites the fresh list", async () => {
+    let resolveStale!: (value: api.ActionListResponse<api.StaffActionDto>) => void;
+    const staleRead = new Promise<api.ActionListResponse<api.StaffActionDto>>((resolve) => {
+      resolveStale = resolve;
+    });
+
+    vi.mocked(api.fetchStaffActions)
+      .mockResolvedValueOnce(pageOf(STAFF_15, 1)) // initial read
+      .mockImplementationOnce(() => staleRead) // older ordinary read, still in flight
+      .mockResolvedValueOnce({
+        // newer post-mutation refresh
+        data: [staffAction({ id: 100, description: "New action text" })],
+        pagination: { page: 2, pageSize: 10, totalItems: 11, totalPages: 2 },
+      });
+    vi.mocked(api.createTicketAction).mockResolvedValue(
+      staffAction({ id: 100, description: "New action text" }),
+    );
+
+    render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" />);
+    await screen.findByText("Page 1 of 2");
+
+    // An ordinary page read starts and stays pending while cached items show.
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    // Commit an Action while that older read is still in flight.
+    await userEvent.click(screen.getByRole("button", { name: "Add Action" }));
+    await userEvent.type(screen.getByLabelText(/Description/), "New action text");
+    await userEvent.click(screen.getByRole("button", { name: "Record Action" }));
+    await waitFor(() => expect(api.createTicketAction).toHaveBeenCalledTimes(1));
+    await screen.findByText("New action text"); // fresh refresh result is rendered
+
+    // The older request now resolves with stale data — it must be ignored.
+    await act(async () => {
+      resolveStale({
+        data: [staffAction({ id: 999, description: "Stale page two item" })],
+        pagination: { page: 2, pageSize: 10, totalItems: 1, totalPages: 1 },
+      });
+    });
+
+    expect(screen.queryByText("Stale page two item")).toBeNull();
+    expect(screen.getByText("New action text")).toBeTruthy();
+    expect(api.createTicketAction).toHaveBeenCalledTimes(1);
+    expect(api.updateTicketAction).not.toHaveBeenCalled();
+  });
+
+  it("FR-18 — a failed post-mutation refresh recovers the UI and ignores an older in-flight read", async () => {
+    let resolveStale!: (value: api.ActionListResponse<api.StaffActionDto>) => void;
+    const staleRead = new Promise<api.ActionListResponse<api.StaffActionDto>>((resolve) => {
+      resolveStale = resolve;
+    });
+
+    vi.mocked(api.fetchStaffActions)
+      .mockResolvedValueOnce(pageOf(STAFF_15, 1)) // initial read; cached items stay visible
+      .mockImplementationOnce(() => staleRead) // older ordinary read, still pending
+      .mockRejectedValueOnce(new Error("Refresh failed")); // post-mutation refresh fails
+    vi.mocked(api.createTicketAction).mockResolvedValue(
+      staffAction({ id: 77, description: "Committed action" }),
+    );
+
+    render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" />);
+    await screen.findByText("Page 1 of 2");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" })); // older read in flight
+    await userEvent.click(screen.getByRole("button", { name: "Add Action" }));
+    await userEvent.type(screen.getByLabelText(/Description/), "Committed action");
+    await userEvent.click(screen.getByRole("button", { name: "Record Action" }));
+
+    await waitFor(() => expect(api.createTicketAction).toHaveBeenCalledTimes(1));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(
+      "The Action was saved, but the list could not be refreshed.",
+    );
+
+    // Cached state survives and the section is never stuck on "Updating Actions…".
+    expect(screen.getByText("Action item 1")).toBeTruthy();
+    expect(screen.queryByText("Updating Actions…")).toBeNull();
+
+    // The older read resolves afterwards with stale data — it must be ignored.
+    await act(async () => {
+      resolveStale({
+        data: [staffAction({ id: 999, description: "Stale page two item" })],
+        pagination: { page: 2, pageSize: 10, totalItems: 1, totalPages: 1 },
+      });
+    });
+
+    expect(screen.queryByText("Stale page two item")).toBeNull();
+    expect(screen.getByText("Action item 1")).toBeTruthy();
+    expect(screen.queryByText("Updating Actions…")).toBeNull();
+    expect(
+      screen
+        .getAllByRole("alert")
+        .some((node) =>
+          node.textContent?.includes("The Action was saved, but the list could not be refreshed."),
+        ),
+    ).toBe(true);
+
+    // The committed write is never repeated because a refresh failed.
+    expect(api.createTicketAction).toHaveBeenCalledTimes(1);
+    expect(api.updateTicketAction).not.toHaveBeenCalled();
   });
 });
 
@@ -1007,6 +1108,39 @@ describe("UI-ACT-01 — Assignee eligibility (AC-03, BR-03)", () => {
     expect(desc.value).toBe("Kept while owners fail"); // values survive the retry
   });
 
+  it("BR-03 — an edit-mode owner lookup failure keeps the assigned identity visible as eligibility-unknown", async () => {
+    const action = staffAction({ id: 42, assignee: { id: 6, name: "Bob", role: "IT_STAFF" } });
+    vi.mocked(api.fetchAssignableOwners).mockRejectedValueOnce(new Error("Owners unavailable"));
+    render(<ActionForm ticketNumber={TICKET} action={action} onSaved={vi.fn()} onCancel={vi.fn()} />);
+
+    // A failed lookup is NOT proof of ineligibility: Bob stays selected and is
+    // labelled eligibility-unknown, never ineligible, and Retry is offered.
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(
+      "Unable to load eligible assignees. Your entered values are kept.",
+    );
+    expect(within(alert).getByRole("button", { name: "Retry" })).toBeTruthy();
+
+    const select = screen.getByLabelText("Assignee") as HTMLSelectElement;
+    expect(select.value).toBe("6");
+    expect(
+      screen.getByRole("option", { name: "Bob (current — eligibility unavailable)" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("option", { name: "Bob (ineligible)" })).toBeNull();
+    expect(screen.queryByText(/no longer an active Staff\/Administrator/)).toBeNull();
+
+    // The typed draft survives the failure and the retry.
+    const desc = screen.getByLabelText(/Description/) as HTMLTextAreaElement;
+    await userEvent.type(desc, "Draft kept through owner failure");
+    expect(desc.value).toContain("Draft kept through owner failure");
+
+    await userEvent.click(within(alert).getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("option", { name: "Bob — IT Staff" })).toBeTruthy();
+    expect(screen.queryByText(/Unable to load eligible assignees/)).toBeNull();
+    expect((screen.getByLabelText("Assignee") as HTMLSelectElement).value).toBe("6");
+    expect(desc.value).toContain("Draft kept through owner failure");
+  });
+
   it("BR-03 — a mid-session deactivation rejected by the server (HTTP 409) refreshes owners and requires explicit repair", async () => {
     // Owners are eligible when the form loads…
     const action = staffAction({ id: 42, assignee: { id: 6, name: "Bob", role: "IT_STAFF" } });
@@ -1016,12 +1150,16 @@ describe("UI-ACT-01 — Assignee eligibility (AC-03, BR-03)", () => {
     await waitFor(() => expect(select.disabled).toBe(false));
     expect(screen.queryByText(/no longer an active Staff\/Administrator/)).toBeNull();
 
-    // …but Bob is deactivated before the PATCH lands. The server rejects the
-    // write with HTTP 409 (ineligible assignee), not a version conflict.
+    // The user reassigns to Alice — a DIFFERENT person from the persisted Bob.
+    await userEvent.selectOptions(select, "5");
+    expect(select.value).toBe("5");
+
+    // …then Alice is deactivated before the PATCH lands. The server rejects
+    // the write with HTTP 409 (ineligible assignee), not a version conflict.
     vi.mocked(api.updateTicketAction).mockRejectedValueOnce(
       apiError(409, "The specified assignee is not an active IT Staff or Administrator user."),
     );
-    vi.mocked(api.fetchAssignableOwners).mockResolvedValue([OWNERS[0], OWNERS[2]]); // Bob gone
+    vi.mocked(api.fetchAssignableOwners).mockResolvedValue([OWNERS[1], OWNERS[2]]); // Alice gone
     await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
 
     // Canonical server feedback and draft retained. This is an edit-mode
@@ -1036,13 +1174,16 @@ describe("UI-ACT-01 — Assignee eligibility (AC-03, BR-03)", () => {
       "Checked the print queue",
     );
 
-    // Review latest Action refreshes BOTH the Action and the owner list, so
-    // the stale assignee becomes visibly ineligible (BR-03).
+    // Review latest Action returns the PERSISTED Bob Action and refreshes the
+    // owner list without Alice. Because the assignee field is dirty, ALICE —
+    // not Bob — must stay selected and be labelled by her own remembered
+    // identity (BR-03/N1).
     vi.mocked(api.fetchActionDetail).mockResolvedValue(action);
     await userEvent.click(screen.getByRole("button", { name: "Review latest Action" }));
     await screen.findByText(/no longer an active Staff\/Administrator/);
-    expect(select.value).toBe("6");
-    expect(screen.getByRole("option", { name: "Bob (ineligible)" })).toBeTruthy();
+    expect(select.value).toBe("5");
+    expect(screen.getByRole("option", { name: "Alice (ineligible)" })).toBeTruthy();
+    expect(screen.queryByRole("option", { name: "Bob (ineligible)" })).toBeNull();
 
     // Resubmission stays blocked until the assignee is explicitly repaired.
     vi.mocked(api.updateTicketAction).mockClear();
@@ -1054,15 +1195,15 @@ describe("UI-ACT-01 — Assignee eligibility (AC-03, BR-03)", () => {
     ).toBeTruthy();
     expect(api.updateTicketAction).not.toHaveBeenCalled();
 
-    // Explicit repair unblocks the save.
-    await userEvent.selectOptions(select, "5");
+    // Explicit repair (pick the eligible Bob) unblocks the save.
+    await userEvent.selectOptions(select, "6");
     vi.mocked(api.updateTicketAction).mockResolvedValue(staffAction({ id: 42, version: 2 }));
     await userEvent.click(screen.getByRole("button", { name: "Save Action" }));
     await waitFor(() => expect(api.updateTicketAction).toHaveBeenCalledTimes(1));
     expect(api.updateTicketAction).toHaveBeenCalledWith(
       TICKET,
       42,
-      expect.objectContaining({ assigneeUserId: 5, expectedVersion: 1 }),
+      expect.objectContaining({ assigneeUserId: 6, expectedVersion: 1 }),
     );
   });
 });

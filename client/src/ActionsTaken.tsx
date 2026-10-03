@@ -237,20 +237,36 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
    */
   const refreshAfterMutation = useCallback(
     async (targetPage: number) => {
-      const generation = generationRef.current;
+      // B2 — a post-mutation refresh acquires its OWN generation. Snapshotting
+      // the current one (the old behaviour) let an older ordinary read that was
+      // already in flight keep authority and overwrite the fresh result.
+      const generation = ++generationRef.current;
+      const requestedTicket = ticketNumber;
+      const requestedPage = targetPage;
+      // Every state update below is guarded by BOTH the generation and the
+      // Ticket, so a stale response can never land after a newer request.
+      const isCurrent = () =>
+        generation === generationRef.current && requestedTicket === ticketRef.current;
       try {
-        const result = await fetchStaffActions(ticketNumber, targetPage, ACTIONS_PAGE_SIZE);
-        if (generation !== generationRef.current) return;
-        if (result.data.length === 0 && targetPage > 1 && result.pagination.totalPages > 0) {
+        const result = await fetchStaffActions(requestedTicket, requestedPage, ACTIONS_PAGE_SIZE);
+        if (!isCurrent()) return;
+        // A page that is now beyond the new total falls back to page 1 (ui-spec §3).
+        if (result.data.length === 0 && requestedPage > 1 && result.pagination.totalPages > 0) {
           setPage(1);
-        } else {
-          setItems(result.data);
-          setPagination(result.pagination);
-          setLoadState("loaded");
+          setRefreshWarning(null);
+          return;
         }
+        setItems(result.data);
+        setPagination(result.pagination);
+        setLoadState("loaded");
+        setLoadError(null);
         setRefreshWarning(null);
       } catch {
-        if (generation !== generationRef.current) return;
+        if (!isCurrent()) return;
+        // The write already committed: keep the cached list and pagination,
+        // leave the section usable (never stuck on "Updating Actions…"), and
+        // report a refresh warning instead of a failed mutation (FR-18/FR-19).
+        setLoadState("loaded");
         setRefreshWarning("The Action was saved, but the list could not be refreshed.");
       }
     },

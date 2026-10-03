@@ -143,6 +143,21 @@ export default function ActionForm({
   const [owners, setOwners] = useState<AssignableOwner[]>([]);
   const [ownersState, setOwnersState] = useState<OwnerLoadState>("loading");
   const ownerSeqRef = useRef(0);
+  /**
+   * N1 — remembered display identity for every owner ever seen, keyed by user
+   * ID. A selected assignee keeps its real name even when the active list
+   * cannot currently supply it (initial load failure, deactivation, conflict
+   * recovery), so the control never loses or mislabels who is selected.
+   */
+  const knownOwnerByIdRef = useRef<Map<number, AssignableOwner>>(new Map());
+  // Seed the persisted assignee as soon as an edit form mounts.
+  if (action?.assignee) {
+    knownOwnerByIdRef.current.set(action.assignee.id, {
+      id: action.assignee.id,
+      name: action.assignee.name,
+      role: action.assignee.role,
+    });
+  }
 
   // Create idempotency-key lifecycle.
   const pendingKeyRef = useRef<{ fingerprint: string; key: string } | null>(null);
@@ -176,11 +191,15 @@ export default function ActionForm({
     try {
       const list = await fetchAssignableOwners();
       if (requestId !== ownerSeqRef.current) return;
+      // Remember every returned owner so their identity survives later list
+      // changes, then publish the authoritative ACTIVE list.
+      list.forEach((owner) => knownOwnerByIdRef.current.set(owner.id, owner));
       setOwners(list);
       setOwnersState("loaded");
     } catch {
       if (requestId !== ownerSeqRef.current) return;
-      setOwners([]);
+      // N1 — a failed lookup proves nothing about eligibility. Keep the last
+      // successful list and remembered labels instead of clearing them.
       setOwnersState("error");
     }
   }, []);
@@ -197,17 +216,32 @@ export default function ActionForm({
 
   const ownerIds = useMemo(() => new Set(owners.map((owner) => owner.id)), [owners]);
 
+  /** The single selected assignee, derived from the DRAFT — never from the
+   *  persisted Action, which may name a different person after a conflict. */
+  const selectedAssigneeId = assigneeUserId === "" ? null : Number(assigneeUserId);
+  /** Active-ness is judged ONLY against the last successful owner list. */
+  const selectedAssigneeIsActive = selectedAssigneeId !== null && ownerIds.has(selectedAssigneeId);
+  /** Display identity resolved through remembered owners, keyed by the SELECTED
+   *  ID — `currentAction.assignee.name` is never used for a different person. */
+  const selectedAssigneeName =
+    selectedAssigneeId === null
+      ? null
+      : (knownOwnerByIdRef.current.get(selectedAssigneeId)?.name ??
+        (currentAction?.assignee?.id === selectedAssigneeId
+          ? currentAction.assignee.name
+          : null));
+
   /**
-   * BR-03 — the persisted assignee may legitimately no longer appear in the
-   * active-owner list. It stays visible as the current value and blocks Save
-   * until the user explicitly picks an eligible user or unassigns.
+   * BR-03 — a selected assignee that a SUCCESSFUL load proves ineligible stays
+   * visible and blocks Save until the user explicitly picks an eligible user
+   * or unassigns. An unavailable/loading list is *unknown*, not ineligible.
    */
   const currentIneligible =
     isEdit &&
     !isTerminalAction &&
     ownersState === "loaded" &&
-    assigneeUserId !== "" &&
-    !ownerIds.has(Number(assigneeUserId));
+    selectedAssigneeId !== null &&
+    !selectedAssigneeIsActive;
 
   const fields: NormalizedFields = useMemo(
     () => ({
@@ -278,6 +312,15 @@ export default function ActionForm({
         loadOwners(),
       ]);
       const dirty = dirtyRef.current;
+      // Record the persisted assignee's identity BEFORE reconciling state, so a
+      // dirty selected assignee can still be labelled by its own name.
+      if (latest.assignee) {
+        knownOwnerByIdRef.current.set(latest.assignee.id, {
+          id: latest.assignee.id,
+          name: latest.assignee.name,
+          role: latest.assignee.role,
+        });
+      }
       if (!dirty.has("description")) setDescription(latest.description);
       if (!dirty.has("result")) setResult(latest.result ?? "");
       if (!dirty.has("followUpRequired")) setFollowUpRequired(latest.followUpRequired);
@@ -626,12 +669,16 @@ export default function ActionForm({
           disabled={isSaving || ownersState === "loading"}
         >
           <option value="">Unassigned</option>
-          {/* `currentIneligible` already implies a non-empty current assignee,
-              so the persisted value can stay visible even though it is absent
-              from the active-owner list (BR-03). */}
-          {currentIneligible && (
-            <option value={String(assigneeUserId)}>
-              {currentAction?.assignee?.name ?? "Current assignee"} (ineligible)
+          {/* N1 — a selected assignee missing from the active list still needs
+              exactly one option so the control shows WHO is selected. The label
+              distinguishes a proven-ineligible owner from an eligibility-unknown
+              one (owner lookup failed or is still loading). */}
+          {selectedAssigneeId !== null && !selectedAssigneeIsActive && (
+            <option value={String(selectedAssigneeId)}>
+              {selectedAssigneeName ?? "Current assignee"}
+              {ownersState === "loaded"
+                ? " (ineligible)"
+                : " (current — eligibility unavailable)"}
             </option>
           )}
           {owners.map((owner) => (
