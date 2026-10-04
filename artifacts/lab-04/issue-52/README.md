@@ -2,9 +2,9 @@
 
 - **Scope**: Issue #52 only (Lab 4 #3 — Actions Taken Ticket Detail UI).
 - **Branch**: `feature/lab4-actions-taken-ui`
-- **Tested implementation SHA**: `1bdaf8b` — the exact commit on which every command below ran (review-fix pass 3: B1 section-owned mutation success, B2 committed-snapshot survival through failed refresh, B3 owner/performer/assignee three-way identity E2E, B4 Zen Green token cleanup, N1/N2 evidence reconciliation). The evidence commit that follows it changes documentation/artifacts only.
+- **Tested implementation SHA**: `1bdaf8b` — the exact commit on which every command below ran (review-fix pass 3: B1 section-owned mutation success, B2 committed-snapshot survival through failed refresh, B3 owner/performer/assignee three-way identity E2E, B4 Zen Green token cleanup, N1/N2 evidence reconciliation). Every commit after it is documentation/evidence-only and changes no production or executable-test file.
 - **Baseline SHA** (from `lab4-staging` after PR #59): `6b8937db0c8d8eefd16da74cb18369c9d6487c83` — **baseline only; NOT the tested feature revision.** The Issue #52 implementation commits exist after this merge.
-- **Date**: 2026-10-03
+- **Date**: 2026-10-04 (review-fix pass 3 verification date, matching the `tests.md` Results Log entry; the manifest was first generated on 2026-10-03)
 - **Environment**: Windows, Node.js, PostgreSQL 18 (local), Playwright 1.62.1 (chromium), Vitest (client + server).
 - **Database context**: disposable E2E database `lab3e2e` via `E2E_DATABASE_URL`; existing configured test databases for Vitest integration tests. No new migration was created or applied — the existing Issue #51 migration `20261001000000_lab4_actions_foundation` was verified (`prisma migrate status`: up to date, 8 migrations).
 
@@ -41,4 +41,15 @@
 - `REG-01` remains **Planned**: only the affected Lab 3 browser regression was run; the full integrated regression is Issue #55.
 - Existing Issue #51 API/migration/seed rows were rerun as dependency evidence only; their ownership and status are unchanged.
 - No database dumps, `.env`, credentials, or attachment snapshots are included in this evidence.
-- Human peer review: PR #60 received a `CHANGES_REQUESTED` review on this head; re-review/approval remains pending, and this manifest does not record reviewer approval.
+
+## Provenance and review chain
+
+| Event | SHA |
+| --- | --- |
+| Baseline (`lab4-staging`, PR #59 merge) | `6b8937d` |
+| Human review [#5400567676](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/60#pullrequestreview-5400567676) (`CHANGES_REQUESTED`) | `31c77b0` |
+| Final implementation fixes + tests (**tested implementation**) | `1bdaf8b` |
+| Pass-3 evidence/docs | `66414ee` |
+| Review-record reconciliation | `0ffb67e` |
+
+Human peer review #5400567676 was submitted as `CHANGES_REQUESTED` against head `31c77b0`, **not** against `1bdaf8b` or any later head. The requested implementation fixes were applied and verified at `1bdaf8b`. All subsequent commits are documentation/evidence-only. Human re-review/approval of the current head remains pending, and this manifest does not record reviewer approval.

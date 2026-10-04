@@ -1,5 +1,13 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #52 PR #60 final evidence reconciliation — manifest provenance (2026-10-04)
+
+- Prompt summary: apply the supplied current-head re-review fix plan for PR #60 — repair the stale evidence-manifest provenance in `artifacts/lab-04/issue-52/README.md`, log the correction in `tests.md` and this file as documentation/evidence-only with 0 executable tests rerun, make one docs-only commit, then rewrite the live PR body and request re-review; do **not** touch `client/`, `server/`, or `e2e/`.
+- Agent used: GitHub Copilot.
+- Work performed: replaced the manifest's misleading "`CHANGES_REQUESTED` review on this head" wording with the exact review chain (review #5400567676 against `31c77b0`; fixes verified at tested implementation `1bdaf8b`; `66414ee` and later commits documentation/evidence-only; re-review pending) plus an explicit event/SHA provenance table; replaced the singular "the evidence commit that follows it" phrasing with wording that allows multiple subsequent evidence-only commits; reconciled the manifest `Date` with the pass-3 Results Log (2026-10-04, noting the original 2026-10-03 generation date); added the matching newest Results Log entry in `tests.md` and this AI-use entry. `reviewer.md` was not changed — the human reviewer supplied no new feedback.
+- Verification: static documentation checks only — `git diff --check` clean; grep confirms the manifest names `#5400567676`, `31c77b0`, `1bdaf8b`, and pending re-review; no `Approved` claim for PR #60; Test DD status table unchanged; diff contains only `artifacts/lab-04/issue-52/README.md`, `docs/lab-04/tests.md`, and `docs/lab-04/ai-use.md`. Executable tests: **0 run / 0 passed / 0 failed / 0 skipped** for this patch (the recorded 52/304/633/9/15/2 results belong to tested implementation SHA `1bdaf8b`).
+- Reflection: the provenance error was subtle because the manifest's numbers were all correct — only the review's target SHA was wrong. Evidence integrity depends as much on *which revision a statement is about* as on the values themselves, so review claims should always name the SHA they were submitted against rather than relying on "this head", which silently re-binds as the branch moves.
+
 ## Issue #52 review-evidence reconciliation — PR #60 review record (2026-10-04)
 
 - Prompt summary: documentation/evidence-only fix packet for Issue #52 — record the actual PR #60 human review and response in `reviewer.md`, synchronize the `tests.md` Results Log and this file, then commit/push only after the repository's explicit commit/push approval gate; do **not** modify the reviewed Actions implementation again unless a new defect is discovered.
