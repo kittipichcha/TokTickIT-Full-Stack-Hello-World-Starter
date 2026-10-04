@@ -79,3 +79,33 @@ human-review feedback.
 The specification, API contract, UI contract, and planned test matrix require human re-review
 before dependent Lab 4 implementation work begins. That gate was satisfied when PR #58 received
 final human approval and merged; automated agent review does not substitute for human approval.
+
+## Issue #52 / PR #60 review record
+
+**GitHub review status:** PR #60 (Actions Taken Ticket Detail UI, base `lab4-staging`) received a
+`Changes Requested` review from `@oangsa`. **Fixes applied; re-review/approval pending.** No
+`Approved` review exists for PR #60.
+
+| Field | Value |
+|---|---|
+| PR | [#60](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/60) |
+| Reviewer | `@oangsa` |
+| Verdict | `Changes Requested` |
+| Review | [#5400567676](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/60#pullrequestreview-5400567676) |
+| Reviewed head | `31c77b076843d102f61d5925b0cc73591041eef1` |
+| Fixes applied at | `1bdaf8b` (implementation) + `66414ee` (evidence/docs) |
+| State | **Fixes applied; re-review/approval pending** |
+
+### Response to PR #60 review #5400567676
+
+| Requested change | Implemented fix at `1bdaf8b` |
+|---|---|
+| Successful Action edits have no success state or accessible success announcement (Major) | **Section-owned edit success**: `ActionForm.onSaved(saved, "create" \| "edit")` reports the committed server response; the form-local success notice was removed; `StaffActionsTaken` renders one section-level `role="status"` `.success-box` that survives the edit form closing. |
+| Create + refresh failure does not keep the committed Action value visible (Major) | **Committed snapshot surviving refresh failure**: `handleSaved()` records the committed snapshot from the POST/PATCH response *before* the follow-up refresh, so a newly created Action stays represented when the GET fails; Retry re-reads only and never replays POST/PATCH. |
+| Performer / assignee / Ticket-owner three-way distinction not verified (Major evidence gap) | **Three-way owner/performer/assignee E2E**: the primary Actions E2E assigns the Ticket to `USERS.admin` (owner), creates the Action as `USERS.staff` (performer), assigns it to `USERS.adminPeer` (assignee), and asserts all three fixtures pairwise distinct plus the persisted owner ID. |
+| Ad-hoc warning colors violate the styling token contract (styling-contract violation) | **Approved-token replacement**: all three Issue #52 `#fff8e6` literals (`.action-reopen-guidance`, `.conflict-box`, `.action-status-pending`) replaced with `var(--color-field-readonly-bg)`; zero newly added raw hex colors remain in the Issue #52 CSS block. |
+
+All four requested changes are implemented and verified on tested implementation SHA `1bdaf8b`
+(client `UI-ACT-01` 52 passed / full client 19 files 304 passed; server 633 passed; Actions E2E
+9 passed; responsive+keyboard 15 passed; affected Lab 3 regression 2 passed). Human re-review of
+the resulting head is pending; this record does **not** claim approval.

@@ -17,6 +17,7 @@ import AdminUserManagement from "./AdminUserManagement";
 import StaffTicketQueue from "./StaffTicketQueue";
 import StaffTicketDetail from "./StaffTicketDetail";
 import CommentThread from "./CommentThread";
+import { RequesterActionsTaken } from "./ActionsTaken";
 import { postTicketComment, postAppearsResolved } from "./api";
 import { formatUtcDate, formatFileSize } from "./format";
 import type { AuthUser } from "./api-client";
@@ -408,6 +409,11 @@ export default function App({ user, onUserUpdated }: AppProps) {
                   <span className="ticket-info-value ticket-description">{ticketDetail.description}</span>
                 </div>
               </div>
+
+              {/* Issue #52 — read-only Actions Taken (ui-spec §3). Renders the
+                  restricted Requester projection only: no staff metadata and no
+                  write controls are reachable from this surface. */}
+              <RequesterActionsTaken ticketNumber={ticketDetail.ticketNumber} />
 
               {/* Attachments section */}
               <section className="attachments-section" aria-label="Attachments">

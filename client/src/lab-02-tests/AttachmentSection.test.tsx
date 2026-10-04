@@ -7,6 +7,13 @@ import { TEST_USER } from "./helpers/user";
 
 vi.mock("../api");
 
+// Issue #52 — default the new Actions Taken reads to a successfully loaded,
+// empty list so this pre-existing suite keeps asserting what it always did.
+vi.mocked(api.fetchRequesterActions).mockResolvedValue({
+  data: [],
+  pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+});
+
 const requesters = [
   { id: 1, name: "Ada Lovelace", email: "ada@example.com" },
 ];

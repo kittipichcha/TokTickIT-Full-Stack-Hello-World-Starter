@@ -566,3 +566,208 @@ export async function postAppearsResolved(
   });
   return result.data;
 }
+
+// ---------------------------------------------------------------------------
+// Actions Taken (Issue #52 — Lab 4, api-spec §2–§6)
+// ---------------------------------------------------------------------------
+
+/** Action lifecycle status. New Actions are always created `PENDING` server-side. */
+export type ActionStatus = "PENDING" | "COMPLETED" | "CANCELLED";
+
+/** Action labels used for textual (non-colour-only) status display. */
+export const ACTION_STATUS_LABELS: Record<ActionStatus, string> = {
+  PENDING: "Pending",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+};
+
+/**
+ * Staff/Admin Action projection (api-spec §2).
+ *
+ * Carries the staff-only `version` (optimistic concurrency) plus performer and
+ * assignee IDs. Never render this shape into the Requester surface — use
+ * {@link RequesterActionDto} there instead.
+ */
+export interface StaffActionDto {
+  id: number;
+  ticketNumber: string;
+  description: string;
+  result: string | null;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  status: ActionStatus;
+  performedBy: { id: number; name: string };
+  assignee: { id: number; name: string; role: string } | null;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+/**
+ * Requester Action projection (api-spec §2).
+ *
+ * Deliberately omits performer/assignee IDs, assignee role, and `version` so
+ * the read-only Requester renderer structurally cannot leak staff metadata.
+ */
+export interface RequesterActionDto {
+  id: number;
+  ticketNumber: string;
+  description: string;
+  result: string | null;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  status: ActionStatus;
+  performedBy: { name: string };
+  assignee: { name: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Server pagination envelope for the Action list (api-spec §3). */
+export interface ActionPagination {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface ActionListResponse<T> {
+  data: T[];
+  pagination: ActionPagination;
+}
+
+/**
+ * Fixed page size for every Action list (ui-spec §3).
+ *
+ * The contract mandates `pageSize=10` with no page-size selector, so this is a
+ * constant rather than a user-controlled option.
+ */
+export const ACTIONS_PAGE_SIZE = 10;
+
+/** Fields the client may send when creating an Action (api-spec §4). */
+export interface CreateActionPayload {
+  description: string;
+  result: string | null;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  assigneeUserId: number | null;
+}
+
+/** Fields the client may send when editing an Action (api-spec §6). */
+export interface UpdateActionPayload {
+  /** Optimistic-concurrency token; required on every PATCH (BR-24). */
+  expectedVersion: number;
+  description: string;
+  result: string | null;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  assigneeUserId: number | null;
+  status: ActionStatus;
+}
+
+/** Builds the Action list path with fixed-size paging (api-spec §3). */
+function actionsListPath(ticketNumber: string, page: number, pageSize: number): string {
+  const url = new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}/actions`, "http://placeholder.invalid");
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("pageSize", String(pageSize));
+  return `${url.pathname}${url.search}`;
+}
+
+/**
+ * Lists a Ticket's Actions using the Staff/Admin projection (api-spec §3).
+ *
+ * The server orders results by `(createdAt, id)` ascending and ignores any
+ * client-supplied ordering, so the stable order is guaranteed upstream.
+ */
+export async function fetchStaffActions(
+  ticketNumber: string,
+  page = 1,
+  pageSize = ACTIONS_PAGE_SIZE,
+): Promise<ActionListResponse<StaffActionDto>> {
+  return apiJson<ActionListResponse<StaffActionDto>>(actionsListPath(ticketNumber, page, pageSize), {
+    fallbackError: "Failed to fetch Actions.",
+  });
+}
+
+/**
+ * Lists a Ticket's Actions using the restricted Requester projection
+ * (api-spec §3/§5). Read-only; ownership is enforced by the server.
+ */
+export async function fetchRequesterActions(
+  ticketNumber: string,
+  page = 1,
+  pageSize = ACTIONS_PAGE_SIZE,
+): Promise<ActionListResponse<RequesterActionDto>> {
+  return apiJson<ActionListResponse<RequesterActionDto>>(actionsListPath(ticketNumber, page, pageSize), {
+    fallbackError: "Failed to fetch Actions.",
+  });
+}
+
+/**
+ * Fetches the current server state of a single Action (api-spec §5).
+ *
+ * Staff-only edit flow starts from the list DTO; this detail fetch is used
+ * during explicit conflict review so `expectedVersion` and the editable
+ * values are reconciled against the authoritative latest server state.
+ */
+export async function fetchActionDetail(
+  ticketNumber: string,
+  actionId: number,
+): Promise<StaffActionDto> {
+  const result = await apiJson<{ data: StaffActionDto }>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/actions/${actionId}`,
+    { fallbackError: "Failed to fetch the Action." },
+  );
+  return result.data;
+}
+
+/**
+ * Records a new Action (api-spec §4). Staff/Admin only; always `PENDING`.
+ *
+ * `idempotencyKey` is sent as the required `Idempotency-Key` header so an
+ * ambiguous retry replays the original `201` instead of duplicating the
+ * logical Action (BR-25). The header is a custom one, so this uses
+ * `apiRequest()` directly rather than `apiJson()`.
+ */
+export async function createTicketAction(
+  ticketNumber: string,
+  payload: CreateActionPayload,
+  idempotencyKey: string,
+): Promise<StaffActionDto> {
+  const response = await apiRequest(`/api/tickets/${encodeURIComponent(ticketNumber)}/actions`, {
+    method: "POST",
+    body: payload,
+    includeCsrf: true,
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  if (!response.ok) throw await parseApiError(response, "Failed to record the Action.");
+  const body = (await response.json()) as { data: StaffActionDto };
+  return body.data;
+}
+
+/**
+ * Edits a Pending Action (api-spec §6). Staff/Admin only.
+ *
+ * `expectedVersion` makes the write a compare-and-set: a stale version returns
+ * `409` with no mutation, and the caller must never auto-retry it (BR-24).
+ */
+export async function updateTicketAction(
+  ticketNumber: string,
+  actionId: number,
+  payload: UpdateActionPayload,
+): Promise<StaffActionDto> {
+  const result = await apiJson<{ data: StaffActionDto }>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/actions/${actionId}`,
+    {
+      method: "PATCH",
+      body: payload,
+      includeCsrf: true,
+      fallbackError: "Failed to save the Action.",
+    },
+  );
+  return result.data;
+}
