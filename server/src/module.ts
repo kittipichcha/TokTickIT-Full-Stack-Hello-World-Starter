@@ -34,6 +34,7 @@ import {
 import {
   staffQueueHandler,
   getStaffTicketDetailHandler,
+  listTicketStatusHistoryHandler,
   setOwnerHandler,
   listAssignableOwnersHandler,
   setItPriorityHandler,
@@ -207,6 +208,14 @@ router.get(
   requirePasswordChanged,
   requireRole(["IT_STAFF", "ADMINISTRATOR"]),
   getStaffTicketDetailHandler,
+);
+
+router.get(
+  "/staff/tickets/:ticketNumber/status-history",
+  requireAuth,
+  requirePasswordChanged,
+  requireRole(["IT_STAFF", "ADMINISTRATOR"]),
+  listTicketStatusHistoryHandler,
 );
 
 // Eligible Ticket owners: IT Staff / Administrator only (api-spec §17a). Read -> no CSRF.
