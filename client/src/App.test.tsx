@@ -85,7 +85,7 @@ describe("UI-48-NAV: integrated Administrator role navigation", () => {
     });
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue({
       id: 1, ticketNumber: "TKT-2026-000001", summary: "Printer not working", description: "Offline",
-      currentStatus: "NEW", requestedPriority: "MEDIUM", itPriority: "MEDIUM", ticketOwnerId: null,
+      currentStatus: "NEW", requestedPriority: "MEDIUM", itPriority: "MEDIUM", ticketOwnerId: null, version: 1,
       requesterId: 7, requesterName: "Ada Lovelace", requesterIsActive: true, categoryId: 1,
       categoryName: "Hardware", relatedSystemId: 1, relatedSystemName: "Office", appearsResolved: false,
       createdAt: "2026-09-10T00:00:00Z", updatedAt: "2026-09-10T00:00:00Z",

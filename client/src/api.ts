@@ -442,6 +442,7 @@ export interface StaffTicketDetail {
   requestedPriority: string;
   itPriority: string | null;
   ticketOwnerId: number | null;
+  version: number;
   requesterId: number;
   requesterName: string;
   requesterIsActive: boolean;
@@ -477,10 +478,11 @@ export async function fetchStaffTicketDetail(
 export async function setTicketOwner(
   ticketNumber: string,
   ownerId: number,
-): Promise<{ ticketOwnerId: number }> {
-  const result = await apiJson<{ data: { ticketOwnerId: number } }>(
+  expectedVersion: number,
+): Promise<{ ticketOwnerId: number; version: number }> {
+  const result = await apiJson<{ data: { ticketOwnerId: number; version: number } }>(
     `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/owner`,
-    { method: "POST", body: { ownerId }, includeCsrf: true, fallbackError: "Failed to set owner." },
+    { method: "POST", body: { ownerId, expectedVersion }, includeCsrf: true, fallbackError: "Failed to set owner." },
   );
   return result.data;
 }
@@ -489,10 +491,11 @@ export async function setTicketOwner(
 export async function setItPriority(
   ticketNumber: string,
   itPriority: string,
-): Promise<{ itPriority: string }> {
-  const result = await apiJson<{ data: { itPriority: string } }>(
+  expectedVersion: number,
+): Promise<{ itPriority: string; version: number }> {
+  const result = await apiJson<{ data: { itPriority: string; version: number } }>(
     `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/priority`,
-    { method: "PATCH", body: { itPriority }, includeCsrf: true, fallbackError: "Failed to set IT priority." },
+    { method: "PATCH", body: { itPriority, expectedVersion }, includeCsrf: true, fallbackError: "Failed to set IT priority." },
   );
   return result.data;
 }
@@ -501,10 +504,11 @@ export async function setItPriority(
 export async function applyStatusTransition(
   ticketNumber: string,
   status: string,
-): Promise<{ currentStatus: string }> {
-  const result = await apiJson<{ data: { currentStatus: string } }>(
+  expectedVersion: number,
+): Promise<{ currentStatus: string; version: number }> {
+  const result = await apiJson<{ data: { currentStatus: string; version: number } }>(
     `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/status`,
-    { method: "PATCH", body: { status }, includeCsrf: true, fallbackError: "Failed to change status." },
+    { method: "PATCH", body: { status, expectedVersion }, includeCsrf: true, fallbackError: "Failed to change status." },
   );
   return result.data;
 }
@@ -636,6 +640,40 @@ export interface ActionPagination {
 export interface ActionListResponse<T> {
   data: T[];
   pagination: ActionPagination;
+}
+
+export interface TicketStatusHistoryEntry {
+  id: number;
+  ticketNumber: string;
+  changedBy: { id: number; name: string };
+  changedAt: string;
+  fromStatus: string;
+  toStatus: string;
+  versionBefore: number;
+  versionAfter: number;
+}
+
+export interface TicketStatusHistoryResponse {
+  data: TicketStatusHistoryEntry[];
+  pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
+}
+
+export const TICKET_STATUS_HISTORY_PAGE_SIZE = 10;
+
+export async function fetchTicketStatusHistory(
+  ticketNumber: string,
+  page = 1,
+  pageSize = TICKET_STATUS_HISTORY_PAGE_SIZE,
+): Promise<TicketStatusHistoryResponse> {
+  const url = new URL(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/status-history`,
+    "http://placeholder.invalid",
+  );
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("pageSize", String(pageSize));
+  return apiJson<TicketStatusHistoryResponse>(`${url.pathname}${url.search}`, {
+    fallbackError: "Failed to fetch ticket status history.",
+  });
 }
 
 /**

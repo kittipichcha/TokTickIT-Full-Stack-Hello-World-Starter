@@ -28,6 +28,7 @@ import { formatUtcDate, formatFileSize } from "./format";
 import CommentThread from "./CommentThread";
 import InternalNoteThread from "./InternalNoteThread";
 import { StaffActionsTaken } from "./ActionsTaken";
+import TicketStatusHistory from "./TicketStatusHistory";
 import { allowedTransitionsFrom, type TicketStatus } from "@shared/ticket-status";
 import type { ApiError } from "./api-client";
 
@@ -64,11 +65,14 @@ export default function StaffTicketDetail({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ kind: DetailLoadError; message: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [workflowSuccess, setWorkflowSuccess] = useState<string | null>(null);
   const [isActing, setIsActing] = useState(false);
   const [pendingTransition, setPendingTransition] = useState<TicketStatus | null>(null);
   const [owners, setOwners] = useState<AssignableOwner[]>([]);
   const [ownerLoadState, setOwnerLoadState] = useState<OwnerLoadState>("loading");
   const [selectedOwnerId, setSelectedOwnerId] = useState<number | undefined>();
+  const [priorityDraft, setPriorityDraft] = useState<string | null>(null);
+  const [workflowBlockedOnRefresh, setWorkflowBlockedOnRefresh] = useState(false);
 
   // Issue #38 review fix (49-B2) — Preview/Download failures mark the
   // Attachment unavailable rather than implying the operation succeeded.
@@ -81,6 +85,7 @@ export default function StaffTicketDetail({
   const modalRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
   const transitionInFlightRef = useRef(false);
+  const workflowMutationInFlightRef = useRef(false);
   const focusAfterTransitionRef = useRef(false);
   const backLinkRef = useRef<HTMLAnchorElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
@@ -170,18 +175,76 @@ export default function StaffTicketDetail({
     }
   };
 
-  const handleClaim = async () => {
+  const beginWorkflowMutation = () => {
+    if (workflowBlockedOnRefresh || workflowMutationInFlightRef.current) return false;
+    workflowMutationInFlightRef.current = true;
     beginMutation();
     setIsActing(true);
     setActionError(null);
+    setWorkflowSuccess(null);
+    return true;
+  };
+
+  const refreshAfterConflict = async (message: string) => {
+    setWorkflowBlockedOnRefresh(true);
+    setActionError(message);
+    const requestedTicket = ticketNumber;
+    const generation = detailReadGenerationRef.current;
+    const sequence = ++detailReadSequenceRef.current;
     try {
-      const result = await setTicketOwner(ticketNumber, currentUserId);
-      setDetail((current) => current ? { ...current, ticketOwnerId: result.ticketOwnerId } : current);
+      const refreshed = await fetchStaffTicketDetail(requestedTicket);
+      if (isCurrentDetailRead(generation, sequence, requestedTicket)) {
+        setDetail(refreshed);
+        setWorkflowBlockedOnRefresh(false);
+      }
+    } catch {
+      if (!isCurrentDetailRead(generation, sequence, requestedTicket)) return;
+      setActionError(`${message} The latest ticket could not be loaded. Refresh ticket before trying again.`);
+    }
+  };
+
+  const handleWorkflowFailure = async (err: unknown, fallback: string) => {
+    if ((err as ApiError).status === 409) {
+      const detailMessage = err instanceof Error ? err.message : fallback;
+      await refreshAfterConflict(`${detailMessage} Ticket changed since it was loaded. Review the latest values before retrying.`);
+    } else {
+      setActionError(err instanceof Error ? err.message : fallback);
+    }
+  };
+
+  const finishWorkflowMutation = () => {
+    workflowMutationInFlightRef.current = false;
+    setIsActing(false);
+  };
+
+  const handleExplicitWorkflowRefresh = async () => {
+    const requestedTicket = ticketNumber;
+    const generation = detailReadGenerationRef.current;
+    const sequence = ++detailReadSequenceRef.current;
+    setActionError(null);
+    try {
+      const refreshed = await fetchStaffTicketDetail(requestedTicket);
+      if (!isCurrentDetailRead(generation, sequence, requestedTicket)) return;
+      setDetail(refreshed);
+      setWorkflowBlockedOnRefresh(false);
+      setActionError("Ticket refreshed. Review current values before retrying your change.");
+    } catch (err) {
+      if (!isCurrentDetailRead(generation, sequence, requestedTicket)) return;
+      setActionError(err instanceof Error ? `Refresh failed: ${err.message}` : "Refresh failed. Try again.");
+    }
+  };
+
+  const handleClaim = async () => {
+    if (!detail || !beginWorkflowMutation()) return;
+    try {
+      const result = await setTicketOwner(ticketNumber, currentUserId, detail.version);
+      setDetail((current) => current ? { ...current, ticketOwnerId: result.ticketOwnerId, version: result.version } : current);
+      setWorkflowSuccess("Owner updated successfully.");
       await refreshAfterMutation("Owner updated successfully");
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to claim the ticket.");
+      await handleWorkflowFailure(err, "Failed to claim the ticket.");
     } finally {
-      setIsActing(false);
+      finishWorkflowMutation();
     }
   };
 
@@ -194,76 +257,57 @@ export default function StaffTicketDetail({
    * would obscure the original failure and is unrelated to mutation success.
    */
   const handleAssignOwner = async () => {
-    if (selectedOwnerId === undefined) return;
-    beginMutation();
-    setIsActing(true);
-    setActionError(null);
+    if (!detail || selectedOwnerId === undefined || !beginWorkflowMutation()) return;
     try {
-      const result = await setTicketOwner(ticketNumber, selectedOwnerId);
-      setDetail((current) => current ? { ...current, ticketOwnerId: result.ticketOwnerId } : current);
+      const result = await setTicketOwner(ticketNumber, selectedOwnerId, detail.version);
+      setDetail((current) => current ? { ...current, ticketOwnerId: result.ticketOwnerId, version: result.version } : current);
       setSelectedOwnerId(undefined);
+      setWorkflowSuccess("Owner updated successfully.");
       await refreshAfterMutation("Owner updated successfully");
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to assign the ticket.");
+      await handleWorkflowFailure(err, "Failed to assign the ticket.");
     } finally {
-      setIsActing(false);
+      finishWorkflowMutation();
     }
   };
 
-  const handlePriorityChange = async (value: string) => {
-    beginMutation();
-    setIsActing(true);
-    setActionError(null);
+  const handlePrioritySave = async () => {
+    if (!detail) return;
+    const value = priorityDraft ?? detail.itPriority ?? "";
+    if (!value || !beginWorkflowMutation()) return;
     try {
-      const result = await setItPriority(ticketNumber, value);
-      setDetail((current) => current ? { ...current, itPriority: result.itPriority } : current);
+      const result = await setItPriority(ticketNumber, value, detail.version);
+      setDetail((current) => current ? { ...current, itPriority: result.itPriority, version: result.version } : current);
+      setPriorityDraft(null);
+      setWorkflowSuccess("IT Priority updated successfully.");
       await refreshAfterMutation("IT priority updated successfully");
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to set IT priority.");
+      await handleWorkflowFailure(err, "Failed to set IT priority.");
     } finally {
-      setIsActing(false);
+      finishWorkflowMutation();
     }
   };
 
   const performTransition = async (target: TicketStatus) => {
-    beginMutation();
-    setIsActing(true);
-    setActionError(null);
+    if (!detail || !beginWorkflowMutation()) return;
     const invokingControl = lastFocusedRef.current;
     const isConfirmedTransition = invokingControl !== null;
     transitionInFlightRef.current = isConfirmedTransition;
     setPendingTransition(null);
     try {
-      const result = await applyStatusTransition(ticketNumber, target);
+      const result = await applyStatusTransition(ticketNumber, target, detail.version);
       if (isConfirmedTransition) {
         focusAfterTransitionRef.current = true;
       }
-      setDetail((current) => current ? { ...current, currentStatus: result.currentStatus } : current);
+      setDetail((current) => current ? { ...current, currentStatus: result.currentStatus, version: result.version } : current);
+      setWorkflowSuccess("Status updated successfully.");
       await refreshAfterMutation("Status updated successfully");
     } catch (err) {
       transitionInFlightRef.current = false;
       invokingControl?.focus();
-      // A 409 (stale client state) is handled safely: show the message and
-      // re-fetch the current status rather than corrupting local state. Other
-      // mutation failures preserve the user's screen and do not make an
-      // unrelated read request that could hide their actionable error.
-      setActionError(err instanceof Error ? err.message : "Failed to change status.");
-      if ((err as ApiError).status === 409) {
-        const requestedTicket = ticketNumber;
-        const generation = detailReadGenerationRef.current;
-        const sequence = ++detailReadSequenceRef.current;
-        try {
-          const refreshed = await fetchStaffTicketDetail(requestedTicket);
-          if (isCurrentDetailRead(generation, sequence, requestedTicket)) setDetail(refreshed);
-        } catch {
-          if (!isCurrentDetailRead(generation, sequence, requestedTicket)) return;
-          setActionError(
-            "The ticket status may have changed, but the latest ticket data could not be refreshed.",
-          );
-        }
-      }
+      await handleWorkflowFailure(err, "Failed to change status.");
     } finally {
-      setIsActing(false);
+      finishWorkflowMutation();
       setPendingTransition(null);
     }
   };
@@ -439,8 +483,14 @@ export default function StaffTicketDetail({
       {actionError && (
         <div className="error-box" role="alert">
           <p>{actionError}</p>
+          {workflowBlockedOnRefresh && (
+            <button className="secondary-button" type="button" onClick={() => void handleExplicitWorkflowRefresh()}>
+              Refresh ticket
+            </button>
+          )}
         </div>
       )}
+      {workflowSuccess && <p className="success-box" role="status">{workflowSuccess}</p>}
 
       <div className="ticket-info">
         <div className="ticket-info-row">
@@ -523,7 +573,7 @@ export default function StaffTicketDetail({
               aria-describedby={ownerLoadState === "error" ? "detail-owner-error" : undefined}
               value={selectedOwnerId === undefined ? "" : String(selectedOwnerId)}
               onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : undefined)}
-              disabled={isActing || ownerLoadState !== "loaded"}
+              disabled={isActing || workflowBlockedOnRefresh || ownerLoadState !== "loaded"}
             >
               <option value="">
                 {detail.ticketOwnerId === null ? "Select owner" : "Select a new owner"}
@@ -545,7 +595,7 @@ export default function StaffTicketDetail({
             <button
               className="primary-button"
               onClick={() => void handleAssignOwner()}
-              disabled={isActing || ownerLoadState !== "loaded" || selectedOwnerId === undefined}
+              disabled={isActing || workflowBlockedOnRefresh || ownerLoadState !== "loaded" || selectedOwnerId === undefined}
             >
               {detail.ticketOwnerId === null ? "Assign" : "Reassign"}
             </button>
@@ -553,7 +603,7 @@ export default function StaffTicketDetail({
           <button
             className="secondary-button"
             onClick={() => void handleClaim()}
-            disabled={isActing || isOwnedByMe}
+            disabled={isActing || workflowBlockedOnRefresh || isOwnedByMe}
           >
             {isOwnedByMe ? "Claimed by you" : "Claim / Reassign to me"}
           </button>
@@ -565,9 +615,9 @@ export default function StaffTicketDetail({
           </label>
           <select
             id="it-priority-select"
-            value={detail.itPriority ?? ""}
-            onChange={(e) => void handlePriorityChange(e.target.value)}
-            disabled={isActing}
+            value={priorityDraft ?? detail.itPriority ?? ""}
+            onChange={(e) => setPriorityDraft(e.target.value)}
+            disabled={isActing || workflowBlockedOnRefresh}
           >
             <option value="" disabled>
               Select…
@@ -576,6 +626,12 @@ export default function StaffTicketDetail({
             <option value="MEDIUM">Medium</option>
             <option value="HIGH">High</option>
           </select>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => void handlePrioritySave()}
+            disabled={isActing || workflowBlockedOnRefresh || priorityDraft === null || priorityDraft === detail.itPriority}
+          >Save priority</button>
         </div>
 
         <div className="action-group">
@@ -589,7 +645,7 @@ export default function StaffTicketDetail({
                   key={target}
                   className="secondary-button"
                   onClick={() => handleTransitionClick(target)}
-                  disabled={isActing || isUnassigned}
+                  disabled={isActing || workflowBlockedOnRefresh || isUnassigned}
                 >
                   {STATUS_LABELS[target]}
                 </button>
@@ -599,8 +655,14 @@ export default function StaffTicketDetail({
           {isUnassigned && permitted.length > 0 && (
             <p className="muted">Claim or assign this ticket before changing its status.</p>
           )}
+          {permitted.includes("RESOLVED") && (
+            <p className="muted">A Pending Action blocks resolution. Complete or cancel any Pending Actions before resolving.</p>
+          )}
+          {workflowBlockedOnRefresh && <p className="field-error">Refresh current ticket data before making another workflow change.</p>}
         </div>
       </section>
+
+      <TicketStatusHistory ticketNumber={ticketNumber} ticketVersion={detail.version} />
 
       {/* Issue #52 — Actions Taken (ui-spec §3). Self-contained so Ticket
           controls, comments, notes and attachments stay untouched. */}
@@ -614,16 +676,7 @@ export default function StaffTicketDetail({
           setDetail((current) =>
             current ? { ...current, publicComments: [...current.publicComments, createdComment] } : current,
           );
-          try {
-            const refreshed = await fetchStaffTicketDetail(ticketNumber);
-            setDetail(refreshed);
-          } catch (refreshErr) {
-            setActionError(
-              refreshErr instanceof Error
-                ? `Comment posted, but the ticket could not be refreshed: ${refreshErr.message}`
-                : "Comment posted, but the ticket could not be refreshed.",
-            );
-          }
+          await refreshAfterMutation("Comment posted successfully");
         }}
       />
 

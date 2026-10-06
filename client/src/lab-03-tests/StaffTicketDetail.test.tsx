@@ -40,6 +40,7 @@ function detail(overrides: Partial<api.StaffTicketDetail> = {}): api.StaffTicket
     currentStatus: "NEW",
     requestedPriority: "MEDIUM",
     itPriority: "MEDIUM",
+    version: 1,
     ticketOwnerId: null,
     requesterId: 7,
     requesterName: "Ada Lovelace",
@@ -111,22 +112,23 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
 
   it("claims the ticket for the current user", async () => {
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail());
-    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 5 });
+    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 5, version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
     await userEvent.click(screen.getByRole("button", { name: /Claim \/ Reassign to me/i }));
-    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 5));
+    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 5, 1));
   });
 
   it("sets the IT Priority", async () => {
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail());
-    vi.mocked(api.setItPriority).mockResolvedValue({ itPriority: "HIGH" });
+    vi.mocked(api.setItPriority).mockResolvedValue({ itPriority: "HIGH", version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
     await userEvent.selectOptions(screen.getByLabelText("IT Priority"), "HIGH");
-    await waitFor(() => expect(api.setItPriority).toHaveBeenCalledWith("TKT-2026-000001", "HIGH"));
+    await userEvent.click(screen.getByRole("button", { name: "Save priority" }));
+    await waitFor(() => expect(api.setItPriority).toHaveBeenCalledWith("TKT-2026-000001", "HIGH", 1));
   });
 
   it("posts a public comment", async () => {
@@ -312,11 +314,11 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
       .mockResolvedValueOnce(detail({ ticketOwnerId: field === "ticketOwnerId" ? null : 5 }))
       .mockRejectedValueOnce(new Error("Refresh failed"));
     if (field === "ticketOwnerId") {
-      vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: value as number });
+      vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: value as number, version: 2 });
     } else if (field === "itPriority") {
-      vi.mocked(api.setItPriority).mockResolvedValue({ itPriority: value as string });
+      vi.mocked(api.setItPriority).mockResolvedValue({ itPriority: value as string, version: 2 });
     } else {
-      vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: value as string });
+      vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: value as string, version: 2 });
     }
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
 
@@ -325,6 +327,7 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
       await userEvent.click(screen.getByRole("button", { name: /Claim \/ Reassign to me/i }));
     } else if (field === "itPriority") {
       await userEvent.selectOptions(screen.getByLabelText("IT Priority"), "HIGH");
+      await userEvent.click(screen.getByRole("button", { name: "Save priority" }));
     } else {
       await userEvent.click(screen.getByRole("button", { name: "Open" }));
     }
@@ -336,7 +339,7 @@ describe("UI-STAFF-01 — Staff Ticket Detail (AC-11–14)", () => {
   it("shows owner lookup failure without disabling Claim / Reassign to me", async () => {
     vi.mocked(api.fetchAssignableOwners).mockRejectedValue(new Error("Owners unavailable"));
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail());
-    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 5 });
+    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 5, version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
@@ -381,26 +384,26 @@ describe("Ownership assign/reassign (FR-16)", () => {
   it("reassigns an owned ticket to another eligible staff member", async () => {
     // Ticket owned by Staff A (id 5); current user is Staff B (id 6).
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ ticketOwnerId: 5 }));
-    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 9 });
+    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 9, version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={6} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
     await userEvent.selectOptions(await screen.findByLabelText("Ticket Owner"), "9");
     await userEvent.click(screen.getByRole("button", { name: /^Reassign$/i }));
 
-    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 9));
+    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 9, 1));
   });
 
   it("assigns an unowned ticket to a selected eligible owner", async () => {
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ ticketOwnerId: null }));
-    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 9 });
+    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 9, version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={6} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
     await userEvent.selectOptions(await screen.findByLabelText("Ticket Owner"), "9");
     await userEvent.click(screen.getByRole("button", { name: /^Assign$/i }));
 
-    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 9));
+    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 9, 1));
   });
 
   it("offers only eligible owners (no Requesters or inactive users)", async () => {
@@ -417,12 +420,12 @@ describe("Ownership assign/reassign (FR-16)", () => {
 
   it("keeps the claim-to-me convenience action available", async () => {
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ ticketOwnerId: null }));
-    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 6 });
+    vi.mocked(api.setTicketOwner).mockResolvedValue({ ticketOwnerId: 6, version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={6} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
     await userEvent.click(screen.getByRole("button", { name: /Claim \/ Reassign to me/i }));
-    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 6));
+    await waitFor(() => expect(api.setTicketOwner).toHaveBeenCalledWith("TKT-2026-000001", 6, 1));
   });
 
   it("surfaces a 409 failure without displaying a false owner", async () => {
@@ -459,7 +462,7 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(
       detail({ currentStatus: "IN_PROGRESS", ticketOwnerId: 5 }),
     );
-    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED" });
+    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED", version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
@@ -471,7 +474,7 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /Confirm/i }));
     await waitFor(() =>
-      expect(api.applyStatusTransition).toHaveBeenCalledWith("TKT-2026-000001", "RESOLVED"),
+      expect(api.applyStatusTransition).toHaveBeenCalledWith("TKT-2026-000001", "RESOLVED", 1),
     );
   });
 
@@ -484,7 +487,7 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
           resolveRefetch = resolve;
         }),
       );
-    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED" });
+    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED", version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
@@ -502,7 +505,7 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
     vi.mocked(api.fetchStaffTicketDetail)
       .mockResolvedValueOnce(detail({ currentStatus: "IN_PROGRESS", ticketOwnerId: 5 }))
       .mockRejectedValueOnce(new Error("Refresh failed"));
-    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED" });
+    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED", version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
@@ -534,7 +537,7 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(
       detail({ currentStatus: "NEW", ticketOwnerId: 5 }),
     );
-    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "OPEN" });
+    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "OPEN", version: 2 });
     render(<StaffTicketDetail ticketNumber="TKT-2026-000001" currentUserId={5} onBack={() => {}} />);
 
     await screen.findByText("TKT-2026-000001");
@@ -542,7 +545,7 @@ describe("UI-STAFF-02 — Status change confirmation (AC-13)", () => {
 
     expect(screen.queryByRole("dialog")).toBeNull();
     await waitFor(() =>
-      expect(api.applyStatusTransition).toHaveBeenCalledWith("TKT-2026-000001", "OPEN"),
+      expect(api.applyStatusTransition).toHaveBeenCalledWith("TKT-2026-000001", "OPEN", 1),
     );
   });
 
@@ -762,11 +765,11 @@ describe("UI-49-MODAL — confirmation modal focus behavior (49-B4)", () => {
   });
 
   it("UI-49-MODAL-09 — Confirm calls the API exactly once", async () => {
-    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED" });
+    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED", version: 2 });
     await openModal("Resolved", "IN_PROGRESS");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
     await waitFor(() =>
-      expect(api.applyStatusTransition).toHaveBeenCalledWith("TKT-2026-000001", "RESOLVED"),
+      expect(api.applyStatusTransition).toHaveBeenCalledWith("TKT-2026-000001", "RESOLVED", 1),
     );
     expect(vi.mocked(api.applyStatusTransition).mock.calls.length).toBe(1);
   });
