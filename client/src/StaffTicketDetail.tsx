@@ -781,6 +781,14 @@ export default function StaffTicketDetail({
               Change the status of {detail.ticketNumber} to{" "}
               <strong>{STATUS_LABELS[pendingTransition]}</strong>?
             </p>
+            <p>
+              {pendingTransition === "RESOLVED" &&
+                "This marks the issue as resolved and prevents new Actions until the Ticket is reopened."}
+              {pendingTransition === "CLOSED" &&
+                "This closes the Ticket and prevents new Actions."}
+              {pendingTransition === "CANCELLED" &&
+                "This cancels the Ticket. No further status changes or new Actions will be allowed."}
+            </p>
             <div className="modal-actions">
               <button
                 ref={cancelButtonRef}

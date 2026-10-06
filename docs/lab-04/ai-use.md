@@ -1,5 +1,12 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #53 confirmation consequence follow-up (2026-10-06)
+
+- Prompt summary: address the supplied non-blocking review note requiring target-specific consequence text in the status confirmation modal.
+- Agent used: Codex.
+- Work performed: added consequence copy for Resolved, Closed, and Cancelled; extended existing modal tests. Maps to UI spec §5, FR-11, BR-16, AC-14.
+- Verification: focused StaffTicketDetail suite 47 passed after an approved-access rerun of an initial sandbox EPERM failure. No commit, push, or PR action performed; reviewer identity was not supplied, so no human reviewer record was added.
+
 ## Issue #53 / PR #61 supplied review-plan fixes (2026-10-06)
 
 - Prompt summary: act as orchestrator and fix `issue-53-worktree` according to the supplied PR #61 review and implementation plan.

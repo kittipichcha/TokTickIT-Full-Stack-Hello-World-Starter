@@ -98,6 +98,10 @@ Statuses are `Planned`, `Implemented`, `Passed`, `Failed`, `Blocked`, `Environme
 
 ### Results Log (newest first)
 
+- **2026-10-06 — Issue #53 confirmation consequence copy**
+  - Scope: UI spec §5; FR-11, BR-16, AC-14. Added target-specific consequences for Resolved, Closed, and Cancelled and extended existing modal assertions.
+  - Validation: `client/src/lab-03-tests/StaffTicketDetail.test.tsx`: **47 passed**. Initial sandbox run failed before execution with Vite `realpath` EPERM; approved-access rerun passed. Contract matrix statuses unchanged; no broader workflow or browser rerun claimed.
+
 - **2026-10-06 — Issue #53 / PR #61 review fixes (B1, N1–N3)**
   - Scope: FR-08/11/18–20; BR-28–31; AC-10/12/21/26/27. Implement the supplied fix plan in `issue-53-worktree` at baseline `3784e9385264ad9db6865e546d03fdb605884c4a`, without changing schema, migrations, frozen contracts, or human review records.
   - Tests changed: canonical `API-WF-HISTORY-01` adds real PostgreSQL reversed-start/lock-order timestamps and audit-insert rollback/retry assertions; resolution retry also verifies `resolvedAt` equals audit `changedAt` (`API-WF-02`). `UI-WF-HISTORY-01` adds delayed keyboard pagination, stable displayed pages, busy/duplicate-read guards, boundary/Retry focus, and user-moved focus. The existing `E2E-01` resolution flow now verifies real delayed history pagination and boundary keyboard focus across three viewports.

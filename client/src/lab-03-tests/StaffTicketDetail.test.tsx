@@ -715,16 +715,25 @@ describe("UI-49-MODAL — confirmation modal focus behavior (49-B4)", () => {
   it("UI-49-MODAL-01 — opens the modal for Resolved", async () => {
     await openModal("Resolved", "IN_PROGRESS");
     expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "This marks the issue as resolved and prevents new Actions until the Ticket is reopened.",
+    );
   });
 
   it("UI-49-MODAL-02 — opens the modal for Closed", async () => {
     await openModal("Closed", "RESOLVED");
     expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "This closes the Ticket and prevents new Actions.",
+    );
   });
 
   it("UI-49-MODAL-03 — opens the modal for Cancelled", async () => {
     await openModal("Cancelled", "NEW");
     expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "This cancels the Ticket. No further status changes or new Actions will be allowed.",
+    );
   });
 
   it("UI-49-MODAL-04 — initial focus enters the modal", async () => {
