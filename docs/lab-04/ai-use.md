@@ -1,5 +1,42 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #53 confirmation consequence follow-up (2026-10-06)
+
+- Prompt summary: address the supplied non-blocking review note requiring target-specific consequence text in the status confirmation modal.
+- Agent used: Codex.
+- Work performed: added consequence copy for Resolved, Closed, and Cancelled; extended existing modal tests. Maps to UI spec §5, FR-11, BR-16, AC-14.
+- Verification: focused StaffTicketDetail suite 47 passed after an approved-access rerun of an initial sandbox EPERM failure. No commit, push, or PR action performed; reviewer identity was not supplied, so no human reviewer record was added.
+
+## Issue #53 / PR #61 supplied review-plan fixes (2026-10-06)
+
+- Prompt summary: act as orchestrator and fix `issue-53-worktree` according to the supplied PR #61 review and implementation plan.
+- Agent used: Codex, with server/client implementation agents and reciprocal read-only cross-checks.
+- Work performed: implemented explicit post-lock/post-validation PostgreSQL event time shared by resolution/history; added real-database reversed-start ordering and audit-failure rollback/retry tests; preserved history navigation during delayed reads, separated requested/displayed pages, guarded duplicate reads, and restored boundary/Retry focus without overriding user-moved focus. Added a real-browser delayed keyboard assertion to the existing resolution flow. Corrected README methods and Test DD introduction; preserved frozen contracts, migrations, historical evidence, and human review records.
+- Verification: focused PostgreSQL workflow/Actions/prior-detail suites passed 84 checks; final workflow UI file passed 22; both builds passed. Browser regression reproduced Chromium dropping focus when a still-mounted button becomes disabled, then passed all three viewports after recording focus before the completion render. Complete backend 652/652 (44 files), complete client 326/326 (20 files), complete configured browser 237/237, all zero failures/skips and exit 0. Restored 57 generated tracked screenshots, checked executable fingerprints, canonical paths, route/document alignment and whitespace, and linked sanitized runner output from the Issue #53 evidence manifest. No downstream status or human review record changed.
+- Reflection: test the review's premise as well as the proposed fix. This Prisma runtime explicitly supplies history timestamps, so reversed chronology already passed; the original run did reproduce differing resolution/history timestamps. The implementation uses the selected database event clock without claiming an unobserved ordering failure. Component tests alone missed Chromium's disabled-button blur; retaining the real-browser assertion prevents that evidence gap. No commit, push, merge, GitHub comment, or human approval is inferred from this implementation request.
+- Publication authorization: the user subsequently approved staging, committing and pushing. Grouped validated server fixes into `9a0c851` and client/browser fixes into `6eee98a`; prepared a separate documentation/evidence commit and the existing PR verification update. Human peer approval remains pending; no merge or issue/board action was authorized.
+
+## Issue #53 full regression completion (2026-10-06)
+
+- Prompt summary: finish incomplete full regression before further commits and pushes, and include the complete results in the PR.
+- Work performed: reran complete client/backend suites, created an isolated disposable browser database using existing migrations and seed, and ran all configured browser checks. Corrected one legacy Staff workflow test to use the current explicit priority-save interaction, then repeated the full browser suite. Restored 55 generated historical screenshots and recorded complete results before the follow-up evidence commit and PR update.
+- Verification: client 322/322 (20 files), backend 650/650 (44 files), full browser 237/237 across desktop/tablet/mobile; zero failures/skips in all final runs. Final executable snapshot `95f146f06dc65ef308d698547e4a377d6f7c7d2d`. Previous cleanup and incomplete browser limitations are superseded by these full successful runs.
+- Reflection: distinguish completed issue-specific tests from the full configured regression clearly; the user required the latter before further publication. Isolated disposable databases allowed backend and browser verification without shared-fixture interference.
+
+## Issue #53 commit and PR preparation (2026-10-06)
+
+- Prompt summary: commit and push the validated work, open a PR to `lab4-staging` using PR #60's format, and include full regression results in the commit.
+- Work performed: grouped the remaining changes into client, integration-test, and documentation commits; prepared the PR with Summary, Included, Verification, evidence boundaries, and issue linkage. Preserved the full backend result and targeted recovery, complete client results, and incomplete broad browser run in the committed Results Log and evidence manifest.
+- Verification: existing execution evidence retained; integrity checks passed. Implementation snapshot `10f4fdd65ef33f840476d6d1f514af005491c4e0`; no full-browser success or human approval is claimed.
+
+## Issue #53 worktree completion (2026-10-06)
+
+- Prompt summary: check the existing Issue #53 worktree against the attached implementation plan; if incomplete, use a sub-agent to plan and implement the remaining scope without a full blocking review.
+- Agent used: Codex with a delegated implementation agent.
+- Work performed: compared existing workflow backend and versioned/history client with the frozen Lab 4 contracts; preserved existing changes; added the canonical resolution browser test including the same-Ticket inactive-assignee case; strengthened API-ACT-08 to reopen through the real authenticated workflow API and cleaned its status-history fixture rows; repaired the existing authorization fixture's status-history cleanup and confirmation dialog pointer interaction; updated README and evidence records. No schema migration, commit, push, PR, board action, or human-review entry was created.
+- Verification: focused workflow/detail UI 65 passed; complete client suite 322 passed; both builds passed, with final client build repeated after the CSS fix. Full backend 650 assertions passed with one authorization fixture cleanup failure; after FK-safe history cleanup, the 52-test authorization suite passed, and the four focused backend files passed all 82 tests. Initial integrated browser run had 9 passes/3 failures from Bootstrap dialog pointer events; after repair, the final enhanced same-Ticket contract passed all 12 checks across desktop/tablet/mobile. Broad browser run was deliberately stopped after 24 passes; no full browser success is claimed.
+- Reflection: source availability alone did not complete the supplied plan: real workflow integration and traceable execution evidence were still missing. Database and browser validation use only the configured disposable loopback test database; sandbox filesystem failures were rerun with approved access.
+
 ## Issue #52 PR #60 final evidence reconciliation — manifest provenance (2026-10-04)
 
 - Prompt summary: apply the supplied current-head re-review fix plan for PR #60 — repair the stale evidence-manifest provenance in `artifacts/lab-04/issue-52/README.md`, log the correction in `tests.md` and this file as documentation/evidence-only with 0 executable tests rerun, make one docs-only commit, then rewrite the live PR body and request re-review; do **not** touch `client/`, `server/`, or `e2e/`.

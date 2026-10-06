@@ -55,7 +55,8 @@ const FROZEN_ALLOWED_TRANSITIONS: Record<TicketStatus, readonly TicketStatus[]> 
   WAITING_FOR_REQUESTER: ["IN_PROGRESS", "CANCELLED"],
   RESOLVED: ["CLOSED", "REOPENED", "CANCELLED"],
   CLOSED: ["REOPENED", "CANCELLED"],
-  REOPENED: ["CANCELLED"],
+  // Lab 4 adds this permitted transition to the shared current-product matrix.
+  REOPENED: ["IN_PROGRESS", "CANCELLED"],
   CANCELLED: [],
 };
 
@@ -970,9 +971,20 @@ describe("API-49-FAIL-02 — priority failure containment", () => {
       itPriority: "LOW",
     });
     const before = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber } });
-    const updateSpy = vi.spyOn(prisma.ticket, "update").mockRejectedValueOnce(
-      new Error("review-test SQL/path sentinel"),
-    );
+    const sentinel = new Error("review-test SQL/path sentinel");
+    const originalTransaction = prisma.$transaction.bind(prisma) as any;
+    let txUpdateCallCount = 0;
+    const transactionSpy = vi.spyOn(prisma, "$transaction").mockImplementation((async (operation: any, ...options: any[]) => {
+      return originalTransaction(async (tx: any) => {
+        const txUpdateSpy = vi.spyOn(tx.ticket, "update").mockRejectedValueOnce(sentinel);
+        try {
+          return await operation(tx);
+        } finally {
+          txUpdateCallCount = txUpdateSpy.mock.calls.length;
+          txUpdateSpy.mockRestore();
+        }
+      }, ...options);
+    }) as typeof prisma.$transaction);
 
     let failed;
     try {
@@ -981,9 +993,10 @@ describe("API-49-FAIL-02 — priority failure containment", () => {
         staffA,
         { csrf: true },
       ).send({ itPriority: "HIGH" });
-      expect(updateSpy).toHaveBeenCalled();
+      expect(transactionSpy).toHaveBeenCalledTimes(1);
+      expect(txUpdateCallCount).toBe(1);
     } finally {
-      updateSpy.mockRestore();
+      transactionSpy.mockRestore();
     }
 
     expect(failed.status).toBe(500);
@@ -994,6 +1007,7 @@ describe("API-49-FAIL-02 — priority failure containment", () => {
     const unchanged = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber } });
     expect(unchanged.itPriority).toBe(before.itPriority);
     expect(unchanged.requestedPriority).toBe(before.requestedPriority);
+    expect(unchanged.version).toBe(before.version);
 
     const recovered = await withSession(
       request(app).patch(`/api/staff/tickets/${ticketNumber}/priority`),
@@ -1004,5 +1018,6 @@ describe("API-49-FAIL-02 — priority failure containment", () => {
     const updated = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber } });
     expect(updated.itPriority).toBe("HIGH");
     expect(updated.requestedPriority).toBe(before.requestedPriority);
+    expect(updated.version).toBe(before.version + 1);
   });
 });

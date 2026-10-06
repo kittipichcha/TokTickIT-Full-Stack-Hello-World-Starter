@@ -104,6 +104,7 @@ export async function createActionFixture(): Promise<ActionFixture> {
         await prisma.actionCreateIdempotency.deleteMany({ where: { actionId: { in: actionIds } } });
         await prisma.actionTaken.deleteMany({ where: { id: { in: actionIds } } });
       }
+      await prisma.ticketStatusChange.deleteMany({ where: { ticketId: ticket.id } });
       await prisma.ticket.deleteMany({ where: { id: ticket.id } });
       await prisma.user.deleteMany({
         where: {
@@ -150,6 +151,7 @@ export async function createAdditionalActionTicket(
         await prisma.actionCreateIdempotency.deleteMany({ where: { actionId: { in: actionIds } } });
         await prisma.actionTaken.deleteMany({ where: { id: { in: actionIds } } });
       }
+      await prisma.ticketStatusChange.deleteMany({ where: { ticketId: ticket.id } });
       await prisma.ticket.delete({ where: { id: ticket.id } });
     },
   };

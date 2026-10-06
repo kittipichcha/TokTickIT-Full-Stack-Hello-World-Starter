@@ -66,6 +66,7 @@ test.describe("E2E-02: Staff ticket queue and detail operations", () => {
     await expect(page.getByRole("button", { name: "Claimed by you" })).toBeVisible();
 
     await page.getByLabel("IT Priority").selectOption("HIGH");
+    await page.getByRole("button", { name: "Save priority", exact: true }).click();
     await expect(page.locator(".ticket-info-row").filter({ hasText: "IT Priority" })).toContainText("HIGH");
     await page.locator(".transition-buttons").getByRole("button", { name: "Open" }).click();
     await expect(page.locator(".status-badge")).toHaveText("OPEN");

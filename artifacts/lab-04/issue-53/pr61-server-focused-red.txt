@@ -1,0 +1,42 @@
+Baseline: 3784e9385264ad9db6865e546d03fdb605884c4a + uncommitted PR61 fixes
+Node: v24.14.0
+Started UTC: 2026-10-06T07:35:00.417Z
+Command: node node_modules/vitest/vitest.mjs run tests/lab-04/ticket-workflow.unit.test.ts tests/lab-04/ticket-workflow.api.test.ts tests/lab-04/actions-taken.api.test.ts tests/lab-03/staff-ticket-detail.api.test.ts
+Database: dedicated loopback lab3e2e_pr61_server_20261006; eight existing migrations
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-53-worktree/server
+
+ ❯ tests/lab-04/ticket-workflow.api.test.ts (17 tests | 1 failed) 9659ms
+     × rolls back the complete Ticket when audit insertion fails and permits a clean retry 165ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/lab-04/ticket-workflow.api.test.ts > API-WF-HISTORY-01: paginated status history > rolls back the complete Ticket when audit insertion fails and permits a clean retry
+AssertionError: expected 2026-10-06T07:35:29.917Z to deeply equal 2026-10-06T07:35:29.923Z
+
+- Expected
++ Received
+
+- 2026-10-06T07:35:29.923Z
++ 2026-10-06T07:35:29.917Z
+
+ ❯ tests/lab-04/ticket-workflow.api.test.ts:614:28
+    612|     expect(history).toHaveLength(1);
+    613|     expect(history[0]).toMatchObject({ changedByUserId: staffId, fromS…
+    614|     expect(row.resolvedAt).toEqual(history[0]!.changedAt);
+       |                            ^
+    615|   });
+    616|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 83 passed (84)
+   Start at  14:35:05
+   Duration  45.78s (transform 1.62s, setup 0ms, import 17.77s, tests 24.47s, environment 2ms)
+
+
+Exit: 1
+Finished UTC: 2026-10-06T07:35:51.715Z

@@ -123,6 +123,7 @@ afterAll(async () => {
     await prisma.comment.deleteMany({ where: { ticketId: ticket.id } });
     await prisma.internalNote.deleteMany({ where: { ticketId: ticket.id } });
     await prisma.attachment.deleteMany({ where: { ticketId: ticket.id } });
+    await prisma.ticketStatusChange.deleteMany({ where: { ticketId: ticket.id } });
     await prisma.ticket.delete({ where: { id: ticket.id } });
   }
   const controlTickets = await prisma.ticket.findMany({
@@ -133,6 +134,7 @@ afterAll(async () => {
     await prisma.comment.deleteMany({ where: { ticketId: controlTicket.id } });
     await prisma.internalNote.deleteMany({ where: { ticketId: controlTicket.id } });
     await prisma.attachment.deleteMany({ where: { ticketId: controlTicket.id } });
+    await prisma.ticketStatusChange.deleteMany({ where: { ticketId: controlTicket.id } });
     await prisma.ticket.delete({ where: { id: controlTicket.id } });
   }
   await prisma.user.deleteMany({ where: { email: { startsWith: "csrf-control-" } } });

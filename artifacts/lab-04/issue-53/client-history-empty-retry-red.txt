@@ -1,0 +1,132 @@
+Baseline 3784e9385264ad9db6865e546d03fdb605884c4a + local PR61 fixes; final file hashes in pr61-executable-snapshot.json.
+
+> toktickit-client@1.0.0 test
+> vitest run src/lab-04-tests/TicketWorkflow.test.tsx -t returns keyboard focus
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-53-worktree/client
+
+ ❯ src/lab-04-tests/TicketWorkflow.test.tsx (22 tests | 2 failed | 20 skipped) 870ms
+     × returns keyboard focus to the history toggle when Retry loads 0 rows 635ms
+     × returns keyboard focus to the history toggle when Retry loads 1 rows 231ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lab-04-tests/TicketWorkflow.test.tsx > UI-WF-HISTORY-01 — Ticket status history > returns keyboard focus to the history toggle when Retry loads 0 rows
+AssertionError: expected <body><div>…(1)</div></body> to be <button …(3)></button> // Object.is equality
+
+- Expected
++ Received
+
++ <body>
++   <div>
++     <section
++       aria-label="Ticket status history"
++       class="ticket-status-history"
++     >
+        <button
+          aria-expanded="true"
+          class="secondary-button"
+          type="button"
+        >
+          Hide status history
+        </button>
++       <div
++         aria-busy="false"
++         class="ticket-status-history-content"
++       >
++         <h2>
++           Status history
++         </h2>
++         <p
++           class="muted"
++         >
++           No status history.
++         </p>
++       </div>
++     </section>
++   </div>
++ </body>
+
+ ❯ src/lab-04-tests/TicketWorkflow.test.tsx:374:36
+    372|     expect(api.fetchTicketStatusHistory).toHaveBeenCalledTimes(2);
+    373|     await act(async () => { retry.resolve(history(totalItems, 1)); });
+    374|     expect(document.activeElement).toBe(screen.getByRole("button", { n…
+       |                                    ^
+    375|     expect(screen.queryByRole("navigation", { name: "Status history pa…
+    376|     expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/lab-04-tests/TicketWorkflow.test.tsx > UI-WF-HISTORY-01 — Ticket status history > returns keyboard focus to the history toggle when Retry loads 1 rows
+AssertionError: expected <body><div>…(1)</div></body> to be <button …(3)></button> // Object.is equality
+
+- Expected
++ Received
+
++ <body>
++   <div>
++     <section
++       aria-label="Ticket status history"
++       class="ticket-status-history"
++     >
+        <button
+          aria-expanded="true"
+          class="secondary-button"
+          type="button"
+        >
+          Hide status history
+        </button>
++       <div
++         aria-busy="false"
++         class="ticket-status-history-content"
++       >
++         <h2>
++           Status history
++         </h2>
++         <ol
++           class="ticket-status-history-list"
++         >
++           <li>
++             <time
++               datetime="2026-09-01T10:00:00.000Z"
++             >
++               2026-09-01 10:00:00 UTC
++             </time>
++             <span>
++               Open
++                →
++               In Progress
++             </span>
++             <span>
++               Changed by
++               Staff 1
++             </span>
++             <span>
++               Version
++               1
++                →
++               2
++             </span>
++           </li>
++         </ol>
++       </div>
++     </section>
++   </div>
++ </body>
+
+ ❯ src/lab-04-tests/TicketWorkflow.test.tsx:374:36
+    372|     expect(api.fetchTicketStatusHistory).toHaveBeenCalledTimes(2);
+    373|     await act(async () => { retry.resolve(history(totalItems, 1)); });
+    374|     expect(document.activeElement).toBe(screen.getByRole("button", { n…
+       |                                    ^
+    375|     expect(screen.queryByRole("navigation", { name: "Status history pa…
+    376|     expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 20 skipped (22)
+   Start at  14:44:09
+   Duration  5.76s (transform 1.14s, setup 0ms, import 2.19s, tests 870ms, environment 2.06s)

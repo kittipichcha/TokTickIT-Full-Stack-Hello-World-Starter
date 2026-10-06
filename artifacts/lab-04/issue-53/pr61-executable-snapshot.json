@@ -1,0 +1,26 @@
+{
+  "baseline": "3784e9385264ad9db6865e546d03fdb605884c4a",
+  "state": "uncommitted PR61 fixes; SHA256 of final executable files",
+  "files": [
+    {
+      "path": "server/src/ticket-workflow-service.ts",
+      "sha256": "cbd96adbc1085ab7ac57b0e1d255ef452dd460e51494dd0ee7dcd45d0dda0a77"
+    },
+    {
+      "path": "server/tests/lab-04/ticket-workflow.api.test.ts",
+      "sha256": "a232b1baf919c75e4f118ab2f413480826ae73beeef4de7a603427284ac7e0ff"
+    },
+    {
+      "path": "client/src/TicketStatusHistory.tsx",
+      "sha256": "d93c190c6bc39439bc48a72b6a113cc5f2e92bf6a562e0e6035673aec7ca8848"
+    },
+    {
+      "path": "client/src/lab-04-tests/TicketWorkflow.test.tsx",
+      "sha256": "9fa05f23a42ee4c4bd4a1496bd819783f659b088e550c7efa6463235351a365f"
+    },
+    {
+      "path": "e2e/lab-04/ticket-resolution.spec.ts",
+      "sha256": "5cfc4ed8e185c335e93617a965d4fa327b878b658a27ead3ad2d4a4a46b90eaf"
+    }
+  ]
+}

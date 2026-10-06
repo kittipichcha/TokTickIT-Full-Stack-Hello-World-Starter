@@ -28,8 +28,20 @@ Staff-only `client/src/ActionForm.tsx` (create/edit with idempotency-key lifecyc
 controls), typed Action functions in `client/src/api.ts`, Zen Green responsive/accessibility
 styling, and Lab 4 browser evidence under `e2e/lab-04/`. The existing Staff Ticket Detail
 "Actions" heading was renamed to "Ticket controls" (display label only, no behavior change).
-Ticket resolution workflow changes, dashboards, and final Lab 4 integrated E2E/release work
-remain owned by later issues (#53–#55).
+Issue #53 adds the complete Ticket transition matrix, atomic Pending-Action resolution gate,
+shared Ticket version for owner/priority/status writes, resolution timestamps, and immutable
+paginated status history. Staff controls send `expectedVersion`, retain recoverable inputs on
+conflict, and require a successful refresh before an explicit retry. Dashboards and final Lab 4
+release hardening remain owned by #54–#55.
+
+Issue #53 extends `POST /api/staff/tickets/:ticketNumber/owner`,
+`PATCH /api/staff/tickets/:ticketNumber/priority`, and
+`PATCH /api/staff/tickets/:ticketNumber/status` requests with optional positive integer
+`expectedVersion` (legacy omission remains supported); successful responses include the new
+Ticket `version`. Stale versions return 409 without mutation. Staff/Admin history is available
+at `GET /api/staff/tickets/:ticketNumber/status-history?page=1&pageSize=10`; Requesters cannot
+access formal history. No new migration is required. Verification commands and current results
+are recorded in `artifacts/lab-04/issue-53/README.md`.
 
 Issue #51 API routes:
 - `GET /api/tickets/:ticketNumber/actions`
