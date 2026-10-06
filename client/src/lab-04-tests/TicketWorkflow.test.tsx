@@ -289,6 +289,95 @@ describe("UI-WF-HISTORY-01 — Ticket status history", () => {
     expect(await screen.findByText("Page 2 of 3")).toBeTruthy();
   });
 
+  it("preserves keyboard focus through delayed forward, backward, and boundary page reads", async () => {
+    const user = userEvent.setup();
+    const reads = Array.from({ length: 5 }, () => deferred<api.TicketStatusHistoryResponse>());
+    vi.mocked(api.fetchTicketStatusHistory).mockResolvedValueOnce(history(21, 1));
+    reads.forEach((read) => vi.mocked(api.fetchTicketStatusHistory).mockReturnValueOnce(read.promise));
+    render(<TicketStatusHistory ticketNumber={ticketNumber} ticketVersion={4} />);
+    await user.click(screen.getByRole("button", { name: "View status history" }));
+    await screen.findByText("Page 1 of 3");
+    const next = screen.getByRole("button", { name: "Next" });
+    next.focus();
+    await user.keyboard("{Enter}{Enter}");
+    expect(document.activeElement).toBe(next);
+    expect(next.getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByRole("navigation", { name: "Status history pages" }).closest("[aria-busy]")?.getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByText("Page 1 of 3")).toBeTruthy();
+    expect(screen.getByText("Changed by Staff 1")).toBeTruthy();
+    expect(api.fetchTicketStatusHistory).toHaveBeenCalledTimes(2);
+    await act(async () => { reads[0]!.resolve(history(21, 2)); });
+    expect(document.activeElement).toBe(next);
+    expect(next.getAttribute("aria-disabled")).toBe("false");
+    const previous = screen.getByRole("button", { name: "Previous" });
+    previous.focus();
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(previous);
+    await act(async () => { reads[1]!.resolve(history(21, 1)); });
+    expect(document.activeElement).toBe(screen.getByRole("status", { name: "Status history page" }));
+    await user.tab();
+    expect(document.activeElement).toBe(next);
+    await user.keyboard("{Enter}");
+    await act(async () => { reads[2]!.resolve(history(21, 2)); });
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(next);
+    await act(async () => { reads[3]!.resolve(history(21, 3)); });
+    expect(document.activeElement).toBe(screen.getByRole("status", { name: "Status history page" }));
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(previous);
+    await user.keyboard("{Enter}");
+    await user.tab({ shift: true });
+    const toggle = screen.getByRole("button", { name: "Hide status history" });
+    expect(document.activeElement).toBe(toggle);
+    await act(async () => { reads[4]!.resolve(history(21, 2)); });
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it("keeps the displayed page and keyboard recovery after a failed page read", async () => {
+    const user = userEvent.setup();
+    const failed = deferred<api.TicketStatusHistoryResponse>();
+    const retry = deferred<api.TicketStatusHistoryResponse>();
+    vi.mocked(api.fetchTicketStatusHistory).mockResolvedValueOnce(history(21, 1)).mockReturnValueOnce(failed.promise).mockReturnValueOnce(retry.promise);
+    render(<TicketStatusHistory ticketNumber={ticketNumber} ticketVersion={4} />);
+    await user.click(screen.getByRole("button", { name: "View status history" }));
+    await screen.findByText("Page 1 of 3");
+    const next = screen.getByRole("button", { name: "Next" });
+    next.focus();
+    await user.keyboard("{Enter}");
+    await act(async () => { failed.reject(new Error("offline")); });
+    expect(screen.getByText("Page 1 of 3")).toBeTruthy();
+    const retryButton = screen.getByRole("button", { name: "Retry" });
+    expect(document.activeElement).toBe(retryButton);
+    await user.keyboard("{Enter}{Enter}");
+    expect(document.activeElement).toBe(retryButton);
+    expect(retryButton.getAttribute("aria-disabled")).toBe("true");
+    expect(api.fetchTicketStatusHistory).toHaveBeenCalledTimes(3);
+    await act(async () => { retry.resolve(history(21, 2)); });
+    expect(document.activeElement).toBe(screen.getByRole("status", { name: "Status history page" }));
+    await user.tab();
+    expect(document.activeElement).toBe(next);
+  });
+
+  it.each([0, 1])("returns keyboard focus to the history toggle when Retry loads %s rows", async (totalItems) => {
+    const user = userEvent.setup();
+    const retry = deferred<api.TicketStatusHistoryResponse>();
+    vi.mocked(api.fetchTicketStatusHistory).mockRejectedValueOnce(new Error("offline")).mockReturnValueOnce(retry.promise);
+    render(<TicketStatusHistory ticketNumber={ticketNumber} ticketVersion={4} />);
+    await user.click(screen.getByRole("button", { name: "View status history" }));
+    const retryButton = await screen.findByRole("button", { name: "Retry" });
+    await user.tab();
+    expect(document.activeElement).toBe(retryButton);
+    await user.keyboard("{Enter}{Enter}");
+    expect(document.activeElement).toBe(retryButton);
+    expect(api.fetchTicketStatusHistory).toHaveBeenCalledTimes(2);
+    await act(async () => { retry.resolve(history(totalItems, 1)); });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Hide status history" }));
+    expect(screen.queryByRole("navigation", { name: "Status history pages" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+    if (totalItems === 0) expect(screen.getByText("No status history.")).toBeTruthy();
+    else expect(screen.getByText("Changed by Staff 1")).toBeTruthy();
+  });
+
   it("hides pagination for zero and one page", async () => {
     const user = userEvent.setup();
     vi.mocked(api.fetchTicketStatusHistory).mockResolvedValue(history(0, 1));

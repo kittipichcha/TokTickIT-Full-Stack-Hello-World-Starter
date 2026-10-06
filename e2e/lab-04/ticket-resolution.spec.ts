@@ -19,6 +19,13 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
   const controls = page.locator("section").filter({ has: page.getByRole("heading", { name: "Ticket controls" }) });
   await controls.getByRole("button", { name: "Open", exact: true }).click();
   await controls.getByRole("button", { name: "In Progress", exact: true }).click();
+  // Build more than one real history page without changing the resolution gate scenario.
+  for (let index = 0; index < 4; index += 1) {
+    await controls.getByRole("button", { name: "Waiting for Requester", exact: true }).click();
+    await expect(page.locator(".status-badge").first()).toHaveText("WAITING_FOR_REQUESTER");
+    await controls.getByRole("button", { name: "In Progress", exact: true }).click();
+    await expect(page.locator(".status-badge").first()).toHaveText("IN_PROGRESS");
+  }
   const actions = page.locator('section[aria-label="Actions Taken"]');
   for (const description of ["Resolution action A", "Resolution action B"]) {
     await actions.getByRole("button", { name: "Add Action" }).click();
@@ -71,6 +78,39 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
   await controls.getByRole("button", { name: "Resolved", exact: true }).click();
   await page.getByRole("dialog", { name: "Confirm status change" }).getByRole("button", { name: "Confirm", exact: true }).click();
   await expect(page.locator(".status-badge").first()).toHaveText("RESOLVED");
+  const history = page.getByRole("region", { name: "Ticket status history" });
+  await history.getByRole("button", { name: "View status history" }).click();
+  await expect(history.getByText("Page 1 of 2", { exact: true })).toBeVisible();
+  const nextPage = history.getByRole("button", { name: "Next", exact: true });
+  let releaseHistory!: () => void;
+  const historyBarrier = new Promise<void>(resolve => { releaseHistory = resolve; });
+  const historyRoute = `**/staff/tickets/${ticketNumber}/status-history?**`;
+  await page.route(historyRoute, async route => {
+    if (new URL(route.request().url()).searchParams.get("page") !== "2") return route.continue();
+    const response = await route.fetch();
+    await historyBarrier;
+    await route.fulfill({ response });
+  });
+  try {
+    await nextPage.focus();
+    await page.keyboard.press("Enter");
+    await expect(history.locator(".ticket-status-history-content")).toHaveAttribute("aria-busy", "true");
+    await expect(nextPage).toBeFocused();
+    await expect(history.getByText("Page 1 of 2", { exact: true })).toBeVisible();
+    releaseHistory();
+    const pageStatus = history.getByRole("status", { name: "Status history page" });
+    await expect(pageStatus).toHaveText("Page 2 of 2");
+    await expect(pageStatus).toBeFocused();
+    await expect(nextPage).toBeDisabled();
+    const previousPage = history.getByRole("button", { name: "Previous", exact: true });
+    await previousPage.focus();
+    await page.keyboard.press("Enter");
+    await expect(pageStatus).toHaveText("Page 1 of 2");
+    await expect(pageStatus).toBeFocused();
+  } finally {
+    releaseHistory();
+    await page.unroute(historyRoute);
+  }
   await page.getByRole("button", { name: "Logout" }).click();
   await login(page, USERS.requester.email);
   await navigate(page, "My Tickets");
