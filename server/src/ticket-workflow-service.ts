@@ -139,9 +139,12 @@ export async function applyStatusTransition(
       );
     }
 
+    const [{ changedAt }] = await tx.$queryRaw<Array<{ changedAt: Date }>>`
+      SELECT clock_timestamp() AS "changedAt"
+    `;
     const version = ticket.version + 1;
     const resolvedAt = targetStatus === "RESOLVED"
-      ? new Date()
+      ? changedAt
       : targetStatus === "REOPENED" || targetStatus === "CANCELLED"
         ? null
         : ticket.resolvedAt;
@@ -153,6 +156,7 @@ export async function applyStatusTransition(
       data: {
         ticketId: ticket.id,
         changedByUserId: actorUserId,
+        changedAt,
         fromStatus: ticket.currentStatus,
         toStatus: targetStatus,
         versionBefore: ticket.version,

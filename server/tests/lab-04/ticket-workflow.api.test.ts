@@ -511,6 +511,126 @@ describe("CONC-WF-01/02: shared Ticket lock and version", () => {
 });
 
 describe("API-WF-HISTORY-01: paginated status history", () => {
+  itIfDb("orders history by lock acquisition when transaction starts are reversed", async () => {
+    const prisma = getPrisma();
+    const resolvedAt = new Date("2025-03-04T05:06:07.000Z");
+    const ticket = await createTicket({ status: "RESOLVED", resolvedAt });
+    const olderStarted = deferred();
+    const releaseOlder = deferred();
+    const originalTransaction = prisma.$transaction.bind(prisma) as any;
+    let transactionCalls = 0;
+    let olderStart = "";
+    let olderStartMilliseconds = 0;
+    let newerStartedLater = false;
+    let olderRequest: Promise<request.Response> | undefined;
+    const transactionSpy = vi.spyOn(prisma, "$transaction").mockImplementation((async (operation: any, ...options: any[]) => {
+      const call = ++transactionCalls;
+      return originalTransaction(async (tx: any) => {
+        if (call === 1) {
+          const [start] = await tx.$queryRaw`SELECT transaction_timestamp()::text AS "startedAt",
+            floor(extract(epoch FROM transaction_timestamp()) * 1000)::float8 AS milliseconds`;
+          olderStart = start.startedAt;
+          olderStartMilliseconds = start.milliseconds;
+          olderStarted.resolve();
+          await releaseOlder.promise;
+        } else if (call === 2) {
+          const [start] = await tx.$queryRaw`SELECT floor(extract(epoch FROM transaction_timestamp()) * 1000)
+            > floor(extract(epoch FROM ${olderStart}::timestamptz) * 1000) AS later`;
+          newerStartedLater = start.later;
+        }
+        return operation(tx);
+      }, ...options);
+    }) as typeof prisma.$transaction);
+    try {
+      olderRequest = patchStatus(staff, ticket.ticketNumber, { status: "REOPENED" }).then((response) => response);
+      await Promise.race([
+        olderStarted.promise,
+        olderRequest.then(() => { throw new Error("Older request completed before the transaction barrier."); }),
+      ]);
+      let beforeNewerLock = new Date(0);
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        const [clock] = await prisma.$queryRaw<Array<{ time: Date }>>`SELECT clock_timestamp() AS time`;
+        beforeNewerLock = clock.time;
+        if (beforeNewerLock.getTime() > olderStartMilliseconds) break;
+      }
+      expect(beforeNewerLock.getTime()).toBeGreaterThan(olderStartMilliseconds);
+      const newer = await patchStatus(staff, ticket.ticketNumber, { status: "CLOSED" });
+      expect(newer.status).toBe(200);
+      expect(newer.body).toEqual({ data: { currentStatus: "CLOSED", version: 2 } });
+      expect(newerStartedLater).toBe(true);
+      const [beforeOlderLock] = await prisma.$queryRaw<Array<{ time: Date }>>`SELECT clock_timestamp() AS time`;
+      releaseOlder.resolve();
+      const older = await olderRequest;
+      expect(older.status).toBe(200);
+      expect(older.body).toEqual({ data: { currentStatus: "REOPENED", version: 3 } });
+      const page = await withSession(request(app).get(`/api/staff/tickets/${ticket.ticketNumber}/status-history`), staff);
+      expect(page.status).toBe(200);
+      expect(page.body.data).toHaveLength(2);
+      expect(page.body.data.map((row: { fromStatus: string; toStatus: string; versionBefore: number; versionAfter: number }) =>
+        [row.fromStatus, row.toStatus, row.versionBefore, row.versionAfter],
+      )).toEqual([["RESOLVED", "CLOSED", 1, 2], ["CLOSED", "REOPENED", 2, 3]]);
+      expect(new Date(page.body.data[0].changedAt).getTime()).toBeLessThanOrEqual(new Date(page.body.data[1].changedAt).getTime());
+      expect(new Date(page.body.data[0].changedAt).getTime()).toBeGreaterThanOrEqual(beforeNewerLock.getTime());
+      expect(new Date(page.body.data[1].changedAt).getTime()).toBeGreaterThanOrEqual(beforeOlderLock.time.getTime());
+      const row = await prisma.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
+      expect(row).toMatchObject({ currentStatus: "REOPENED", version: 3, resolvedAt: null });
+    } finally {
+      releaseOlder.resolve();
+      if (olderRequest) await Promise.allSettled([olderRequest]);
+      transactionSpy.mockRestore();
+    }
+  });
+
+  itIfDb("rolls back the complete Ticket when audit insertion fails and permits a clean retry", async () => {
+    const prisma = getPrisma();
+    const ticket = await createTicket();
+    const before = await prisma.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
+    const historyBefore = await prisma.ticketStatusChange.findMany({ where: { ticketId: ticket.id } });
+    const originalTransaction = prisma.$transaction.bind(prisma) as any;
+    let auditInsertAttempted = false;
+    const transactionSpy = vi.spyOn(prisma, "$transaction").mockImplementation((async (operation: any, ...options: any[]) =>
+      originalTransaction(async (tx: any) => {
+        const txFacade = new Proxy(tx, {
+          get(target, property) {
+            if (property === "ticketStatusChange") {
+              return new Proxy(target.ticketStatusChange, {
+                get(model, method) {
+                  if (method === "create") return async () => {
+                    auditInsertAttempted = true;
+                    expect(await tx.ticket.findUniqueOrThrow({ where: { id: ticket.id } })).toMatchObject({ currentStatus: "RESOLVED", version: 2 });
+                    await tx.$executeRaw`SELECT 1 / 0`;
+                  };
+                  return Reflect.get(model, method, model);
+                },
+              });
+            }
+            const value = Reflect.get(target, property, target);
+            return typeof value === "function" ? value.bind(target) : value;
+          },
+        });
+        return operation(txFacade);
+      }, ...options)) as typeof prisma.$transaction);
+    try {
+      const failed = await patchStatus(staff, ticket.ticketNumber, { status: "RESOLVED", expectedVersion: 1 });
+      expect(auditInsertAttempted).toBe(true);
+      expect(failed.status).toBe(500);
+      expect(failed.body).toEqual({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } });
+    } finally {
+      transactionSpy.mockRestore();
+    }
+    expect(await prisma.ticket.findUniqueOrThrow({ where: { id: ticket.id } })).toEqual(before);
+    expect(await prisma.ticketStatusChange.findMany({ where: { ticketId: ticket.id } })).toEqual(historyBefore);
+    const retry = await patchStatus(staff, ticket.ticketNumber, { status: "RESOLVED", expectedVersion: 1 });
+    expect(retry.status).toBe(200);
+    expect(retry.body).toEqual({ data: { currentStatus: "RESOLVED", version: 2 } });
+    const row = await prisma.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
+    const history = await prisma.ticketStatusChange.findMany({ where: { ticketId: ticket.id } });
+    expect(row).toMatchObject({ currentStatus: "RESOLVED", version: 2 });
+    expect(history).toHaveLength(1);
+    expect(history[0]).toMatchObject({ changedByUserId: staffId, fromStatus: "IN_PROGRESS", toStatus: "RESOLVED", versionBefore: 1, versionAfter: 2 });
+    expect(row.resolvedAt).toEqual(history[0]!.changedAt);
+  });
+
   itIfDb("returns exact ascending pages, empty metadata, and the authorization matrix", async () => {
     const prisma = getPrisma();
     const ticket = await createTicket();
