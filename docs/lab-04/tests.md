@@ -98,6 +98,15 @@ Statuses are `Planned`, `Implemented`, `Passed`, `Failed`, `Blocked`, `Environme
 
 ### Results Log (newest first)
 
+- **2026-10-06 — Issue #53 completed full regression and PR follow-up**
+  - Scope: complete the entire configured regression after the user requested no further publication until full validation passed. FR-08–11/18–20; BR-12–16/24/26–31; AC-10–14/21/23/25–27. Updated the prior Lab 3 Staff workflow test to click the current explicit `Save priority` control before asserting persisted priority.
+  - Branch/SHA: `feature/lab4-ticket-workflow`; final executable snapshot `95f146f06dc65ef308d698547e4a377d6f7c7d2d`, based on `6cae341`. Backend/client reruns used `6cae341`; the sole later executable change is the browser test step, included in the final full browser run. The following evidence commit changes documentation only.
+  - Full client: `cd client; npm.cmd test` — **20 files, 322 passed, 0 failed/skipped**, 57.26 seconds.
+  - Full server: `cd server; npm.cmd test`, guarded disposable `DATABASE_URL` — **44 files, 650 passed, 0 failed/skipped**, 1,106.47 seconds. The previous authorization cleanup failure is absent in this completed full rerun.
+  - Full browser: `node node_modules/@playwright/test/cli.js test` from worktree root, equivalent to the configured `npm.cmd run test:e2e` — **237 passed, 0 failed/skipped**, 26.4 minutes, desktop/tablet/mobile. The first new attempt found the obsolete automatic-priority-save expectation and was stopped after 83 passes/1 failure; the complete corrected rerun passed all 237 tests.
+  - Environment: backend uses disposable loopback `lab3e2e`; browser uses a separate fresh disposable loopback `lab3e2e_issue53_full_browser_20261006_r2`, with all eight existing migrations applied and repository seed run. Environment variables are supplied to the child process; no `.env` modification or credential is committed. Restored all 55 generated tracked historical screenshots after the final browser run.
+  - Status/evidence: all Issue #53 rows remain Passed; full configured regression is now complete. Downstream dashboard/final-release rows retain their owning-issue status because their entire contracts are outside this branch. Evidence: `artifacts/lab-04/issue-53/README.md`. No human-review approval is inferred from passing tests.
+
 - **2026-10-06 — Issue #53 existing-worktree completion**
   - Scope: complete the supplied workflow plan without a full blocking review. Preserved existing backend/client work; added canonical `e2e/lab-04/ticket-resolution.spec.ts`; strengthened `API-ACT-08` with a real permitted versioned Reopened transition and FK-safe history cleanup. FR-08–11/18–20; BR-12–16/24/26–31; AC-10–14/21/23/25–27.
   - Branch/SHA: `feature/lab4-ticket-workflow`; backend `1de162f1b5228bff8cbcb406121cd6f4ab0185df`, client `5bf2538`, final implementation snapshot `10f4fdd65ef33f840476d6d1f514af005491c4e0`. Results were collected during implementation before committing; final browser/build checks include the last executable changes. The following documentation commit records these results without changing executable source.

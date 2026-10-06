@@ -1,5 +1,12 @@
 # Lab 4 — AI Use and Reflection
 
+## Issue #53 full regression completion (2026-10-06)
+
+- Prompt summary: finish incomplete full regression before further commits and pushes, and include the complete results in the PR.
+- Work performed: reran complete client/backend suites, created an isolated disposable browser database using existing migrations and seed, and ran all configured browser checks. Corrected one legacy Staff workflow test to use the current explicit priority-save interaction, then repeated the full browser suite. Restored 55 generated historical screenshots and recorded complete results before the follow-up evidence commit and PR update.
+- Verification: client 322/322 (20 files), backend 650/650 (44 files), full browser 237/237 across desktop/tablet/mobile; zero failures/skips in all final runs. Final executable snapshot `95f146f06dc65ef308d698547e4a377d6f7c7d2d`. Previous cleanup and incomplete browser limitations are superseded by these full successful runs.
+- Reflection: distinguish completed issue-specific tests from the full configured regression clearly; the user required the latter before further publication. Isolated disposable databases allowed backend and browser verification without shared-fixture interference.
+
 ## Issue #53 commit and PR preparation (2026-10-06)
 
 - Prompt summary: commit and push the validated work, open a PR to `lab4-staging` using PR #60's format, and include full regression results in the commit.

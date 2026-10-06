@@ -13,7 +13,42 @@ The documentation commit that follows this snapshot changes no executable source
 Scope: FR-08–11/18–20; BR-12–16/24/26–31; AC-10–14/21/23/25–27.
 Dashboards and final Lab 4 release hardening remain outside Issue #53.
 
-## Commands and results
+## Completed full regression (supersedes earlier limitations below)
+
+After the user's request to finish full regression before further publication,
+the entire configured client, backend and browser suites completed successfully.
+Final executable snapshot: `95f146f06dc65ef308d698547e4a377d6f7c7d2d`.
+Runs started on `6cae341`; the only subsequent executable change was the single
+explicit priority-save step in the browser regression, committed as `95f146f`.
+The final complete browser run includes that correction. The following evidence
+commit changes documentation only.
+
+| Full command | Passed | Failed / skipped | Duration |
+| --- | --- | --- | --- |
+| `cd client; npm.cmd test` | 322 tests, 20 files | 0 / 0 | 57.26 seconds |
+| `cd server; npm.cmd test` with guarded disposable `DATABASE_URL` | 650 tests, 44 files | 0 / 0 | 1,106.47 seconds |
+| `node node_modules/@playwright/test/cli.js test` from worktree root | 237 tests, desktop/tablet/mobile | 0 / 0 | 26.4 minutes |
+
+Backend uses the existing loopback `lab3e2e` database. Browser verification uses
+a separate disposable loopback database `lab3e2e_issue53_full_browser_20261006_r2`
+to avoid interference with the backend suite. Setup creates that database, applies
+all eight existing migrations with `node node_modules/prisma/build/index.js migrate deploy`,
+and seeds it with `node node_modules/tsx/dist/cli.mjs prisma/seed.ts` from `server/`.
+Both `DATABASE_URL` and `E2E_DATABASE_URL` point to the isolated browser database
+for the unmodified configured Playwright suite. No environment file changed.
+
+The first new broad browser attempt reproduced an outdated Lab 3 test expectation:
+selecting IT Priority alone no longer saves it. The test now clicks the existing
+`Save priority` button before asserting persisted state. That attempt was stopped
+after 83 passing checks and one failure to restart the complete corrected suite.
+The final run completed all 237 checks successfully; it was not stopped early.
+All 55 regenerated tracked historical screenshots were restored to HEAD bytes.
+
+Issue #53 verification is complete. This complete regression run does not mark
+downstream dashboard/final-release Test DD rows Passed before their entire
+contracts exist. Human peer review remains separate from test verification.
+
+## Earlier implementation commands and results (historical)
 
 Run from the worktree unless a subdirectory is specified. Windows commands use
 `npm.cmd`/`npx.cmd` because the PowerShell execution policy blocks their script shims.
