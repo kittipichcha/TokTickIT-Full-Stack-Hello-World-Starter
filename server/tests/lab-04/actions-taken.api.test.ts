@@ -905,18 +905,38 @@ describe("API-ACT-08: terminal Ticket creation rule", () => {
     const prisma = getPrisma();
     for (const status of ["RESOLVED", "CLOSED", "CANCELLED"] as const) {
       await prisma.ticket.update({ where: { id: fx.ticketId }, data: { currentStatus: status } });
+      const beforeCount = await prisma.actionTaken.count({ where: { ticketId: fx.ticketId } });
       const res = await postAction(fx.staff.session, fx.ticketNumber, `key-08-${status}-${fx.suffix}`, {
         description: "should fail",
       });
       expect(res.status).toBe(409);
+      expect(await prisma.actionTaken.count({ where: { ticketId: fx.ticketId } })).toBe(beforeCount);
     }
-    // A permitted Reopened Ticket can receive a Pending Action.
-    await prisma.ticket.update({ where: { id: fx.ticketId }, data: { currentStatus: "REOPENED" } });
+    // Issue #53: prove reopening through the permitted, authenticated workflow API.
+    const ticket = await prisma.ticket.update({
+      where: { id: fx.ticketId },
+      data: { currentStatus: "RESOLVED", ticketOwnerId: fx.staff.id },
+    });
+    const transition = await withSession(
+      request(app).patch(`/api/staff/tickets/${fx.ticketNumber}/status`)
+        .send({ status: "REOPENED", expectedVersion: ticket.version }),
+      fx.staff.session,
+      { csrf: true },
+    );
+    expect(transition.status).toBe(200);
+    expect(transition.body.data).toEqual({ currentStatus: "REOPENED", version: ticket.version + 1 });
     const reopened = await postAction(fx.staff.session, fx.ticketNumber, `key-08-reopened-${fx.suffix}`, {
       description: "allowed",
     });
     expect(reopened.status).toBe(201);
-    await prisma.ticket.update({ where: { id: fx.ticketId }, data: { currentStatus: "IN_PROGRESS" } });
+    expect(reopened.body.data.status).toBe("PENDING");
+    const resume = await withSession(
+      request(app).patch(`/api/staff/tickets/${fx.ticketNumber}/status`)
+        .send({ status: "IN_PROGRESS", expectedVersion: transition.body.data.version }),
+      fx.staff.session,
+      { csrf: true },
+    );
+    expect(resume.status).toBe(200);
   });
 });
 
