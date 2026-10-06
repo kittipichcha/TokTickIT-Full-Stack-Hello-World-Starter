@@ -1,0 +1,14 @@
+PR #61 final scope and alignment checks — 2026-10-06 (Asia/Bangkok)
+Baseline: 3784e9385264ad9db6865e546d03fdb605884c4a; branch feature/lab4-ticket-workflow; PR target lab4-staging.
+Verification runtime: Node v24.14.0, Vitest 4.1.10; real local PostgreSQL on two dedicated disposable databases; eight existing migrations and seed.
+Final full checks: backend 44 files / 652 passed; client 20 files / 326 passed; browser 237 passed across desktop/tablet/mobile. All zero failed/skipped and exit 0.
+Focused checks: server 84 passed; workflow UI 22 passed; resolution/history browser 3 passed. Both builds exit 0.
+PASS: five executable SHA256 fingerprints match pr61-executable-snapshot.json.
+PASS: canonical paths in all 29 Implemented/Passed Test DD rows exist.
+PASS: owner POST and priority/status PATCH match module.ts and API spec; Test DD introduction and new assertions align.
+PASS: workflow role/CSRF/version gates, append-only history and transactional update/audit boundaries preserved.
+PASS: reciprocal source cross-checks; original Prisma chronology passing distinguished from shared-timestamp mismatch and browser focus reproductions.
+PASS: 57 generated tracked screenshots restored; zero screenshot changes remain.
+PASS: git diff --check; evidence trailing whitespace normalized and database URLs/credential headers absent.
+PASS: no schema, migration, dependency, environment, frozen contract, human-review record or downstream Test DD status change.
+Publication at verification completion: changes were unstaged/uncommitted; no push, merge, GitHub comment or human approval. The user subsequently approved staging, committing and pushing the validated fixes.

@@ -2,6 +2,93 @@
 
 Date: 2026-10-06 (Asia/Bangkok).
 
+## PR #61 review-fix verification (current)
+
+The supplied B1/N1–N3 plan was implemented locally on baseline
+`3784e9385264ad9db6865e546d03fdb605884c4a`. Verification ran before committing;
+`pr61-executable-snapshot.json` records SHA256 fingerprints of the final five
+executable files. Historical runs below remain historical, rather than evidence
+for these new changes. Human peer approval remains pending.
+
+After explicit user approval, the validated executable changes were committed as
+`9a0c851` (B1/N2 server fixes) and `6eee98a9cea95cc903024fc65cea56d77474c69d`
+(N1 client/browser fixes). The following evidence/documentation commit changes
+no executable source. These commits contain the source exercised by the runs below.
+
+Mappings: FR-08/11/18–20; BR-28–31; AC-10/12/21/26/27.
+No schema, migration, dependency, environment file, or frozen contract changed.
+
+The status writer samples PostgreSQL `clock_timestamp()` after locking and
+validation, supplies `changedAt`, and uses the same event instant for resolution.
+The reversed-start/lock-order regression asserts two real successful legacy
+requests, their exact version chain and history order, and database-clock bounds.
+Audit insertion failure is injected after the real Ticket update; the test proves
+complete Ticket/history rollback and an explicit retry appending exactly one row.
+
+The original reversed-order test already passed: diagnostic generated Prisma SQL
+explicitly includes `changedAt` even when create data omits it. The review's
+transaction-default chronology premise was therefore not reproduced in this
+runtime. Original focused results were 83 passed / 1 failed on differing
+`resolvedAt` and history timestamps; the selected shared database-clock fix makes
+that assertion pass. This observation is not represented as a reproduced
+chronology failure.
+
+History reads retain the displayed rows/page and navigation while busy, block
+duplicate reads, and restore boundary/Retry focus without overriding user-moved
+focus. Retry returning zero/one page focuses the persistent history toggle. The
+real-browser test holds a real history response and asserts focus before and after
+keyboard paging. The first browser run failed all three boundary-focus checks:
+Chromium blurs a still-mounted button when it becomes disabled. Focus is now
+captured before the completion render; the focused rerun passed all three views.
+
+Verification uses two dedicated loopback disposable PostgreSQL databases,
+`lab3e2e_pr61_server_20261006` and `lab3e2e_pr61_browser_20261006`, both with all
+eight existing migrations and seed applied. Process environment overrides are
+derived from the guarded configured E2E test connection; no application database
+or environment file is changed. Connection URLs are redacted from saved output.
+
+| Command / scope | Current result |
+| --- | --- |
+| Server: workflow unit/API, Actions API, prior Staff Detail API | 4 files / 84 passed / 0 failed / 0 skipped |
+| Client: canonical workflow component tests | 22 passed / 0 failed / 0 skipped |
+| Client: complete Vitest suite, `--maxWorkers 1` | 20 files / 326 passed / 0 failed / 0 skipped |
+| Server and client production builds | Passed |
+| Playwright: existing resolution/history flow, all configured projects | 3 passed / 0 failed / 0 skipped |
+| Full backend Vitest suite | 44 files / 652 passed / 0 failed / 0 skipped; 1,602.08 seconds; exit 0 |
+| Complete configured Playwright suite | 237 passed / 0 failed / 0 skipped; desktop/tablet/mobile; 29.2 minutes; exit 0 |
+
+Initial full client parallel run: 323 passed / 1 timed out / 0 skipped in the
+unchanged long-summary test. A single-worker rerun passed 324/324 before the final
+Retry fallback; the final full run after that addition passed 326/326. No timeout
+or assertion was relaxed. Existing jsdom window/navigation diagnostics do not
+fail assertions. The two new zero/one-page focus regressions failed before the
+fallback (20 other tests filtered out), then the complete 22-test file passed.
+
+Inspectable sanitized output:
+
+- [Server focused checks](pr61-server-focused.txt), [original shared-time failure](pr61-server-focused-red.txt), [server build](pr61-server-build.txt).
+- [Complete backend regression](pr61-server-full.txt).
+- [Client focus tests](client-history-green.txt), [zero/one-page Retry reproduction](client-history-empty-retry-red.txt), [client build](client-history-build.txt).
+- [Final full client run](pr61-client-full.txt), [initial parallel timeout](pr61-client-full-initial.txt).
+- [Focused browser recovery](pr61-browser-focused.txt), [Chromium boundary-focus reproduction](pr61-browser-focused-red.txt).
+- [Complete browser regression](pr61-browser-full.txt).
+- [Server migrations](setup-server-migrations.txt), [server seed](setup-server-seed.txt), [browser migrations](setup-browser-migrations.txt), [browser seed](setup-browser-seed.txt).
+- [Executable file fingerprints](pr61-executable-snapshot.json).
+
+Final scope and alignment checks are recorded in [the scope report](pr61-scope-checks.txt).
+All 57 regenerated tracked screenshots were restored to baseline bytes after the
+last browser run. `git diff --check` passes. Canonical test paths, route methods,
+Test DD statuses and executable fingerprints were cross-checked; no contract,
+schema, migration, dependency, environment, or human-review file changed. Neither
+package defines lint/format scripts; configured TypeScript/build and test checks
+were used. All full suites exited successfully with zero failures/skips.
+
+The full browser command started before the final zero/one-page Retry fallback;
+that change completed before the first Staff/history browser cases ran. Every
+affected browser case therefore exercised the final source, as did the final
+326-test client rerun. No executable edit followed the recorded fingerprint
+snapshot. Human review and publication remain separate from executable validation.
+
 Baseline: `371782a` (merged Issue #52). Backend implementation HEAD:
 `1de162f1b5228bff8cbcb406121cd6f4ab0185df`. Client implementation commit:
 `5bf2538`; final implementation snapshot: `10f4fdd65ef33f840476d6d1f514af005491c4e0`

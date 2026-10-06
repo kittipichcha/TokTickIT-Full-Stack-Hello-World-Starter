@@ -1,0 +1,84 @@
+Baseline: 3784e9385264ad9db6865e546d03fdb605884c4a + uncommitted PR61 fixes
+Node: v24.14.0
+Started UTC: 2026-10-06T07:39:34.599Z
+Command: node node_modules/vitest/vitest.mjs run
+Database: dedicated loopback lab3e2e_pr61_server_20261006; eight existing migrations
+◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-53-worktree/server
+
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+MigrationCollisionError: 1 collision(s) block the migration.
+  - Duplicate normalized email "ada@example.com" between DevRequester id 1 and 3
+Database left in the documented Phase-A-applied state. Resolve the collision source (manual data fix or user decision), then re-run the orchestrator to resume at Stage 2. Never un-apply tracked migrations; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-9468-1791272664418.sql:43: ERROR:  division by zero
+Command failed: psql "[redacted database URL]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-9468-1791272664418.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-9468-1791272664418.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+isRemoved invariant violated: rows exist where isRemoved <> (removedAt IS NOT NULL). This indicates pre-existing corrupt data. Abort for manual cleanup; never 'fix' by silent UPDATE.
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+Backfilled User records do not match the frozen legacy-to-User mapping for IDs: 1. Expected same id/role/email/name/isActive, mustChangePassword=true, and the deterministic initial password. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-26240-1791273026701.sql:43: ERROR:  division by zero
+Command failed: psql "[redacted database URL]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-26240-1791273026701.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-26240-1791273026701.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-14716-1791273072399.sql:43: ERROR:  division by zero
+Command failed: psql "[redacted database URL]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-14716-1791273072399.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-14716-1791273072399.sql:43: ERROR:  division by zero
+
+Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 1. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-25792-1791273124362.sql:43: ERROR:  division by zero
+Command failed: psql "[redacted database URL]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-25792-1791273124362.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-25792-1791273124362.sql:43: ERROR:  division by zero
+
+Attachment ownership shadow columns do not mirror the legacy requester columns for IDs: 2. Phase C would drop the legacy columns and lose the true ownership/removal attribution. Follow the README runbook; never hand-edit _prisma_migrations.
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-18488-1791273175254.sql:43: ERROR:  division by zero
+Command failed: psql "[redacted database URL]" --single-transaction -v ON_ERROR_STOP=1 -f "C:\Users\kitti\AppData\Local\Temp\migrate-lab3-injected-18488-1791273175254.sql"
+psql:C:/Users/kitti/AppData/Local/Temp/migrate-lab3-injected-18488-1791273175254.sql:43: ERROR:  division by zero
+
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+[test-only] simulated crash right after backfill commit.
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+NOTICE:  database "tocktick_lab3_mig05_25860" does not exist, skipping
+NOTICE:  database "lab3e2e_pr61_server_20261006_lab4mig01_11740" does not exist, skipping
+NOTICE:  database "lab3e2e_pr61_server_20261006_lab4mig02_11740" does not exist, skipping
+NOTICE:  database "lab3e2e_pr61_server_20261006_lab4mig02restore_11740" does not exist, skipping
+Error: P3018
+
+A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+
+Migration name: 99999999999999_lab4_deliberate_failure
+
+Database error code: 22012
+
+Database error:
+ERROR: division by zero
+
+DbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E22012), message: "division by zero", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("int.c"), line: Some(843), routine: Some("int4div") }
+
+
+NOTICE:  database "lab3e2e_pr61_server_20261006_lab4mig03_11740" does not exist, skipping
+NOTICE:  database "lab3e2e_pr61_server_20261006_lab4mig03rehearsal_11740" does not exist, skipping
+
+ Test Files  44 passed (44)
+      Tests  652 passed (652)
+   Start at  14:39:36
+   Duration  1602.08s (transform 3.12s, setup 0ms, import 40.19s, tests 1537.04s, environment 13ms)
+
+
+Exit: 0
+Finished UTC: 2026-10-06T08:06:18.411Z

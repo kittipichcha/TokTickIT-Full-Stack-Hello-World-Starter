@@ -34,7 +34,9 @@ paginated status history. Staff controls send `expectedVersion`, retain recovera
 conflict, and require a successful refresh before an explicit retry. Dashboards and final Lab 4
 release hardening remain owned by #54–#55.
 
-Issue #53 extends owner, priority, and status PATCH requests with optional positive integer
+Issue #53 extends `POST /api/staff/tickets/:ticketNumber/owner`,
+`PATCH /api/staff/tickets/:ticketNumber/priority`, and
+`PATCH /api/staff/tickets/:ticketNumber/status` requests with optional positive integer
 `expectedVersion` (legacy omission remains supported); successful responses include the new
 Ticket `version`. Stale versions return 409 without mutation. Staff/Admin history is available
 at `GET /api/staff/tickets/:ticketNumber/status-history?page=1&pageSize=10`; Requesters cannot

@@ -1,0 +1,28 @@
+Baseline: 3784e9385264ad9db6865e546d03fdb605884c4a + uncommitted PR61 fixes
+Node: v24.14.0
+Started UTC: 2026-10-06T07:45:45.532Z
+Command: node node_modules/vitest/vitest.mjs run --maxWorkers 1
+Database: dedicated loopback lab3e2e_pr61_server_20261006; eight existing migrations
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-53-worktree/client
+
+Error: Not implemented: window.open
+    at module.exports (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at onClick (C:/Users/kitti/CPE334/issue-53-worktree/client/src/App.tsx:493:42) undefined
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at listOnTimeout (node:internal/timers:605:17)
+    at processTimers (node:internal/timers:541:7) undefined
+
+ Test Files  20 passed (20)
+      Tests  326 passed (326)
+   Start at  14:45:47
+   Duration  181.50s (transform 2.75s, setup 0ms, import 21.32s, tests 107.70s, environment 40.27s)
+
+
+Exit: 0
+Finished UTC: 2026-10-06T07:48:48.769Z
