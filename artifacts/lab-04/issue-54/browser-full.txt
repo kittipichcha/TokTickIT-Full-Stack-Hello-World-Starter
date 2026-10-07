@@ -1,0 +1,83 @@
+◇ injected env (1) from server\.env // tip: ⌘ override existing { override: true }
+[WebServer] (node:18296) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:14616) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:13960) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+Running 258 tests using 1 worker
+
+(node:26564) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+  ok   1 [desktop] › e2e\lab-02\attachment-lifecycle.spec.ts:21:7 › E2E-03: Full attachment lifecycle › upload, preview, download, and remove an attachment on a created ticket (6.7s)
+  ok   2 [desktop] › e2e\lab-02\keyboard-access.spec.ts:47:7 › E2E-05: Keyboard accessibility › visible focus indicators on the Login form controls (1.0s)
+  ok   3 [desktop] › e2e\lab-02\keyboard-access.spec.ts:66:7 › E2E-05: Keyboard accessibility › mandatory keyboard-only flow: Login → Create Ticket (2.1s)
+  ok   4 [desktop] › e2e\lab-02\keyboard-access.spec.ts:106:7 › E2E-05: Keyboard accessibility › focus indicator visible on form controls (2.9s)
+  ok   5 [desktop] › e2e\lab-02\keyboard-access.spec.ts:137:7 › E2E-05: Keyboard accessibility › Logout is keyboard-accessible (1.4s)
+  ok   6 [desktop] › e2e\lab-02\keyboard-access.spec.ts:150:7 › E2E-05: Keyboard accessibility › removal dialog: focus enters modal, Tab stays inside, Escape closes, focus restores (2.1s)
+  ok   7 [desktop] › e2e\lab-02\ownership.spec.ts:29:7 › E2E-02: Ownership isolation across two requester contexts › Requester A and B cannot see or fetch each other's tickets (4.5s)
+  ok   8 [desktop] › e2e\lab-02\partial-success-attachment.spec.ts:26:7 › E2E-04: Partial success — ticket created, attachment fails › ticket creation succeeds, attachment upload fails, ticket persists, no duplicate, retry succeeds (2.9s)
+  ok   9 [desktop] › e2e\lab-02\requester-ticket-flow.spec.ts:22:7 › E2E-01: Requester creates ticket and finds it in My Tickets › full requester flow: log in → create ticket → find in My Tickets (2.8s)
+  ok  10 [desktop] › e2e\lab-02\responsive-visual.spec.ts:278:7 › Login screenshots › default state @visual (6.4s)
+  ok  11 [desktop] › e2e\lab-02\responsive-visual.spec.ts:284:7 › Login screenshots › validation error state @visual (6.3s)
+  ok  12 [desktop] › e2e\lab-02\responsive-visual.spec.ts:292:7 › Login screenshots › failure state @visual (6.7s)
+  ok  13 [desktop] › e2e\lab-02\responsive-visual.spec.ts:311:7 › Create Ticket screenshots › initial state @visual (7.4s)
+  ok  14 [desktop] › e2e\lab-02\responsive-visual.spec.ts:321:7 › Create Ticket screenshots › validation error @visual (9.9s)
+  ok  15 [desktop] › e2e\lab-02\responsive-visual.spec.ts:333:7 › Create Ticket screenshots › submitting state @visual (10.6s)
+  ok  16 [desktop] › e2e\lab-02\responsive-visual.spec.ts:352:7 › Create Ticket screenshots › success state @visual (8.7s)
+  ok  17 [desktop] › e2e\lab-02\responsive-visual.spec.ts:366:7 › Create Ticket screenshots › api failure @visual (8.4s)
+  ok  18 [desktop] › e2e\lab-02\responsive-visual.spec.ts:389:7 › Create Ticket screenshots › invalid attachment @visual (10.5s)
+  ok  19 [desktop] › e2e\lab-02\responsive-visual.spec.ts:402:7 › Create Ticket screenshots › partial success attachment failure @visual (20.8s)
+  ok  20 [desktop] › e2e\lab-02\responsive-visual.spec.ts:446:7 › My Tickets screenshots › default state @visual (12.3s)
+  ok  21 [desktop] › e2e\lab-02\responsive-visual.spec.ts:452:7 › My Tickets screenshots › loading state @visual (7.8s)
+  ok  22 [desktop] › e2e\lab-02\responsive-visual.spec.ts:459:7 › My Tickets screenshots › empty state @visual (12.4s)
+  ok  23 [desktop] › e2e\lab-02\responsive-visual.spec.ts:465:7 › My Tickets screenshots › no-results state @visual (12.3s)
+  x   24 [desktop] › e2e\lab-02\responsive-visual.spec.ts:475:7 › My Tickets screenshots › filtered state @visual (30.2s)
+(node:20148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  ok  25 [desktop] › e2e\lab-02\responsive-visual.spec.ts:483:7 › My Tickets screenshots › failure state @visual (13.0s)
+  x   26 [desktop] › e2e\lab-02\responsive-visual.spec.ts:499:7 › Ticket Detail screenshots › default state @visual (12.2s)
+(node:27300) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+  x   27 [desktop] › e2e\lab-02\responsive-visual.spec.ts:507:7 › Ticket Detail screenshots › loading state @visual (12.4s)
+(node:21508) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  x   28 [desktop] › e2e\lab-02\responsive-visual.spec.ts:516:7 › Ticket Detail screenshots › failure/not-found state @visual (12.6s)
+(node:15324) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  x   29 [desktop] › e2e\lab-02\responsive-visual.spec.ts:524:7 › Ticket Detail screenshots › attachment active @visual (13.4s)
+(node:24816) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  x   30 [desktop] › e2e\lab-02\responsive-visual.spec.ts:532:7 › Ticket Detail screenshots › attachment uploading @visual (12.5s)
+(node:14896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x   31 [desktop] › e2e\lab-02\responsive-visual.spec.ts:548:7 › Ticket Detail screenshots › attachment invalid @visual (12.3s)
+(node:3088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x   32 [desktop] › e2e\lab-02\responsive-visual.spec.ts:559:7 › Ticket Detail screenshots › attachment removed @visual (12.2s)
+(node:24224) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  x   33 [desktop] › e2e\lab-02\responsive-visual.spec.ts:568:7 › Ticket Detail screenshots › attachment unavailable @visual (12.2s)
+(node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x   34 [desktop] › e2e\lab-02\responsive-visual.spec.ts:587:7 › Ticket Detail screenshots › preview modal @visual (12.2s)
+(node:24544) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+  ok  35 [desktop] › e2e\lab-02\responsive-visual.spec.ts:684:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets no horizontal scroll (8.0s)
+  x   36 [desktop] › e2e\lab-02\responsive-visual.spec.ts:694:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets table→card representation per breakpoint (8.4s)
+(node:5932) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }

@@ -1,0 +1,13 @@
+
+> toktickit-client@1.0.0 test
+> vitest run --maxWorkers 1 src/lab-04-tests/RequesterDashboard.test.tsx src/lab-04-tests/StaffDashboard.test.tsx src/lab-04-tests/RoleNavigation.test.tsx src/lab-04-tests/ActionsTaken.test.tsx src/lab-02-tests/MyTickets.test.tsx src/lab-03-tests/StaffTicketQueue.test.tsx src/App.test.tsx
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/client
+
+
+ Test Files  7 passed (7)
+      Tests  127 passed (127)
+   Start at  21:52:23
+   Duration  65.76s (transform 2.18s, setup 0ms, import 11.29s, tests 33.63s, environment 16.61s)
+

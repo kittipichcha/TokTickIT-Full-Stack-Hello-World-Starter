@@ -1,0 +1,183 @@
+
+> toktickit-client@1.0.0 test
+> vitest run --maxWorkers 1 src/lab-04-tests/RoleNavigation.test.tsx
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/client
+
+ ❯ src/lab-04-tests/RoleNavigation.test.tsx (8 tests | 1 failed) 3728ms
+     × mobile menu exposes expanded state and closes after navigation 70ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lab-04-tests/RoleNavigation.test.tsx > UI-DASH-01 role navigation and credentialed real list transport > mobile menu exposes expanded state and closes after navigation
+TestingLibraryElementError: Unable to find an element with the role "button" and name "Open navigation menu"
+
+Here are the available roles:
+
+  banner:
+
+  Name "":
+  <header
+    class="app-header"
+  />
+
+  --------------------------------------------------
+  strong:
+
+  Name "":
+  <strong />
+
+  --------------------------------------------------
+  button:
+
+  Name "":
+  <button
+    aria-controls="primary-navigation"
+    aria-expanded="false"
+    aria-label="Open navigation menu"
+    class="hamburger"
+    type="button"
+  />
+
+  --------------------------------------------------
+  navigation:
+
+  Name "Primary":
+  <nav
+    aria-label="Primary"
+    class=""
+    id="primary-navigation"
+  />
+
+  --------------------------------------------------
+  link:
+
+  Name "Dashboard":
+  <a
+    aria-current="page"
+    class="nav-active"
+    href="#dashboard"
+  />
+
+  Name "My Tickets":
+  <a
+    class=""
+    href="#my-tickets"
+  />
+
+  Name "Create Ticket":
+  <a
+    class=""
+    href="#create-ticket"
+  />
+
+  --------------------------------------------------
+  main:
+
+  Name "":
+  <main
+    class="app-container dashboard"
+  />
+
+  --------------------------------------------------
+  heading:
+
+  Name "Requester Dashboard":
+  <h1 />
+
+  --------------------------------------------------
+  status:
+
+  Name "":
+  <p
+    role="status"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell"
+    >
+      <header
+        class="app-header"
+      >
+        <strong>
+          TokTickIT
+        </strong>
+        <button
+          aria-controls="primary-navigation"
+          aria-expanded="false"
+          aria-label="Open navigation menu"
+          class="hamburger"
+          type="button"
+        >
+          <span
+            class="hamburger-bar"
+          />
+          <span
+            class="hamburger-bar"
+          />
+          <span
+            class="hamburger-bar"
+          />
+        </button>
+        <nav
+          aria-label="Primary"
+          class=""
+          id="primary-navigation"
+        >
+          <a
+            aria-current="page"
+            class="nav-active"
+            href="#dashboard"
+          >
+            Dashboard
+          </a>
+          <a
+            class=""
+            href="#my-tickets"
+          >
+            My Tickets
+          </a>
+          <a
+            class=""
+            href="#create-ticket"
+          >
+            Create Ticket
+          </a>
+        </nav>
+      </header>
+      <main
+        class="app-container dashboard"
+      >
+        <h1>
+          Requester Dashboard
+        </h1>
+        <p
+          role="status"
+        >
+          Loading dashboard…
+        </p>
+      </main>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/lab-04-tests/RoleNavigation.test.tsx:26:141
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  21:51:35
+   Duration  7.69s (transform 1.00s, setup 0ms, import 1.90s, tests 3.73s, environment 1.57s)
+

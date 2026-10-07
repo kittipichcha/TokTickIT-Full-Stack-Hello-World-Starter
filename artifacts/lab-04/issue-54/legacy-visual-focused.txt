@@ -1,0 +1,175 @@
+◇ injected env (1) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+[WebServer] (node:1700) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:14896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:25992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+
+Running 43 tests using 1 worker
+
+(node:3896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+  ok  1 [desktop] › e2e\lab-02\responsive-visual.spec.ts:283:7 › Login screenshots › default state @visual (6.8s)
+  ok  2 [desktop] › e2e\lab-02\responsive-visual.spec.ts:289:7 › Login screenshots › validation error state @visual (7.2s)
+  ok  3 [desktop] › e2e\lab-02\responsive-visual.spec.ts:297:7 › Login screenshots › failure state @visual (7.2s)
+  ok  4 [desktop] › e2e\lab-02\responsive-visual.spec.ts:316:7 › Create Ticket screenshots › initial state @visual (7.0s)
+  ok  5 [desktop] › e2e\lab-02\responsive-visual.spec.ts:326:7 › Create Ticket screenshots › validation error @visual (9.9s)
+  ok  6 [desktop] › e2e\lab-02\responsive-visual.spec.ts:338:7 › Create Ticket screenshots › submitting state @visual (11.3s)
+  ok  7 [desktop] › e2e\lab-02\responsive-visual.spec.ts:357:7 › Create Ticket screenshots › success state @visual (8.4s)
+  ok  8 [desktop] › e2e\lab-02\responsive-visual.spec.ts:371:7 › Create Ticket screenshots › api failure @visual (8.6s)
+  ok  9 [desktop] › e2e\lab-02\responsive-visual.spec.ts:394:7 › Create Ticket screenshots › invalid attachment @visual (10.4s)
+  ok 10 [desktop] › e2e\lab-02\responsive-visual.spec.ts:407:7 › Create Ticket screenshots › partial success attachment failure @visual (20.6s)
+  ok 11 [desktop] › e2e\lab-02\responsive-visual.spec.ts:451:7 › My Tickets screenshots › default state @visual (13.2s)
+  ok 12 [desktop] › e2e\lab-02\responsive-visual.spec.ts:457:7 › My Tickets screenshots › loading state @visual (8.1s)
+  ok 13 [desktop] › e2e\lab-02\responsive-visual.spec.ts:464:7 › My Tickets screenshots › empty state @visual (12.8s)
+  ok 14 [desktop] › e2e\lab-02\responsive-visual.spec.ts:470:7 › My Tickets screenshots › no-results state @visual (12.7s)
+  ok 15 [desktop] › e2e\lab-02\responsive-visual.spec.ts:480:7 › My Tickets screenshots › filtered state @visual (15.9s)
+  ok 16 [desktop] › e2e\lab-02\responsive-visual.spec.ts:488:7 › My Tickets screenshots › failure state @visual (12.7s)
+  ok 17 [desktop] › e2e\lab-02\responsive-visual.spec.ts:504:7 › Ticket Detail screenshots › default state @visual (16.2s)
+  ok 18 [desktop] › e2e\lab-02\responsive-visual.spec.ts:512:7 › Ticket Detail screenshots › loading state @visual (15.9s)
+  ok 19 [desktop] › e2e\lab-02\responsive-visual.spec.ts:521:7 › Ticket Detail screenshots › failure/not-found state @visual (15.8s)
+  ok 20 [desktop] › e2e\lab-02\responsive-visual.spec.ts:529:7 › Ticket Detail screenshots › attachment active @visual (16.2s)
+  ok 21 [desktop] › e2e\lab-02\responsive-visual.spec.ts:537:7 › Ticket Detail screenshots › attachment uploading @visual (19.5s)
+  ok 22 [desktop] › e2e\lab-02\responsive-visual.spec.ts:553:7 › Ticket Detail screenshots › attachment invalid @visual (19.3s)
+  ok 23 [desktop] › e2e\lab-02\responsive-visual.spec.ts:564:7 › Ticket Detail screenshots › attachment removed @visual (16.3s)
+  ok 24 [desktop] › e2e\lab-02\responsive-visual.spec.ts:573:7 › Ticket Detail screenshots › attachment unavailable @visual (18.0s)
+  ok 25 [desktop] › e2e\lab-02\responsive-visual.spec.ts:592:7 › Ticket Detail screenshots › preview modal @visual (19.8s)
+  ok 26 [desktop] › e2e\lab-02\responsive-visual.spec.ts:689:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets no horizontal scroll (7.6s)
+  x  27 [desktop] › e2e\lab-02\responsive-visual.spec.ts:699:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets table→card representation per breakpoint (8.0s)
+(node:12860) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok 28 [desktop] › e2e\lab-02\responsive-visual.spec.ts:717:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets mobile touch targets >= 44px (3.2s)
+  ok 29 [desktop] › e2e\lab-02\responsive-visual.spec.ts:730:7 › E2E-06/VISUAL-01: Responsive layout checks › Create Ticket responsive (3.5s)
+  ok 30 [desktop] › e2e\lab-02\responsive-visual.spec.ts:742:7 › E2E-06/VISUAL-01: Responsive layout checks › Create Ticket mobile touch targets >= 44px (1.8s)
+  ok 31 [desktop] › e2e\lab-02\responsive-visual.spec.ts:757:7 › E2E-06/VISUAL-01: Responsive layout checks › Login responsive (2.8s)
+  ok 32 [desktop] › e2e\lab-02\responsive-visual.spec.ts:770:7 › E2E-06/VISUAL-01: Responsive layout checks › Login mobile touch targets >= 44px (1.4s)
+  x  33 [desktop] › e2e\lab-02\responsive-visual.spec.ts:784:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail responsive (11.9s)
+(node:19840) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  x  34 [desktop] › e2e\lab-02\responsive-visual.spec.ts:801:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail mobile touch targets >= 44px (12.0s)
+(node:6924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok 35 [desktop] › e2e\lab-02\responsive-visual.spec.ts:815:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets no clipped labels or overlapping controls (8.1s)
+  ok 36 [desktop] › e2e\lab-02\responsive-visual.spec.ts:838:7 › E2E-06/VISUAL-01: Responsive layout checks › Create Ticket no clipped labels or overlapping controls (4.9s)
+  ok 37 [desktop] › e2e\lab-02\responsive-visual.spec.ts:854:7 › E2E-06/VISUAL-01: Responsive layout checks › Login no clipped labels or overlapping controls (3.6s)
+  x  38 [desktop] › e2e\lab-02\responsive-visual.spec.ts:867:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail no clipped labels or overlapping controls (12.1s)
+(node:20492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  ok 39 [desktop] › e2e\lab-02\responsive-visual.spec.ts:893:7 › E2E-06: Mobile hamburger navigation › desktop/tablet show normal navigation, hamburger hidden (3.5s)
+  ok 40 [desktop] › e2e\lab-02\responsive-visual.spec.ts:910:7 › E2E-06: Mobile hamburger navigation › mobile closed: hamburger visible >=44px, nav hidden, requester identity visible (2.0s)
+  ok 41 [desktop] › e2e\lab-02\responsive-visual.spec.ts:931:7 › E2E-06: Mobile hamburger navigation › mobile keyboard activation opens the menu with visible focus (2.1s)
+  ok 42 [desktop] › e2e\lab-02\responsive-visual.spec.ts:955:7 › E2E-06: Mobile hamburger navigation › mobile open: menu exposes My Tickets and Create Ticket, requester identity visible (2.1s)
+  ok 43 [desktop] › e2e\lab-02\responsive-visual.spec.ts:967:7 › E2E-06: Mobile hamburger navigation › mobile menu navigation closes the menu and shows the correct screen (2.6s)
+
+
+  1) [desktop] › e2e\lab-02\responsive-visual.spec.ts:699:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets table→card representation per breakpoint 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.tickets-table')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.tickets-table')
+
+
+      709 |       } else {
+      710 |         // Desktop/tablet: table visible, cards hidden/not used.
+    > 711 |         await expect(page.locator(".tickets-table")).toBeVisible();
+          |                                                      ^
+      712 |         await expect(page.locator(".ticket-card").first()).toBeHidden();
+      713 |       }
+      714 |     }
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-02\responsive-visual.spec.ts:711:54
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-02-responsive-visual-E-2dd31-presentation-per-breakpoint-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-02-responsive-visual-E-2dd31-presentation-per-breakpoint-desktop\error-context.md
+
+  2) [desktop] › e2e\lab-02\responsive-visual.spec.ts:784:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail responsive 
+
+    TimeoutError: locator.waitFor: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('tr:visible, .ticket-card:visible').filter({ hasText: 'Detail view test ticket' }).first() to be visible
+
+
+      247 | async function openTicketBySummary(page: Page, summary: string): Promise<void> {
+      248 |   const row = page.locator("tr:visible, .ticket-card:visible").filter({ hasText: summary }).first();
+    > 249 |   await row.waitFor({ state: "visible", timeout: 10000 });
+          |             ^
+      250 |   await row.locator("a").first().click();
+      251 |   await page.waitForTimeout(2000);
+      252 | }
+        at openTicketBySummary (C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-02\responsive-visual.spec.ts:249:13)
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-02\responsive-visual.spec.ts:790:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-02-responsive-visual-E-1f143-ks-Ticket-Detail-responsive-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-02-responsive-visual-E-1f143-ks-Ticket-Detail-responsive-desktop\error-context.md
+
+  3) [desktop] › e2e\lab-02\responsive-visual.spec.ts:801:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail mobile touch targets >= 44px 
+
+    TimeoutError: locator.waitFor: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('tr:visible, .ticket-card:visible').filter({ hasText: 'Detail view test ticket' }).first() to be visible
+
+
+      247 | async function openTicketBySummary(page: Page, summary: string): Promise<void> {
+      248 |   const row = page.locator("tr:visible, .ticket-card:visible").filter({ hasText: summary }).first();
+    > 249 |   await row.waitFor({ state: "visible", timeout: 10000 });
+          |             ^
+      250 |   await row.locator("a").first().click();
+      251 |   await page.waitForTimeout(2000);
+      252 | }
+        at openTicketBySummary (C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-02\responsive-visual.spec.ts:249:13)
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-02\responsive-visual.spec.ts:806:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-02-responsive-visual-E-2e834-l-mobile-touch-targets-44px-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-02-responsive-visual-E-2e834-l-mobile-touch-targets-44px-desktop\error-context.md
+
+  4) [desktop] › e2e\lab-02\responsive-visual.spec.ts:867:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail no clipped labels or overlapping controls 
+
+    TimeoutError: locator.waitFor: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('tr:visible, .ticket-card:visible').filter({ hasText: 'Detail view test ticket' }).first() to be visible
+
+
+      247 | async function openTicketBySummary(page: Page, summary: string): Promise<void> {
+      248 |   const row = page.locator("tr:visible, .ticket-card:visible").filter({ hasText: summary }).first();
+    > 249 |   await row.waitFor({ state: "visible", timeout: 10000 });
+          |             ^
+      250 |   await row.locator("a").first().click();
+      251 |   await page.waitForTimeout(2000);
+      252 | }
+        at openTicketBySummary (C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-02\responsive-visual.spec.ts:249:13)
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-02\responsive-visual.spec.ts:873:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-02-responsive-visual-E-cb0a8-els-or-overlapping-controls-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-02-responsive-visual-E-cb0a8-els-or-overlapping-controls-desktop\error-context.md
+
+  4 failed
+    [desktop] › e2e\lab-02\responsive-visual.spec.ts:699:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets table→card representation per breakpoint 
+    [desktop] › e2e\lab-02\responsive-visual.spec.ts:784:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail responsive 
+    [desktop] › e2e\lab-02\responsive-visual.spec.ts:801:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail mobile touch targets >= 44px 
+    [desktop] › e2e\lab-02\responsive-visual.spec.ts:867:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail no clipped labels or overlapping controls 
+  39 passed (7.4m)

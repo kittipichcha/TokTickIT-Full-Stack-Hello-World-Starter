@@ -1,0 +1,11 @@
+◇ injected env (1) from .env // tip: ⌘ suppress logs { quiet: true }
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/server
+
+NOTICE:  database "lab4e2e_issue54_test_20261006_staff_dash_test_25052" does not exist, skipping
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  22:12:18
+   Duration  59.32s (transform 812ms, setup 0ms, import 750ms, tests 58.10s, environment 0ms)
+
