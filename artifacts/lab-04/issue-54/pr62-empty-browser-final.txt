@@ -1,0 +1,70 @@
+◇ injected env (1) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+[WebServer] (node:4744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:26992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:27348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+
+Running 48 tests using 1 worker
+
+(node:24636) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  ok  1 [desktop] › e2e\lab-04\dashboards.spec.ts:108:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (4.4s)
+  ok  2 [desktop] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations (2.2s)
+  ok  3 [desktop] › e2e\lab-04\dashboards.spec.ts:166:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (4.0s)
+  ok  4 [desktop] › e2e\lab-04\dashboards.spec.ts:200:7 › E2E-02: role dashboards and exact destinations › Action21 remains editable when only the paginated Actions list fails and Retry never writes (4.6s)
+  ok  5 [desktop] › e2e\lab-04\dashboards.spec.ts:232:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (3.1s)
+  ok  6 [desktop] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (4.0s)
+  ok  7 [desktop] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (3.6s)
+  ok  8 [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (4.7s)
+  ok  9 [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.8s)
+  ok 10 [desktop] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.7s)
+  ok 11 [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (3.8s)
+  ok 12 [desktop] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (4.3s)
+  ok 13 [desktop] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.8s)
+  ok 14 [desktop] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.5s)
+  ok 15 [desktop] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.6s)
+  ok 16 [desktop] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.2s)
+(node:2816) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok 17 [tablet] › e2e\lab-04\dashboards.spec.ts:108:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (3.4s)
+  ok 18 [tablet] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations (2.3s)
+  ok 19 [tablet] › e2e\lab-04\dashboards.spec.ts:166:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (4.1s)
+  ok 20 [tablet] › e2e\lab-04\dashboards.spec.ts:200:7 › E2E-02: role dashboards and exact destinations › Action21 remains editable when only the paginated Actions list fails and Retry never writes (4.6s)
+  ok 21 [tablet] › e2e\lab-04\dashboards.spec.ts:232:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (3.0s)
+  ok 22 [tablet] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (3.8s)
+  ok 23 [tablet] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (3.6s)
+  ok 24 [tablet] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (4.3s)
+  ok 25 [tablet] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.9s)
+  ok 26 [tablet] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.7s)
+  ok 27 [tablet] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (3.7s)
+  ok 28 [tablet] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (4.2s)
+  ok 29 [tablet] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.7s)
+  ok 30 [tablet] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.5s)
+  ok 31 [tablet] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.5s)
+  ok 32 [tablet] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.2s)
+(node:22776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok 33 [mobile] › e2e\lab-04\dashboards.spec.ts:108:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (3.4s)
+  ok 34 [mobile] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations (2.2s)
+  ok 35 [mobile] › e2e\lab-04\dashboards.spec.ts:166:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (3.8s)
+  ok 36 [mobile] › e2e\lab-04\dashboards.spec.ts:200:7 › E2E-02: role dashboards and exact destinations › Action21 remains editable when only the paginated Actions list fails and Retry never writes (5.0s)
+  ok 37 [mobile] › e2e\lab-04\dashboards.spec.ts:232:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (3.0s)
+  ok 38 [mobile] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (4.8s)
+  ok 39 [mobile] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (4.9s)
+  ok 40 [mobile] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (5.2s)
+  ok 41 [mobile] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.9s)
+  ok 42 [mobile] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.5s)
+  ok 43 [mobile] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (4.6s)
+  ok 44 [mobile] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (5.0s)
+  ok 45 [mobile] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.7s)
+  ok 46 [mobile] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.2s)
+  ok 47 [mobile] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.8s)
+  ok 48 [mobile] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.3s)
+
+  48 passed (2.8m)

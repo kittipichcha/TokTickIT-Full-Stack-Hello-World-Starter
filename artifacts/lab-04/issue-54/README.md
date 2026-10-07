@@ -148,3 +148,32 @@ The following evidence commit contains no executable changes. Base-inclusive wor
 `git diff --check 6f8ffa0300362849a3f550573a4899a747046dc8` passes. After the evidence
 commit, `git diff --check 6f8ffa0300362849a3f550573a4899a747046dc8...HEAD` also passed
 with exit 0, verifying the complete committed PR including normalized historical logs.
+
+## Human-review zero-metric follow-up (2026-10-07, Asia/Bangkok)
+
+[@oangsa approved PR #62 with a non-blocking follow-up](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/62#pullrequestreview-5443358420)
+at `f83f51f45904daec56a871b41bd690b2536a3b9e`: zero metric cards require concise empty copy.
+Tested source `1a63e75d3d244041b9d9f163adc093501d57a32f` adds `No matching Tickets`
+to zero Ticket cards and `No matching Actions` to the two zero count-only Action cards.
+Nonzero cards, counts, accessible names and destinations are preserved; Action cards remain
+noninteractive. The subsequent documentation/evidence commit changes no executable source.
+
+- `pr62-empty-focused.txt`: canonical Requester/Staff dashboard component tests, 13 passed.
+- `pr62-empty-client-full.txt`: complete client suite, 364 tests in 23 files passed,
+  zero failed/skipped, 85.83 seconds.
+- `pr62-empty-client-build.txt`: TypeScript/Vite production build passed.
+- `pr62-empty-browser-final.txt`: dashboard, keyboard and responsive checks,
+  48 passed across desktop/tablet/mobile, zero failed/skipped, exit 0, 2.8 minutes.
+- `pr62-empty-browser-initial.txt`: diagnostic 45 passed/3 failed. A global empty-list
+  text count also matched four new card messages; scoping the original two-list check
+  and separately asserting four card messages corrected the test without weakening it.
+- `pr62-empty-executable-sha256.json`: the same 176-path inventory, SHA-256 of raw
+  Windows working-tree bytes including actual line endings. Prior inventories are historical.
+
+Independent source/test and human-record review found no blocker. Mobile empty-state image
+inspection and existing responsive geometry checks confirmed wrapping; all 27 generated
+tracked screenshots were restored. `git diff --check 6f8ffa0300362849a3f550573a4899a747046dc8`
+passed for the complete working tree. Previous full-browser (270) and backend (681) results
+remain historical; those complete suites were not rerun for this copy-only UI change.
+No server, schema, migration, dependency or authorization change was made. The submitted
+human approval applies to its reviewed head, without implying review of these later commits.
