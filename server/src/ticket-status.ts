@@ -25,6 +25,9 @@ export type TicketStatus =
   | "REOPENED"
   | "CANCELLED";
 
+/** BR-17 dashboard/list open population. */
+export const OPEN_TICKET_STATUSES = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] as const;
+
 /**
  * The frozen transition table (specification.md §7), excluding the
  * "Any non-Cancelled → Cancelled" row which is applied uniformly below.

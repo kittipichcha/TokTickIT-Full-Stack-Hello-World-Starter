@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { DashboardFilterError, parseRequesterDashboardFilters } from "./ticket-dashboard-filters.js";
 import {
   getActiveRelatedSystems,
   getCategories,
@@ -283,6 +284,7 @@ export async function createTicketHandler(req: Request, res: Response): Promise<
 
 export async function getMyTicketsHandler(req: Request, res: Response): Promise<void> {
   try {
+    const extensions = parseRequesterDashboardFilters(req.query);
     const requesterId = res.locals.userId as number;
 
     // Parse query params using first-value semantics for duplicates
@@ -399,6 +401,7 @@ export async function getMyTicketsHandler(req: Request, res: Response): Promise<
     }
 
     const result = await getMyTickets(requesterId, {
+      ...extensions,
       search: activeSearch,
       categoryId,
       requestedPriority,
@@ -411,6 +414,10 @@ export async function getMyTicketsHandler(req: Request, res: Response): Promise<
 
     res.status(200).json(result);
   } catch (err) {
+    if (err instanceof DashboardFilterError) {
+      res.status(400).json({ error: { code: "VALIDATION_ERROR", message: err.message, fields: err.fields } });
+      return;
+    }
     res.status(500).json({
       error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
     });

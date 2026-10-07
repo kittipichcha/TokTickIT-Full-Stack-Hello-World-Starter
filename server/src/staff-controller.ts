@@ -12,6 +12,7 @@
  */
 
 import { Request, Response } from "express";
+import { DashboardFilterError } from "./ticket-dashboard-filters.js";
 import {
   getStaffQueue,
   parseQueueQuery,
@@ -100,9 +101,13 @@ function respondWithError(res: Response, err: unknown): void {
 export async function staffQueueHandler(req: Request, res: Response): Promise<void> {
   try {
     const params = parseQueueQuery(req.query);
-    const result = await getStaffQueue(params);
+    const result = await getStaffQueue(params, res.locals.userId as number);
     res.status(200).json(result);
-  } catch {
+  } catch (err) {
+    if (err instanceof DashboardFilterError) {
+      res.status(400).json({ error: { code: "VALIDATION_ERROR", message: err.message, fields: err.fields } });
+      return;
+    }
     res.status(500).json(INTERNAL_ERROR_BODY);
   }
 }
