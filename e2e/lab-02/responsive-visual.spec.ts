@@ -229,6 +229,11 @@ async function screenshotAllViewports(page: Page, basePath: string, action: () =
   for (const vp of VIEWPORTS) {
     await page.setViewportSize({ width: vp.width, height: vp.height });
     await page.goto("/");
+    // Lab 4 changes the landing destination; preserve every existing list/detail scenario.
+    if (basePath.startsWith("my-tickets/") || basePath.startsWith("ticket-detail/")) {
+      await expect(page.getByRole("heading", { name: "Requester Dashboard", exact: true })).toBeVisible();
+      await clickNavLink(page, "My Tickets");
+    }
     await action();
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `artifacts/lab-02/screenshots/${basePath}/${vp.name}.png`, fullPage: true });
@@ -685,7 +690,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await setupApiMocks(page, context, { ticketData: sampleTickets });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(2000);
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await clickNavLink(page, "My Tickets"); await page.waitForTimeout(2000);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(overflow, `${vp.name}: no horizontal scroll`).toBe(false);
     }
@@ -695,7 +700,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await setupApiMocks(page, context, { ticketData: sampleTickets });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(2000);
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await clickNavLink(page, "My Tickets"); await page.waitForTimeout(2000);
       const isMobile = vp.width < 768;
       if (isMobile) {
         // Mobile: table hidden, ticket cards visible.
@@ -712,7 +717,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
   test("My Tickets mobile touch targets >= 44px", async ({ page, context }) => {
     await setupApiMocks(page, context, { ticketData: sampleTickets });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(2000);
+    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await clickNavLink(page, "My Tickets"); await page.waitForTimeout(2000);
     await assertTouchTargets(page, [
       "button:has-text('Logout')",
       ".ticket-card-toggle",
@@ -781,7 +786,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await clickNavLink(page, "My Tickets"); await page.waitForTimeout(1000);
       await openTicketBySummary(page, "Detail view test ticket");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(overflow, `${vp.name}: Ticket Detail no horizontal scroll`).toBe(false);
@@ -797,7 +802,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     const dt = makeDetailTicket(1, activeAttachments);
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+    await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await clickNavLink(page, "My Tickets"); await page.waitForTimeout(1000);
     await openTicketBySummary(page, "Detail view test ticket");
     await assertTouchTargets(page, [
       "button:has-text('Preview')",
@@ -811,7 +816,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await setupApiMocks(page, context, { ticketData: sampleTickets });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(2000);
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await clickNavLink(page, "My Tickets"); await page.waitForTimeout(2000);
       await assertNoClippedText(page, [
         "button:has-text('Logout')",
         ".ticket-card-toggle",
@@ -864,7 +869,7 @@ test.describe("E2E-06/VISUAL-01: Responsive layout checks", () => {
     await setupApiMocks(page, context, { ticketData: [makeTicket(1, { summary: "Detail view test ticket" })], detailTicket: dt, attachmentData: activeAttachments });
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await page.waitForTimeout(1000);
+      await page.goto("/"); await page.waitForSelector(".app-shell", { timeout: 10000 }); await clickNavLink(page, "My Tickets"); await page.waitForTimeout(1000);
       await openTicketBySummary(page, "Detail view test ticket");
       await assertNoClippedText(page, [
         "button:has-text('Preview')", "button:has-text('Download')",

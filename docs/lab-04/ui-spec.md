@@ -1,6 +1,7 @@
-# Lab 4 UI Contract — Draft for Human Review
+# Lab 4 UI Contract — Approved Contract
 
-> Contract only. No Lab 4 screen or interaction is claimed as implemented.
+> Approved contract from merged PR #58. This document defines required behavior;
+> runtime implementation and verification evidence are tracked by the owning issues and `tests.md`.
 
 ## 1. Shared visual and interaction rules
 

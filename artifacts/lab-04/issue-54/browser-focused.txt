@@ -1,0 +1,207 @@
+◇ injected env (1) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+[WebServer] (node:4208) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:22264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:8404) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+
+Running 33 tests using 1 worker
+
+(node:28092) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok  1 [desktop] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (4.2s)
+  ok  2 [desktop] › e2e\lab-04\dashboards.spec.ts:73:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (4.4s)
+  ok  3 [desktop] › e2e\lab-04\dashboards.spec.ts:100:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (3.4s)
+  ok  4 [desktop] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (5.4s)
+  ok  5 [desktop] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (4.1s)
+  ok  6 [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (5.8s)
+  ok  7 [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (2.0s)
+  ok  8 [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (4.3s)
+  ok  9 [desktop] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (4.9s)
+  ok 10 [desktop] › e2e\lab-04\responsive-visual.spec.ts:149:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.2s)
+  ok 11 [desktop] › e2e\lab-04\responsive-visual.spec.ts:149:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (3.4s)
+(node:25400) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok 12 [tablet] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (3.6s)
+  ok 13 [tablet] › e2e\lab-04\dashboards.spec.ts:73:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (3.5s)
+[WebServer] (node:25452) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+  ok 14 [tablet] › e2e\lab-04\dashboards.spec.ts:100:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (4.4s)
+  ok 15 [tablet] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (4.8s)
+  ok 16 [tablet] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (5.2s)
+  ok 17 [tablet] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (6.3s)
+  ok 18 [tablet] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (2.1s)
+  ok 19 [tablet] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (4.6s)
+  ok 20 [tablet] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (5.5s)
+  ok 21 [tablet] › e2e\lab-04\responsive-visual.spec.ts:149:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.3s)
+  ok 22 [tablet] › e2e\lab-04\responsive-visual.spec.ts:149:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (3.2s)
+(node:25044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x  23 [mobile] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (8.0s)
+(node:17272) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x  24 [mobile] › e2e\lab-04\dashboards.spec.ts:73:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (9.1s)
+(node:28616) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x  25 [mobile] › e2e\lab-04\dashboards.spec.ts:100:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (7.9s)
+(node:25248) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok 26 [mobile] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (6.9s)
+  ok 27 [mobile] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (5.0s)
+  ok 28 [mobile] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (6.4s)
+  x  29 [mobile] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (6.9s)
+(node:9716) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+  ok 30 [mobile] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (6.3s)
+  ok 31 [mobile] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (7.9s)
+  ok 32 [mobile] › e2e\lab-04\responsive-visual.spec.ts:149:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.7s)
+  ok 33 [mobile] › e2e\lab-04\responsive-visual.spec.ts:149:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (3.4s)
+
+
+  1) [mobile] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('#primary-navigation').getByRole('link')
+    Timeout: 5000ms
+    - Expected  - 5
+    + Received  + 1
+
+    - Array [
+    -   "Dashboard",
+    -   "My Tickets",
+    -   "Create Ticket",
+    - ]
+    + Array []
+
+    Call log:
+      - Expect "toHaveText" with timeout 5000ms
+      - waiting for locator('#primary-navigation').getByRole('link')
+        14 × locator resolved to 0 elements
+
+
+      54 |     const data = await dashboard(page, "requester", USERS.requester.email);
+      55 |     expect(data.counts.openTickets).toBe(1);
+    > 56 |     expect(data.counts.waitingForRequester).toBe(1);
+         |                                                     ^
+      57 |     await expect(page.locator("#primary-navigation").getByRole("link")).toHaveText(["Dashboard", "My Tickets", "Create Ticket"]);
+      58 |     const listResponse = page.waitForResponse(response => {
+      59 |       const url = new URL(response.url());
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\dashboards.spec.ts:56:73
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-dashboards-E2E-02-r-5787c-ered-My-Tickets-destination-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-dashboards-E2E-02-r-5787c-ered-My-Tickets-destination-mobile\error-context.md
+
+  2) [mobile] › e2e\lab-04\dashboards.spec.ts:73:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('#primary-navigation').getByRole('link', { name: 'Ticket Queue', exact: true })
+    Expected: "page"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 5000ms
+      - waiting for locator('#primary-navigation').getByRole('link', { name: 'Ticket Queue', exact: true })
+
+
+      92 |     const selected = page.getByRole("region", { name: "Selected Action", exact: true });
+      93 |     await expect(selected).toContainText(`${marker} Action 21`);
+    > 94 |     await expect(selected).toBeFocused();
+         |                                          ^
+      95 |     await expect(page.locator("#primary-navigation").getByRole("link", { name: "Ticket Queue", exact: true })).toHaveAttribute("aria-current", "page");
+      96 |     await expect(page.locator('form[aria-label="Edit Action"]')).toHaveCount(0);
+      97 |     expect(writes).toEqual([]);
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\dashboards.spec.ts:94:112
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-dashboards-E2E-02-r-14107-xact-detail-without-writing-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-dashboards-E2E-02-r-14107-xact-detail-without-writing-mobile\error-context.md
+
+  3) [mobile] › e2e\lab-04\dashboards.spec.ts:100:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('#primary-navigation').getByRole('link')
+    Timeout: 5000ms
+    - Expected  - 5
+    + Received  + 1
+
+    - Array [
+    -   "Dashboard",
+    -   "Ticket Queue",
+    -   "User Management",
+    - ]
+    + Array []
+
+    Call log:
+      - Expect "toHaveText" with timeout 5000ms
+      - waiting for locator('#primary-navigation').getByRole('link')
+        14 × locator resolved to 0 elements
+
+
+      103 |     const data = await dashboard(page, "staff", USERS.admin.email);
+      104 |     expect(Object.keys(data.counts.byStatus)).toHaveLength(8);
+    > 105 |     expect(Object.keys(data.counts.byPriority)).toHaveLength(3);
+          |                                                                 ^
+      106 |     await expect(page.locator("#primary-navigation").getByRole("link")).toHaveText(["Dashboard", "Ticket Queue", "User Management"]);
+      107 |     await navigate(page, "User Management");
+      108 |     await expect(page.getByRole("heading", { name: "User Management", exact: true })).toBeVisible();
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\dashboards.spec.ts:105:73
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-dashboards-E2E-02-r-8282e--User-Management-navigation-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-dashboards-E2E-02-r-8282e--User-Management-navigation-mobile\error-context.md
+
+  4) [mobile] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('#primary-navigation').getByRole('link', { name: 'My Tickets', exact: true })
+    Expected: "page"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 5000ms
+      - waiting for locator('#primary-navigation').getByRole('link', { name: 'My Tickets', exact: true })
+
+
+      198 |   await page.keyboard.press("Enter");
+      199 |   await expect(page.getByRole("searchbox", { name: "Search tickets" })).toBeVisible();
+    > 200 |   await expect(page.locator("#primary-navigation").getByRole("link", { name: "My Tickets", exact: true })).toHaveAttribute("aria-current", "page");
+          |                                                                                                            ^
+      201 |   await navigateByKeyboard(page, "Dashboard", page.getByRole("heading", { name: "Requester Dashboard", exact: true }));
+      202 |   await expect(page.locator("#primary-navigation").getByRole("link", { name: "Dashboard", exact: true })).toHaveAttribute("aria-current", "page");
+      203 |   const hamburger = page.locator(".hamburger");
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\keyboard-access.spec.ts:200:108
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-keyboard-access-A11-901cd-es-active-mobile-navigation-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-keyboard-access-A11-901cd-es-active-mobile-navigation-mobile\error-context.md
+
+  4 failed
+    [mobile] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination
+    [mobile] › e2e\lab-04\dashboards.spec.ts:73:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing
+    [mobile] › e2e\lab-04\dashboards.spec.ts:100:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation
+    [mobile] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation
+  29 passed (3.1m)

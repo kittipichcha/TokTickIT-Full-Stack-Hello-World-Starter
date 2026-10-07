@@ -76,6 +76,8 @@ async function setupAuthenticatedApp() {
   vi.mocked(api.fetchRelatedSystems).mockImplementation(async () => relatedSystems);
 
   render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
   await screen.findByText("TokTickIT");
 }

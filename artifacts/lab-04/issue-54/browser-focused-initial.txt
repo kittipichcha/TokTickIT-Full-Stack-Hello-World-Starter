@@ -1,0 +1,161 @@
+◇ injected env (1) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+[WebServer] (node:28588) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:26264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:24148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+Running 11 tests using 1 worker
+
+(node:19156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x   1 [desktop] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (19.3s)
+(node:5956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ok  2 [desktop] › e2e\lab-04\dashboards.spec.ts:73:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (3.4s)
+  ok  3 [desktop] › e2e\lab-04\dashboards.spec.ts:100:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (2.9s)
+  ok  4 [desktop] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (5.1s)
+  ok  5 [desktop] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (4.3s)
+  x   6 [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (9.3s)
+(node:28008) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x   7 [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (7.3s)
+(node:27928) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ override existing { override: true }
+  x   8 [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (9.4s)
+(node:12988) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok  9 [desktop] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (5.2s)
+  ok 10 [desktop] › e2e\lab-04\responsive-visual.spec.ts:149:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.3s)
+  ok 11 [desktop] › e2e\lab-04\responsive-visual.spec.ts:149:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (3.0s)
+
+
+  1) [desktop] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'TKT-2054-109814', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'TKT-2054-109814', exact: true })
+
+
+      64 |     expect((await list.json()).pagination.totalItems).toBe(data.counts.openTickets);
+      65 |     await page.getByRole("link", { name: ticketNumber, exact: true }).first().click();
+    > 66 |     await expect(page.getByRole("heading", { name: ticketNumber, exact: true })).toBeVisible();
+         |                                                                                  ^
+      67 |     await expect(page.locator("#primary-navigation").getByRole("link", { name: "My Tickets", exact: true })).toHaveAttribute("aria-current", "page");
+      68 |     await expect(page.getByRole("button", { name: "Add Action" })).toHaveCount(0);
+      69 |     await navigate(page, "Dashboard");
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\dashboards.spec.ts:66:82
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-dashboards-E2E-02-r-5787c-ered-My-Tickets-destination-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-dashboards-E2E-02-r-5787c-ered-My-Tickets-destination-desktop\error-context.md
+
+  2) [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('section[aria-label="Actions Taken"]').locator('li.action-card').filter({ hasText: 'Keyboard status smoke Action.' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('section[aria-label="Actions Taken"]').locator('li.action-card').filter({ hasText: 'Keyboard status smoke Action.' })
+
+
+      155 |       .locator("li.action-card")
+      156 |       .filter({ hasText: "Keyboard status smoke Action." });
+    > 157 |     await expect(card).toBeVisible();
+          |                        ^
+      158 |     // Status is conveyed as text, never colour alone.
+      159 |     await expect(card.locator(".action-status-badge")).toHaveText("Pending");
+      160 |
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\keyboard-access.spec.ts:157:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-keyboard-access-A11-77fb5-it-in-a-labelled-radiogroup-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-keyboard-access-A11-77fb5-it-in-a-labelled-radiogroup-desktop\error-context.md
+
+  3) [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'My Tickets', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'My Tickets', exact: true })
+
+
+      197 |   await tabTo(page, card);
+      198 |   await page.keyboard.press("Enter");
+    > 199 |   await expect(page.getByRole("heading", { name: "My Tickets", exact: true })).toBeVisible();
+          |                                                                                ^
+      200 |   await navigateByKeyboard(page, "Dashboard", page.getByRole("heading", { name: "Requester Dashboard", exact: true }));
+      201 |   await expect(page.locator("#primary-navigation").getByRole("link", { name: "Dashboard", exact: true })).toHaveAttribute("aria-current", "page");
+      202 |   const hamburger = page.locator(".hamburger");
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\keyboard-access.spec.ts:199:80
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-keyboard-access-A11-901cd-es-active-mobile-navigation-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-keyboard-access-A11-901cd-es-active-mobile-navigation-desktop\error-context.md
+
+  4) [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('section[aria-label="Actions Taken"]').locator('li.action-card').filter({ hasText: 'Responsive smoke Action for VISUAL-01.' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('section[aria-label="Actions Taken"]').locator('li.action-card').filter({ hasText: 'Responsive smoke Action for VISUAL-01.' })
+
+
+      81 |       .locator("li.action-card")
+      82 |       .filter({ hasText: "Responsive smoke Action for VISUAL-01." });
+    > 83 |     await expect(card).toBeVisible();
+         |                        ^
+      84 |     await expectControlInViewport(page, card.locator(".action-status-badge"));
+      85 |     // A freshly created Action is Pending, so its footer control is Edit Action.
+      86 |     await expectControlInViewport(page, card.getByRole("button", { name: "Edit Action" }));
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\responsive-visual.spec.ts:83:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-desktop\error-context.md
+
+  4 failed
+    [desktop] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination
+    [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup
+    [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation
+    [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport
+  7 passed (1.5m)

@@ -58,6 +58,9 @@ export interface MyTicketsResponse {
 }
 
 export interface MyTicketsParams {
+  scope?: "open";
+  updatedSince?: string;
+  resolvedSince?: string;
   search?: string;
   categoryId?: number;
   requestedPriority?: string;
@@ -135,6 +138,9 @@ export async function fetchMyTickets(
 ): Promise<MyTicketsResponse> {
   const url = new URL("/api/tickets", "http://placeholder.invalid");
 
+  if (params.scope !== undefined) url.searchParams.set("scope", String(params.scope));
+  if (params.updatedSince !== undefined) url.searchParams.set("updatedSince", String(params.updatedSince));
+  if (params.resolvedSince !== undefined) url.searchParams.set("resolvedSince", String(params.resolvedSince));
   if (params.search) url.searchParams.set("search", params.search);
   if (params.categoryId !== undefined) url.searchParams.set("categoryId", String(params.categoryId));
   if (params.requestedPriority) url.searchParams.set("requestedPriority", params.requestedPriority);
@@ -374,6 +380,9 @@ export interface StaffQueueResponse {
 }
 
 export interface StaffQueueParams {
+  ownerScope?: "me" | "unassigned";
+  openOnly?: boolean | "true" | "false";
+  updatedSince?: string;
   search?: string;
   status?: string;
   priority?: string;
@@ -389,6 +398,9 @@ export async function fetchStaffQueue(
   params: StaffQueueParams = {},
 ): Promise<StaffQueueResponse> {
   const url = new URL("/api/staff/queue", "http://placeholder.invalid");
+  if (params.ownerScope !== undefined) url.searchParams.set("ownerScope", String(params.ownerScope));
+  if (params.updatedSince !== undefined) url.searchParams.set("updatedSince", String(params.updatedSince));
+  if (params.openOnly !== undefined) url.searchParams.set("openOnly", String(params.openOnly));
   if (params.search) url.searchParams.set("search", params.search);
   if (params.status) url.searchParams.set("status", params.status);
   if (params.priority) url.searchParams.set("priority", params.priority);

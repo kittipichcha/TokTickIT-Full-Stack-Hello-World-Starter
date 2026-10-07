@@ -1,4 +1,6 @@
 import { getPrisma } from "./prisma.js";
+import { OPEN_TICKET_STATUSES } from "./ticket-status.js";
+import { parseStaffDashboardFilters } from "./ticket-dashboard-filters.js";
 import { allocateTicketNumberWithClient, TicketSequenceExhaustedError } from "./ticket-number.js";
 import { MAX_DATABASE_ID } from "./id-domain.js";
 import type { Role } from "@prisma/client";
@@ -388,6 +390,9 @@ export interface MyTicketsResult {
 }
 
 export interface MyTicketsParams {
+  scope?: "open";
+  updatedSince?: Date;
+  resolvedSince?: Date;
   search?: string;
   categoryId?: number;
   requestedPriority?: string;
@@ -438,6 +443,18 @@ export async function getMyTickets(
     paramIndex++;
   }
 
+  if (params.scope === "open") {
+    conditions.push(`t."currentStatus" = ANY($${paramIndex}::"TicketStatus"[])`);
+    filterValues.push([...OPEN_TICKET_STATUSES]); paramIndex++;
+  }
+  for (const [column, instant] of [["updatedAt", params.updatedSince], ["resolvedAt", params.resolvedSince]] as const) {
+    if (instant !== undefined) {
+      conditions.push(`t."${column}" >= $${paramIndex}`);
+      filterValues.push(instant);
+      paramIndex++;
+    }
+  }
+  if (params.resolvedSince !== undefined) conditions.push(`t."currentStatus" = 'RESOLVED' AND t."resolvedAt" IS NOT NULL`);
   const whereClause = conditions.join(" AND ");
 
   // Count filtered results
@@ -592,6 +609,9 @@ export interface StaffQueueResult {
 }
 
 export interface StaffQueueParams {
+  ownerScope?: "me" | "unassigned";
+  openOnly?: boolean;
+  updatedSince?: Date;
   search?: string;
   status?: string;
   priority?: string;
@@ -613,8 +633,8 @@ function firstQueryValue(val: unknown): string | undefined {
  * Parses and validates the Staff Queue query string (api-spec §15).
  *
  * Frozen rule: **invalid query values fall back to safe defaults and never
- * return `400`** — they are treated as absent. This function therefore never
- * throws; every branch returns a usable value.
+ * return `400`** — they are treated as absent. Lab 4 extensions are validated
+ * separately and may throw DashboardFilterError; legacy branches retain defaults.
  *
  * - `search`: trimmed; empty/whitespace-only → absent.
  * - `status` / `priority`: applied only when the value is exactly in the enum;
@@ -629,6 +649,7 @@ function firstQueryValue(val: unknown): string | undefined {
  */
 export function parseQueueQuery(query: unknown): StaffQueueParams {
   const q = (query ?? {}) as Record<string, unknown>;
+  const extensions = parseStaffDashboardFilters(q);
 
   const rawSearch = firstQueryValue(q.search) ?? "";
   const search = rawSearch.trim();
@@ -686,6 +707,7 @@ export function parseQueueQuery(query: unknown): StaffQueueParams {
 
   return {
     search: search.length > 0 ? search : undefined,
+    ...extensions,
     status,
     priority,
     ownerId,
@@ -709,7 +731,7 @@ export function parseQueueQuery(query: unknown): StaffQueueParams {
  * Migrated Lab 2 rows (`ticketOwnerId IS NULL`, `itPriority` backfilled by #35)
  * are returned normally — the queue never hides a ticket because it is unowned.
  */
-export async function getStaffQueue(params: StaffQueueParams): Promise<StaffQueueResult> {
+export async function getStaffQueue(params: StaffQueueParams, actorId?: number): Promise<StaffQueueResult> {
   const prisma = getPrisma();
 
   // Unfiltered total: every ticket in the system (no requester scoping).
@@ -745,6 +767,22 @@ export async function getStaffQueue(params: StaffQueueParams): Promise<StaffQueu
     paramIndex++;
   }
 
+  if (params.ownerScope === "unassigned") conditions.push(`t."ticketOwnerId" IS NULL`);
+  if (params.ownerScope === "me") {
+    if (actorId === undefined) throw new Error("Authenticated Queue actor is required.");
+    conditions.push(`t."ticketOwnerId" = $${paramIndex}`);
+    filterValues.push(actorId);
+    paramIndex++;
+  }
+  if (params.openOnly) {
+    conditions.push(`t."currentStatus" = ANY($${paramIndex}::"TicketStatus"[])`);
+    filterValues.push([...OPEN_TICKET_STATUSES]); paramIndex++;
+  }
+  if (params.updatedSince !== undefined) {
+    conditions.push(`t."updatedAt" >= $${paramIndex}`);
+    filterValues.push(params.updatedSince);
+    paramIndex++;
+  }
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const countRows = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(

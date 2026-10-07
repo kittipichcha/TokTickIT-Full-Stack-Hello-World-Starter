@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { requesterDashboardHandler, staffDashboardHandler } from "./dashboard-controller.js";
 import multer from "multer";
 import {
   getCategoriesHandler,
@@ -59,6 +60,8 @@ import {
 } from "./action-controller.js";
 
 export const router = Router();
+router.get("/requester/dashboard", requireAuth, requirePasswordChanged, requireRole(["REQUESTER"]), requesterDashboardHandler);
+router.get("/staff/dashboard", requireAuth, requirePasswordChanged, requireRole(["IT_STAFF", "ADMINISTRATOR"]), staffDashboardHandler);
 
 // ---- Lab 3 auth endpoints (Issue #35) ----
 // Gate exemptions (frozen): login public; me/logout/change-password authenticated,

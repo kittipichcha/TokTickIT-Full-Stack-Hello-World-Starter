@@ -31,8 +31,35 @@ styling, and Lab 4 browser evidence under `e2e/lab-04/`. The existing Staff Tick
 Issue #53 adds the complete Ticket transition matrix, atomic Pending-Action resolution gate,
 shared Ticket version for owner/priority/status writes, resolution timestamps, and immutable
 paginated status history. Staff controls send `expectedVersion`, retain recoverable inputs on
-conflict, and require a successful refresh before an explicit retry. Dashboards and final Lab 4
-release hardening remain owned by #54–#55.
+conflict, and require a successful refresh before an explicit retry. Issue #54 adds role
+dashboards; final Lab 4 release hardening remains owned by #55.
+
+Issue #54 makes Requester Dashboard the Requester landing screen and Staff Dashboard the
+Staff/Administrator landing screen. Counts come from repeatable-read database snapshots,
+with at most 10 concise rows per summary list. Recent means the last seven rolling 24-hour
+days in UTC; recent resolution uses known `resolvedAt`, never a fabricated legacy date.
+Action count cards are informational; individual Action links open the exact current Action
+on Ticket Detail even when it is beyond the first list page. Existing My Tickets, Create
+Ticket, Queue, and Administrator User Management remain available in primary navigation.
+
+Dashboard routes (authenticated session and completed password change required):
+
+- `GET /api/requester/dashboard` — Requester-only, own Ticket counts and summaries.
+- `GET /api/staff/dashboard` — Staff/Administrator, operational Ticket and caller-specific Action metrics.
+
+My Tickets accepts `scope=open`, `updatedSince`, and `resolvedSince` in addition to its
+existing filters. `scope` and `status` are mutually exclusive. Queue accepts
+`ownerScope=me|unassigned`, `openOnly=true|false`, and `updatedSince`; `ownerScope` and
+`ownerId` are mutually exclusive. New date filters accept valid ISO UTC timestamps (`Z`
+or `+00:00`); malformed extensions return 400. All supplied filters combine with AND.
+Clear Filters clears the complete destination filter; normal list navigation starts unfiltered.
+
+Dashboard demonstration: sign in as each role, open a Ticket count card, inspect the active
+filters, then return to Dashboard. Staff can open an individual Pending/Recently Performed
+Action link to inspect its selected current detail before explicitly choosing Edit or View.
+Seed additions demonstrate Reopened urgent, Cancelled, known recent/old resolution dates,
+and distinct Action performer/assignee identities; repeat seeds preserve existing edits.
+Verification and Issue #55 handoff are recorded in `artifacts/lab-04/issue-54/README.md`.
 
 Issue #53 extends `POST /api/staff/tickets/:ticketNumber/owner`,
 `PATCH /api/staff/tickets/:ticketNumber/priority`, and
@@ -378,6 +405,11 @@ using any result as release evidence.
 
 ## 8. API Implemented Today
 
+Lab 4 role dashboards are `GET /api/requester/dashboard` (Requester) and
+`GET /api/staff/dashboard` (Staff/Administrator). Their exact count, summary and drill-down
+schemas are frozen in `docs/lab-04/api-spec.md` §§10–11. Both are read-only; no reporting
+or export endpoint is added.
+
 > **Superseded in Lab 3 (Issues #35 / #37).** The `X-Dev-Requester-Id` header and the
 > `GET /api/dev-requesters` / `GET /api/requester-context` endpoints were removed.
 > `GET /api/categories`, `GET /api/related-systems`, and all Ticket/Attachment routes
@@ -593,7 +625,7 @@ CSRF.
 
 | Method | Endpoint | Auth | Notes |
 |---|---|---|---|
-| GET | `/api/staff/queue` | IT Staff / Administrator | Search, status/priority/owner filters, sort, pagination. Invalid query values fall back to safe defaults and never return `400`. |
+| GET | `/api/staff/queue` | IT Staff / Administrator | Search, status/priority/owner filters, sort, pagination. Legacy invalid query values retain safe defaults. Invalid Lab 4 `ownerScope`, `openOnly`, `updatedSince`, or mutually exclusive owner filters return `400`. |
 | GET | `/api/staff/owners` | IT Staff / Administrator | Eligible Ticket-owner set: active IT Staff/Administrators as `{id, name, role}`. Read-only; no credential field. |
 | GET | `/api/staff/tickets/:ticketNumber` | IT Staff / Administrator | Staff Ticket Detail, including Public Comments and Internal Notes. |
 | POST | `/api/staff/tickets/:ticketNumber/owner` | IT Staff / Administrator + CSRF | Claim/assign/reassign. `ownerId` must reference an active IT Staff/Administrator. Last-write-wins; no unassign. |

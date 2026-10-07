@@ -1513,3 +1513,127 @@ describe("UI-ACT-01 — Safe rendering and accessibility (AC-07, AC-21, FR-18)",
     expect(api.createTicketAction).not.toHaveBeenCalled();
   });
 });
+import SelectedDashboardAction from "../SelectedDashboardAction";
+describe("UI-DASH-01 exact Action destination (Issue #54)", () => {
+ it("respects focus moved after detail resolves but before its scheduled frame and cancels cleanup", async()=>{
+  const frames: FrameRequestCallback[]=[];
+  const raf=vi.spyOn(window,"requestAnimationFrame").mockImplementation(callback=>{frames.push(callback);return frames.length;});
+  const cancel=vi.spyOn(window,"cancelAnimationFrame").mockImplementation(()=>{});
+  try {
+   vi.mocked(api.fetchActionDetail).mockResolvedValue(staffAction({id:21}));
+   const {unmount}=render(<><button>Keep focus</button><SelectedDashboardAction ticketNumber={TICKET} actionId={21} onOpen={vi.fn()}/></>);
+   await screen.findByRole("button",{name:"Edit Action"});
+   expect(frames).toHaveLength(1);
+   const panel=screen.getByRole("region",{name:"Selected Action"});
+   const scroll=vi.fn();
+   panel.scrollIntoView=scroll;
+   const keep=screen.getByRole("button",{name:"Keep focus"});
+   keep.focus();
+   act(()=>frames[0](0));
+   expect(document.activeElement).toBe(keep);
+   expect(scroll).not.toHaveBeenCalled();
+   unmount();
+   expect(cancel).toHaveBeenCalledWith(1);
+   act(()=>frames[0](0));
+  } finally {raf.mockRestore();cancel.mockRestore();}
+ });
+ it("cancels the scheduled focus on unmount and an independently captured stale callback cannot focus or scroll",async()=>{
+  let frame!:FrameRequestCallback;
+  const raf=vi.spyOn(window,"requestAnimationFrame").mockImplementation(callback=>{frame=callback;return 42;});
+  const cancel=vi.spyOn(window,"cancelAnimationFrame").mockImplementation(()=>{});
+  try {
+   const {unmount}=render(<SelectedDashboardAction ticketNumber={TICKET} actionId={21} onOpen={vi.fn()}/>);
+   await screen.findByRole("button",{name:"Edit Action"});
+   const panel=screen.getByRole("region",{name:"Selected Action"});
+   const focus=vi.spyOn(panel,"focus");
+   const scroll=vi.fn();panel.scrollIntoView=scroll;
+   unmount();
+   expect(cancel).toHaveBeenCalledWith(42);
+   act(()=>frame(0));
+   expect(focus).not.toHaveBeenCalled();
+   expect(scroll).not.toHaveBeenCalled();
+  } finally {raf.mockRestore();cancel.mockRestore();}
+ });
+ it.each(["deferred","failed"] as const)("opens exact Action21 while list is %s and preserves form through list Retry",async(listState)=>{
+  let resolveList!:(value:api.ActionListResponse<api.StaffActionDto>)=>void;
+  const result={data:[staffAction({id:1,description:"List restored"})],pagination:{page:1,pageSize:10,totalItems:1,totalPages:1}};
+  if(listState==="deferred") vi.mocked(api.fetchStaffActions).mockReturnValueOnce(new Promise(resolve=>{resolveList=resolve;}));
+  else vi.mocked(api.fetchStaffActions).mockRejectedValueOnce(apiError(500,"List unavailable")).mockReturnValueOnce(new Promise(resolve=>{resolveList=resolve;}));
+  vi.mocked(api.fetchActionDetail).mockResolvedValue(staffAction({id:21,description:"Exact Action21",version:7}));
+  render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" selectedActionId={21}/>);
+  const panel=await screen.findByRole("region",{name:"Selected Action"});
+  await userEvent.click(await within(panel).findByRole("button",{name:"Edit Action"}));
+  const form=await screen.findByRole("form",{name:"Edit Action"});
+  const description=screen.getByLabelText(/Description/) as HTMLTextAreaElement;
+  expect(description.value).toBe("Exact Action21");
+  await userEvent.type(description," draft");
+  if(listState==="failed") await userEvent.click(screen.getByRole("button",{name:"Retry"}));
+  description.focus();
+  await act(async()=>resolveList(result));
+  await screen.findByText("List restored");
+  expect(screen.getByRole("region",{name:"Selected Action"})).toBe(panel);
+  expect(screen.getByRole("form",{name:"Edit Action"})).toBe(form);
+  expect(description.value).toBe("Exact Action21 draft");
+  expect(document.activeElement).toBe(description);
+  expect(api.fetchActionDetail).toHaveBeenCalledTimes(1);
+  expect(api.updateTicketAction).not.toHaveBeenCalled();
+  expect(api.createTicketAction).not.toHaveBeenCalled();
+ });
+ it.each(["deferred","failed"] as const)("views terminal exact Actions independently of %s list",async(listState)=>{
+  for(const status of ["COMPLETED","CANCELLED"] as const){
+   vi.mocked(api.fetchStaffActions).mockImplementation(()=>listState==="deferred"?new Promise(()=>{}):Promise.reject(apiError(500,"List unavailable")));
+   vi.mocked(api.fetchActionDetail).mockResolvedValue(staffAction({id:21,description:`Exact ${status}`,status,result:"Recorded result"}));
+   const {unmount}=render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" selectedActionId={21}/>);
+   const panel=await screen.findByRole("region",{name:"Selected Action"});
+   await userEvent.click(await within(panel).findByRole("button",{name:"View Action"}));
+   const view=await screen.findByRole("region",{name:"View Action"});
+   expect(view.textContent).toContain(`Exact ${status}`);
+   expect(view.textContent).toContain("Recorded result");
+   expect(screen.queryByRole("button",{name:"Save Action"})).toBeNull();
+   expect(screen.queryByLabelText(/Description/)).toBeNull();
+   expect(api.updateTicketAction).not.toHaveBeenCalled();
+   expect(api.createTicketAction).not.toHaveBeenCalled();
+   expect(api.fetchAssignableOwners).not.toHaveBeenCalled();
+   unmount();
+  }
+ });
+ beforeEach(()=>{vi.mocked(api.fetchStaffActions).mockResolvedValue({data:[staffAction()],pagination:{page:1,pageSize:10,totalItems:21,totalPages:3}});});
+ it("loads Action 21 outside page 1, focuses selected panel and never opens edit automatically",async()=>{vi.mocked(api.fetchActionDetail).mockResolvedValue(staffAction({id:21,description:"Exact selected Action",version:7}));render(<StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" selectedActionId={21}/>);const panel=await screen.findByRole("region",{name:"Selected Action"});await within(panel).findByText("Exact selected Action");expect(api.fetchActionDetail).toHaveBeenCalledWith(TICKET,21);expect(api.fetchStaffActions).toHaveBeenCalledWith(TICKET,1,10);await waitFor(()=>expect(document.activeElement).toBe(panel));expect(screen.queryByRole("textbox",{name:/Description/})).toBeNull();expect(api.updateTicketAction).not.toHaveBeenCalled();await userEvent.click(within(panel).getByRole("button",{name:"Edit Action"}));expect(await screen.findByRole("textbox",{name:/Description/})).toHaveProperty("value","Exact selected Action");});
+ it("uses current terminal detail and explicit read-only View",async()=>{vi.mocked(api.fetchActionDetail).mockResolvedValue(staffAction({id:21,status:"COMPLETED",result:"Done"}));render(<SelectedDashboardAction ticketNumber={TICKET} actionId={21} onOpen={vi.fn()}/>);await screen.findByRole("button",{name:"View Action"});expect(screen.queryByRole("button",{name:"Edit Action"})).toBeNull();expect(api.updateTicketAction).not.toHaveBeenCalled();});
+ it.each([403,404])("shows %s without Retry or substitute",async(status)=>{vi.mocked(api.fetchActionDetail).mockRejectedValue(apiError(status,"failure"));render(<SelectedDashboardAction ticketNumber={TICKET} actionId={21} onOpen={vi.fn()}/>);await screen.findByRole("alert");expect(screen.queryByRole("button",{name:/Retry/})).toBeNull();expect(screen.queryByRole("button",{name:"Edit Action"})).toBeNull();});
+ it("network failure retries only exact detail read",async()=>{vi.mocked(api.fetchActionDetail).mockRejectedValueOnce(apiError(500,"private")).mockResolvedValue(staffAction({id:21}));render(<SelectedDashboardAction ticketNumber={TICKET} actionId={21} onOpen={vi.fn()}/>);await userEvent.click(await screen.findByRole("button",{name:"Retry selected Action"}));await screen.findByRole("button",{name:"Edit Action"});expect(api.fetchActionDetail).toHaveBeenCalledTimes(2);expect(api.updateTicketAction).not.toHaveBeenCalled();});
+ it("ignores old pair response and respects intentional focus movement",async()=>{let resolve!: (a:api.StaffActionDto)=>void;vi.mocked(api.fetchActionDetail).mockReturnValueOnce(new Promise(r=>resolve=r)).mockResolvedValueOnce(staffAction({id:22,description:"New selection"}));const {rerender}=render(<><button>Keep focus</button><SelectedDashboardAction ticketNumber={TICKET} actionId={21} onOpen={vi.fn()}/></>);rerender(<><button>Keep focus</button><SelectedDashboardAction ticketNumber={TICKET} actionId={22} onOpen={vi.fn()}/></>);screen.getByRole("button",{name:"Keep focus"}).focus();await screen.findByText("New selection");await act(async()=>resolve(staffAction({id:21,description:"Old selection"})));expect(screen.queryByText("Old selection")).toBeNull();expect(document.activeElement).toBe(screen.getByRole("button",{name:"Keep focus"}));});
+ it("keeps the selected panel mounted and external focus when its deferred list resolves",async()=>{
+  let resolveList!:(result:api.ActionListResponse<api.StaffActionDto>)=>void;
+  vi.mocked(api.fetchStaffActions).mockReturnValueOnce(new Promise(resolve=>{resolveList=resolve;}));
+  vi.mocked(api.fetchActionDetail).mockResolvedValue(staffAction({id:21,description:"Selected while list waits"}));
+  render(<><button>Keep focus</button><StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" selectedActionId={21}/></>);
+  const panel=await screen.findByRole("region",{name:"Selected Action"});
+  await within(panel).findByText("Selected while list waits");
+  await waitFor(()=>expect(document.activeElement).toBe(panel));
+  screen.getByRole("button",{name:"Keep focus"}).focus();
+  await act(async()=>resolveList({data:[staffAction({id:1,description:"Loaded list row"})],pagination:{page:1,pageSize:10,totalItems:1,totalPages:1}}));
+  await screen.findByText("Loaded list row");
+  await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+  expect(screen.getByRole("region",{name:"Selected Action"})).toBe(panel);
+  expect(api.fetchActionDetail).toHaveBeenCalledTimes(1);
+  expect(document.activeElement).toBe(screen.getByRole("button",{name:"Keep focus"}));
+ });
+ it("preserves the selected panel across list failure and read-only Retry",async()=>{
+  vi.mocked(api.fetchStaffActions).mockRejectedValueOnce(apiError(500,"List unavailable")).mockResolvedValueOnce({data:[staffAction({id:1,description:"Retry list row"})],pagination:{page:1,pageSize:10,totalItems:1,totalPages:1}});
+  vi.mocked(api.fetchActionDetail).mockResolvedValue(staffAction({id:21,description:"Selected through list error"}));
+  render(<><button>Keep focus</button><StaffActionsTaken ticketNumber={TICKET} ticketStatus="OPEN" selectedActionId={21}/></>);
+  const panel=await screen.findByRole("region",{name:"Selected Action"});
+  await within(panel).findByText("Selected through list error");
+  await screen.findByText("List unavailable");
+  const retry=screen.getByRole("button",{name:"Retry"});
+  await userEvent.click(retry);
+  screen.getByRole("button",{name:"Keep focus"}).focus();
+  await screen.findByText("Retry list row");
+  await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+  expect(screen.getByRole("region",{name:"Selected Action"})).toBe(panel);
+  expect(api.fetchActionDetail).toHaveBeenCalledTimes(1);
+  expect(api.fetchStaffActions).toHaveBeenCalledTimes(2);
+  expect(document.activeElement).toBe(screen.getByRole("button",{name:"Keep focus"}));
+ });
+});

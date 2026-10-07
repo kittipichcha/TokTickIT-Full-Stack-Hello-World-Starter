@@ -30,6 +30,8 @@ async function setupAuthenticatedApp() {
   }));
 
   render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
   // Wait for requester selector to load and select a requester
 

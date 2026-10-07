@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
+  type MyTicketsParams,
   fetchMyTickets,
   fetchCategories,
   type MyTicketItem,
@@ -11,6 +12,7 @@ import { formatUtcDate } from "./format";
 type LoadState = "loading" | "loaded" | "error" | "empty" | "no-results";
 
 interface MyTicketsProps {
+  initialFilters?: MyTicketsParams;
   onViewTicket: (ticketNumber: string) => void;
   onCreateTicket: () => void;
   resetKey: number;
@@ -35,15 +37,18 @@ const TICKET_STATUSES = [
   { value: "CANCELLED", label: "Cancelled" },
 ] as const;
 
-export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: MyTicketsProps) {
+export default function MyTickets({ onViewTicket, onCreateTicket, resetKey, initialFilters = {} }: MyTicketsProps) {
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Filter state
-  const [search, setSearch] = useState("");
-  const [categoryId, setCategoryId] = useState<number | undefined>();
-  const [requestedPriority, setRequestedPriority] = useState<string | undefined>();
-  const [status, setStatus] = useState<string | undefined>();
+  const [search, setSearch] = useState(initialFilters.search ?? "");
+  const [categoryId, setCategoryId] = useState<number | undefined>(initialFilters.categoryId);
+  const [requestedPriority, setRequestedPriority] = useState<string | undefined>(initialFilters.requestedPriority);
+  const [status, setStatus] = useState<string | undefined>(initialFilters.status);
 
+  const [scope, setScope] = useState<MyTicketsParams["scope"]>(initialFilters.scope);
+  const [updatedSince, setUpdatedSince] = useState<MyTicketsParams["updatedSince"]>(initialFilters.updatedSince);
+  const [resolvedSince, setResolvedSince] = useState<MyTicketsParams["resolvedSince"]>(initialFilters.resolvedSince);
   // Sort state
   const [sort, setSort] = useState<SortField>("createdAt");
   const [order, setOrder] = useState<SortOrder>("desc");
@@ -89,6 +94,10 @@ export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: My
         categoryId,
         requestedPriority,
         status,
+        scope,
+        updatedSince,
+        resolvedSince,
+
         sort,
         order,
         page,
@@ -125,24 +134,12 @@ export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: My
         setErrorMessage(err instanceof Error ? err.message : "Failed to load tickets.");
       }
     }
-  }, [search, categoryId, requestedPriority, status, sort, order, page, pageSize]);
+  }, [scope, updatedSince, resolvedSince, search, categoryId, requestedPriority, status, sort, order, page, pageSize]);
 
   // Reload when filters, sort, page, or resetKey change
   useEffect(() => {
     void loadTickets();
   }, [loadTickets, resetKey]);
-
-  // Reset filters when requester changes (resetKey changes)
-  useEffect(() => {
-    setSearch("");
-    setCategoryId(undefined);
-    setRequestedPriority(undefined);
-    setStatus(undefined);
-    setSort("createdAt");
-    setOrder("desc");
-    setPage(1);
-    setExpandedCards(new Set());
-  }, [resetKey]);
 
   const handleSortToggle = (field: SortField) => {
     if (sort === field) {
@@ -159,10 +156,18 @@ export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: My
     setCategoryId(undefined);
     setRequestedPriority(undefined);
     setStatus(undefined);
+    setScope(undefined);
+    setUpdatedSince(undefined);
+    setResolvedSince(undefined);
     setPage(1);
   };
 
-  const hasActiveFilters = search.trim() || categoryId !== undefined || requestedPriority || status;
+  const hasActiveFilters = scope || updatedSince || resolvedSince || search.trim() || categoryId !== undefined || requestedPriority || status;
+  const dashboardFilterLabels = [
+    scope && "Open Tickets",
+    updatedSince && `Updated since: ${new Date(updatedSince).toLocaleString()} (local time)`,
+    resolvedSince && `Resolved since: ${new Date(resolvedSince).toLocaleString()} (local time)`,
+  ].filter(Boolean);
 
   // Pagination helpers
   const startItem = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
@@ -239,6 +244,7 @@ export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: My
     <main className="app-container my-tickets">
       {/* Toolbar */}
       <div className="my-tickets-toolbar">
+        {dashboardFilterLabels.length > 0 && <p className="notice" aria-label="Active dashboard filters">{dashboardFilterLabels.join(" · ")}</p>}
         <div className="toolbar-filters">
           <div className="toolbar-search">
             <input
@@ -271,7 +277,8 @@ export default function MyTickets({ onViewTicket, onCreateTicket, resetKey }: My
           </select>
           <select
             value={status ?? ""}
-            onChange={(e) => { setStatus(e.target.value || undefined); setPage(1); }}
+            onChange={(e) => { setStatus(e.target.value || undefined);
+              setScope(undefined); setPage(1); }}
             aria-label="Filter by status"
           >
             <option value="">All Statuses</option>

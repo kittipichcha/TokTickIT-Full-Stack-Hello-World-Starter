@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
+  type StaffQueueParams,
   fetchStaffQueue,
   fetchAssignableOwners,
   type StaffQueueItem,
@@ -21,6 +22,7 @@ type LoadState = "loading" | "loaded" | "error" | "forbidden" | "empty" | "no-re
 type OwnerLoadState = "loading" | "loaded" | "error";
 
 interface StaffTicketQueueProps {
+  initialFilters?: StaffQueueParams;
   onOpenDetail: (ticketNumber: string) => void;
 }
 
@@ -39,11 +41,14 @@ const TICKET_STATUSES = [
   { value: "CANCELLED", label: "Cancelled" },
 ] as const;
 
-export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps) {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string | undefined>();
-  const [priority, setPriority] = useState<string | undefined>();
-  const [ownerId, setOwnerId] = useState<number | undefined>();
+export default function StaffTicketQueue({ onOpenDetail, initialFilters = {} }: StaffTicketQueueProps) {
+  const [search, setSearch] = useState(initialFilters.search ?? "");
+  const [status, setStatus] = useState<string | undefined>(initialFilters.status);
+  const [priority, setPriority] = useState<string | undefined>(initialFilters.priority);
+  const [ownerId, setOwnerId] = useState<number | undefined>(initialFilters.ownerId);
+  const [ownerScope, setOwnerScope] = useState<StaffQueueParams["ownerScope"]>(initialFilters.ownerScope);
+  const [updatedSince, setUpdatedSince] = useState<StaffQueueParams["updatedSince"]>(initialFilters.updatedSince);
+  const [openOnly, setOpenOnly] = useState<StaffQueueParams["openOnly"]>(initialFilters.openOnly);
   const [sort, setSort] = useState<SortField>("createdAt");
   const [order, setOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(1);
@@ -93,6 +98,10 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
       const result = await fetchStaffQueue({
         search: trimmedSearch || undefined,
         status,
+        ownerScope,
+        updatedSince,
+        openOnly,
+
         priority,
         ownerId,
         sort,
@@ -126,7 +135,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
         setErrorMessage(err instanceof Error ? err.message : "Failed to load the queue.");
       }
     }
-  }, [search, status, priority, ownerId, sort, order, page, pageSize]);
+  }, [ownerScope, updatedSince, openOnly, search, status, priority, ownerId, sort, order, page, pageSize]);
 
   useEffect(() => {
     void loadQueue();
@@ -147,10 +156,20 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
     setStatus(undefined);
     setPriority(undefined);
     setOwnerId(undefined);
+    setOwnerScope(undefined);
+    setUpdatedSince(undefined);
+    setOpenOnly(undefined);
     setPage(1);
   };
 
-  const hasActiveFilters = search.trim() || status || priority || ownerId !== undefined;
+  const hasActiveFilters = ownerScope || updatedSince || openOnly !== undefined || search.trim() || status || priority || ownerId !== undefined;
+  const dashboardFilterLabels = [
+    ownerScope === "me" && "Assigned to me",
+    ownerScope === "unassigned" && "Unassigned Tickets",
+    updatedSince && `Updated since: ${new Date(updatedSince).toLocaleString()} (local time)`,
+    (openOnly === true || openOnly === "true") && "Open Tickets only",
+    (openOnly === false || openOnly === "false") && "All Ticket statuses",
+  ].filter(Boolean);
 
   const startItem = pagination ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
   const endItem = pagination
@@ -186,6 +205,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
       <h1>Ticket Queue</h1>
 
       <div className="my-tickets-toolbar">
+        {dashboardFilterLabels.length > 0 && <p className="notice" aria-label="Active dashboard filters">{dashboardFilterLabels.join(" · ")}</p>}
         <div className="toolbar-filters">
           <div className="toolbar-search">
             <label htmlFor="queue-search">Search tickets</label>
@@ -238,6 +258,7 @@ export default function StaffTicketQueue({ onOpenDetail }: StaffTicketQueueProps
             disabled={ownerLoadState !== "loaded"}
             onChange={(e) => {
               setOwnerId(e.target.value ? Number(e.target.value) : undefined);
+              setOwnerScope(undefined);
               setPage(1);
             }}
           >

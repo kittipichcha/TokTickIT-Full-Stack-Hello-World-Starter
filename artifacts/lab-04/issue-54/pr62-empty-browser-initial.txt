@@ -1,0 +1,177 @@
+◇ injected env (1) from server\.env // tip: ⌘ override existing { override: true }
+[WebServer] (node:4812) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:30084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:7932) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+
+Running 48 tests using 1 worker
+
+(node:18956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+  ok  1 [desktop] › e2e\lab-04\dashboards.spec.ts:108:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (4.9s)
+  x   2 [desktop] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations (7.4s)
+(node:11064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  ok  3 [desktop] › e2e\lab-04\dashboards.spec.ts:165:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (4.8s)
+  ok  4 [desktop] › e2e\lab-04\dashboards.spec.ts:199:7 › E2E-02: role dashboards and exact destinations › Action21 remains editable when only the paginated Actions list fails and Retry never writes (4.9s)
+  ok  5 [desktop] › e2e\lab-04\dashboards.spec.ts:231:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (3.1s)
+  ok  6 [desktop] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (4.2s)
+  ok  7 [desktop] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (3.9s)
+  ok  8 [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (4.9s)
+  ok  9 [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.9s)
+  ok 10 [desktop] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.7s)
+  ok 11 [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (3.8s)
+  ok 12 [desktop] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (4.3s)
+  ok 13 [desktop] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.8s)
+  ok 14 [desktop] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.5s)
+  ok 15 [desktop] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.6s)
+  ok 16 [desktop] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.3s)
+(node:12336) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok 17 [tablet] › e2e\lab-04\dashboards.spec.ts:108:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (3.4s)
+  x  18 [tablet] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations (7.2s)
+(node:19084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ok 19 [tablet] › e2e\lab-04\dashboards.spec.ts:165:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (4.1s)
+  ok 20 [tablet] › e2e\lab-04\dashboards.spec.ts:199:7 › E2E-02: role dashboards and exact destinations › Action21 remains editable when only the paginated Actions list fails and Retry never writes (4.1s)
+  ok 21 [tablet] › e2e\lab-04\dashboards.spec.ts:231:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (3.1s)
+  ok 22 [tablet] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (3.8s)
+  ok 23 [tablet] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (3.6s)
+  ok 24 [tablet] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (4.5s)
+  ok 25 [tablet] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.8s)
+  ok 26 [tablet] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.7s)
+  ok 27 [tablet] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (3.7s)
+  ok 28 [tablet] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (4.1s)
+  ok 29 [tablet] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.8s)
+  ok 30 [tablet] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.5s)
+  ok 31 [tablet] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.6s)
+  ok 32 [tablet] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.3s)
+(node:30012) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok 33 [mobile] › e2e\lab-04\dashboards.spec.ts:108:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (3.4s)
+  x  34 [mobile] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations (7.2s)
+(node:29804) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  ok 35 [mobile] › e2e\lab-04\dashboards.spec.ts:165:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (3.8s)
+  ok 36 [mobile] › e2e\lab-04\dashboards.spec.ts:199:7 › E2E-02: role dashboards and exact destinations › Action21 remains editable when only the paginated Actions list fails and Retry never writes (5.0s)
+  ok 37 [mobile] › e2e\lab-04\dashboards.spec.ts:231:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (2.9s)
+  ok 38 [mobile] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (4.7s)
+  ok 39 [mobile] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (5.2s)
+  ok 40 [mobile] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (5.7s)
+  ok 41 [mobile] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (2.0s)
+  ok 42 [mobile] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.7s)
+  ok 43 [mobile] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (4.9s)
+  ok 44 [mobile] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (5.3s)
+  ok 45 [mobile] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.8s)
+  ok 46 [mobile] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.3s)
+  ok 47 [mobile] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.9s)
+  ok 48 [mobile] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.4s)
+
+
+  1) [desktop] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByText(/No matching Tickets/)
+    Expected: 2
+    Received: 6
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for getByText(/No matching Tickets/)
+        14 × locator resolved to 6 elements
+           - unexpected value "6"
+
+
+      154 |     expect(Object.values(data.counts)).toEqual([0, 0, 0, 0]);
+      155 |     await expect(page.getByRole("button", { name: "Open Tickets: 0", exact: true })).toBeVisible();
+    > 156 |     await expect(page.getByText(/No matching Tickets/)).toHaveCount(2);
+          |                                                         ^
+      157 |     await expect(page.locator("#primary-navigation").getByRole("link", { name: "Ticket Queue" })).toHaveCount(0);
+      158 |     expect(Object.values(data.lists).every(items => Array.isArray(items) && items.length === 0)).toBe(true);
+      159 |     const response = await page.request.get("http://localhost:3000/api/staff/dashboard");
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\dashboards.spec.ts:156:57
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-dashboards-E2E-02-r-dfcc1-safe-role-only-destinations-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-dashboards-E2E-02-r-dfcc1-safe-role-only-destinations-desktop\error-context.md
+
+  2) [tablet] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByText(/No matching Tickets/)
+    Expected: 2
+    Received: 6
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for getByText(/No matching Tickets/)
+        14 × locator resolved to 6 elements
+           - unexpected value "6"
+
+
+      154 |     expect(Object.values(data.counts)).toEqual([0, 0, 0, 0]);
+      155 |     await expect(page.getByRole("button", { name: "Open Tickets: 0", exact: true })).toBeVisible();
+    > 156 |     await expect(page.getByText(/No matching Tickets/)).toHaveCount(2);
+          |                                                         ^
+      157 |     await expect(page.locator("#primary-navigation").getByRole("link", { name: "Ticket Queue" })).toHaveCount(0);
+      158 |     expect(Object.values(data.lists).every(items => Array.isArray(items) && items.length === 0)).toBe(true);
+      159 |     const response = await page.request.get("http://localhost:3000/api/staff/dashboard");
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\dashboards.spec.ts:156:57
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-dashboards-E2E-02-r-dfcc1-safe-role-only-destinations-tablet\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-dashboards-E2E-02-r-dfcc1-safe-role-only-destinations-tablet\error-context.md
+
+  3) [mobile] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByText(/No matching Tickets/)
+    Expected: 2
+    Received: 6
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for getByText(/No matching Tickets/)
+        14 × locator resolved to 6 elements
+           - unexpected value "6"
+
+
+      154 |     expect(Object.values(data.counts)).toEqual([0, 0, 0, 0]);
+      155 |     await expect(page.getByRole("button", { name: "Open Tickets: 0", exact: true })).toBeVisible();
+    > 156 |     await expect(page.getByText(/No matching Tickets/)).toHaveCount(2);
+          |                                                         ^
+      157 |     await expect(page.locator("#primary-navigation").getByRole("link", { name: "Ticket Queue" })).toHaveCount(0);
+      158 |     expect(Object.values(data.lists).every(items => Array.isArray(items) && items.length === 0)).toBe(true);
+      159 |     const response = await page.request.get("http://localhost:3000/api/staff/dashboard");
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\dashboards.spec.ts:156:57
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-dashboards-E2E-02-r-dfcc1-safe-role-only-destinations-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-dashboards-E2E-02-r-dfcc1-safe-role-only-destinations-mobile\error-context.md
+
+  3 failed
+    [desktop] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations
+    [tablet] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations
+    [mobile] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations
+  45 passed (3.3m)

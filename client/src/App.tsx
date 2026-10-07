@@ -11,6 +11,9 @@ import {
   type TicketDetailResponse,
   type AttachmentItem,
 } from "./api";
+import RequesterDashboard from "./RequesterDashboard";
+import StaffDashboard from "./StaffDashboard";
+import type { MyTicketsParams, StaffQueueParams } from "./api";
 import CreateTicket from "./CreateTicket";
 import MyTickets from "./MyTickets";
 import AdminUserManagement from "./AdminUserManagement";
@@ -22,7 +25,7 @@ import { postTicketComment, postAppearsResolved } from "./api";
 import { formatUtcDate, formatFileSize } from "./format";
 import type { AuthUser } from "./api-client";
 
-type AppView = "home" | "create-ticket" | "ticket-detail" | "staff-queue" | "staff-ticket-detail" | "admin-users";
+type AppView = "requester-dashboard" | "staff-dashboard" | "home" | "create-ticket" | "ticket-detail" | "staff-queue" | "staff-ticket-detail" | "admin-users";
 
 /**
  * Issue #38 review fix (49-B1) — role-specific navigation and entry behavior
@@ -33,9 +36,9 @@ type AppView = "home" | "create-ticket" | "ticket-detail" | "staff-queue" | "sta
  * may only reach `staff-queue` / `staff-ticket-detail`. The backend authorization
  * is unchanged — this is the frontend entry/routing behavior only.
  */
-const REQUESTER_VIEWS: readonly AppView[] = ["home", "create-ticket", "ticket-detail"];
-const STAFF_VIEWS: readonly AppView[] = ["staff-queue", "staff-ticket-detail"];
-const ADMIN_VIEWS: readonly AppView[] = ["staff-queue", "staff-ticket-detail", "admin-users"];
+const REQUESTER_VIEWS: readonly AppView[] = ["requester-dashboard", "home", "create-ticket", "ticket-detail"];
+const STAFF_VIEWS: readonly AppView[] = ["staff-dashboard", "staff-queue", "staff-ticket-detail"];
+const ADMIN_VIEWS: readonly AppView[] = ["staff-dashboard", "staff-queue", "staff-ticket-detail", "admin-users"];
 
 interface FailedAttachment {
   id: string;
@@ -56,7 +59,7 @@ export default function App({ user, onUserUpdated }: AppProps) {
 
   const isStaff = user.role === "IT_STAFF" || user.role === "ADMINISTRATOR";
   const allowedViews = user.role === "ADMINISTRATOR" ? ADMIN_VIEWS : user.role === "IT_STAFF" ? STAFF_VIEWS : REQUESTER_VIEWS;
-  const initialView: AppView = isStaff ? "staff-queue" : "home";
+  const initialView: AppView = isStaff ? "staff-dashboard" : "requester-dashboard";
 
   const [view, setView] = useState<AppView>(initialView);
   const [detailTicketNumber, setDetailTicketNumber] = useState<string | null>(null);
@@ -65,6 +68,10 @@ export default function App({ user, onUserUpdated }: AppProps) {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailRetryCounter, setDetailRetryCounter] = useState(0);
   const [myTicketsResetKey, setMyTicketsResetKey] = useState(0);
+  const [listNavigationKey, setListNavigationKey] = useState(0);
+  const [myTicketFilters, setMyTicketFilters] = useState<MyTicketsParams>({});
+  const [queueFilters, setQueueFilters] = useState<StaffQueueParams>({});
+  const [selectedActionId, setSelectedActionId] = useState<number | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Issue #38 — staff views
@@ -85,6 +92,15 @@ export default function App({ user, onUserUpdated }: AppProps) {
       setView(initialView);
     }
   }, [allowedViews, initialView, view]);
+
+  useEffect(() => {
+    setMyTicketFilters({}); setQueueFilters({}); setSelectedActionId(undefined);
+    setListNavigationKey(key => key + 1);
+  }, [user.id, user.role]);
+
+  const openMyTickets = (filters: MyTicketsParams = {}) => { setMyTicketFilters(filters); setListNavigationKey(key => key + 1); setView("home"); setMobileMenuOpen(false); };
+  const openQueue = (filters: StaffQueueParams = {}) => { setQueueFilters(filters); setListNavigationKey(key => key + 1); setSelectedActionId(undefined); setView("staff-queue"); setMobileMenuOpen(false); };
+  const openStaffTicket = (number: string, actionId?: number) => { setStaffDetailTicketNumber(number); setSelectedActionId(actionId); setView("staff-ticket-detail"); };
 
   // Attachment dialog state
   const [removeDialogAttachment, setRemoveDialogAttachment] = useState<AttachmentItem | null>(null);
@@ -246,18 +262,21 @@ export default function App({ user, onUserUpdated }: AppProps) {
           <span className="hamburger-bar" />
         </button>
         <nav id="primary-navigation" aria-label="Primary" className={mobileMenuOpen ? "mobile-menu-open" : ""}>
+          <a href="#dashboard" className={activeView.endsWith("dashboard") ? "nav-active" : ""} aria-current={activeView.endsWith("dashboard") ? "page" : undefined} onClick={e => { e.preventDefault(); setView(initialView); setMobileMenuOpen(false); }}>Dashboard</a>
           {!isStaff && (
             <>
               <a
                 href="#my-tickets"
-                className={activeView === "home" ? "nav-active" : ""}
-                onClick={(e) => { e.preventDefault(); setView("home"); setMobileMenuOpen(false); }}
+                className={activeView === "home" || activeView === "ticket-detail" ? "nav-active" : ""}
+                aria-current={activeView === "home" || activeView === "ticket-detail" ? "page" : undefined}
+                onClick={(e) => { e.preventDefault(); openMyTickets(); }}
               >
                 My Tickets
               </a>
               <a
                 href="#create-ticket"
                 className={activeView === "create-ticket" ? "nav-active" : ""}
+                aria-current={activeView === "create-ticket" ? "page" : undefined}
                 onClick={(e) => { e.preventDefault(); setView("create-ticket"); setMobileMenuOpen(false); }}
               >
                 Create Ticket
@@ -268,13 +287,14 @@ export default function App({ user, onUserUpdated }: AppProps) {
             <a
               href="#staff-queue"
               className={activeView === "staff-queue" || activeView === "staff-ticket-detail" ? "nav-active" : ""}
-              onClick={(e) => { e.preventDefault(); setView("staff-queue"); setMobileMenuOpen(false); }}
+              aria-current={activeView === "staff-queue" || activeView === "staff-ticket-detail" ? "page" : undefined}
+              onClick={(e) => { e.preventDefault(); openQueue(); }}
             >
               Ticket Queue
             </a>
           )}
           {user.role === "ADMINISTRATOR" && (
-            <a href="#admin-users" className={activeView === "admin-users" ? "nav-active" : ""}
+            <a href="#admin-users" className={activeView === "admin-users" ? "nav-active" : ""} aria-current={activeView === "admin-users" ? "page" : undefined}
               onClick={(e) => { e.preventDefault(); setView("admin-users"); setMobileMenuOpen(false); }}>
               User Management
             </a>
@@ -282,8 +302,10 @@ export default function App({ user, onUserUpdated }: AppProps) {
         </nav>
       </header>
       {message && <p className="notice" role="status">{message}</p>}
+      {activeView === "requester-dashboard" && <RequesterDashboard key={user.id} onOpenTickets={destination => { if (destination.path === "/api/tickets") openMyTickets(destination.query); }} onOpenTicket={handleViewTicket} onCreateTicket={() => setView("create-ticket")} />}
+      {activeView === "staff-dashboard" && <StaffDashboard key={user.id} onOpenQueue={destination => { if (destination.path === "/api/staff/queue") openQueue(destination.query); }} onOpenTicket={openStaffTicket} onOpenAction={openStaffTicket} />}
       {activeView === "home" && (
-        <MyTickets
+        <MyTickets key={`${user.id}-${listNavigationKey}-${myTicketsResetKey}`} initialFilters={myTicketFilters}
           onViewTicket={handleViewTicket}
           onCreateTicket={() => setView("create-ticket")}
           resetKey={myTicketsResetKey}
@@ -297,15 +319,12 @@ export default function App({ user, onUserUpdated }: AppProps) {
         />
       )}
       {activeView === "staff-queue" && (
-        <StaffTicketQueue
-          onOpenDetail={(ticketNumber) => {
-            setStaffDetailTicketNumber(ticketNumber);
-            setView("staff-ticket-detail");
-          }}
+        <StaffTicketQueue key={`${user.id}-${listNavigationKey}`} initialFilters={queueFilters}
+          onOpenDetail={number => openStaffTicket(number)}
         />
       )}
       {activeView === "staff-ticket-detail" && staffDetailTicketNumber && (
-        <StaffTicketDetail
+        <StaffTicketDetail key={`${user.id}-${staffDetailTicketNumber}`} selectedActionId={selectedActionId}
           ticketNumber={staffDetailTicketNumber}
           currentUserId={user.id}
           onBack={() => setView("staff-queue")}
