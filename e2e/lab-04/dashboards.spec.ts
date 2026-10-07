@@ -153,7 +153,8 @@ test.describe("E2E-02: role dashboards and exact destinations", () => {
     const data = await dashboard(page, "requester", USERS.requester.email);
     expect(Object.values(data.counts)).toEqual([0, 0, 0, 0]);
     await expect(page.getByRole("button", { name: "Open Tickets: 0", exact: true })).toBeVisible();
-    await expect(page.getByText(/No matching Tickets/)).toHaveCount(2);
+    await expect(page.locator(".dashboard-list").getByText(/No matching Tickets/)).toHaveCount(2);
+    await expect(page.locator(".dashboard-metric").getByText("No matching Tickets", { exact: true })).toHaveCount(4);
     await expect(page.locator("#primary-navigation").getByRole("link", { name: "Ticket Queue" })).toHaveCount(0);
     expect(Object.values(data.lists).every(items => Array.isArray(items) && items.length === 0)).toBe(true);
     const response = await page.request.get("http://localhost:3000/api/staff/dashboard");

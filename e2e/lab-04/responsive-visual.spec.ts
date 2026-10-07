@@ -213,7 +213,15 @@ for (const role of ["requester", "staff"] as const) {
       await navigate(page, "Dashboard");
       if (next === "loading") await expect(page.getByRole("status")).toHaveText("Loading dashboard…");
       if (next === "failure") await expect(page.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
-      if (next === "empty") await expect(page.getByRole("button", { name: role === "requester" ? "Open Tickets: 0" : "Unassigned: 0", exact: true })).toBeVisible();
+      if (next === "empty") {
+        await expect(page.getByRole("button", { name: role === "requester" ? "Open Tickets: 0" : "Unassigned: 0", exact: true })).toBeVisible();
+        const metrics = page.locator(".dashboard-metric");
+        await expect(metrics).toHaveCount(role === "requester" ? 4 : 17);
+        for (const metric of await metrics.all()) {
+          await expect(metric.locator("strong")).toHaveText("0");
+          await expect(metric.getByText(await metric.evaluate(element => element.tagName === "BUTTON") ? "No matching Tickets" : "No matching Actions", { exact: true })).toBeVisible();
+        }
+      }
       if (next === "long") await expect(page.getByRole("link", { name: /VeryLongDashboardSummaryWithoutSpaces/ })).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       await expectDashboardGeometry(page);

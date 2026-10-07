@@ -23,8 +23,8 @@ export function DashboardFrame({ title, loading, error, retry, children }: { tit
     {error && <div className="error-box" role="alert"><p>{error.status === 403 ? "Access denied. You do not have permission to view this dashboard." : error.status === 401 ? "Your session has expired. Please sign in again." : "Unable to load dashboard. Please try again."}</p>{error.status !== 403 && error.status !== 401 && <button className="secondary-button" disabled={loading} onClick={retry}>Retry</button>}</div>}
     {!loading && !error && children}</main>;
 }
-export function DashboardMetric({ label, count, onOpen }: { label: string; count: number; onOpen?: () => void }) {
-  const content = <><span>{label}</span><strong>{count}</strong></>;
+export function DashboardMetric({ label, count, onOpen, emptyCopy = "No matching Tickets" }: { label: string; count: number; onOpen?: () => void; emptyCopy?: string }) {
+  const content = <><span>{label}{count === 0 && <small className="d-block muted">{emptyCopy}</small>}</span><strong>{count}</strong></>;
   return onOpen ? <button className="dashboard-metric" aria-label={`${label}: ${count}`} onClick={onOpen}>{content}</button> : <div className="dashboard-metric">{content}</div>;
 }
 export function DashboardWindow({ windowStart, generatedAt }: { windowStart: string; generatedAt: string }) {
