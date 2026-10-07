@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 /**
  * RR-04 class (b) — superseded Dev-Requester behavior, retired and replaced.
  *
@@ -36,6 +37,8 @@ describe("Authenticated identity replaces the Development Requester selector", (
 
   it("renders the application shell directly for the authenticated user", async () => {
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     expect(await screen.findByText("TokTickIT")).toBeDefined();
     expect(screen.getAllByText("My Tickets").length).toBeGreaterThan(0);
@@ -43,6 +46,8 @@ describe("Authenticated identity replaces the Development Requester selector", (
 
   it("does not render the Development Requester selector", () => {
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     expect(screen.queryByRole("combobox", { name: /development requester/i })).toBeNull();
     expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
@@ -50,6 +55,8 @@ describe("Authenticated identity replaces the Development Requester selector", (
 
   it("does not render a Change Requester action", () => {
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     expect(screen.queryByRole("button", { name: /change requester/i })).toBeNull();
   });
@@ -61,6 +68,8 @@ describe("Authenticated identity replaces the Development Requester selector", (
 
   it("does not call the removed requester endpoints", () => {
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     // The removed helpers no longer exist on the api module.
     expect((api as Record<string, unknown>).fetchDevRequesters).toBeUndefined();

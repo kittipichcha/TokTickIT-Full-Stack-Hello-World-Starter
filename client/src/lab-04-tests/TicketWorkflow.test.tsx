@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -479,6 +480,8 @@ describe("UI-WF-HISTORY-01 — Ticket status history", () => {
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail());
     vi.mocked(api.fetchTicketStatusHistory).mockResolvedValue(history(1, 1));
     render(<App user={staffUser} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "Ticket Queue" }));
     const queue = await screen.findByRole("grid");
     await user.click(within(queue).getByRole("button", { name: /Open Detail/i }));
     await screen.findByRole("heading", { name: new RegExp(ticketNumber) });
@@ -490,6 +493,8 @@ describe("UI-WF-HISTORY-01 — Ticket status history", () => {
 
     vi.mocked(api.fetchMyTickets).mockResolvedValue({ data: [{ id: 1, ticketNumber, categoryId: 1, categoryName: "Hardware", summary: "Printer failure", requestedPriority: "MEDIUM", itPriority: "MEDIUM", currentStatus: "IN_PROGRESS", createdAt: "2026-09-10T00:00:00Z", updatedAt: "2026-09-10T00:00:00Z" }], pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 } });
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
     const requesterLinks = await screen.findAllByRole("link", { name: ticketNumber });
     await user.click(requesterLinks[0]!);
     await screen.findByRole("heading", { name: new RegExp(ticketNumber) });

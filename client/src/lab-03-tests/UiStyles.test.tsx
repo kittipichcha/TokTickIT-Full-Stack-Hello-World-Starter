@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -33,6 +34,8 @@ async function setupAuthenticatedApp() {
   }));
 
   render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
   await screen.findByText("TokTickIT");
 }
 
@@ -272,6 +275,8 @@ describe("UI-STYLE-03: Priority/Status/Removed badge styling and non-color-relia
     }));
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
     await screen.findByText("TokTickIT");
   }
 

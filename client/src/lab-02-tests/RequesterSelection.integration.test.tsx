@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 /**
  * RR-04 class (b) — superseded Dev-Requester behavior, retired and replaced.
  *
@@ -51,6 +52,8 @@ describe("Authenticated transport replaces header-identified requests", () => {
 
   it("renders the shell and issues credentialed requests without the legacy header", async () => {
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     expect(await screen.findByText("TokTickIT")).toBeDefined();
 
@@ -69,6 +72,8 @@ describe("Authenticated transport replaces header-identified requests", () => {
 
   it("never requests the removed requester endpoints", async () => {
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     await screen.findByText("TokTickIT");
     await waitFor(() => {
