@@ -144,3 +144,81 @@ test.describe("VISUAL-01 (Actions portion): Actions area responsive layout", () 
     });
   });
 });
+
+async function expectDashboardGeometry(page: Page) {
+  const result = await page.locator(".dashboard").evaluate(root => {
+    const nodes = [...root.querySelectorAll<HTMLElement>(".dashboard-grid > *, .dashboard-window, h1")];
+    const boxes = nodes.map(node => node.getBoundingClientRect());
+    const overlaps = boxes.some((a,index) => boxes.slice(index+1).some(b => Math.min(a.right,b.right)-Math.max(a.left,b.left)>1 && Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1));
+    const clipped = nodes.some(node => node.scrollWidth > node.clientWidth + 1);
+    const unnamed = [...root.querySelectorAll<HTMLElement>("button,a")].some(node => !node.textContent?.trim());
+    return {overlaps,clipped,unnamed};
+  });
+  expect(result).toEqual({overlaps:false,clipped:false,unnamed:false});
+}
+for (const role of ["requester", "staff"] as const) {
+  test(`VISUAL-01 dashboard: ${role} cards and lists wrap within the viewport`, async ({ page }) => {
+    await resetAccount(role);
+    await login(page, USERS[role].email);
+    await expect(page.getByRole("heading", { name: role === "requester" ? "Requester Dashboard" : "Staff Dashboard", exact: true })).toBeVisible();
+    const card = page.getByRole("button", { name: role === "requester" ? /Open Tickets/ : /Unassigned/ });
+    await expectControlInViewport(page, card);
+    for (const item of await page.locator(".dashboard-grid button").all()) {
+      await item.scrollIntoViewIfNeeded();
+      const bounds = await item.boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.x).toBeGreaterThanOrEqual(-1);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expectDashboardGeometry(page);
+    await page.screenshot({ path: screenshot(`${role}-dashboard`, "dashboard"), fullPage: true });
+  });
+}
+
+for (const role of ["requester", "staff"] as const) {
+  test(`VISUAL-01 dashboard: ${role} loading, empty, failure and long text states`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await resetAccount(role);
+    let state: "normal" | "loading" | "empty" | "failure" | "long" = "normal";
+    const releaseLoading: Array<() => void> = [];
+    // These response variants prove presentation only; real metrics are verified by API/E2E-02.
+    await page.route(`**/api/${role}/dashboard`, async route => {
+      const response = await route.fetch();
+      const body = await response.json();
+      if (state === "failure") {
+        await route.fulfill({ status: 500, json: { error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } } });
+        return;
+      }
+      if (state === "loading") await new Promise<void>(resolve => { releaseLoading.push(resolve); });
+      if (state === "empty") {
+        for (const key of Object.keys(body.data.counts)) {
+          const value = body.data.counts[key];
+          body.data.counts[key] = typeof value === "number" ? 0 : Object.fromEntries(Object.keys(value).map(key => [key, 0]));
+        }
+        for (const key of Object.keys(body.data.lists)) body.data.lists[key] = [];
+      }
+      if (state === "long") {
+        const key = role === "requester" ? "attentionTickets" : "urgentTickets";
+        body.data.lists[key] = [{ ticketNumber: "TKT-2054-999999", summary: "VeryLongDashboardSummaryWithoutSpaces".repeat(15), currentStatus: "WAITING_FOR_REQUESTER", updatedAt: body.data.generatedAt, ...(role === "requester" ? { appearsResolved: false } : { itPriority: "HIGH" }) }];
+      }
+      await route.fulfill({ response, json: body });
+    });
+    await login(page, USERS[role].email);
+    const title = role === "requester" ? "Requester Dashboard" : "Staff Dashboard";
+    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    for (const next of ["loading", "empty", "failure", "long"] as const) {
+      await navigate(page, role === "requester" ? "My Tickets" : "Ticket Queue");
+      state = next;
+      await navigate(page, "Dashboard");
+      if (next === "loading") await expect(page.getByRole("status")).toHaveText("Loading dashboard…");
+      if (next === "failure") await expect(page.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
+      if (next === "empty") await expect(page.getByRole("button", { name: role === "requester" ? "Open Tickets: 0" : "Unassigned: 0", exact: true })).toBeVisible();
+      if (next === "long") await expect(page.getByRole("link", { name: /VeryLongDashboardSummaryWithoutSpaces/ })).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      await expectDashboardGeometry(page);
+      await page.screenshot({ path: screenshot(`${role}-dashboard`, next), fullPage: true });
+      if (next === "loading") { await expect.poll(() => releaseLoading.length > 0).toBe(true); releaseLoading.splice(0).forEach(resolve => resolve()); await expect(page.getByRole("status")).toHaveCount(0); }
+    }
+  });
+}

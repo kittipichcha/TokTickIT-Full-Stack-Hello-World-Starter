@@ -188,3 +188,40 @@ test.describe("A11Y-01 (Actions portion): Actions Taken keyboard and focus behav
     await expect(editForm).toHaveCount(0);
   });
 });
+
+test("A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation", async ({ page }) => {
+  await resetAccount("requester");
+  await login(page, USERS.requester.email);
+  await expect(page.getByRole("heading", { name: "Requester Dashboard", exact: true })).toBeVisible();
+  const card = page.getByRole("button", { name: /Open Tickets/ });
+  await tabTo(page, card);
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("searchbox", { name: "Search tickets" })).toBeVisible();
+  await expect(page.locator("#primary-navigation").getByRole("link", { name: "My Tickets", exact: true, includeHidden: true })).toHaveAttribute("aria-current", "page");
+  await navigateByKeyboard(page, "Dashboard", page.getByRole("heading", { name: "Requester Dashboard", exact: true }));
+  await expect(page.locator("#primary-navigation").getByRole("link", { name: "Dashboard", exact: true, includeHidden: true })).toHaveAttribute("aria-current", "page");
+  const hamburger = page.locator(".hamburger");
+  if (await hamburger.isVisible()) await expect(hamburger).toHaveAttribute("aria-expanded", "false");
+});
+
+test("A11Y-01 dashboard: keyboard Retry performs one read and restores cards", async ({ page }) => {
+  await resetAccount("requester");
+  let attempts = 0;
+  let failReads = true;
+  await page.route("**/api/requester/dashboard", async route => {
+    attempts++;
+    if (failReads) await route.fulfill({ status: 500, json: { error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } } });
+    else await route.continue();
+  });
+  await login(page, USERS.requester.email);
+  const retry = page.getByRole("button", { name: "Retry", exact: true });
+  await expect(retry).toBeVisible();
+  await tabTo(page, retry);
+  const initialAttempts = attempts;
+  failReads = false;
+  await page.keyboard.press("Enter");
+  const card = page.getByRole("button", { name: "Open Tickets: 0", exact: true });
+  await expect(card).toBeVisible();
+  expect(attempts).toBe(initialAttempts + 1);
+  await tabTo(page, card);
+});
