@@ -33,6 +33,7 @@ import { allowedTransitionsFrom, type TicketStatus } from "@shared/ticket-status
 import type { ApiError } from "./api-client";
 
 interface StaffTicketDetailProps {
+  selectedActionId?: number;
   ticketNumber: string;
   /** The authenticated staff user's id (for the claim control). */
   currentUserId: number;
@@ -58,6 +59,7 @@ type OwnerLoadState = "loading" | "loaded" | "error";
 
 export default function StaffTicketDetail({
   ticketNumber,
+  selectedActionId,
   currentUserId,
   onBack,
 }: StaffTicketDetailProps) {
@@ -666,7 +668,7 @@ export default function StaffTicketDetail({
 
       {/* Issue #52 — Actions Taken (ui-spec §3). Self-contained so Ticket
           controls, comments, notes and attachments stay untouched. */}
-      <StaffActionsTaken ticketNumber={ticketNumber} ticketStatus={detail.currentStatus} />
+      <StaffActionsTaken selectedActionId={selectedActionId} ticketNumber={ticketNumber} ticketStatus={detail.currentStatus} />
 
       <CommentThread
         comments={detail.publicComments}

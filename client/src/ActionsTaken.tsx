@@ -29,6 +29,8 @@ import {
 } from "./api";
 import type { ApiError } from "./api-client";
 import { formatUtcDate } from "./format";
+import StaffActionCard from "./StaffActionCard";
+import SelectedDashboardAction from "./SelectedDashboardAction";
 import ActionForm from "./ActionForm";
 
 /** Ticket statuses on which no new Action may be created (BR-27). */
@@ -159,6 +161,7 @@ function ActionsSkeleton() {
 }
 
 interface StaffActionsTakenProps {
+  selectedActionId?: number;
   ticketNumber: string;
   /** The Ticket's workflow status; drives the BR-27 create gate. */
   ticketStatus: string;
@@ -171,7 +174,7 @@ interface StaffActionsTakenProps {
  * `ActionForm` for create/edit. Mutation success and list refresh are handled
  * separately: a failed refresh never retracts an already-committed write.
  */
-export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTakenProps) {
+export function StaffActionsTaken({ ticketNumber, ticketStatus, selectedActionId }: StaffActionsTakenProps) {
   const [items, setItems] = useState<StaffActionDto[]>([]);
   const [pagination, setPagination] = useState<ActionPagination>({
     page: 1,
@@ -325,6 +328,7 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
     return (
       <section className="actions-taken" aria-label="Actions Taken">
         <h2>Actions Taken</h2>
+      {selectedActionId !== undefined && <SelectedDashboardAction key={`${ticketNumber}-${selectedActionId}`} ticketNumber={ticketNumber} actionId={selectedActionId} refreshKey={committed?.action.updatedAt} onOpen={action => { setCommitted(null); setEditingAction(action); setMode("edit"); }} />}
         <ActionsSkeleton />
       </section>
     );
@@ -334,6 +338,7 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
     return (
       <section className="actions-taken" aria-label="Actions Taken">
         <h2>Actions Taken</h2>
+      {selectedActionId !== undefined && <SelectedDashboardAction key={`${ticketNumber}-${selectedActionId}`} ticketNumber={ticketNumber} actionId={selectedActionId} refreshKey={committed?.action.updatedAt} onOpen={action => { setCommitted(null); setEditingAction(action); setMode("edit"); }} />}
         <ActionReadError
           kind={loadError.kind}
           message={loadError.message}
@@ -346,6 +351,7 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
   return (
     <section className="actions-taken" aria-label="Actions Taken">
       <h2>Actions Taken</h2>
+      {selectedActionId !== undefined && <SelectedDashboardAction key={`${ticketNumber}-${selectedActionId}`} ticketNumber={ticketNumber} actionId={selectedActionId} refreshKey={committed?.action.updatedAt} onOpen={action => { setCommitted(null); setEditingAction(action); setMode("edit"); }} />}
 
       <div className="actions-toolbar">
         {isTerminalTicket ? (
@@ -424,65 +430,7 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus }: StaffActionsTa
         <p className="placeholder-text">No Actions recorded for this Ticket.</p>
       ) : (
         <ul className="action-list">
-          {items.map((action) => {
-            const isPending = action.status === "PENDING";
-            return (
-              <li className="action-card" key={action.id}>
-                <div className="action-card-header">
-                  <ActionStatusChip status={action.status} />
-                  <span className="action-card-date">{formatUtcDate(action.createdAt)}</span>
-                </div>
-                <p className="action-card-description">{action.description}</p>
-                <div className="action-card-fields">
-                  <ActionField label="Result">
-                    {action.result === null ? (
-                      <span className="muted">—</span>
-                    ) : (
-                      action.result
-                    )}
-                  </ActionField>
-                  <ActionField label="Follow-up Required">
-                    {action.followUpRequired ? "Yes" : "No"}
-                  </ActionField>
-                  {action.followUpRequired && action.followUpNote !== null && (
-                    <ActionField label="Follow-up Note">{action.followUpNote}</ActionField>
-                  )}
-                  <ActionField label="Attachment Notes">
-                    {action.attachmentNotes === null ? (
-                      <span className="muted">—</span>
-                    ) : (
-                      action.attachmentNotes
-                    )}
-                  </ActionField>
-                  <ActionField label="Performed by">{action.performedBy.name}</ActionField>
-                  <ActionField label="Assignee">
-                    {action.assignee === null ? (
-                      <span className="muted">Unassigned</span>
-                    ) : (
-                      action.assignee.name
-                    )}
-                  </ActionField>
-                  <ActionField label="Last Updated">{formatUtcDate(action.updatedAt)}</ActionField>
-                </div>
-                <div className="action-card-footer">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => {
-                      // A new edit attempt retires the previous success snapshot.
-                      setCommitted(null);
-                      setEditingAction(action);
-                      setMode("edit");
-                    }}
-                  >
-                    {/* Terminal Actions open a read-only View surface; only
-                        Pending Actions expose an edit path (BR-04/AC-06). */}
-                    {isPending ? "Edit Action" : "View Action"}
-                  </button>
-                </div>
-              </li>
-            );
-          })}
+          {items.map(action => <li className="action-card" key={action.id}><StaffActionCard className="" action={action} onOpen={action => { setCommitted(null); setEditingAction(action); setMode("edit"); }} /></li>)}
         </ul>
       )}
 
