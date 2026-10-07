@@ -21,4 +21,3 @@ Error: Not implemented: navigation (except hash changes)
       Tests  358 passed (358)
    Start at  13:20:39
    Duration  87.58s (transform 2.57s, setup 0ms, import 19.88s, tests 107.72s, environment 35.61s)
-

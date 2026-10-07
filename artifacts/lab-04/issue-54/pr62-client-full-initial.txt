@@ -1,0 +1,228 @@
+
+> toktickit-client@1.0.0 test
+> vitest run --maxWorkers=2
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/client
+
+ ❯ src/lab-04-tests/ActionsTaken.test.tsx (66 tests | 2 failed) 2306520ms
+     × BR-05 — checked follow-up with a blank note fails validation 2290710ms
+     × AC-21 — successful create clears the form and hands the committed Action to the section 1441ms
+ ❯ src/lab-02-tests/CreateTicket.test.tsx (17 tests | 1 failed) 2311559ms
+     × shows field error when description is too short 2290911ms
+Error: Not implemented: window.open
+    at module.exports (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at onClick (C:/Users/kitti/CPE334/lab4-staging-worktree/client/src/App.tsx:512:42) undefined
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at listOnTimeout (node:internal/timers:605:17)
+    at processTimers (node:internal/timers:541:7) undefined
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lab-02-tests/CreateTicket.test.tsx > UI-TKT-03: Description under 10 chars blocks submit > shows field error when description is too short
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/lab-02-tests/CreateTicket.test.tsx:112:3
+    110|   });
+    111|
+    112|   it("shows field error when description is too short", async () => {
+       |   ^
+    113|     await setupAuthenticatedApp();
+    114|     await userEvent.click(screen.getByRole("link", { name: "Create Tic…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/lab-04-tests/ActionsTaken.test.tsx > UI-ACT-01 — ActionForm client validation (AC-21, BR-05, BR-04) > BR-05 — checked follow-up with a blank note fails validation
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/lab-04-tests/ActionsTaken.test.tsx:797:3
+    795|   });
+    796|
+    797|   it("BR-05 — checked follow-up with a blank note fails validation", a…
+       |   ^
+    798|     render(<ActionForm ticketNumber={TICKET} action={null} onSaved={vi…
+    799|     await userEvent.type(screen.getByLabelText(/Description/), "Has a …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/lab-04-tests/ActionsTaken.test.tsx > UI-ACT-01 — Create success and payload normalization (AC-21, BR-05, BR-25) > AC-21 — successful create clears the form and hands the committed Action to the section
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body>
+    <div>
+      <form
+        aria-label="Add Action"
+        class="action-form"
+      >
+        <h3>
+          Add Action
+        </h3>
+        <div
+          class="action-field-row"
+        >
+          <label
+            class="action-label"
+            for="action-description"
+          >
+            Description
+            <span
+              aria-hidden="true"
+            >
+              *
+            </span>
+            <span
+              class="visually-hidden"
+            >
+               (required)
+            </span>
+          </label>
+          <textarea
+            aria-describedby="action-description-error"
+            aria-invalid="true"
+            aria-required="true"
+            id="action-description"
+            rows="3"
+          />
+          <p
+            class="field-error"
+            id="action-description-error"
+            role="alert"
+          >
+            Description is required.
+          </p>
+        </div>
+        <div
+          class="action-field-row"
+        >
+          <label
+            class="action-label"
+            for="action-result"
+          >
+            Result
+          </label>
+          <textarea
+            id="action-result"
+            rows="2"
+          />
+        </div>
+        <div
+          class="action-field-row action-field-inline"
+        >
+          <input
+            id="action-followup"
+            type="checkbox"
+          />
+          <label
+            class="action-label"
+            for="action-followup"
+          >
+            Follow-up Required
+          </label>
+        </div>
+        <div
+          class="action-field-row"
+        >
+          <label
+            class="action-label"
+            for="action-attachment-notes"
+          >
+            Attachment Notes
+          </label>
+          <textarea
+            aria-describedby="action-attachment-notes-help"
+            id="action-attachment-notes"
+            rows="2"
+          />
+          <p
+            class="field-help"
+            id="action-attachment-notes-help"
+          >
+            Plain text describing any Attachment relevant to this Action. Attachments themselves stay in the Attachments section.
+          </p>
+        </div>
+        <div
+          class="action-field-row"
+        >
+          <label
+            class="action-label"
+            for="action-assignee"
+          >
+            Assignee
+          </label>
+          <select
+            id="action-assignee"
+          >
+            <option
+              value=""
+            >
+              Unassigned
+            </option>
+            <option
+              value="5"
+            >
+              Alice
+               —
+              IT Staff
+            </option>
+            <option
+              value="6"
+            >
+              Bob
+               —
+              IT Staff
+            </option>
+            <option
+              value="9"
+            >
+              Carol
+               —
+              Administrator
+            </option>
+          </select>
+        </div>
+        <div
+          class="form-actions"
+        >
+          <button
+            class="primary-button"
+            type="submit"
+          >
+            Record Action
+          </button>
+          <button
+            class="secondary-button"
+            type="button"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>
+ ❯ src/lab-04-tests/ActionsTaken.test.tsx:848:56
+    846|     await userEvent.click(screen.getByRole("button", { name: "Record A…
+    847|
+    848|     await waitFor(() => expect(api.createTicketAction).toHaveBeenCalle…
+       |                                                        ^
+    849|     expect(api.createTicketAction).toHaveBeenCalledWith(
+    850|       TICKET,
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  2 failed | 21 passed (23)
+      Tests  3 failed | 361 passed (364)
+   Start at  16:09:37
+   Duration  2360.57s (transform 1.95s, setup 0ms, import 12.06s, tests 4681.00s, environment 20.95s)

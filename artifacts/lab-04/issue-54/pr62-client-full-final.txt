@@ -1,6 +1,6 @@
 
 > toktickit-client@1.0.0 test
-> vitest run --maxWorkers 1
+> vitest run --maxWorkers=2
 
 
  RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/client
@@ -18,6 +18,6 @@ Error: Not implemented: navigation (except hash changes)
     at processTimers (node:internal/timers:541:7) undefined
 
  Test Files  23 passed (23)
-      Tests  351 passed (351)
-   Start at  21:59:43
-   Duration  221.33s (transform 3.48s, setup 0ms, import 30.01s, tests 124.23s, environment 52.17s)
+      Tests  364 passed (364)
+   Start at  16:50:14
+   Duration  82.55s (transform 2.54s, setup 0ms, import 17.63s, tests 104.58s, environment 32.13s)

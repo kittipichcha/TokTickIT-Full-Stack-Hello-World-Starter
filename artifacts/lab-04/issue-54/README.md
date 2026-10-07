@@ -104,3 +104,47 @@ npx playwright test e2e/lab-04/dashboards.spec.ts e2e/lab-04/responsive-visual.s
 
 Execution/closure dates: 2026-10-06–07, Asia/Bangkok. Test-runner start-time text is the execution host's clock; JSON performance timestamps are UTC. Dashboard fixed-clock fixtures use 2026-10-06T12:00:00Z. Final fingerprints were regenerated after the last test-only assertions and verified against disk.
 Publication grouping: 40794be (filters), 58083cb (APIs/seed), b14e4d1 (landing/navigation), c21af9a (exact Action selection), 2b2af97 (performance/browser tests), followed by this documentation/evidence-only commit. Tests validate the final combined source snapshot, not every intermediate commit independently. Push and PR creation use the separate explicit user authorization.
+
+## PR #62 supplied review corrections (2026-10-07, Asia/Bangkok)
+
+This follow-up supersedes the historical blanket no-blocker closure above for B1/B2/N1.
+B1 reproduced scheduled animation-frame focus stealing after an intentional focus move.
+The callback now rechecks focus movement/cancellation, and cleanup cancels pending frames.
+B2 keeps one shared selected Action form/card mounted during parent Actions-list loading
+and errors, preserving edit/view state. Component regressions cover deferred reads, errors
+and cleanup; the browser regression injects an Actions-list HTTP 500 during selection.
+N1 removes trailing whitespace and
+surplus EOF blanks only, including RoleNavigation's EOF. No requirement/schema/API change.
+No automated review is recorded as human peer review.
+
+Completed fresh validation:
+- `pr62-client-focused.txt`: 66 passed, zero failed/skipped.
+- `pr62-client-full-final.txt`: unchanged bounded rerun, 364 passed in 23 files,
+  zero failed/skipped, 82.55 seconds.
+- `pr62-server-build.txt`, `pr62-client-build-final.txt`: builds passed.
+- Independent final source/test review reported no remaining blocker.
+- Base-inclusive working-tree `git diff --check 6f8ffa0300362849a3f550573a4899a747046dc8`
+  passed after whitespace normalization.
+
+Diagnostics retained: `pr62-client-build-initial.txt` records the unsupported test query
+option TS2769 corrected before the final successful build. `pr62-client-full-initial.txt`
+records 361 passed/3 failed during a severe clock/suspend anomaly; no source changed before
+the successful bounded rerun. `pr62-browser-focused-initial.txt` records 44 passed/4 failed,
+including extreme elapsed time, two ERR_NETWORK_CHANGED navigations and one loading
+assertion. Unchanged focused browser rerun passed all 48 checks in 2.8 minutes, zero failed/skipped,
+recorded in `pr62-browser-focused-final.txt`. Full configured browser passed all 270 checks, zero failed/skipped, exit 0, 27.5 minutes,
+recorded in `pr62-browser-full-final.txt`; all 103 generated tracked screenshots were
+restored to HEAD afterward.
+Tests-first reproduction observed 60 passed/5 failed before the strengthened final 66/0.
+The initial reproduction tool output has no retained raw artifact and is not substituted
+for the completed final logs.
+
+`pr62-executable-sha256.json` retains the historical inventory's 176 paths and records
+SHA-256 of raw Windows working-tree file bytes (including actual line endings), verified
+with zero mismatches after source settled. The original `executable-sha256.json` remains
+associated with historical runs. Evidence copies remove ANSI sequences, trailing spaces
+and surplus EOF blanks only; failed diagnostics remain intact. Fresh full browser verification is complete. Tested source commit: `4b32675bbd223585a6c0c3edbb0ec156ca495a4f`.
+The following evidence commit contains no executable changes. Base-inclusive working-tree
+`git diff --check 6f8ffa0300362849a3f550573a4899a747046dc8` passes. After the evidence
+commit, `git diff --check 6f8ffa0300362849a3f550573a4899a747046dc8...HEAD` also passed
+with exit 0, verifying the complete committed PR including normalized historical logs.

@@ -9,4 +9,3 @@ NOTICE:  database "lab4e2e_issue54_test_20261006_requester_dash_test_24800" does
       Tests  26 passed (26)
    Start at  21:53:17
    Duration  145.96s (transform 950ms, setup 0ms, import 1.48s, tests 143.51s, environment 0ms)
-

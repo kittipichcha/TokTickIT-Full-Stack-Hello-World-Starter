@@ -8,4 +8,3 @@ NOTICE:  database "lab4e2e_issue54_test_20261006_staff_dash_test_25052" does not
       Tests  12 passed (12)
    Start at  22:12:18
    Duration  59.32s (transform 812ms, setup 0ms, import 750ms, tests 58.10s, environment 0ms)
-

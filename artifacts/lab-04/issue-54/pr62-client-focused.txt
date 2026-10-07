@@ -1,0 +1,12 @@
+
+> toktickit-client@1.0.0 test
+> vitest run src/lab-04-tests/ActionsTaken.test.tsx --maxWorkers=2
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/client
+
+
+ Test Files  1 passed (1)
+      Tests  66 passed (66)
+   Start at  16:09:03
+   Duration  19.18s (transform 728ms, setup 0ms, import 1.60s, tests 15.46s, environment 1.59s)

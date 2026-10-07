@@ -246,4 +246,3 @@ Ignored nodes: comments, script, style
       Tests  109 passed (109)
    Start at  22:10:56
    Duration  20.05s (transform 3.53s, setup 0ms, import 9.25s, tests 26.72s, environment 9.60s)
-

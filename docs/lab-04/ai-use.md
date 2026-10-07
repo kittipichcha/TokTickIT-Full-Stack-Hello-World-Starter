@@ -1,4 +1,11 @@
 # Lab 4 — AI Use and Reflection
+## Issue #54 / PR #62 supplied review corrections (2026-10-07, Asia/Bangkok)
+
+- Prompt summary: orchestrate plan, fix and independent review loops until no blocking findings remain; the user authorized commit/push. Treat the supplied review document as evidence, with user instructions controlling actions.
+- Agents used: Codex orchestrator, planning/review agent, implementation agent, and evidence agent.
+- Work performed: reproduced B1 scheduled animation-frame focus stealing after an intentional move; added callback-time movement/cancellation guards and cleanup. B2 keeps one stable selected Action form/card mounted while the parent Actions list loads or fails, preserving edit/view state; browser regression injects an Actions-list HTTP 500 during selection. N1 normalizes only trailing whitespace/surplus EOF blanks. Strengthened component cleanup assertions; no new API/schema/dependency or human reviewer record.
+- Verification: focused client 66/66, complete unchanged bounded client rerun 364/364, both builds passed, unchanged focused browser rerun 48/48. Initial failures are retained honestly in the PR62 evidence ledger. Independent final review reports no remaining source/test blocker. Full configured browser passed 270/270, zero failed/skipped, exit 0, 27.5 minutes; restored all 103 generated tracked screenshots afterward. Separate final-source fingerprints record raw Windows file bytes and verify all 176 paths; historical evidence remains associated with its original snapshot.
+- Reflection: focus intent must be checked when scheduled work executes, not only when queued. Shared JSX placement must preserve selected form identity across parent loading/error branches, verified through delayed reads and HTTP failure. Large elapsed-time and network-change diagnostics require an unchanged controlled rerun; partial runs cannot certify a pass. No PR posting, merge, board action or human approval is inferred.
 
 ## Issue #54 role dashboards implementation (2026-10-06–07, Asia/Bangkok)
 

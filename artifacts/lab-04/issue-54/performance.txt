@@ -8,4 +8,3 @@ NOTICE:  database "lab4e2e_issue54_perf_20261006_dashboard_perf_test_27876" does
       Tests  2 passed (2)
    Start at  22:00:00
    Duration  91.75s (transform 976ms, setup 0ms, import 1.12s, tests 89.94s, environment 0ms)
-

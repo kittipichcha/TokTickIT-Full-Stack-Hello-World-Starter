@@ -69,7 +69,7 @@ Running 43 tests using 1 worker
   ok 43 [desktop] › e2e\lab-02\responsive-visual.spec.ts:967:7 › E2E-06: Mobile hamburger navigation › mobile menu navigation closes the menu and shows the correct screen (2.6s)
 
 
-  1) [desktop] › e2e\lab-02\responsive-visual.spec.ts:699:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets table→card representation per breakpoint 
+  1) [desktop] › e2e\lab-02\responsive-visual.spec.ts:699:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets table→card representation per breakpoint
 
     Error: expect(locator).toBeVisible() failed
 
@@ -98,7 +98,7 @@ Running 43 tests using 1 worker
 
     Error Context: test-results\lab-02-responsive-visual-E-2dd31-presentation-per-breakpoint-desktop\error-context.md
 
-  2) [desktop] › e2e\lab-02\responsive-visual.spec.ts:784:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail responsive 
+  2) [desktop] › e2e\lab-02\responsive-visual.spec.ts:784:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail responsive
 
     TimeoutError: locator.waitFor: Timeout 10000ms exceeded.
     Call log:
@@ -121,7 +121,7 @@ Running 43 tests using 1 worker
 
     Error Context: test-results\lab-02-responsive-visual-E-1f143-ks-Ticket-Detail-responsive-desktop\error-context.md
 
-  3) [desktop] › e2e\lab-02\responsive-visual.spec.ts:801:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail mobile touch targets >= 44px 
+  3) [desktop] › e2e\lab-02\responsive-visual.spec.ts:801:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail mobile touch targets >= 44px
 
     TimeoutError: locator.waitFor: Timeout 10000ms exceeded.
     Call log:
@@ -144,7 +144,7 @@ Running 43 tests using 1 worker
 
     Error Context: test-results\lab-02-responsive-visual-E-2e834-l-mobile-touch-targets-44px-desktop\error-context.md
 
-  4) [desktop] › e2e\lab-02\responsive-visual.spec.ts:867:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail no clipped labels or overlapping controls 
+  4) [desktop] › e2e\lab-02\responsive-visual.spec.ts:867:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail no clipped labels or overlapping controls
 
     TimeoutError: locator.waitFor: Timeout 10000ms exceeded.
     Call log:
@@ -168,8 +168,8 @@ Running 43 tests using 1 worker
     Error Context: test-results\lab-02-responsive-visual-E-cb0a8-els-or-overlapping-controls-desktop\error-context.md
 
   4 failed
-    [desktop] › e2e\lab-02\responsive-visual.spec.ts:699:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets table→card representation per breakpoint 
-    [desktop] › e2e\lab-02\responsive-visual.spec.ts:784:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail responsive 
-    [desktop] › e2e\lab-02\responsive-visual.spec.ts:801:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail mobile touch targets >= 44px 
-    [desktop] › e2e\lab-02\responsive-visual.spec.ts:867:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail no clipped labels or overlapping controls 
+    [desktop] › e2e\lab-02\responsive-visual.spec.ts:699:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets table→card representation per breakpoint
+    [desktop] › e2e\lab-02\responsive-visual.spec.ts:784:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail responsive
+    [desktop] › e2e\lab-02\responsive-visual.spec.ts:801:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail mobile touch targets >= 44px
+    [desktop] › e2e\lab-02\responsive-visual.spec.ts:867:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail no clipped labels or overlapping controls
   39 passed (7.4m)

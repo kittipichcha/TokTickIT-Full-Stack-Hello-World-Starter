@@ -37,7 +37,7 @@ Running 11 tests using 1 worker
   ok 11 [desktop] › e2e\lab-04\responsive-visual.spec.ts:149:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (3.0s)
 
 
-  1) [desktop] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination 
+  1) [desktop] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination
 
     Error: expect(locator).toBeVisible() failed
 
@@ -66,7 +66,7 @@ Running 11 tests using 1 worker
 
     Error Context: test-results\lab-04-dashboards-E2E-02-r-5787c-ered-My-Tickets-destination-desktop\error-context.md
 
-  2) [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup 
+  2) [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup
 
     Error: expect(locator).toBeVisible() failed
 
@@ -95,7 +95,7 @@ Running 11 tests using 1 worker
 
     Error Context: test-results\lab-04-keyboard-access-A11-77fb5-it-in-a-labelled-radiogroup-desktop\error-context.md
 
-  3) [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation 
+  3) [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation
 
     Error: expect(locator).toBeVisible() failed
 
@@ -124,7 +124,7 @@ Running 11 tests using 1 worker
 
     Error Context: test-results\lab-04-keyboard-access-A11-901cd-es-active-mobile-navigation-desktop\error-context.md
 
-  4) [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+  4) [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport
 
     Error: expect(locator).toBeVisible() failed
 
@@ -154,8 +154,8 @@ Running 11 tests using 1 worker
     Error Context: test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-desktop\error-context.md
 
   4 failed
-    [desktop] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination 
-    [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup 
-    [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation 
-    [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+    [desktop] › e2e\lab-04\dashboards.spec.ts:51:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination
+    [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup
+    [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation
+    [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport
   7 passed (1.5m)
