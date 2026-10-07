@@ -85,6 +85,7 @@ async function ensureUser(
 }
 
 async function main() {
+  const seedNow = new Date();
   // Categories (preserved; idempotent upserts)
   for (const name of CATEGORIES) {
     await prisma.category.upsert({ where: { name }, update: {}, create: { name } });
@@ -130,6 +131,10 @@ async function main() {
     { key: 'shared-drive', summary: 'Shared drive permission denied', description: 'Cannot write to the shared drive folder for the project.', status: 'NEW', priority: 'LOW', owner: null },
     { key: 'printer-network', summary: 'Printer not detected on network', description: 'The network printer is not visible from the workstation.', status: 'RESOLVED', priority: 'MEDIUM', owner: staffUsers[0] },
     { key: 'hr-portal-loop', summary: 'HR portal login loop', description: 'The HR portal redirects back to login after authenticating.', status: 'CLOSED', priority: 'HIGH', owner: staffUsers[1] },
+    { key: 'dashboard-reopened', summary: 'Reopened urgent network issue', description: 'Connectivity needs further investigation.', status: 'REOPENED', priority: 'HIGH', owner: staffUsers[0] },
+    { key: 'dashboard-cancelled', summary: 'Cancelled duplicate request', description: 'The requester confirmed this duplicate is unnecessary.', status: 'CANCELLED', priority: 'LOW', owner: null },
+    { key: 'dashboard-recent-resolved', summary: 'Recently resolved display issue', description: 'The replacement display was verified.', status: 'RESOLVED', priority: 'MEDIUM', owner: staffUsers[1], resolvedAt: new Date(seedNow.getTime() - 24 * 60 * 60 * 1000) },
+    { key: 'dashboard-old-resolved', summary: 'Older resolved access issue', description: 'Access was restored earlier this month.', status: 'RESOLVED', priority: 'LOW', owner: staffUsers[0], resolvedAt: new Date(seedNow.getTime() - 30 * 24 * 60 * 60 * 1000) },
   ];
 
   const createdTickets = [];
@@ -164,6 +169,7 @@ async function main() {
             ticketOwnerId: t.owner ? t.owner.id : null,
             currentStatus: t.status as 'NEW' | 'OPEN' | 'IN_PROGRESS' | 'WAITING_FOR_REQUESTER' | 'RESOLVED' | 'CLOSED' | 'REOPENED' | 'CANCELLED',
             appearsResolved: t.status === 'RESOLVED' || t.status === 'CLOSED',
+            resolvedAt: 'resolvedAt' in t ? t.resolvedAt : null,
           },
         });
       });
@@ -285,6 +291,16 @@ async function main() {
         });
       }
     });
+  }
+
+  // Additive dashboard example: preserve the three original Action fixtures.
+  const pendingMarker = '[seed-dashboard-action:assigned-pending]';
+  if (!await prisma.actionTaken.findFirst({ where: { description: { contains: pendingMarker } } })) {
+    await prisma.actionTaken.create({ data: {
+      ticketId: createdTickets[6].id, description: `${pendingMarker} Investigate reopened connectivity`,
+      performedByUserId: staffUsers[1].id, assigneeUserId: staffUsers[0].id,
+      status: 'PENDING', followUpRequired: false, createdAt: seedNow,
+    } });
   }
 
   console.log('Seed completed. Users, categories, related systems, tickets, comments, and internal notes inserted/verified.');

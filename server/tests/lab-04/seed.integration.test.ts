@@ -72,7 +72,7 @@ describe("DB-SEED-01: Actions fixtures are repeatable and non-destructive", () =
     expect(snapshot.tickets.some((ticket) => ticket.ticketOwnerId === null)).toBe(true);
     expect(snapshot.tickets.some((ticket) => ticket.ticketOwnerId !== null)).toBe(true);
     expect(new Set(snapshot.tickets.map((ticket) => ticket.currentStatus))).toEqual(
-      new Set(["OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "NEW", "RESOLVED", "CLOSED"]),
+      new Set(["OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "NEW", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"]),
     );
     expect(new Set(snapshot.tickets.map((ticket) => ticket.itPriority))).toEqual(new Set(["LOW", "MEDIUM", "HIGH"]));
   }, 60000);
@@ -86,5 +86,26 @@ describe("DB-SEED-01: Actions fixtures are repeatable and non-destructive", () =
 
     expect(second).toEqual(first);
     expect(new Set(second.actions.map((action) => action.id)).size).toBe(3);
+  }, 60000);
+
+  itIfDb("keeps additive dashboard dates and edited fixtures unchanged on re-seeding", async () => {
+    runSeed();
+    const prisma = getPrisma();
+    const rows = await prisma.ticket.findMany({ where: { description: { contains: '[seed:dashboard-' } }, orderBy: { id: 'asc' } });
+    expect(rows).toHaveLength(4);
+    const recent = rows.find(row => row.description.includes('dashboard-recent-resolved'))!;
+    const old = rows.find(row => row.description.includes('dashboard-old-resolved'))!;
+    expect(recent.resolvedAt!.getTime()).toBeGreaterThan(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    expect(old.resolvedAt!.getTime()).toBeLessThan(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const legacy = await prisma.ticket.findFirstOrThrow({ where: { description: { contains: '[seed:printer-network]' } } });
+    expect(legacy.resolvedAt).toBeNull();
+    const action = await prisma.actionTaken.findFirstOrThrow({ where: { description: { contains: '[seed-dashboard-action:' } } });
+    expect(action.status).toBe('PENDING'); expect(action.assigneeUserId).not.toBeNull(); expect(action.assigneeUserId).not.toBe(action.performedByUserId);
+    try {
+      const edited = await prisma.ticket.update({ where: { id: recent.id }, data: { summary: 'Legitimate edited dashboard demo', currentStatus: 'REOPENED', resolvedAt: null } });
+      runSeed();
+      expect(await prisma.ticket.findUnique({ where: { id: recent.id } })).toEqual(edited);
+      expect(await prisma.actionTaken.findUnique({ where: { id: action.id } })).toEqual(action);
+    } finally { await prisma.ticket.update({ where: { id: recent.id }, data: { summary: recent.summary, currentStatus: recent.currentStatus, resolvedAt: recent.resolvedAt, updatedAt: recent.updatedAt } }); }
   }, 60000);
 });
