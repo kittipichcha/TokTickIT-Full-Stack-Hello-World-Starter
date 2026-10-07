@@ -10,15 +10,20 @@ export default function SelectedDashboardAction({ ticketNumber, actionId, refres
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     let cancelled = false; let focusMoved = false;
+    let focusFrame: number | undefined;
     const trackFocus = () => { focusMoved = true; };
     document.addEventListener("focusin", trackFocus);
     setAction(null); setError(null); setLoading(true);
     fetchActionDetail(ticketNumber, actionId).then(value => {
       if (cancelled) return;
       setAction(value); setLoading(false);
-      if (!focusMoved) requestAnimationFrame(() => { if (!cancelled) { panel.current?.focus(); panel.current?.scrollIntoView?.({ block: "nearest" }); } });
+      if (!focusMoved) focusFrame = requestAnimationFrame(() => {
+        if (cancelled || focusMoved) return;
+        panel.current?.focus();
+        panel.current?.scrollIntoView?.({ block: "nearest" });
+      });
     }).catch(reason => { if (!cancelled) { setError(reason); setLoading(false); } });
-    return () => { cancelled = true; document.removeEventListener("focusin", trackFocus); };
+    return () => { cancelled = true; if (focusFrame !== undefined) cancelAnimationFrame(focusFrame); document.removeEventListener("focusin", trackFocus); };
   }, [ticketNumber, actionId, attempt, refreshKey]);
   return <section ref={panel} id="selected-dashboard-action" tabIndex={-1} aria-label="Selected Action" className="selected-dashboard-action"><h3>Selected Action {actionId}</h3>
     {loading && <p role="status">Loading selected Action…</p>}

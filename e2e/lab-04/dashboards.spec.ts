@@ -196,6 +196,38 @@ test.describe("E2E-02: role dashboards and exact destinations", () => {
     await expectAuthenticatedReads(page);
   });
 
+  test("Action21 remains editable when only the paginated Actions list fails and Retry never writes", async ({ page }) => {
+    const target = await fixture();
+    await dashboard(page, "staff", USERS.staff.email);
+    let listReads = 0;
+    await page.route(`**/api/tickets/${target.ticketNumber}/actions?*`, async route => {
+      expect(route.request().method()).toBe("GET");
+      listReads++;
+      await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "List unavailable" } }) });
+    });
+    const writes: string[] = [];
+    page.on("request", request => { if (["POST", "PATCH", "DELETE"].includes(request.method())) writes.push(request.url()); });
+    const detail = page.waitForResponse(response => response.url().endsWith(`/tickets/${target.ticketNumber}/actions/${target.selectedActionId}`));
+    await page.getByRole("link", { name: new RegExp(`Action ${target.selectedActionId}.*${target.ticketNumber}`) }).first().click();
+    expect((await detail).status()).toBe(200);
+    const selected = page.getByRole("region", { name: "Selected Action", exact: true });
+    await expect(selected).toContainText(`${marker} Action 21`);
+    await expect(page.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
+    await expect(page.getByRole("form", { name: "Edit Action" })).toHaveCount(0);
+    await selected.getByRole("button", { name: "Edit Action", exact: true }).click();
+    const form = page.getByRole("form", { name: "Edit Action" });
+    await expect(form).toBeVisible();
+    await expect(form.getByLabel(/Description/)).toHaveValue(`${marker} Action 21`);
+    await form.getByLabel(/Description/).fill("Draft survives list Retry");
+    const readsBefore = listReads;
+    await page.getByRole("button", { name: "Retry", exact: true }).click();
+    await expect.poll(() => listReads).toBe(readsBefore + 1);
+    await expect(page.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
+    await expect(form.getByLabel(/Description/)).toHaveValue("Draft survives list Retry");
+    expect(writes).toEqual([]);
+    await expectAuthenticatedReads(page);
+  });
+
   test("Administrator reuses staff metrics while retaining User Management navigation", async ({ page }) => {
     await fixture();
     const data = await dashboard(page, "staff", USERS.admin.email);

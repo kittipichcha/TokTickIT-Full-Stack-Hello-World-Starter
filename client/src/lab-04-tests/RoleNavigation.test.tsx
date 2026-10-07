@@ -66,4 +66,3 @@ describe("UI-DASH-01 role navigation and credentialed real list transport",()=> 
   await waitFor(()=>expect(screen.queryByLabelText("Active dashboard filters")).toBeNull());
  });
 });
-

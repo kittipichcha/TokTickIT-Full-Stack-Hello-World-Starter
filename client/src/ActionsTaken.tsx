@@ -324,41 +324,23 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus, selectedActionId
 
   const isTerminalTicket = TERMINAL_TICKET_STATUSES.has(ticketStatus);
 
-  if (loadState === "loading" && items.length === 0 && loadError === null) {
-    return (
-      <section className="actions-taken" aria-label="Actions Taken">
-        <h2>Actions Taken</h2>
-      {selectedActionId !== undefined && <SelectedDashboardAction key={`${ticketNumber}-${selectedActionId}`} ticketNumber={ticketNumber} actionId={selectedActionId} refreshKey={committed?.action.updatedAt} onOpen={action => { setCommitted(null); setEditingAction(action); setMode("edit"); }} />}
-        <ActionsSkeleton />
-      </section>
-    );
-  }
-
-  if (loadState === "error" && loadError) {
-    return (
-      <section className="actions-taken" aria-label="Actions Taken">
-        <h2>Actions Taken</h2>
-      {selectedActionId !== undefined && <SelectedDashboardAction key={`${ticketNumber}-${selectedActionId}`} ticketNumber={ticketNumber} actionId={selectedActionId} refreshKey={committed?.action.updatedAt} onOpen={action => { setCommitted(null); setEditingAction(action); setMode("edit"); }} />}
-        <ActionReadError
-          kind={loadError.kind}
-          message={loadError.message}
-          onRetry={() => setReloadTick((tick) => tick + 1)}
-        />
-      </section>
-    );
-  }
+  const openAction = (action: StaffActionDto) => {
+    setCommitted(null);
+    setEditingAction(action);
+    setMode("edit");
+  };
 
   return (
     <section className="actions-taken" aria-label="Actions Taken">
       <h2>Actions Taken</h2>
-      {selectedActionId !== undefined && <SelectedDashboardAction key={`${ticketNumber}-${selectedActionId}`} ticketNumber={ticketNumber} actionId={selectedActionId} refreshKey={committed?.action.updatedAt} onOpen={action => { setCommitted(null); setEditingAction(action); setMode("edit"); }} />}
+      {selectedActionId !== undefined && <SelectedDashboardAction key={`${ticketNumber}-${selectedActionId}`} ticketNumber={ticketNumber} actionId={selectedActionId} refreshKey={committed?.action.updatedAt} onOpen={openAction} />}
 
       <div className="actions-toolbar">
         {isTerminalTicket ? (
           <p className="action-reopen-guidance" role="note">
             This Ticket is {ticketStatus.toLowerCase()}. Reopen it before recording new Actions.
           </p>
-        ) : mode === "list" ? (
+        ) : mode === "list" && (loadState === "loaded" || (loadState === "loading" && items.length > 0)) ? (
           <button
             type="button"
             className="primary-button"
@@ -420,6 +402,12 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus, selectedActionId
           />
         )}
 
+      {loadState === "error" && loadError ? (
+        <ActionReadError kind={loadError.kind} message={loadError.message} onRetry={() => setReloadTick((tick) => tick + 1)} />
+      ) : loadState === "loading" && items.length === 0 ? (
+        <ActionsSkeleton />
+      ) : (
+        <>
       {loadState === "loading" && (
         <p className="placeholder-text" role="status">
           Updating Actions…
@@ -430,7 +418,7 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus, selectedActionId
         <p className="placeholder-text">No Actions recorded for this Ticket.</p>
       ) : (
         <ul className="action-list">
-          {items.map(action => <li className="action-card" key={action.id}><StaffActionCard className="" action={action} onOpen={action => { setCommitted(null); setEditingAction(action); setMode("edit"); }} /></li>)}
+          {items.map(action => <li className="action-card" key={action.id}><StaffActionCard className="" action={action} onOpen={openAction} /></li>)}
         </ul>
       )}
 
@@ -441,6 +429,8 @@ export function StaffActionsTaken({ ticketNumber, ticketStatus, selectedActionId
           if (next !== page) setPage(next);
         }}
       />
+        </>
+      )}
     </section>
   );
 }
