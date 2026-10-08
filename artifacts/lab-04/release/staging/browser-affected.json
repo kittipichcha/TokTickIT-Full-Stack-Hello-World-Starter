@@ -1,0 +1,1782 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/lab-04/release-hardening.spec.ts",
+      "e2e/lab-04/responsive-visual.spec.ts",
+      "e2e/lab-04/actions-taken-flow.spec.ts",
+      "e2e/lab-04/ticket-resolution.spec.ts",
+      "--workers=1",
+      "--reporter=list,json"
+    ],
+    "configFile": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\playwright.config.ts",
+    "rootDir": "C:/Users/kitti/CPE334/issue-55-worktree/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-03\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/kitti/CPE334/issue-55-worktree/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "C:/Users/kitti/CPE334/issue-55-worktree/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/kitti/CPE334/issue-55-worktree/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet",
+        "name": "tablet",
+        "testDir": "C:/Users/kitti/CPE334/issue-55-worktree/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/kitti/CPE334/issue-55-worktree/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "C:/Users/kitti/CPE334/issue-55-worktree/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "lab-04\\actions-taken-flow.spec.ts",
+      "file": "lab-04/actions-taken-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "E2E-01 (Actions portion): Actions Taken flow",
+          "file": "lab-04/actions-taken-flow.spec.ts",
+          "line": 32,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Staff completes A with a Result, cancels B without one, and Requester sees read-only names",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7298,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:20:18.674Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3a7897b555732050aff0-d25e0ca02bfe0a20db90",
+              "file": "lab-04/actions-taken-flow.spec.ts",
+              "line": 40,
+              "column": 7
+            },
+            {
+              "title": "an assignee deactivated mid-session is rejected by the server with safe 409 feedback and explicit repair",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5302,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:20:26.243Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3a7897b555732050aff0-3bbccc68130ecd808d37",
+              "file": "lab-04/actions-taken-flow.spec.ts",
+              "line": 211,
+              "column": 7
+            },
+            {
+              "title": "terminal Ticket shows reopen guidance and hides Add Action",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2518,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:20:31.568Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3a7897b555732050aff0-dacec464a0837c1546d7",
+              "file": "lab-04/actions-taken-flow.spec.ts",
+              "line": 308,
+              "column": 7
+            },
+            {
+              "title": "Staff completes A with a Result, cancels B without one, and Requester sees read-only names",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6723,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:21:29.721Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3a7897b555732050aff0-2d4a0632dda2b8392130",
+              "file": "lab-04/actions-taken-flow.spec.ts",
+              "line": 40,
+              "column": 7
+            },
+            {
+              "title": "an assignee deactivated mid-session is rejected by the server with safe 409 feedback and explicit repair",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5968,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:21:36.853Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3a7897b555732050aff0-dccdcb2ebc7aed52797a",
+              "file": "lab-04/actions-taken-flow.spec.ts",
+              "line": 211,
+              "column": 7
+            },
+            {
+              "title": "terminal Ticket shows reopen guidance and hides Add Action",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1819,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:21:42.857Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3a7897b555732050aff0-8ab3abb2355aa7d81ca6",
+              "file": "lab-04/actions-taken-flow.spec.ts",
+              "line": 308,
+              "column": 7
+            },
+            {
+              "title": "Staff completes A with a Result, cancels B without one, and Requester sees read-only names",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8986,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:22:44.390Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3a7897b555732050aff0-042b3b15b271ac2f804e",
+              "file": "lab-04/actions-taken-flow.spec.ts",
+              "line": 40,
+              "column": 7
+            },
+            {
+              "title": "an assignee deactivated mid-session is rejected by the server with safe 409 feedback and explicit repair",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7182,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:22:53.667Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3a7897b555732050aff0-d0dfb6e37344e391aa93",
+              "file": "lab-04/actions-taken-flow.spec.ts",
+              "line": 211,
+              "column": 7
+            },
+            {
+              "title": "terminal Ticket shows reopen guidance and hides Add Action",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2623,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:23:00.875Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3a7897b555732050aff0-ecaa831fd8e060a9dc03",
+              "file": "lab-04/actions-taken-flow.spec.ts",
+              "line": 308,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "lab-04\\release-hardening.spec.ts",
+      "file": "lab-04/release-hardening.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "HARDEN-01 requester: primary navigation and existing detail controls remain functional",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [
+                {
+                  "type": "expected-bootstrap-diagnostics",
+                  "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2748,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:20:34.128Z",
+                  "annotations": [
+                    {
+                      "type": "expected-bootstrap-diagnostics",
+                      "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-c291f1c970d347bdabbd",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 staff: primary navigation and existing detail controls remain functional",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [
+                {
+                  "type": "expected-bootstrap-diagnostics",
+                  "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3334,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:20:36.895Z",
+                  "annotations": [
+                    {
+                      "type": "expected-bootstrap-diagnostics",
+                      "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-93ecd0f1ab41908c4a73",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 admin: primary navigation and existing detail controls remain functional",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [
+                {
+                  "type": "expected-bootstrap-diagnostics",
+                  "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3377,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:20:40.248Z",
+                  "annotations": [
+                    {
+                      "type": "expected-bootstrap-diagnostics",
+                      "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-b42b768d95be50e2a629",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 requester: primary navigation and existing detail controls remain functional",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [
+                {
+                  "type": "expected-bootstrap-diagnostics",
+                  "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2254,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:21:44.704Z",
+                  "annotations": [
+                    {
+                      "type": "expected-bootstrap-diagnostics",
+                      "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-c7f5d46a6fc02c187f67",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 staff: primary navigation and existing detail controls remain functional",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [
+                {
+                  "type": "expected-bootstrap-diagnostics",
+                  "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3537,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:21:46.975Z",
+                  "annotations": [
+                    {
+                      "type": "expected-bootstrap-diagnostics",
+                      "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-192274584f1111706201",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 admin: primary navigation and existing detail controls remain functional",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [
+                {
+                  "type": "expected-bootstrap-diagnostics",
+                  "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3348,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:21:50.537Z",
+                  "annotations": [
+                    {
+                      "type": "expected-bootstrap-diagnostics",
+                      "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-7cca8701e0babe17d9e9",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 requester: primary navigation and existing detail controls remain functional",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [
+                {
+                  "type": "expected-bootstrap-diagnostics",
+                  "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3969,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:03.544Z",
+                  "annotations": [
+                    {
+                      "type": "expected-bootstrap-diagnostics",
+                      "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-fcb735f8955974bc9101",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 staff: primary navigation and existing detail controls remain functional",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [
+                {
+                  "type": "expected-bootstrap-diagnostics",
+                  "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4909,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:07.536Z",
+                  "annotations": [
+                    {
+                      "type": "expected-bootstrap-diagnostics",
+                      "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-a5614eeb0c39be51ac89",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 admin: primary navigation and existing detail controls remain functional",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [
+                {
+                  "type": "expected-bootstrap-diagnostics",
+                  "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4880,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:12.472Z",
+                  "annotations": [
+                    {
+                      "type": "expected-bootstrap-diagnostics",
+                      "description": "[\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\",\"Failed to load resource: the server responded with a status of 401 (Unauthorized)\"]"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-e7ac41fa73cedbf45cb9",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        }
+      ]
+    },
+    {
+      "title": "lab-04\\responsive-visual.spec.ts",
+      "file": "lab-04/responsive-visual.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "VISUAL-01 dashboard: requester cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1873,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:20:55.873Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-8f334382271644eed92f",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 185,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2423,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:20:57.778Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-bce93ba490472fa5a8ab",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 185,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2414,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:21:00.220Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-083c1e744ea7cda93f41",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 185,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2893,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:21:02.651Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-e12603df24b69b6757fe",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 205,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3653,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:21:05.565Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-3bc14233aa45cf093f4a",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 205,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3605,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:21:09.238Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-fe1100be03786c11c449",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 205,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2601,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:22:07.334Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-affbe5227fe26e66e2ef",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 185,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3952,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:22:09.965Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-8778059809b116d0b5ce",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 185,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3765,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:22:13.955Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-651a5195aed977b8e51b",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 185,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3847,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:22:17.812Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-47d544c9cb2e29086228",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 205,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3830,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:22:21.783Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-8bdca1a1c1293c0dd0af",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 205,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4797,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:22:25.642Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-c3fbb024397494d0bff6",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 205,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2215,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:31.809Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-c6fcc8c97f5a5e0dc69d",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 185,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2809,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:34.050Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-79dcba1be5c1a4356179",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 185,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2858,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:36.883Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-52bce72049c132ffad24",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 185,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3568,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:39.777Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-9acd22f339500bf164da",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 205,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4089,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:43.373Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-ffdf6c94f354f4622281",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 205,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4488,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:47.489Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-1476130a951583263ea7",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 205,
+          "column": 7
+        }
+      ],
+      "suites": [
+        {
+          "title": "VISUAL-01 (Actions portion): Actions area responsive layout",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 40,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Staff Actions area keeps section, controls, and cards inside the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7170,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:20:43.663Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-a9766c3643210b8a9685",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 50,
+              "column": 7
+            },
+            {
+              "title": "Requester read-only Actions area keeps cards inside the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4991,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:20:50.853Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-634687995d17a4a116de",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 120,
+              "column": 7
+            },
+            {
+              "title": "Staff Actions area keeps section, controls, and cards inside the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7014,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:21:53.931Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-0b6e67976e2f70847d07",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 50,
+              "column": 7
+            },
+            {
+              "title": "Requester read-only Actions area keeps cards inside the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6324,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:22:00.978Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-1c180e4a629adc8da9a8",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 120,
+              "column": 7
+            },
+            {
+              "title": "Staff Actions area keeps section, controls, and cards inside the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8654,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:23:17.400Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-a91e3f850618029b3a9a",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 50,
+              "column": 7
+            },
+            {
+              "title": "Requester read-only Actions area keeps cards inside the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5694,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:23:26.079Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-9dcdebefabe47649c20e",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 120,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "lab-04\\ticket-resolution.spec.ts",
+      "file": "lab-04/ticket-resolution.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Pending Actions block resolution until completed or cancelled; Requester remains read-only",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13652,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:21:12.880Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901d9f42b451fe84ae1a-02872602469b554a97aa",
+          "file": "lab-04/ticket-resolution.spec.ts",
+          "line": 20,
+          "column": 5
+        },
+        {
+          "title": "Pending Actions block resolution until completed or cancelled; Requester remains read-only",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12232,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:22:30.483Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901d9f42b451fe84ae1a-4cb2645f2852f2db7339",
+          "file": "lab-04/ticket-resolution.spec.ts",
+          "line": 20,
+          "column": 5
+        },
+        {
+          "title": "Pending Actions block resolution until completed or cancelled; Requester remains read-only",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15886,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:23:52.033Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "901d9f42b451fe84ae1a-4ea28ed526403171100a",
+          "file": "lab-04/ticket-resolution.spec.ts",
+          "line": 20,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-07T15:20:09.566Z",
+    "duration": 237419.862,
+    "expected": 45,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

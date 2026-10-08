@@ -7,6 +7,7 @@ import { USERS, createRequesterTicket, login, navigate, resetAccount } from "../
 async function expectControlInViewport(page: Page, control: Locator): Promise<void> {
   control = control.first();
   await control.scrollIntoViewIfNeeded();
+  await control.evaluate(node => node.scrollIntoView({ block: "center" }));
   await expect(control).toBeVisible();
   const bounds = await control.boundingBox();
   const viewport = page.viewportSize()!;
@@ -69,6 +70,12 @@ test.describe("VISUAL-01 (Actions portion): Actions area responsive layout", () 
     await expect(createForm).toBeVisible();
     await expectControlInViewport(page, createForm.locator("#action-description"));
     await expectControlInViewport(page, createForm.locator("#action-assignee"));
+    await createForm.locator("#action-followup").check();
+    await createForm.getByRole("button", { name: "Record Action" }).click();
+    await expect(createForm.locator("#action-followup-note-error")).toBeVisible();
+    await expectControlInViewport(page, createForm.locator("#action-followup-note"));
+    await page.screenshot({ path: screenshot("actions-taken", "create-validation"), fullPage: true });
+    await createForm.locator("#action-followup-note").fill("Responsive follow-up note.");
     await createForm.locator("#action-description").fill("Responsive smoke Action for VISUAL-01.");
     await createForm.getByRole("button", { name: "Record Action" }).click();
     await expect(actionsSection.locator(".success-box")).toContainText(
@@ -84,6 +91,24 @@ test.describe("VISUAL-01 (Actions portion): Actions area responsive layout", () 
     await expectControlInViewport(page, card.locator(".action-status-badge"));
     // A freshly created Action is Pending, so its footer control is Edit Action.
     await expectControlInViewport(page, card.getByRole("button", { name: "Edit Action" }));
+    await card.getByRole("button", { name: "Edit Action" }).click();
+    const editForm = page.locator('form[aria-label="Edit Action"]');
+    await editForm.locator("#action-description").fill("LongUnbrokenActionDescription".repeat(60));
+    // Move to the next field before inspecting layout; focused textarea caret scrolling is independent of page geometry.
+    await editForm.locator("#action-description").press("Tab");
+    await expectControlInViewport(page, editForm.locator("#action-description"));
+    await expectControlInViewport(page, editForm.getByRole("button", { name: "Save Action" }));
+    await page.screenshot({ path: screenshot("actions-taken", "edit-long"), fullPage: true });
+    await editForm.getByRole("button", { name: "Save Action" }).click();
+    await expect(editForm).toHaveCount(0);
+    const longCard = actionsSection.locator("li.action-card").filter({ hasText: "LongUnbrokenActionDescription" });
+    const description = longCard.locator(".action-card-description");
+    await expect(description).toBeVisible();
+    // Long content may legitimately exceed viewport height; it must wrap without horizontal clipping.
+    expect(await description.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+    const descriptionBounds = await description.boundingBox();
+    expect(descriptionBounds!.x).toBeGreaterThanOrEqual(0);
+    expect(descriptionBounds!.x + descriptionBounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
 
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -156,7 +181,7 @@ async function expectDashboardGeometry(page: Page) {
   });
   expect(result).toEqual({overlaps:false,clipped:false,unnamed:false});
 }
-for (const role of ["requester", "staff"] as const) {
+for (const role of ["requester", "staff", "admin"] as const) {
   test(`VISUAL-01 dashboard: ${role} cards and lists wrap within the viewport`, async ({ page }) => {
     await resetAccount(role);
     await login(page, USERS[role].email);
@@ -176,18 +201,22 @@ for (const role of ["requester", "staff"] as const) {
   });
 }
 
-for (const role of ["requester", "staff"] as const) {
+for (const role of ["requester", "staff", "admin"] as const) {
   test(`VISUAL-01 dashboard: ${role} loading, empty, failure and long text states`, async ({ page }) => {
     test.setTimeout(90_000);
     await resetAccount(role);
-    let state: "normal" | "loading" | "empty" | "failure" | "long" = "normal";
+    let state: "normal" | "loading" | "empty" | "failure" | "forbidden" | "long" = "normal";
     const releaseLoading: Array<() => void> = [];
     // These response variants prove presentation only; real metrics are verified by API/E2E-02.
-    await page.route(`**/api/${role}/dashboard`, async route => {
+    await page.route(`**/api/${role === "requester" ? "requester" : "staff"}/dashboard`, async route => {
       const response = await route.fetch();
       const body = await response.json();
       if (state === "failure") {
         await route.fulfill({ status: 500, json: { error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } } });
+        return;
+      }
+      if (state === "forbidden") {
+        await route.fulfill({ status: 403, json: { error: { code: "FORBIDDEN", message: "You do not have permission to view this dashboard." } } });
         return;
       }
       if (state === "loading") await new Promise<void>(resolve => { releaseLoading.push(resolve); });
@@ -207,12 +236,13 @@ for (const role of ["requester", "staff"] as const) {
     await login(page, USERS[role].email);
     const title = role === "requester" ? "Requester Dashboard" : "Staff Dashboard";
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
-    for (const next of ["loading", "empty", "failure", "long"] as const) {
+    for (const next of ["loading", "empty", "failure", "forbidden", "long"] as const) {
       await navigate(page, role === "requester" ? "My Tickets" : "Ticket Queue");
       state = next;
       await navigate(page, "Dashboard");
       if (next === "loading") await expect(page.getByRole("status")).toHaveText("Loading dashboard…");
       if (next === "failure") await expect(page.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
+      if (next === "forbidden") await expect(page.getByRole("alert")).toContainText("permission");
       if (next === "empty") {
         await expect(page.getByRole("button", { name: role === "requester" ? "Open Tickets: 0" : "Unassigned: 0", exact: true })).toBeVisible();
         const metrics = page.locator(".dashboard-metric");

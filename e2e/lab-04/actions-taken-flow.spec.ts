@@ -1,5 +1,20 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
+import { mkdirSync } from "node:fs";
+import path from "node:path";
 import { PASSWORD, USERS, createRequesterTicket, login, navigate, resetAccount } from "../lab-03/helpers";
+
+async function captureActionState(page: Page, scope: Locator, state: string) {
+  await scope.scrollIntoViewIfNeeded();
+  await expect(scope).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await scope.locator("button,input,select,textarea").evaluateAll(nodes => nodes.every(node => {
+    const bounds = node.getBoundingClientRect();
+    return !bounds.width || (bounds.left >= -1 && bounds.right <= window.innerWidth + 1);
+  }))).toBe(true);
+  const directory = path.resolve("artifacts/lab-04/screenshots/actions-taken");
+  mkdirSync(directory, { recursive: true });
+  await page.screenshot({ path: path.join(directory, `${test.info().project.name}-${state}.png`), fullPage: true });
+}
 
 /**
  * E2E-01 — Actions portion (Issue #52).
@@ -23,6 +38,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
   });
 
   test("Staff completes A with a Result, cancels B without one, and Requester sees read-only names", async ({ page }) => {
+    test.setTimeout(90_000);
     const summary = `Issue 52 actions flow ${Date.now()}`;
 
     await login(page, USERS.requester.email);
@@ -117,6 +133,13 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
       "Queue cleared; test page printed.",
     );
     await expect(cardA.getByRole("button", { name: "View Action" })).toBeVisible();
+    await cardA.getByRole("button", { name: "View Action" }).click();
+    const completedView = page.getByRole("region", { name: "View Action", exact: true });
+    await expect(completedView).toContainText("completed and read-only");
+    await expect(completedView.locator("input,select,textarea")).toHaveCount(0);
+    await captureActionState(page, completedView, "completed-view");
+    await completedView.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(completedView).toHaveCount(0);
 
     // --- Cancel B without a Result ---
     await cardB.getByRole("button", { name: "Edit Action" }).click();
@@ -127,6 +150,12 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
     await expect(cardB.locator(".action-status-badge")).toHaveText("Cancelled");
     await expect(cardB.locator(".action-field").filter({ hasText: "Result" }).first()).toContainText("—");
     await expect(cardB.getByRole("button", { name: "View Action" })).toBeVisible();
+    await cardB.getByRole("button", { name: "View Action" }).click();
+    const cancelledView = page.getByRole("region", { name: "View Action", exact: true });
+    await expect(cancelledView).toContainText("cancelled and read-only");
+    await expect(cancelledView.getByRole("button", { name: "Save Action" })).toHaveCount(0);
+    await captureActionState(page, cancelledView, "cancelled-view");
+    await cancelledView.getByRole("button", { name: "Close", exact: true }).click();
 
     // Terminal Actions are no longer editable.
     await expect(cardA.getByRole("button", { name: "Edit Action" })).toHaveCount(0);
@@ -180,6 +209,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
   });
 
   test("an assignee deactivated mid-session is rejected by the server with safe 409 feedback and explicit repair", async ({ page }) => {
+    test.setTimeout(90_000);
     const summary = `Issue 52 assignee 409 ${Date.now()}`;
     try {
       // --- Arrange: a Ticket with one Pending Action assigned to adminPeer ---
@@ -235,6 +265,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
         "not an active IT Staff or Administrator",
       );
       await expect(editForm.locator("#action-description")).toHaveValue(draftDescription);
+      await captureActionState(page, editForm, "assignee-conflict-draft");
 
       // The persisted Action is unchanged: original description, still Pending.
       await expect(cardC.locator(".action-card-description")).toHaveText(
@@ -250,6 +281,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
       await expect(
         editForm.locator("#action-assignee option:checked"),
       ).toContainText("(ineligible)");
+      await captureActionState(page, editForm, "assignee-ineligible-review");
 
       // Resubmission stays blocked until the assignee is explicitly repaired.
       await editForm.getByRole("button", { name: "Save Action" }).click();
@@ -266,6 +298,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
         cardC.locator(".action-field").filter({ hasText: "Assignee" }).first(),
       ).toContainText("Unassigned");
       await expect(cardC.locator(".action-status-badge")).toHaveText("Pending");
+      await captureActionState(page, cardC, "assignee-repaired");
     } finally {
       // Restore adminPeer so later tests/projects stay deterministic.
       await resetAccount("adminPeer");

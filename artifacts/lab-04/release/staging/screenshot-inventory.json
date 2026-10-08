@@ -1,0 +1,847 @@
+{
+  "screenshots": [
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/desktop-assignee-conflict-draft.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/desktop-assignee-conflict-draft.png",
+      "sha256": "155481eabdcd8d86de3d975f3dd7a706622f914b7b69d5558dcb02f4d96908a7",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/desktop-assignee-ineligible-review.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/desktop-assignee-ineligible-review.png",
+      "sha256": "c19a4167ef34b9ded81db6e848e3f3183742c2484558f2897cd54125f62ba3bd",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/desktop-assignee-repaired.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/desktop-assignee-repaired.png",
+      "sha256": "8c945c34bd03a8cfaf60f2ee8f08266ea2a679c055716acd817282c82e9a02a8",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/desktop-cancelled-view.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/desktop-cancelled-view.png",
+      "sha256": "63b0654ddbeba228b82dd26ad0d35c6dd2a21bda77088595ce21eabaa1b6a8f9",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/desktop-completed-view.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/desktop-completed-view.png",
+      "sha256": "3fe515809507b0a9520ef946c2726ccde08b695771949b1352181ebae889ff1d",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/desktop-create-validation.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/desktop-create-validation.png",
+      "sha256": "4cad3a1d7cf92d03fb254357161b1175d792a18e9cf9898cd9ae4a9be2579649",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/desktop-edit-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/desktop-edit-long.png",
+      "sha256": "6957605d2174f93489280d29d7ae20702759281dbdae993f009f3168fd003a59",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/desktop-requester-actions.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/desktop-requester-actions.png",
+      "sha256": "0bcc935c55ec124edb1841da0fa0c5eadb9aa172c61a8e0a8918f80c0c016abb",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/desktop-staff-actions.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/desktop-staff-actions.png",
+      "sha256": "2acbacee39b03c429c3ee3da7542a7f085ef2f05430c1fd94262510b117910dd",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/mobile-assignee-conflict-draft.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/mobile-assignee-conflict-draft.png",
+      "sha256": "8efc3ec8d5b2e8706abec9a8811412fc26db96706c34904f30bc9c9d15091cdb",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/mobile-assignee-ineligible-review.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/mobile-assignee-ineligible-review.png",
+      "sha256": "370838255e1c54498b1ba7c83223ff7435200b91a2ed40a103fd432a6d7a26bb",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/mobile-assignee-repaired.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/mobile-assignee-repaired.png",
+      "sha256": "ca8f685993203848fe1668bc3e1f12ef7480a3119973ec49a26ddffe19c91c21",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/mobile-cancelled-view.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/mobile-cancelled-view.png",
+      "sha256": "1471ae3088d5227615393ca4bb169a4d1bb7991b37d9b23393ec1d9284a43f54",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/mobile-completed-view.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/mobile-completed-view.png",
+      "sha256": "8f4c444f46f9ce99a0b0d5a701e053c2429b1382e34182678ed0a7c2be91abaa",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/mobile-create-validation.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/mobile-create-validation.png",
+      "sha256": "6ca3132f6e392f1893d04197d66d32cdf3242b9079941f4db224745d49194298",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/mobile-edit-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/mobile-edit-long.png",
+      "sha256": "d37b4e288ccdf55709a1e8816b2634325d6c58d5aad68f514063f4dd1aca6c78",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/mobile-requester-actions.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/mobile-requester-actions.png",
+      "sha256": "1cd9d6e0ffb070a0877c220557ba47a3357afe8b94c5a4751f3f7d8a13501a83",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/mobile-staff-actions.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/mobile-staff-actions.png",
+      "sha256": "8accb3be79ef01c1ab74da245f84e86bb6d4934a21001f884fe8436ace99ca50",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/tablet-assignee-conflict-draft.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/tablet-assignee-conflict-draft.png",
+      "sha256": "a50a3f220a90f6d385879a93af8780a7b2f65a260885d7dbe6d2e02ddcd301e9",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/tablet-assignee-ineligible-review.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/tablet-assignee-ineligible-review.png",
+      "sha256": "7df4836ff183729e24f5bdc4579ed5befc944f2e14b662a2b7286d2eecac33d3",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/tablet-assignee-repaired.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/tablet-assignee-repaired.png",
+      "sha256": "00af0016b7690688eb3855146b1cd857b30ca58a761a20c6e9e77e0d612b81c0",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/tablet-cancelled-view.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/tablet-cancelled-view.png",
+      "sha256": "94807c4f80fca2ddd5e6c802649d70edecdb2e2d361c5e89ac219974d2015e66",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/tablet-completed-view.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/tablet-completed-view.png",
+      "sha256": "a43b370a807345f990a89c474c77de515d57f5e21a991c57c8fea11368ee94e2",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/tablet-create-validation.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/tablet-create-validation.png",
+      "sha256": "61ec82a26b039c09f0225f186e6282c9f1a813db7d173d991a67827b128ff8d2",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/tablet-edit-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/tablet-edit-long.png",
+      "sha256": "a9cd0b3c01fb13606473850e34ea14571ca0b7e51e362f7209930a7e3d1d4c5e",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/tablet-requester-actions.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/tablet-requester-actions.png",
+      "sha256": "ee8c6901238f7affbe4131364a6248b1b62c03de29081e7769897e6b44971455",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/actions-taken/tablet-staff-actions.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/actions-taken/tablet-staff-actions.png",
+      "sha256": "c5dd9b06174569c470a85c94df8a0b8f63fd4b733fcf2bb75a64dfdab9c73dcb",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/desktop-dashboard.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/desktop-dashboard.png",
+      "sha256": "68a29829435184c1d8e3785d5d7d3e87dc38f149f28cf67b369546b45a463709",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/desktop-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/desktop-empty.png",
+      "sha256": "aed6fd0cffa4484277029f9e47468ca8b628ccddeece391b5a03bb02d4601f7f",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/desktop-failure.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/desktop-failure.png",
+      "sha256": "300f82e7e05b42dca869e008807eb62c39e1408d108031d6cae9ca1e782841fa",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/desktop-forbidden.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/desktop-forbidden.png",
+      "sha256": "726d1243b8fe13f5a8b8416204c7e3519df9f0431d0a921c2c7cd92083955100",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/desktop-loading.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/desktop-loading.png",
+      "sha256": "87328c5a118df901b1a5de46bd4e9768abc2d6a4e97a634d7e06ecd42a4b3e2d",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/desktop-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/desktop-long.png",
+      "sha256": "79336ae06e05f62c1eff65722ba3114b5ae72a407ad4e48e30b53101eadb25ee",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/mobile-dashboard.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/mobile-dashboard.png",
+      "sha256": "1be488f09f2154c7eee83f04c456930e691326d0f33036a93a8e04322b92ebad",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/mobile-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/mobile-empty.png",
+      "sha256": "29791fce8f2abfc729015d999398d12c4b52cca19f66158bce7db1b4682a3166",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/mobile-failure.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/mobile-failure.png",
+      "sha256": "8c99c72bc1a607b69d9f1a3aee71a6323412ec8b0efdc04061c7d1e358360705",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/mobile-forbidden.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/mobile-forbidden.png",
+      "sha256": "8f88847ed18550d2470683915b7923b929ae38239baea8b015cebd003252901d",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/mobile-loading.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/mobile-loading.png",
+      "sha256": "a40de2a05d645e0ca69414ce7b41be7b1b862d15d14b6dca2c94db14615943b0",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/mobile-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/mobile-long.png",
+      "sha256": "dfa62e5e8d7dd1e2e0d9097a7767cde5b8ccb957859c5af556c14c5d1dc70c87",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/tablet-dashboard.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/tablet-dashboard.png",
+      "sha256": "099c032e0329d8c6a9351bc93fdb0775ecd4e838b65f47a266da20e0d7a3ee2e",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/tablet-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/tablet-empty.png",
+      "sha256": "fccd059d2b94fdb3ad3a9d98fb4f9698890945593a4bbed9249100371bdc9ea6",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/tablet-failure.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/tablet-failure.png",
+      "sha256": "39912d3106b7f459df6ac293b8dfa0cb919dc6f56353ba490b328ce70383ac00",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/tablet-forbidden.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/tablet-forbidden.png",
+      "sha256": "b93c4b00ca225fa179354a96a4f3fbf768c4aca1ea91c3f0514876b8214e4f43",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/tablet-loading.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/tablet-loading.png",
+      "sha256": "acbc7818ac30752e05ec923600dff3786472e71445922a5719c4999521759f02",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/admin-dashboard/tablet-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/admin-dashboard/tablet-long.png",
+      "sha256": "ebad8f289c96378afc7b3d6e802ad13f951d8d13121be75055a7878624a239e4",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/desktop-dashboard.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/desktop-dashboard.png",
+      "sha256": "1645b30ffba8fa81617ebc08b9ecb91607e075ed092ee395e5c04ae99cb543d1",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/desktop-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/desktop-empty.png",
+      "sha256": "2a3c91a718c47b3f576badcb24b925394999f2b3593fe3b33c2612be56a73b04",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/desktop-failure.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/desktop-failure.png",
+      "sha256": "49bca65e617a4cccfdb09bdfe35e202c4d6d7c7e42d7aadfd6180c0aad34aebb",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/desktop-forbidden.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/desktop-forbidden.png",
+      "sha256": "bcdf0e8d18bddfa5c07a2f7f28deefbc109288c0920fd13c1ff98ed141d0c7b1",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/desktop-loading.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/desktop-loading.png",
+      "sha256": "79b7a90d19cb90c7c9e1731e1bda2205dafa1ef3b5bf4180f9d4e2355273048d",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/desktop-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/desktop-long.png",
+      "sha256": "9fcf1d3d7caed1f6db639a0c972f470fc63f9db1f96d5f8f5c6cd4abeffc856e",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/mobile-dashboard.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/mobile-dashboard.png",
+      "sha256": "403ea5e4308e781522e028d8b796f619e572c7bc431a8ace565072c8657b9bd7",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/mobile-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/mobile-empty.png",
+      "sha256": "e52257eea6ca84c2c4ce2da197d86b489e0a5259a4c99f039bc4088483fb2f40",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/mobile-failure.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/mobile-failure.png",
+      "sha256": "62bc93930c66036b46e9dfdb6632203585c300c4cfbec71ae43a4d4216fe4777",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/mobile-forbidden.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/mobile-forbidden.png",
+      "sha256": "b5acaa4c3bee1c79d0ad6f2c714480e463e2be6c504e67c129d3e23226dd0dd7",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/mobile-loading.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/mobile-loading.png",
+      "sha256": "16f603602fb371f1649526e106cb753beeaa4da2e8d55c0afdf1edc7065bd814",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/mobile-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/mobile-long.png",
+      "sha256": "b6966c938d41bf80195587cb3d8c73222e73a59940a80cd352005d6716c6db9a",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/tablet-dashboard.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/tablet-dashboard.png",
+      "sha256": "bcc8d0eae43cc11e0de1852a5d31fb552f51f763ce779e872a00832b791d5ba0",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/tablet-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/tablet-empty.png",
+      "sha256": "903231c97c95841dbce7f423aa48ff4d0e31ed86528fae04d487cc166d0921e6",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/tablet-failure.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/tablet-failure.png",
+      "sha256": "2b69f5ee21a10a47013f69670566c8f49ea7f42a380ddcdf78fac6764ac2baa3",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/tablet-forbidden.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/tablet-forbidden.png",
+      "sha256": "5deba57dd0f5426fc0ecc6db5ac29a7575060bd137d6585bdd3e010b6eb31c08",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/tablet-loading.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/tablet-loading.png",
+      "sha256": "734933dc808c45330ed2d851323eea48ac9658b7ce673046aa3ff1bb7e2669ac",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/requester-dashboard/tablet-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/requester-dashboard/tablet-long.png",
+      "sha256": "2e9257e0019b0fa2bbb9c20ff23640131c57bfd4bd005afd893a08c36f9946c5",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/desktop-dashboard.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/desktop-dashboard.png",
+      "sha256": "796a2f2f7ac9e7d2759681aa65f9ec3359801edb1f11bf4c045e99424e31bc2e",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/desktop-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/desktop-empty.png",
+      "sha256": "34cfa6e9e6df8d5a3513a2dba69544d843ee94766059ed27be36317a06dfcb60",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/desktop-failure.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/desktop-failure.png",
+      "sha256": "962912673ff1a94fffe02b695c8ea09fd1034f03f4a8ecce49bc5d9c6b0d6a0d",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/desktop-forbidden.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/desktop-forbidden.png",
+      "sha256": "21dd50427a7bc5185cb57250044e69cae3a09c3e0f07326811f93074b0cb3eeb",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/desktop-loading.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/desktop-loading.png",
+      "sha256": "c707a86f2f1ae9f0a5313b1619010dd42eeeabe40acd49f86e431f555e22da4f",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/desktop-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/desktop-long.png",
+      "sha256": "dab89db4c202e569e323121375572c5bf68a34f97d42372790642c7c87353ac8",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/mobile-dashboard.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/mobile-dashboard.png",
+      "sha256": "ef09eccf003615564ce40a304d53aeb30603273ed36aeab83f1d780f9576ffa3",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/mobile-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/mobile-empty.png",
+      "sha256": "da8cbbf67f55dddce9a9e0149913d5b21f44016e04b655d95a8226b2d8ac0d9c",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/mobile-failure.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/mobile-failure.png",
+      "sha256": "c0166d7c6b40fcaeda0fdb0d705c3d537ece79855ce443729cb7f15ffdc93e0b",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/mobile-forbidden.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/mobile-forbidden.png",
+      "sha256": "f10b604a9e89b2d4d62fbfde9c0ea185211f39a031af8106fdcf0e3b945abab6",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/mobile-loading.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/mobile-loading.png",
+      "sha256": "16025086f8450ea5038cf76d86690b98923e263c8185891204f3e993eb10a9e7",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/mobile-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/mobile-long.png",
+      "sha256": "dbb2461ac46fd583cc0ba91085805523743c46e51609584f177a75210e93558c",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/tablet-dashboard.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/tablet-dashboard.png",
+      "sha256": "8ec2f96b7ebf08f07be1c23f2e6d790665f3112b1dd40a02916eb53de55cb1e6",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/tablet-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/tablet-empty.png",
+      "sha256": "73965dc5d3b9e5d1a1bfe6605e2ffc964552065d431e5d2c377098a3526698d4",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/tablet-failure.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/tablet-failure.png",
+      "sha256": "1e0e471b0c3e05b3a887c489600f3b82a9ea5b6f6a8bc3caa65f06ba418bc875",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/tablet-forbidden.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/tablet-forbidden.png",
+      "sha256": "21366676b068066c9c2709064739cf80a24fcfceab3e6c8cda7580daad4e301e",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/tablet-loading.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/tablet-loading.png",
+      "sha256": "41b905b004c3d04fc38452ce0529291d0e1396eafc18f8f4a53602ae01bd07dc",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/staff-dashboard/tablet-long.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/staff-dashboard/tablet-long.png",
+      "sha256": "983fba25eb50adc9ba3756829036ff8bace8e106d017c81ae956b76cf8e31302",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/ticket-workflow/desktop-confirm-cancelled.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/ticket-workflow/desktop-confirm-cancelled.png",
+      "sha256": "3b9b1ac6fcc92da4ace24b377a76fd89293bb2f64ec9ef76795be00a5e8bbbe4",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/ticket-workflow/desktop-confirm-closed.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/ticket-workflow/desktop-confirm-closed.png",
+      "sha256": "3a6b5d1d4a7b7c6752c78ed4e1b7367428605996132a7cb1b6bc991c169d613a",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/ticket-workflow/desktop-confirm-resolved.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/ticket-workflow/desktop-confirm-resolved.png",
+      "sha256": "d4e19d998173154ed16bd1fe733a5b976911eae3d0d4eb3479c9246c3d5fd59b",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/ticket-workflow/mobile-confirm-cancelled.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/ticket-workflow/mobile-confirm-cancelled.png",
+      "sha256": "8e1e38a2bb6671a4e9d9253a3e44966a23ccc9b6d9e59b72998e3828288ebe18",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/ticket-workflow/mobile-confirm-closed.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/ticket-workflow/mobile-confirm-closed.png",
+      "sha256": "8b5ec84f7eae3c28ad5e58c90f97e9337a567fc2932618a361a0e372ab97f857",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/ticket-workflow/mobile-confirm-resolved.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/ticket-workflow/mobile-confirm-resolved.png",
+      "sha256": "1eb303d227c4de5b543ace5c11a708727d534309b047b6d54e271bcbbca3fe2c",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/ticket-workflow/tablet-confirm-cancelled.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/ticket-workflow/tablet-confirm-cancelled.png",
+      "sha256": "eccf9eedb9ddd06ec9eb758a76456a399938c9d58bb82cf336c7f4433ff30bb4",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/ticket-workflow/tablet-confirm-closed.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/ticket-workflow/tablet-confirm-closed.png",
+      "sha256": "3d9ec668c3208c0b6ae81b40f68bcc4ad87310f8e9df3de8d767b203adb5c7bc",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/ticket-workflow/tablet-confirm-resolved.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/ticket-workflow/tablet-confirm-resolved.png",
+      "sha256": "143e9cfffeda78da66282136ae706925afbaadb5392368354fd425dbfbb30af5",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/desktop-history-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/desktop-history-empty.png",
+      "sha256": "18653b7c907ad144a122e17c342eb43280b00f79de841ff9c8f6fb634ac5df57",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/desktop-history-page-1.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/desktop-history-page-1.png",
+      "sha256": "cf25a518feef83d03be874d104d5c5969964b9d7704db973034a0a8d701d8e56",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/desktop-history-page-2.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/desktop-history-page-2.png",
+      "sha256": "b00a678da1940c85d2d1f1419910074f51efcf043d9b954319c88339aec8cac3",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/desktop-history-read-error.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/desktop-history-read-error.png",
+      "sha256": "8a4566e1ddda4bec868f9b4aaff571a0dcbd5e9c406dd5f8d10ff1e9f3eb62f8",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/desktop-resolved-confirmation.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/desktop-resolved-confirmation.png",
+      "sha256": "3c899db625c1e4bede9df1b104319edbf6a4472c62ce39cd64422c389de6b6d9",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "1280x800",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/mobile-history-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/mobile-history-empty.png",
+      "sha256": "3b01ea6f66f862c9a4f28fb39e09a20779f795e8024a6ce92be70b3d0a96ec53",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/mobile-history-page-1.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/mobile-history-page-1.png",
+      "sha256": "adc408af50c318a7156ded16abb48476ea6f9e30c6853f355ebc7694fa61a862",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/mobile-history-page-2.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/mobile-history-page-2.png",
+      "sha256": "67380675be8d224bd4018da09585e767436b5d45c332f20d60656585ed36cc21",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/mobile-history-read-error.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/mobile-history-read-error.png",
+      "sha256": "560c9ea2453de26bb90802fc5950fcdf6486402725116e55d4d42aed7d4b0367",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/mobile-resolved-confirmation.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/mobile-resolved-confirmation.png",
+      "sha256": "48b0b805eafb20231e44ac3872a2a177e895c5189d402e73ae7e1e2f76ea66d1",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "390x844",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/tablet-history-empty.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/tablet-history-empty.png",
+      "sha256": "9d9793e53da017d5acd09dbd18dc194fdee2b2325d682952b9ab73f353fc6476",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/tablet-history-page-1.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/tablet-history-page-1.png",
+      "sha256": "ee838b272a4b364d23d010cdce192c022d75033611e13b697a319cf018ede9c8",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/tablet-history-page-2.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/tablet-history-page-2.png",
+      "sha256": "5df258343819b8e3be2e97ef6daa1256f2c233802808095c6eee094fdd155b23",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/tablet-history-read-error.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/tablet-history-read-error.png",
+      "sha256": "43b89629e1c8f39ad549814c4ed5112d41266378481dea87a876402ea5a162ba",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    },
+    {
+      "path": "artifacts/lab-04/release/staging/screenshots/workflow/tablet-resolved-confirmation.png",
+      "canonicalPath": "artifacts/lab-04/screenshots/workflow/tablet-resolved-confirmation.png",
+      "sha256": "6d51a9acdbf2042e34ee9db5acb09bc18a153aefaed6ee815119de029d07e65a",
+      "runStartedAt": "2026-10-08T02:00:20.519Z",
+      "viewport": "820x1180",
+      "evidence": "Canonical capture in final full three-project run; image inspection is recorded separately."
+    }
+  ],
+  "runStartedAt": "2026-10-08T02:00:20.519Z",
+  "imageCount": 105,
+  "fullRunExpected": 294
+}

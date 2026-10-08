@@ -1,0 +1,13 @@
+{
+  "startedUtc": "2026-10-07T15:09:00.7142639Z",
+  "endedUtc": "2026-10-07T15:09:02.8715649Z",
+  "source": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+  "cwd": "C:\\Users\\kitti\\CPE334\\issue-55-worktree",
+  "serverCommand": "node dist/src/index.js (server cwd, PORT=3045, NODE_ENV=development, valid private SESSION_SECRET, dedicated rehearsal DB)",
+  "clientCommand": "node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4175 --strictPort (client cwd)",
+  "authReadinessStatus": 401,
+  "authReadinessCode": "UNAUTHENTICATED",
+  "builtClientStatus": 200,
+  "result": "Passed",
+  "limitation": "HTTP startup smoke only; role journeys are proved by canonical Playwright, not this static preview request."
+}

@@ -1,0 +1,538 @@
+{
+  "restoredCount": 76,
+  "restored": [
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/api-failure/desktop.png",
+      "generatedSha256": "fc9a7e984fec814bd1c1340d0cd5981bad01d35c70b76c87df36279bb67b52fa",
+      "restoredSha256": "e60f4132e6dea4d92ddbe03a7cffaa8dbad905aeced5b72b18cbc7ce035d3002",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/api-failure/tablet.png",
+      "generatedSha256": "ce8f0368febaab9c386556dc0812f2ed5a18dfd557a9bd04a490bfdecf59a8cd",
+      "restoredSha256": "f319cef4f5494dfa9a0946464ab9d2d8a6e35c528f1d1880e732fb5b49710f0d",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/initial/desktop.png",
+      "generatedSha256": "e126f751abd6cd316457f67666f34157103f469569c92a0fc1a30bf3312ecfa9",
+      "restoredSha256": "55d3c09e818e7c92360d645c18d9dfa5c67a7ef4ff75d91953c04bf0ae81ed45",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/initial/tablet.png",
+      "generatedSha256": "6ff5c660cbf11b85f0f811fd86a8541dfa37c8f876b00275ecd89fa3a964aea7",
+      "restoredSha256": "3bfb302bafbd6efc2c9d16ebf7cb654be7a4521f10cc6b88781602ccb5d2ce3c",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/invalid-attachment/desktop.png",
+      "generatedSha256": "935f64d83439eb7a66927bb3fb3bab53f83b207a0fd446bd5e7bbeb1c3738564",
+      "restoredSha256": "8de035de244a8c8af463804e891d81ba60ce478ff2e08cf464a344eb9d6d841f",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/invalid-attachment/tablet.png",
+      "generatedSha256": "450f1bc57adcd33997b0722ad5e1713ae37c6f7af83f816a863508f84ff25e49",
+      "restoredSha256": "cf8ba9dc5d8df126d10c5d543f6c7acf20d075e851cd3c8d5dfaee90795e2b53",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/partial-success-attachment-failure/desktop.png",
+      "generatedSha256": "16c4b2124be84962063dc376dc84724fde75eb8e7c55c0a4c683e7ec0c28856f",
+      "restoredSha256": "fdd2b20b5fa23a8d544fede9a59695c3931bc77d6a2d81aa86f1050074dcc98d",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/partial-success-attachment-failure/mobile.png",
+      "generatedSha256": "54ae69afc289ef76774d6b7b4054f632c41e3c27f4681a4383ee94472c50a008",
+      "restoredSha256": "e1ce1aacbfa8b08a883e80769e2221a234546d6f96ff426e1ac4412f1f5ef268",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/partial-success-attachment-failure/tablet.png",
+      "generatedSha256": "fc923afc9b6257266bf1df928e1743df3157f2684b9067d889895e1239fcce77",
+      "restoredSha256": "97ce0560242a7e3d315f2a7bea7431ffdb0ff09a68e1af52201ed95bf263c683",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/submitting/desktop.png",
+      "generatedSha256": "1dc98dfdd882ec81bb4becc78ed8e68f667aafc1e421930bb384b37b3a2564b1",
+      "restoredSha256": "e5340c66c6bf0e840eb724d95145995449ff5d2e666e36f9822dbeec6d393523",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/submitting/tablet.png",
+      "generatedSha256": "e66973cabbeec1d39a2c305195989b2b74a12763653c58493a5cfbf761e40f86",
+      "restoredSha256": "568c23d583b839ef621d8579e32ffb214b451e262b2978181ce5e988fbe5447d",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/success/desktop.png",
+      "generatedSha256": "a1871d195f21ca848e52f659e06728d78b1a031c9f7036d7639af61f5cbbc897",
+      "restoredSha256": "38c528dc5d22e18bcea6c3b013be2fbb1b08b9dce6023d214d377ea606dbf3d0",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/success/mobile.png",
+      "generatedSha256": "49dd0a6e1037dbaf422862e417d47974ef5a35eb1335550b08e577b26d407909",
+      "restoredSha256": "346ddb75d3101311769adaae2d9159f4ce765e0603acc289be02deb1410bf19f",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/success/tablet.png",
+      "generatedSha256": "2896904c50b667a84084b19ac3064d6abcabbb8f0545d52760fb4d60dd543e4f",
+      "restoredSha256": "d956274d436301e0f898b3ddf9160fad22e728c56faa5a7c6ee9f7a9656df9c3",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/validation-error/desktop.png",
+      "generatedSha256": "ea84e1e15ef90014118e85d992ffc7e028007509568927a54d0e622f74236a30",
+      "restoredSha256": "0067108e1b00b2b106bd4427f67177a7205691b27b8440ab93b3b356e5e286d4",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/create-ticket/validation-error/tablet.png",
+      "generatedSha256": "80321903ca534ff92ae7cc7c6b8aae5b018a75ef8dd93f9a23d49eafacec0473",
+      "restoredSha256": "dd1627a3cd082bf17cf05da06bb47d71fcd8f0fcbc07e37abfb8aeeea2e1a89d",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/e2e-01-ticket-created.png",
+      "generatedSha256": "061067a0fef6c23b0f38343832d49c823d8cdf73a46bacbe0bef181cffe0b7b3",
+      "restoredSha256": "0cfa665617a1524570f24e0a0d29a72e4cc1022486c1089e6c9010672db2e113",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/e2e-02-ownership-isolation.png",
+      "generatedSha256": "79083d930976a0314d806adf0d6f4ab8d75ec6b6da03d176640d70426c5a2599",
+      "restoredSha256": "012b8b3cf81750522feabbccbe8db926b1b7bada6f54008979553bf35dc56dc3",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/e2e-03-attachment-lifecycle.png",
+      "generatedSha256": "403a4e33398612e5d9209ea58f7998a3f963b2849f4275b2dc4f6bae39e00d32",
+      "restoredSha256": "cbaf724b4cfefcc2e0e4aad2f29f044a7ca5ae56635f8e0bb100d19850f8f4b4",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/e2e-04-partial-success.png",
+      "generatedSha256": "4eec25fb7c8d8b674599ac155fa80b3b87c1c7374e9a29df103570d3047ef698",
+      "restoredSha256": "09c2127b7f8edfbcf6a0616b45ab5ff4ecbb29debffbcf04b5fe0119421b4514",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/default/desktop.png",
+      "generatedSha256": "aafdee365b3376e7a7a35ede0faea9a7b21e8778c66c0260cd3234de2999209e",
+      "restoredSha256": "e1d1d2b9d818fe72331b02e718076c4d8221835b3c43629d1671ae1ca5ee6c4d",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/default/tablet.png",
+      "generatedSha256": "81ba898419e85e1412fa8a6d9ab478ea9da2d139cbb6cef48f6a4064500e23b2",
+      "restoredSha256": "7e0a2c31e3bf972e5a5d151e83657ede0ceecb8e5f50000288421f2299812352",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/empty/desktop.png",
+      "generatedSha256": "61b0c3aedcfdce4873f1c6d8058ce35148ec9bc118280c69c037e4573da60a81",
+      "restoredSha256": "bee61bbdf23efe26529599fb2bfba9b9e3984f82dcc48a7cbf4461852937893a",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/empty/tablet.png",
+      "generatedSha256": "859402a1b3553a8071167d0840064c747a3c89ac26c1273d9fef2d35f5c2fe59",
+      "restoredSha256": "23a5d51ab013d2d1f755a9c7046ad8eb996b56e7165621c4ddc6541bfad2d734",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/failure/desktop.png",
+      "generatedSha256": "42c17ea86988825da7851dc5eef347fb4d2fc07f1a68bc32a214a7b994ed7f64",
+      "restoredSha256": "1bbffb5bb0bd28e62a18d42986a8ad2b5e9041fefcf1f5b39eadb07f4a299ebd",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/failure/tablet.png",
+      "generatedSha256": "db3554c23ba9806e66bf30cb134d7540aa21ac2e6b0c212be767d1291b173fef",
+      "restoredSha256": "4c60b42aacd331ab3e50ea6719e810f73e190bab9accb27cb7c4b45a4dae1144",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/filtered/desktop.png",
+      "generatedSha256": "88e0702c6a8347c38dfcca82d42b15aa5c8cc6ac4be1cf0d4e92f29b6ddab127",
+      "restoredSha256": "b3171fd0884a48ee8752c5eee6aa79fa360d16ed023c4bbbad663f9f8ae03897",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/filtered/tablet.png",
+      "generatedSha256": "3fd735508b24aedf0bf7d51ffc5dcbdc5301822c214498af57eb1a86cd4ecef2",
+      "restoredSha256": "3670c24bcbc4551f5ac9160e1d4c0c3f3fc610ee75098b5018ae891e6e068c8b",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/loading/desktop.png",
+      "generatedSha256": "c140f0a7d405fd2f61ba337490c122d28ec021303819ef47826057d7058bd112",
+      "restoredSha256": "93bf90bcf0697c39b4ed4dbc7889743c8d76c7d4790169cdadb7fdf0eaa56017",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/loading/tablet.png",
+      "generatedSha256": "73d3b3cd2e5694b3e2d411d88e9036b297c980e19f3631f68d9d522df1c73b81",
+      "restoredSha256": "8de1dd52f8cd551cff8efc5b245ea54d2260c449608ff27986085ed3c7682c76",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/no-results/desktop.png",
+      "generatedSha256": "1c9e670de87227061ccb68d15dd3a41b5582a8b36297a92cdca8d76415bc8c63",
+      "restoredSha256": "1d0200e6943e240e2243ab02f2b28197091f1f626411dc79fbef221f89b5ed7d",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/my-tickets/no-results/tablet.png",
+      "generatedSha256": "a07232409f409365a531a5b559ee50930b05727196797903faf145307b01b9b7",
+      "restoredSha256": "f29912683f8d8129b64cc55b6466abcfd2c05e87669f883323b930c342a00577",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-active/desktop.png",
+      "generatedSha256": "2c5c1652e165404fa2b656cc6ef7c026e1d794de63330247c773995f42d711cf",
+      "restoredSha256": "f2d530b08cbfc2a86ef2e906962baff14c7156a5a05702c5fdaf38514ac69201",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-active/mobile.png",
+      "generatedSha256": "00b35499a4b88fb732fb51c60bac2d1c9df8c8eff728740dc4001471a733eafb",
+      "restoredSha256": "f7b7adf0a4bedb7b2129a086bfe3a8eb5dafd6de359d1e074dbb81b5522318aa",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-active/tablet.png",
+      "generatedSha256": "4f3323ea26c7ac46502b67ffc474c291a64ff077dbda4dc5b6878a267c5d2659",
+      "restoredSha256": "f88923cc1919dfed7ad7f48452f7b0742c2c1cdd0530418073af0c96263b0c32",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-invalid/desktop.png",
+      "generatedSha256": "4a75ef351287e7f14dda5b379a1ef4c91054d350096e93acbd0f37963951dc2f",
+      "restoredSha256": "d3ef4460208259ee76af5391620523a17e9c3263031a448b0ba1b41d702ba617",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-invalid/mobile.png",
+      "generatedSha256": "a5afb91ce81ecbdf8c0af54f2eba80d53d74c7a5275c2227b60c4ba411991829",
+      "restoredSha256": "8cebb512765e4165dd6bdae08d4d586d25d652a08f1596aba7ba6dd8c7695571",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-invalid/tablet.png",
+      "generatedSha256": "dab2146931a307aa8b3d6246184d7a1b6d563be1e1b8eced87370aaca6a24524",
+      "restoredSha256": "bf12649239ae4745d54a487944f71b686ba411b970bff47363eb6493bc8545e0",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-removed/desktop.png",
+      "generatedSha256": "a837b67981b935400e2c29ba2d489e41513a4f09986b0081ec37ee7af4cf5a22",
+      "restoredSha256": "c7bf1b60b2f9232e96ab916a95a8ab8aa0149794159f4ec49b23dd178c217bf7",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-removed/mobile.png",
+      "generatedSha256": "fa6213d1d7496fa5c6c1ea4b8c6003094925341cc37f84b894087aeb1c8ae237",
+      "restoredSha256": "e514da2fec8bf2d83f9140b4802af1d53c216348fef3017b3cbb8dd9146cfaf8",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-removed/tablet.png",
+      "generatedSha256": "f505474c7191fd448c3d5d077d327aac976ffb96c9428583d77392a01eba272a",
+      "restoredSha256": "d4293205b15f1ff0961794f8f7d7ee2be1a5c78988e6aa9fe50e86c3c0b6a7a0",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-unavailable/desktop.png",
+      "generatedSha256": "bdeefa0f624a4010bb62c97ffc7cee87ce896fc8eddd173ffa5c8610521d0086",
+      "restoredSha256": "4c73a3860269911de72f4aeb13d229eac7c5e535c72144151ddfe0f29bc46c5d",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-unavailable/mobile.png",
+      "generatedSha256": "77d0a1137854db6024fff92a6db50fdf7f8a80d0d88626e105cf80c8b93452b0",
+      "restoredSha256": "8b6ed214ae325ad969ca64b886f503b266133cddb2736a83813f7eff9d759bc1",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-unavailable/tablet.png",
+      "generatedSha256": "ada401e0d4edfadc9cddbf7ffea6f224a409731dbcd38988d3798a94601c90c6",
+      "restoredSha256": "d22c46288a9486c107ce6f963b9a300bac3508a2ddd55921ba19269882ed1f17",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-uploading/desktop.png",
+      "generatedSha256": "f25059b50bcae7adefe2bffee5b370daa643462accc4152db3787d7f9b3d4ad0",
+      "restoredSha256": "a55900e8316d880eb379b3755f71745dd04293399847b3be1109cc6224228951",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-uploading/mobile.png",
+      "generatedSha256": "61e6afbc8e68f5d7ea56669b7dad84a589934ff0560760bb5ddf93707fc83971",
+      "restoredSha256": "6c929f5f205949fe45714846a259e948250eb12b72e8b88ace731de454df760b",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/attachment-uploading/tablet.png",
+      "generatedSha256": "fdc9efd405ad1ff1ad6d0bb9ef2e939cd7f5e810504910ff5df0961c349e4e8a",
+      "restoredSha256": "8bd4d4cc2ed12f0b1f92b2e2fc633b8e3797dd9ad1419b7fd2ec797e1b8c1a37",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/default/desktop.png",
+      "generatedSha256": "2c5c1652e165404fa2b656cc6ef7c026e1d794de63330247c773995f42d711cf",
+      "restoredSha256": "f2d530b08cbfc2a86ef2e906962baff14c7156a5a05702c5fdaf38514ac69201",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/default/mobile.png",
+      "generatedSha256": "00b35499a4b88fb732fb51c60bac2d1c9df8c8eff728740dc4001471a733eafb",
+      "restoredSha256": "f7b7adf0a4bedb7b2129a086bfe3a8eb5dafd6de359d1e074dbb81b5522318aa",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/default/tablet.png",
+      "generatedSha256": "4f3323ea26c7ac46502b67ffc474c291a64ff077dbda4dc5b6878a267c5d2659",
+      "restoredSha256": "f88923cc1919dfed7ad7f48452f7b0742c2c1cdd0530418073af0c96263b0c32",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/failure-or-not-found/desktop.png",
+      "generatedSha256": "8d0cb839cb447348a0d729891e1644243fb0604ee3f160b4ef63c4abbb2f4ef2",
+      "restoredSha256": "1d50033314e4945fbad77f37db4f4c06c1cac2618d8a3cd3ee67afe8bcbce149",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/failure-or-not-found/tablet.png",
+      "generatedSha256": "fec7f45a0a663bfad5de5f98a14d756946eb4425b21860ea355ec5e00e712cac",
+      "restoredSha256": "a006b357b12a82238f71c54c3a7f089c7a24af06c120df41ac2827bd80a93567",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/loading/desktop.png",
+      "generatedSha256": "e75be7e22d38a179d415e1b76ad676493e53778d47950a0b9f16fb87a2c4ef88",
+      "restoredSha256": "4383f6ea759b793dce822d69766fcc1414806c3aac88a1ad30537254693024e9",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/loading/tablet.png",
+      "generatedSha256": "49a1605fe1460fa688a4e48361b76a7faa07fbd1905f819e84c5788f7f5a36d2",
+      "restoredSha256": "dfa360239e3c61ad02784885152f646d3e17e17a68180cf0c1f1a7c0ce17a669",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/preview-modal/desktop.png",
+      "generatedSha256": "21a934d2e842343f74bfbcab5637ffaa2c24f0f2871e346f46035c8ceb49b67c",
+      "restoredSha256": "dca0df9cdd24edd71b370095f47672f32d0f16cf12e259632276a3aa82e2070e",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/preview-modal/mobile.png",
+      "generatedSha256": "32b092d9f503b552286bae84d576f6c18af1ed7207b36bc003825551ffa8a577",
+      "restoredSha256": "dcb5ab9e8914a31b2935cd8bb1fe14204dfefd3473455cfbf87e395309d06f3d",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-02/screenshots/ticket-detail/preview-modal/tablet.png",
+      "generatedSha256": "230847bbccf06af08a67f1de68aedd842105016f92d2d143349d7a811760ca64",
+      "restoredSha256": "6851d8ab29ce01f4aaf8883e116112c95997f0ddf7930077f6049e7d3b699392",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-create-ticket.png",
+      "generatedSha256": "750f269021b0bf3e6b561778cc714cd5076fa22a1b2ef5c82fd8dd4cf25a05c3",
+      "restoredSha256": "2815d4a1fd490f752d633e2f68a0f124782998bbaaf345526c5c8f6a35e5adfc",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-requester-my-tickets.png",
+      "generatedSha256": "434ccbf33ba175c53dd4fd479b3864741fc086273e85bafbb32ba40945b446ed",
+      "restoredSha256": "b409bba7748d217482a555e2e67a62eb73d844a507a562928dfa9c851473e762",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-requester-ticket-detail.png",
+      "generatedSha256": "a34b74c5448effb47d0cf33e74eff91c5c79027f5bc6e350ea71f72407c16b6d",
+      "restoredSha256": "0537c740ec91845c05d878a1ccd4978b580bcf24806d684d3c1e274360f07179",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-ticket-created.png",
+      "generatedSha256": "b57ce033491f7bb38a9042a3caf2f3812ffe00125088c62997a1fe5dffb9a1f8",
+      "restoredSha256": "f0aa716acaf41b3ccc71bd352247e1ec5f631b5844b9477a17b8c55db9d42099",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/mobile-requester-my-tickets.png",
+      "generatedSha256": "1f4d4a7200f169265e2b63864f1b2712afe8778e36df64e1bce4f752dd039755",
+      "restoredSha256": "5d804abdfabb52def4a4be02f78b6945980fb6474c6a572fad9495705651185a",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/mobile-requester-ticket-detail.png",
+      "generatedSha256": "2762b38dcfb60eca029a0b8675e054e6a8a1e69c31692dfbea9f35e48f2e5dd2",
+      "restoredSha256": "56c67a732afc749bc99f48fb9f3bd0f77b36fe0c8c12ca355b99b6fcdf8a8569",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/mobile-ticket-created.png",
+      "generatedSha256": "e357e3fbca69dbcc017762755e09294798d3d6afbda5af03b3d09ddac88df0c2",
+      "restoredSha256": "4c2ef8a2173e6532eb0be8b70336d63afa2dc91a41fa74e0062d1fd63773854b",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/tablet-create-ticket.png",
+      "generatedSha256": "409dfa616bfa3f1fd0082d23799366fcca432975e51fa41545fe319ff2d388fc",
+      "restoredSha256": "88294eb73c1fdde909778d0fa677a17025f16807b4a17081caf92b274a8841c6",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/tablet-requester-my-tickets.png",
+      "generatedSha256": "cb08f4ce381026763150b448c7949092efb640ca15f46a5e63df78326c1aea1d",
+      "restoredSha256": "16ca48bc0727c7ae62a65f3e0c5d26c4a3939ef3cb9ddfa6e6a5fb5460992127",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/tablet-requester-ticket-detail.png",
+      "generatedSha256": "75569e9966064000a056b53d9ffb0106135af04692df2ee1de218b79c232f672",
+      "restoredSha256": "6b4d11ad2e9b227ba630c3457b49f4282d9cfa0eb7012fe4b2b4a11dde9e533e",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/tablet-ticket-created.png",
+      "generatedSha256": "6e85f71176f27b55ff3add31f6671891dd3f9d8350405d6b1ea3d206beae3c99",
+      "restoredSha256": "9492c9fd3054cd5ac17457cbe5ab6f45ac5a9147389847d4ba625bbd4de616c4",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/desktop-queue-filtered.png",
+      "generatedSha256": "6bebbcf99fe5dbbda405a9caf066b653122616d7ec99e31efdc029e787b2f772",
+      "restoredSha256": "27274315ab9a13535efa389bfec9adc7ecc2507caaa7ddf7f6fc922ca4f1239c",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/mobile-queue-filtered.png",
+      "generatedSha256": "baa642f8aecc4e5ac9ba4833e669534c2f3ceb519fe75ae07c9e4c5d72b1ec4c",
+      "restoredSha256": "12b629272842be8f1cf1e0eff3cabbf23529693de3d743aa139fbf6dc68d7d3e",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/tablet-queue-filtered.png",
+      "generatedSha256": "eada8c064fe7e303ad401dc1043f9e9e0a12ff979573bc850da616baaaf2bbf5",
+      "restoredSha256": "301fb777be42b32b194c1f10d75d299eaa0a90cf8fad10128f4895e7d870f3b5",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/desktop-detail-unassigned.png",
+      "generatedSha256": "5e8cc06c095db7f32ad0d20c99d83184419aed364c8f30b55ba71ee21408f69d",
+      "restoredSha256": "a22ee6bae7774c25300831fa7236be659231cdac5ce952e7234c4b5d04d4657e",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/mobile-detail-unassigned.png",
+      "generatedSha256": "b752357b18dd31e603768446b309857e9d055c77d7e54cc4bc494023d0447549",
+      "restoredSha256": "dd27d1e20b7f3ac237ab60ad2f6971daa6e4f3017baf9c82022aaeb734093a03",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/tablet-detail-unassigned.png",
+      "generatedSha256": "3c2d0c0b4fcecac99d2abe7aa80637b61006c5563936388a32768b3dc9d188cf",
+      "restoredSha256": "716cf223d4e729c58f99d8d1e28e4274f6dc369828ebe20d4d8f7211ead6ffe8",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-users-list.png",
+      "generatedSha256": "fea8b1152caad67e3f7493b65d41196e4848f799323331da56bd8b58497f5fa9",
+      "restoredSha256": "26d4259a90983bad7ff424c8dcb9d39be2cc64a173cc4f4c01d7273cf5c45127",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/tablet-users-list.png",
+      "generatedSha256": "015790984234f86f6d841c8e7717f7e76c9ea2faa2d79d89aabbb186805164f0",
+      "restoredSha256": "27039c244c023f3c205c80131662c0e80c6657d5097dcfb2fdd40e69c5d1d604",
+      "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+      "reason": "Known historical tracked Lab2/3 generated output; current Lab4 captures retained."
+    }
+  ],
+  "baseline": "ed91b191ed44c3cb71de1ae61484f91e32b98e28"
+}

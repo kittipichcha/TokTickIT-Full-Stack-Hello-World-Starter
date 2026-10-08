@@ -1,0 +1,556 @@
+diff --git a/client/src/App.css b/client/src/App.css
+index 7a7466b..a434fdb 100644
+--- a/client/src/App.css
++++ b/client/src/App.css
+@@ -477,6 +477,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
+ .conflict-latest dd { margin: 0; overflow-wrap: anywhere; }
+ 
+ /* Action list + cards */
++.actions-taken .success-box { overflow-wrap: anywhere; }
+ .action-list { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-direction: column; gap: 14px; }
+ .action-card {
+   border: 1px solid var(--border-light);
+diff --git a/client/src/lab-04-tests/TicketWorkflow.test.tsx b/client/src/lab-04-tests/TicketWorkflow.test.tsx
+index ba2260a..9bf2459 100644
+--- a/client/src/lab-04-tests/TicketWorkflow.test.tsx
++++ b/client/src/lab-04-tests/TicketWorkflow.test.tsx
+@@ -147,18 +147,28 @@ describe("UI-WF-01/02 — versioned Ticket workflow", () => {
+     await waitFor(() => expect(api.applyStatusTransition).toHaveBeenLastCalledWith(ticketNumber, "WAITING_FOR_REQUESTER", 8));
+   });
+ 
+-  it("cancels confirmation and Escape without a request, then confirms with current version", async () => {
++  it.each([
++    { target: "RESOLVED", label: "Resolved", source: "IN_PROGRESS", consequence: "This marks the issue as resolved and prevents new Actions until the Ticket is reopened." },
++    { target: "CLOSED", label: "Closed", source: "RESOLVED", consequence: "This closes the Ticket and prevents new Actions." },
++    { target: "CANCELLED", label: "Cancelled", source: "IN_PROGRESS", consequence: "This cancels the Ticket. No further status changes or new Actions will be allowed." },
++  ] as const)("explains $label consequences, cancels without a request, then confirms with current version", async ({ target, label, source, consequence }) => {
+     const user = userEvent.setup();
+-    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail());
+-    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED", version: 5 });
++    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ currentStatus: source }));
++    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: target, version: 5 });
+     renderDetail();
+     await screen.findByText(ticketNumber);
+-    await user.click(screen.getByRole("button", { name: "Resolved" }));
++    await user.click(screen.getByRole("button", { name: label }));
++    const dialog = screen.getByRole("dialog", { name: "Confirm status change" });
++    expect(within(dialog).getByText(consequence)).toBeTruthy();
++    expect(within(dialog).getByText(label, { exact: true })).toBeTruthy();
+     await user.keyboard("{Escape}");
+     expect(api.applyStatusTransition).not.toHaveBeenCalled();
+-    await user.click(screen.getByRole("button", { name: "Resolved" }));
++    await user.click(screen.getByRole("button", { name: label }));
++    await user.click(screen.getByRole("button", { name: /^Cancel$/ }));
++    expect(api.applyStatusTransition).not.toHaveBeenCalled();
++    await user.click(screen.getByRole("button", { name: label }));
+     await user.click(screen.getByRole("button", { name: "Confirm" }));
+-    await waitFor(() => expect(api.applyStatusTransition).toHaveBeenCalledWith(ticketNumber, "RESOLVED", 4));
++    await waitFor(() => expect(api.applyStatusTransition).toHaveBeenCalledWith(ticketNumber, target, 4));
+   });
+ 
+   it("announces committed snapshots before failed refresh and uses each returned version on the next write", async () => {
+diff --git a/e2e/lab-04/actions-taken-flow.spec.ts b/e2e/lab-04/actions-taken-flow.spec.ts
+index aa7697c..8ef9dcc 100644
+--- a/e2e/lab-04/actions-taken-flow.spec.ts
++++ b/e2e/lab-04/actions-taken-flow.spec.ts
+@@ -1,6 +1,21 @@
+-import { test, expect } from "@playwright/test";
++import { test, expect, type Locator, type Page } from "@playwright/test";
++import { mkdirSync } from "node:fs";
++import path from "node:path";
+ import { PASSWORD, USERS, createRequesterTicket, login, navigate, resetAccount } from "../lab-03/helpers";
+ 
++async function captureActionState(page: Page, scope: Locator, state: string) {
++  await scope.scrollIntoViewIfNeeded();
++  await expect(scope).toBeVisible();
++  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
++  expect(await scope.locator("button,input,select,textarea").evaluateAll(nodes => nodes.every(node => {
++    const bounds = node.getBoundingClientRect();
++    return !bounds.width || (bounds.left >= -1 && bounds.right <= window.innerWidth + 1);
++  }))).toBe(true);
++  const directory = path.resolve("artifacts/lab-04/screenshots/actions-taken");
++  mkdirSync(directory, { recursive: true });
++  await page.screenshot({ path: path.join(directory, `${test.info().project.name}-${state}.png`), fullPage: true });
++}
++
+ /**
+  * E2E-01 — Actions portion (Issue #52).
+  *
+@@ -23,6 +38,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
+   });
+ 
+   test("Staff completes A with a Result, cancels B without one, and Requester sees read-only names", async ({ page }) => {
++    test.setTimeout(90_000);
+     const summary = `Issue 52 actions flow ${Date.now()}`;
+ 
+     await login(page, USERS.requester.email);
+@@ -117,6 +133,13 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
+       "Queue cleared; test page printed.",
+     );
+     await expect(cardA.getByRole("button", { name: "View Action" })).toBeVisible();
++    await cardA.getByRole("button", { name: "View Action" }).click();
++    const completedView = page.getByRole("region", { name: "View Action", exact: true });
++    await expect(completedView).toContainText("completed and read-only");
++    await expect(completedView.locator("input,select,textarea")).toHaveCount(0);
++    await captureActionState(page, completedView, "completed-view");
++    await completedView.getByRole("button", { name: "Close", exact: true }).click();
++    await expect(completedView).toHaveCount(0);
+ 
+     // --- Cancel B without a Result ---
+     await cardB.getByRole("button", { name: "Edit Action" }).click();
+@@ -127,6 +150,12 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
+     await expect(cardB.locator(".action-status-badge")).toHaveText("Cancelled");
+     await expect(cardB.locator(".action-field").filter({ hasText: "Result" }).first()).toContainText("—");
+     await expect(cardB.getByRole("button", { name: "View Action" })).toBeVisible();
++    await cardB.getByRole("button", { name: "View Action" }).click();
++    const cancelledView = page.getByRole("region", { name: "View Action", exact: true });
++    await expect(cancelledView).toContainText("cancelled and read-only");
++    await expect(cancelledView.getByRole("button", { name: "Save Action" })).toHaveCount(0);
++    await captureActionState(page, cancelledView, "cancelled-view");
++    await cancelledView.getByRole("button", { name: "Close", exact: true }).click();
+ 
+     // Terminal Actions are no longer editable.
+     await expect(cardA.getByRole("button", { name: "Edit Action" })).toHaveCount(0);
+@@ -180,6 +209,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
+   });
+ 
+   test("an assignee deactivated mid-session is rejected by the server with safe 409 feedback and explicit repair", async ({ page }) => {
++    test.setTimeout(90_000);
+     const summary = `Issue 52 assignee 409 ${Date.now()}`;
+     try {
+       // --- Arrange: a Ticket with one Pending Action assigned to adminPeer ---
+@@ -235,6 +265,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
+         "not an active IT Staff or Administrator",
+       );
+       await expect(editForm.locator("#action-description")).toHaveValue(draftDescription);
++      await captureActionState(page, editForm, "assignee-conflict-draft");
+ 
+       // The persisted Action is unchanged: original description, still Pending.
+       await expect(cardC.locator(".action-card-description")).toHaveText(
+@@ -250,6 +281,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
+       await expect(
+         editForm.locator("#action-assignee option:checked"),
+       ).toContainText("(ineligible)");
++      await captureActionState(page, editForm, "assignee-ineligible-review");
+ 
+       // Resubmission stays blocked until the assignee is explicitly repaired.
+       await editForm.getByRole("button", { name: "Save Action" }).click();
+@@ -266,6 +298,7 @@ test.describe("E2E-01 (Actions portion): Actions Taken flow", () => {
+         cardC.locator(".action-field").filter({ hasText: "Assignee" }).first(),
+       ).toContainText("Unassigned");
+       await expect(cardC.locator(".action-status-badge")).toHaveText("Pending");
++      await captureActionState(page, cardC, "assignee-repaired");
+     } finally {
+       // Restore adminPeer so later tests/projects stay deterministic.
+       await resetAccount("adminPeer");
+diff --git a/e2e/lab-04/keyboard-access.spec.ts b/e2e/lab-04/keyboard-access.spec.ts
+index c98d2a2..bb535bf 100644
+--- a/e2e/lab-04/keyboard-access.spec.ts
++++ b/e2e/lab-04/keyboard-access.spec.ts
+@@ -1,4 +1,6 @@
+ import { test, expect, type Locator, type Page } from "@playwright/test";
++import { mkdirSync } from "node:fs";
++import path from "node:path";
+ import { USERS, createRequesterTicket, login, navigate, resetAccount } from "../lab-03/helpers";
+ 
+ /**
+@@ -225,3 +227,79 @@ test("A11Y-01 dashboard: keyboard Retry performs one read and restores cards", a
+   expect(attempts).toBe(initialAttempts + 1);
+   await tabTo(page, card);
+ });
++
++for (const role of ["staff", "admin"] as const) {
++  test(`A11Y-01 ${role}: Ticket metrics use keyboard and Action totals stay outside the Tab order`, async ({ page }) => {
++    await resetAccount(role);
++    await login(page, USERS[role].email);
++    const card = page.getByRole("button", { name: /Unassigned:/ });
++    await tabTo(page, card);
++    expect(await page.locator(".dashboard-metric").evaluateAll(nodes => nodes.filter(node => node.tagName === "DIV").every(node => (node as HTMLElement).tabIndex < 0))).toBe(true);
++    await page.keyboard.press("Enter");
++    await expect(page.getByRole("searchbox", { name: "Search tickets" })).toBeVisible();
++    await navigateByKeyboard(page, "Dashboard", page.getByRole("heading", { name: "Staff Dashboard", exact: true }));
++  });
++}
++
++test("A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss", async ({ page }) => {
++  test.setTimeout(90_000);
++  await resetAccount("requester");
++  await resetAccount("staff");
++  await openStaffDetail(page, `Issue 55 keyboard confirmations ${Date.now()}`);
++  const claim = page.getByRole("button", { name: "Claim / Reassign to me", exact: true });
++  await tabTo(page, claim);
++  await page.keyboard.press("Enter");
++  const controls = page.locator("section").filter({ has: page.getByRole("heading", { name: "Ticket controls" }) });
++  for (const status of ["Open", "In Progress"]) {
++    const button = controls.getByRole("button", { name: status, exact: true });
++    await expect(button).toBeEnabled();
++    await tabTo(page, button);
++    await page.keyboard.press("Enter");
++    await expect(page.locator(".status-badge").first()).toHaveText(status.toUpperCase().replaceAll(" ", "_"));
++  }
++  const writes: string[] = [];
++  page.on("request", request => { if (request.method() === "PATCH" && /\/status$/.test(request.url())) writes.push(request.url()); });
++  for (const [status, consequence] of [["Resolved", "prevents new Actions until the Ticket is reopened"], ["Closed", "closes the Ticket and prevents new Actions"], ["Cancelled", "No further status changes or new Actions will be allowed"]]) {
++    const invoke = controls.getByRole("button", { name: status, exact: true });
++    const before = writes.length;
++    for (const dismiss of ["Escape", "Cancel"]) {
++      await tabTo(page, invoke);
++      await page.keyboard.press("Enter");
++      const dialog = page.getByRole("dialog", { name: "Confirm status change" });
++      await expect(dialog).toContainText(status);
++      await expect(dialog).toContainText(consequence);
++      if (dismiss === "Escape") {
++        const bounds = await dialog.boundingBox();
++        expect(bounds!.x).toBeGreaterThanOrEqual(0);
++        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
++        expect(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
++        const directory = path.resolve("artifacts/lab-04/screenshots/ticket-workflow");
++        mkdirSync(directory, { recursive: true });
++        await page.screenshot({ path: path.join(directory, `${test.info().project.name}-confirm-${status.toLowerCase()}.png`), fullPage: false });
++      }
++      const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
++      const confirm = dialog.getByRole("button", { name: "Confirm", exact: true });
++      await expect(cancel).toBeFocused();
++      await page.keyboard.press("Shift+Tab");
++      await expect(confirm).toBeFocused();
++      await page.keyboard.press("Tab");
++      await expect(cancel).toBeFocused();
++      if (dismiss === "Escape") await page.keyboard.press("Escape");
++      else await page.keyboard.press("Enter");
++      await expect(dialog).toHaveCount(0);
++      await expect(invoke).toBeFocused();
++      expect(writes).toHaveLength(before);
++    }
++    // Closed becomes available only after a successful Resolved transition.
++    if (status !== "Cancelled") {
++      await tabTo(page, invoke);
++      await page.keyboard.press("Enter");
++      const dialog = page.getByRole("dialog", { name: "Confirm status change" });
++      await tabTo(page, dialog.getByRole("button", { name: "Confirm", exact: true }));
++      await page.keyboard.press("Enter");
++      await expect(dialog).toHaveCount(0);
++      await expect(page.locator(".status-badge").first()).toHaveText(status.toUpperCase());
++      await expect(page.getByRole("link", { name: "← Back to Queue", exact: true })).toBeFocused();
++    }
++  }
++});
+diff --git a/e2e/lab-04/release-hardening.spec.ts b/e2e/lab-04/release-hardening.spec.ts
+new file mode 100644
+index 0000000..24c8a4d
+--- /dev/null
++++ b/e2e/lab-04/release-hardening.spec.ts
+@@ -0,0 +1,118 @@
++import { test, expect } from "@playwright/test";
++import { USERS, createRequesterTicket, login, navigate, resetAccount } from "../lab-03/helpers";
++
++// HARDEN-01: healthy journeys only. Injected-failure coverage stays in its canonical suites.
++for (const role of ["requester", "staff", "admin"] as const) {
++  test(`HARDEN-01 ${role}: primary navigation and existing detail controls remain functional`, async ({ page }) => {
++    test.setTimeout(90_000);
++    await resetAccount("requester");
++    await resetAccount(role);
++    const errors: string[] = [];
++    const expectedBootstrapDiagnostics: string[] = [];
++    let unauthenticated = true;
++    page.on("pageerror", error => errors.push(error.message));
++    page.on("console", message => {
++      if (message.type() !== "error") return;
++      // Chromium reports the exact unauthenticated bootstrap response as a transport error.
++      if (unauthenticated && new URL(message.location().url || "http://invalid").pathname === "/api/auth/me" && /401/.test(message.text())) {
++        expectedBootstrapDiagnostics.push(message.text());
++      } else errors.push(message.text());
++    });
++    page.on("response", async response => {
++      const url = new URL(response.url());
++      if (!url.pathname.startsWith("/api/") || response.status() < 400) return;
++      if (unauthenticated && url.pathname === "/api/auth/me" && response.status() === 401 && response.request().method() === "GET") {
++        const body = await response.json();
++        if (body.error?.code === "UNAUTHENTICATED") return;
++      }
++      errors.push(`${response.request().method()} ${url.pathname}: ${response.status()}`);
++    });
++    page.on("requestfailed", request => {
++      if (new URL(request.url()).pathname.startsWith("/api/")) errors.push(`${request.url()}: ${request.failure()?.errorText}`);
++    });
++    async function healthyScreen(active: string) {
++      await expect(page.locator("#primary-navigation").getByRole("link", { name: active, exact: true, includeHidden: true })).toHaveAttribute("aria-current", "page");
++      await expect(page.getByText(/^(Coming soon|Not implemented|TODO|TBD)[.!]?$/)).toHaveCount(0);
++      const hamburger = page.locator(".hamburger");
++      if (await hamburger.isVisible()) await expect(hamburger).toHaveAttribute("aria-expanded", "false");
++      // Only known boundaries and actual validation/eligibility reasons explain a disabled control.
++      for (const control of await page.locator("button:disabled").all()) {
++        const explanation = await control.evaluate(node => {
++          const label = node.textContent?.trim() ?? "";
++          const section = node.closest("section");
++          const form = node.closest("form");
++          const context = node.closest("nav,.pagination,.pagination-controls,section,main")?.textContent ?? "";
++          if (/^(Previous|Next)$/.test(label) && /Page\s+\d+\s+of\s+\d+/.test(context)) return "documented page boundary";
++          const pagination = node.closest(".pagination-footer");
++          if (/^(Previous|Next)$/.test(label) && pagination?.querySelector(".pagination-page.active") && /Showing\s+\d+[–-]\d+\s+of\s+\d+/.test(pagination.textContent ?? "")) return "visible Ticket-list page boundary";
++          if (/^Post (Comment|Note)$/.test(label) && form) {
++            const text = form.querySelector("textarea")?.value.trim() ?? "";
++            if (text.length === 0 || text.length > 2000) return "comment/note validation with visible length counter";
++          }
++          if (label === "Save priority") {
++            const selected = section?.querySelector<HTMLSelectElement>("#it-priority-select")?.value;
++            const currentRow = [...document.querySelectorAll(".ticket-info-row")].find(row => row.querySelector(".ticket-info-label")?.textContent?.trim() === "IT Priority");
++            const current = currentRow?.querySelector(".priority-badge")?.textContent?.trim() ?? "";
++            if (selected === "" || selected === current) return "no unsaved IT Priority change";
++          }
++          if (label === "Assign" && section?.querySelector<HTMLSelectElement>("#owner-select")?.value === "") return "no owner selected";
++          if (label === "Claimed by you") return "already owned by this actor";
++          if (/^(Open|In Progress|Resolved|Closed|Cancelled|Reopened|Waiting for Requester)$/.test(label) && section?.textContent?.includes("Claim or assign this ticket before changing its status.")) return "unowned Ticket eligibility guidance";
++          return "";
++        });
++        expect(explanation, `Unexplained disabled control: ${await control.innerText()}`).not.toBe("");
++      }
++    }
++    async function signIn(email: string) {
++      await login(page, email);
++      unauthenticated = false;
++    }
++    async function logout() {
++      unauthenticated = true;
++      await page.getByRole("button", { name: "Logout", exact: true }).click();
++      await expect(page.getByRole("button", { name: "Login", exact: true })).toBeVisible();
++    }
++    await signIn(USERS.requester.email);
++    const summary = `Issue 55 ${role} navigation ${Date.now()}`;
++    const ticketNumber = await createRequesterTicket(page, summary);
++    if (role !== "requester") { await logout(); await signIn(USERS[role].email); }
++    await navigate(page, "Dashboard");
++    await expect(page.getByRole("heading", { name: role === "requester" ? "Requester Dashboard" : "Staff Dashboard", exact: true })).toBeVisible();
++    await healthyScreen("Dashboard");
++    const destination = role === "requester" ? "My Tickets" : "Ticket Queue";
++    await navigate(page, destination);
++    await expect(page.getByRole("searchbox", { name: "Search tickets" })).toBeVisible();
++    await healthyScreen(destination);
++    await page.getByLabel("Search tickets").fill(summary);
++    if (role === "requester") await page.getByRole("link", { name: ticketNumber, exact: true }).click();
++    else await page.getByRole("button", { name: "Open Detail", exact: true }).click();
++    await expect(page.getByRole("heading", { name: new RegExp(`^${ticketNumber} `) })).toBeVisible();
++    await healthyScreen(destination);
++    for (const heading of ["Public Comments", "Attachments", "Actions Taken"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
++    if (role !== "requester") {
++      await page.getByRole("button", { name: "View status history", exact: true }).click();
++      for (const heading of ["Internal Notes", "Status history"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
++      await expect(page.getByRole("button", { name: "Add Action", exact: true })).toBeEnabled();
++    }
++    await page.getByRole("link", { name: role === "requester" ? "← Back to My Tickets" : "← Back to Queue", exact: true }).click();
++    await expect(page.getByRole("searchbox", { name: "Search tickets" })).toBeVisible();
++    await healthyScreen(destination);
++    if (role === "requester") {
++      await navigate(page, "Create Ticket");
++      const another = page.getByRole("button", { name: "Create Another", exact: true });
++      if (await another.isVisible()) await another.click();
++      await expect(page.locator("#summary")).toBeVisible();
++      await healthyScreen("Create Ticket");
++    }
++    if (role === "admin") {
++      await navigate(page, "User Management");
++      await expect(page.getByRole("heading", { name: "User Management", exact: true })).toBeVisible();
++      await healthyScreen("User Management");
++    }
++    await navigate(page, "Dashboard");
++    await healthyScreen("Dashboard");
++    await logout();
++    test.info().annotations.push({ type: "expected-bootstrap-diagnostics", description: JSON.stringify(expectedBootstrapDiagnostics) });
++    expect(errors).toEqual([]);
++  });
++}
+diff --git a/e2e/lab-04/responsive-visual.spec.ts b/e2e/lab-04/responsive-visual.spec.ts
+index 62d66f7..936d682 100644
+--- a/e2e/lab-04/responsive-visual.spec.ts
++++ b/e2e/lab-04/responsive-visual.spec.ts
+@@ -7,6 +7,7 @@ import { USERS, createRequesterTicket, login, navigate, resetAccount } from "../
+ async function expectControlInViewport(page: Page, control: Locator): Promise<void> {
+   control = control.first();
+   await control.scrollIntoViewIfNeeded();
++  await control.evaluate(node => node.scrollIntoView({ block: "center" }));
+   await expect(control).toBeVisible();
+   const bounds = await control.boundingBox();
+   const viewport = page.viewportSize()!;
+@@ -69,6 +70,12 @@ test.describe("VISUAL-01 (Actions portion): Actions area responsive layout", ()
+     await expect(createForm).toBeVisible();
+     await expectControlInViewport(page, createForm.locator("#action-description"));
+     await expectControlInViewport(page, createForm.locator("#action-assignee"));
++    await createForm.locator("#action-followup").check();
++    await createForm.getByRole("button", { name: "Record Action" }).click();
++    await expect(createForm.locator("#action-followup-note-error")).toBeVisible();
++    await expectControlInViewport(page, createForm.locator("#action-followup-note"));
++    await page.screenshot({ path: screenshot("actions-taken", "create-validation"), fullPage: true });
++    await createForm.locator("#action-followup-note").fill("Responsive follow-up note.");
+     await createForm.locator("#action-description").fill("Responsive smoke Action for VISUAL-01.");
+     await createForm.getByRole("button", { name: "Record Action" }).click();
+     await expect(actionsSection.locator(".success-box")).toContainText(
+@@ -84,6 +91,24 @@ test.describe("VISUAL-01 (Actions portion): Actions area responsive layout", ()
+     await expectControlInViewport(page, card.locator(".action-status-badge"));
+     // A freshly created Action is Pending, so its footer control is Edit Action.
+     await expectControlInViewport(page, card.getByRole("button", { name: "Edit Action" }));
++    await card.getByRole("button", { name: "Edit Action" }).click();
++    const editForm = page.locator('form[aria-label="Edit Action"]');
++    await editForm.locator("#action-description").fill("LongUnbrokenActionDescription".repeat(60));
++    // Move to the next field before inspecting layout; focused textarea caret scrolling is independent of page geometry.
++    await editForm.locator("#action-description").press("Tab");
++    await expectControlInViewport(page, editForm.locator("#action-description"));
++    await expectControlInViewport(page, editForm.getByRole("button", { name: "Save Action" }));
++    await page.screenshot({ path: screenshot("actions-taken", "edit-long"), fullPage: true });
++    await editForm.getByRole("button", { name: "Save Action" }).click();
++    await expect(editForm).toHaveCount(0);
++    const longCard = actionsSection.locator("li.action-card").filter({ hasText: "LongUnbrokenActionDescription" });
++    const description = longCard.locator(".action-card-description");
++    await expect(description).toBeVisible();
++    // Long content may legitimately exceed viewport height; it must wrap without horizontal clipping.
++    expect(await description.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
++    const descriptionBounds = await description.boundingBox();
++    expect(descriptionBounds!.x).toBeGreaterThanOrEqual(0);
++    expect(descriptionBounds!.x + descriptionBounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
+ 
+     expect(
+       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+@@ -156,7 +181,7 @@ async function expectDashboardGeometry(page: Page) {
+   });
+   expect(result).toEqual({overlaps:false,clipped:false,unnamed:false});
+ }
+-for (const role of ["requester", "staff"] as const) {
++for (const role of ["requester", "staff", "admin"] as const) {
+   test(`VISUAL-01 dashboard: ${role} cards and lists wrap within the viewport`, async ({ page }) => {
+     await resetAccount(role);
+     await login(page, USERS[role].email);
+@@ -176,20 +201,24 @@ for (const role of ["requester", "staff"] as const) {
+   });
+ }
+ 
+-for (const role of ["requester", "staff"] as const) {
++for (const role of ["requester", "staff", "admin"] as const) {
+   test(`VISUAL-01 dashboard: ${role} loading, empty, failure and long text states`, async ({ page }) => {
+     test.setTimeout(90_000);
+     await resetAccount(role);
+-    let state: "normal" | "loading" | "empty" | "failure" | "long" = "normal";
++    let state: "normal" | "loading" | "empty" | "failure" | "forbidden" | "long" = "normal";
+     const releaseLoading: Array<() => void> = [];
+     // These response variants prove presentation only; real metrics are verified by API/E2E-02.
+-    await page.route(`**/api/${role}/dashboard`, async route => {
++    await page.route(`**/api/${role === "requester" ? "requester" : "staff"}/dashboard`, async route => {
+       const response = await route.fetch();
+       const body = await response.json();
+       if (state === "failure") {
+         await route.fulfill({ status: 500, json: { error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } } });
+         return;
+       }
++      if (state === "forbidden") {
++        await route.fulfill({ status: 403, json: { error: { code: "FORBIDDEN", message: "You do not have permission to view this dashboard." } } });
++        return;
++      }
+       if (state === "loading") await new Promise<void>(resolve => { releaseLoading.push(resolve); });
+       if (state === "empty") {
+         for (const key of Object.keys(body.data.counts)) {
+@@ -207,12 +236,13 @@ for (const role of ["requester", "staff"] as const) {
+     await login(page, USERS[role].email);
+     const title = role === "requester" ? "Requester Dashboard" : "Staff Dashboard";
+     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+-    for (const next of ["loading", "empty", "failure", "long"] as const) {
++    for (const next of ["loading", "empty", "failure", "forbidden", "long"] as const) {
+       await navigate(page, role === "requester" ? "My Tickets" : "Ticket Queue");
+       state = next;
+       await navigate(page, "Dashboard");
+       if (next === "loading") await expect(page.getByRole("status")).toHaveText("Loading dashboard…");
+       if (next === "failure") await expect(page.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
++      if (next === "forbidden") await expect(page.getByRole("alert")).toContainText("permission");
+       if (next === "empty") {
+         await expect(page.getByRole("button", { name: role === "requester" ? "Open Tickets: 0" : "Unassigned: 0", exact: true })).toBeVisible();
+         const metrics = page.locator(".dashboard-metric");
+diff --git a/e2e/lab-04/ticket-resolution.spec.ts b/e2e/lab-04/ticket-resolution.spec.ts
+index fef172f..48a5970 100644
+--- a/e2e/lab-04/ticket-resolution.spec.ts
++++ b/e2e/lab-04/ticket-resolution.spec.ts
+@@ -1,8 +1,24 @@
+-import { test, expect } from "@playwright/test";
++import { test, expect, type Locator, type Page } from "@playwright/test";
++import { mkdirSync } from "node:fs";
++import path from "node:path";
+ import { PASSWORD, USERS, createRequesterTicket, login, navigate, resetAccount } from "../lab-03/helpers";
+ 
++async function captureWorkflowState(page: Page, scope: Locator, state: string) {
++  await scope.scrollIntoViewIfNeeded();
++  await expect(scope).toBeVisible();
++  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
++  expect(await scope.locator("button").evaluateAll(nodes => nodes.every(node => {
++    const bounds = node.getBoundingClientRect();
++    return !bounds.width || (bounds.left >= -1 && bounds.right <= window.innerWidth + 1);
++  }))).toBe(true);
++  const directory = path.resolve("artifacts/lab-04/screenshots/workflow");
++  mkdirSync(directory, { recursive: true });
++  await page.screenshot({ path: path.join(directory, `${test.info().project.name}-${state}.png`), fullPage: state !== "resolved-confirmation" });
++}
++
+ // E2E-01 workflow portion: exercise the real resolution gate and role projection.
+ test("Pending Actions block resolution until completed or cancelled; Requester remains read-only", async ({ page }) => {
++  test.setTimeout(120_000);
+   await resetAccount("requester");
+   await resetAccount("staff");
+   await resetAccount("adminPeer");
+@@ -15,6 +31,11 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
+   await page.getByLabel("Search tickets").fill(summary);
+   await page.getByRole("button", { name: "Open Detail" }).click();
+   await expect(page.getByRole("heading", { name: ticketNumber })).toBeVisible();
++  const history = page.getByRole("region", { name: "Ticket status history" });
++  await history.getByRole("button", { name: "View status history" }).click();
++  await expect(history.getByText("No status history.", { exact: true })).toBeVisible();
++  await captureWorkflowState(page, history, "history-empty");
++  await history.getByRole("button", { name: "Hide status history" }).click();
+   await page.getByRole("button", { name: "Claim / Reassign to me", exact: true }).click();
+   const controls = page.locator("section").filter({ has: page.getByRole("heading", { name: "Ticket controls" }) });
+   await controls.getByRole("button", { name: "Open", exact: true }).click();
+@@ -60,7 +81,10 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
+   }
+   const blockedResponse = page.waitForResponse(response => response.url().endsWith(`/staff/tickets/${ticketNumber}/status`) && response.request().method() === "PATCH");
+   await controls.getByRole("button", { name: "Resolved", exact: true }).click();
+-  await page.getByRole("dialog", { name: "Confirm status change" }).getByRole("button", { name: "Confirm", exact: true }).click();
++  const confirmation = page.getByRole("dialog", { name: "Confirm status change" });
++  await expect(confirmation).toContainText("prevents new Actions until the Ticket is reopened");
++  await captureWorkflowState(page, confirmation, "resolved-confirmation");
++  await confirmation.getByRole("button", { name: "Confirm", exact: true }).click();
+   expect((await blockedResponse).status()).toBe(409);
+   await expect(page.locator(".error-box").first()).toContainText(/pending/i);
+   await expect(page.locator(".status-badge").first()).toHaveText("IN_PROGRESS");
+@@ -78,9 +102,9 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
+   await controls.getByRole("button", { name: "Resolved", exact: true }).click();
+   await page.getByRole("dialog", { name: "Confirm status change" }).getByRole("button", { name: "Confirm", exact: true }).click();
+   await expect(page.locator(".status-badge").first()).toHaveText("RESOLVED");
+-  const history = page.getByRole("region", { name: "Ticket status history" });
+   await history.getByRole("button", { name: "View status history" }).click();
+   await expect(history.getByText("Page 1 of 2", { exact: true })).toBeVisible();
++  await captureWorkflowState(page, history, "history-page-1");
+   const nextPage = history.getByRole("button", { name: "Next", exact: true });
+   let releaseHistory!: () => void;
+   const historyBarrier = new Promise<void>(resolve => { releaseHistory = resolve; });
+@@ -102,6 +126,7 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
+     await expect(pageStatus).toHaveText("Page 2 of 2");
+     await expect(pageStatus).toBeFocused();
+     await expect(nextPage).toBeDisabled();
++    await captureWorkflowState(page, history, "history-page-2");
+     const previousPage = history.getByRole("button", { name: "Previous", exact: true });
+     await previousPage.focus();
+     await page.keyboard.press("Enter");
+@@ -111,6 +136,20 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
+     releaseHistory();
+     await page.unroute(historyRoute);
+   }
++  // A presentation-only injected read failure retains the real previously fetched history.
++  // Persistence and authorized visibility remain proved by the preceding real API journey.
++  await page.route(historyRoute, route => route.fulfill({ status: 500, json: { error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } } }));
++  try {
++    await nextPage.click();
++    await expect(history.getByRole("alert")).toContainText("Unable to load status history.");
++    await captureWorkflowState(page, history, "history-read-error");
++    await page.unroute(historyRoute);
++    await history.getByRole("button", { name: "Retry", exact: true }).click();
++    await expect(history.getByRole("status", { name: "Status history page" })).toHaveText("Page 2 of 2");
++    await expect(history.getByRole("alert")).toHaveCount(0);
++  } finally {
++    await page.unroute(historyRoute);
++  }
+   await page.getByRole("button", { name: "Logout" }).click();
+   await login(page, USERS.requester.email);
+   await navigate(page, "My Tickets");

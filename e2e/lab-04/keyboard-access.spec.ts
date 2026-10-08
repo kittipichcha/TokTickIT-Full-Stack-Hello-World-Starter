@@ -1,4 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
+import { mkdirSync } from "node:fs";
+import path from "node:path";
 import { USERS, createRequesterTicket, login, navigate, resetAccount } from "../lab-03/helpers";
 
 /**
@@ -224,4 +226,80 @@ test("A11Y-01 dashboard: keyboard Retry performs one read and restores cards", a
   await expect(card).toBeVisible();
   expect(attempts).toBe(initialAttempts + 1);
   await tabTo(page, card);
+});
+
+for (const role of ["staff", "admin"] as const) {
+  test(`A11Y-01 ${role}: Ticket metrics use keyboard and Action totals stay outside the Tab order`, async ({ page }) => {
+    await resetAccount(role);
+    await login(page, USERS[role].email);
+    const card = page.getByRole("button", { name: /Unassigned:/ });
+    await tabTo(page, card);
+    expect(await page.locator(".dashboard-metric").evaluateAll(nodes => nodes.filter(node => node.tagName === "DIV").every(node => (node as HTMLElement).tabIndex < 0))).toBe(true);
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("searchbox", { name: "Search tickets" })).toBeVisible();
+    await navigateByKeyboard(page, "Dashboard", page.getByRole("heading", { name: "Staff Dashboard", exact: true }));
+  });
+}
+
+test("A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss", async ({ page }) => {
+  test.setTimeout(90_000);
+  await resetAccount("requester");
+  await resetAccount("staff");
+  await openStaffDetail(page, `Issue 55 keyboard confirmations ${Date.now()}`);
+  const claim = page.getByRole("button", { name: "Claim / Reassign to me", exact: true });
+  await tabTo(page, claim);
+  await page.keyboard.press("Enter");
+  const controls = page.locator("section").filter({ has: page.getByRole("heading", { name: "Ticket controls" }) });
+  for (const status of ["Open", "In Progress"]) {
+    const button = controls.getByRole("button", { name: status, exact: true });
+    await expect(button).toBeEnabled();
+    await tabTo(page, button);
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".status-badge").first()).toHaveText(status.toUpperCase().replaceAll(" ", "_"));
+  }
+  const writes: string[] = [];
+  page.on("request", request => { if (request.method() === "PATCH" && /\/status$/.test(request.url())) writes.push(request.url()); });
+  for (const [status, consequence] of [["Resolved", "prevents new Actions until the Ticket is reopened"], ["Closed", "closes the Ticket and prevents new Actions"], ["Cancelled", "No further status changes or new Actions will be allowed"]]) {
+    const invoke = controls.getByRole("button", { name: status, exact: true });
+    const before = writes.length;
+    for (const dismiss of ["Escape", "Cancel"]) {
+      await tabTo(page, invoke);
+      await page.keyboard.press("Enter");
+      const dialog = page.getByRole("dialog", { name: "Confirm status change" });
+      await expect(dialog).toContainText(status);
+      await expect(dialog).toContainText(consequence);
+      if (dismiss === "Escape") {
+        const bounds = await dialog.boundingBox();
+        expect(bounds!.x).toBeGreaterThanOrEqual(0);
+        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
+        expect(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+        const directory = path.resolve("artifacts/lab-04/screenshots/ticket-workflow");
+        mkdirSync(directory, { recursive: true });
+        await page.screenshot({ path: path.join(directory, `${test.info().project.name}-confirm-${status.toLowerCase()}.png`), fullPage: false });
+      }
+      const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+      const confirm = dialog.getByRole("button", { name: "Confirm", exact: true });
+      await expect(cancel).toBeFocused();
+      await page.keyboard.press("Shift+Tab");
+      await expect(confirm).toBeFocused();
+      await page.keyboard.press("Tab");
+      await expect(cancel).toBeFocused();
+      if (dismiss === "Escape") await page.keyboard.press("Escape");
+      else await page.keyboard.press("Enter");
+      await expect(dialog).toHaveCount(0);
+      await expect(invoke).toBeFocused();
+      expect(writes).toHaveLength(before);
+    }
+    // Closed becomes available only after a successful Resolved transition.
+    if (status !== "Cancelled") {
+      await tabTo(page, invoke);
+      await page.keyboard.press("Enter");
+      const dialog = page.getByRole("dialog", { name: "Confirm status change" });
+      await tabTo(page, dialog.getByRole("button", { name: "Confirm", exact: true }));
+      await page.keyboard.press("Enter");
+      await expect(dialog).toHaveCount(0);
+      await expect(page.locator(".status-badge").first()).toHaveText(status.toUpperCase());
+      await expect(page.getByRole("link", { name: "← Back to Queue", exact: true })).toBeFocused();
+    }
+  }
 });
