@@ -1,0 +1,46 @@
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+[WebServer] (node:22032) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:22120) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+Running 57 tests using 1 worker
+
+(node:12740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok  1 [desktop] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (18.4s)
+  ok  2 [desktop] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (8.0s)
+  ok  3 [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (8.3s)
+  ok  4 [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (2.6s)
+  ok  5 [desktop] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (2.0s)
+  ok  6 [desktop] › e2e\lab-04\keyboard-access.spec.ts:230:7 › A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order (2.3s)
+  ok  7 [desktop] › e2e\lab-04\keyboard-access.spec.ts:230:7 › A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order (2.3s)
+  x   8 [desktop] › e2e\lab-04\keyboard-access.spec.ts:242:5 › A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss (9.2s)
+(node:10368) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  x   9 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (7.8s)
+(node:17640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  x  10 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (8.3s)
+(node:9932) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  x  11 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (8.2s)
+(node:28484) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  x  12 [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (5.3s)
+(node:12800) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok 13 [desktop] › e2e\lab-04\responsive-visual.spec.ts:111:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (5.0s)
+  ok 14 [desktop] › e2e\lab-04\responsive-visual.spec.ts:176:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.1s)
+  ok 15 [desktop] › e2e\lab-04\responsive-visual.spec.ts:176:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.8s)
+  ok 16 [desktop] › e2e\lab-04\responsive-visual.spec.ts:176:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (2.9s)
+  ok 17 [desktop] › e2e\lab-04\responsive-visual.spec.ts:196:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (3.4s)

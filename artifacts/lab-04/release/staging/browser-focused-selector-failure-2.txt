@@ -1,0 +1,458 @@
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+[WebServer] (node:12220) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:27128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+
+Running 57 tests using 1 worker
+
+(node:27028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+  ok  1 [desktop] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (6.0s)
+  ok  2 [desktop] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (4.8s)
+  ok  3 [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (5.3s)
+  ok  4 [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (2.2s)
+  ok  5 [desktop] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.8s)
+  ok  6 [desktop] › e2e\lab-04\keyboard-access.spec.ts:230:7 › A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order (2.2s)
+  ok  7 [desktop] › e2e\lab-04\keyboard-access.spec.ts:230:7 › A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order (2.3s)
+  ok  8 [desktop] › e2e\lab-04\keyboard-access.spec.ts:242:5 › A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss (4.6s)
+  x   9 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (7.6s)
+(node:21992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+  x  10 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (8.4s)
+(node:19084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ override existing { override: true }
+  x  11 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (8.5s)
+(node:26560) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x  12 [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (5.2s)
+(node:9348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok 13 [desktop] › e2e\lab-04\responsive-visual.spec.ts:117:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (4.5s)
+  ok 14 [desktop] › e2e\lab-04\responsive-visual.spec.ts:182:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.0s)
+  ok 15 [desktop] › e2e\lab-04\responsive-visual.spec.ts:182:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.5s)
+  ok 16 [desktop] › e2e\lab-04\responsive-visual.spec.ts:182:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (2.7s)
+  ok 17 [desktop] › e2e\lab-04\responsive-visual.spec.ts:202:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (3.0s)
+  ok 18 [desktop] › e2e\lab-04\responsive-visual.spec.ts:202:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.6s)
+  ok 19 [desktop] › e2e\lab-04\responsive-visual.spec.ts:202:7 › VISUAL-01 dashboard: admin loading, empty, failure and long text states (3.4s)
+(node:9424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  ok 20 [tablet] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (4.2s)
+  ok 21 [tablet] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (3.9s)
+  ok 22 [tablet] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (4.8s)
+  ok 23 [tablet] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.9s)
+  ok 24 [tablet] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.7s)
+  ok 25 [tablet] › e2e\lab-04\keyboard-access.spec.ts:230:7 › A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order (2.1s)
+  ok 26 [tablet] › e2e\lab-04\keyboard-access.spec.ts:230:7 › A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order (2.1s)
+  ok 27 [tablet] › e2e\lab-04\keyboard-access.spec.ts:242:5 › A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss (4.5s)
+  x  28 [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (7.6s)
+(node:30028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  x  29 [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (8.3s)
+(node:7384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  x  30 [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (8.5s)
+(node:24444) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ override existing { override: true }
+  x  31 [tablet] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (5.2s)
+(node:5452) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+  ok 32 [tablet] › e2e\lab-04\responsive-visual.spec.ts:117:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (4.7s)
+  ok 33 [tablet] › e2e\lab-04\responsive-visual.spec.ts:182:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.9s)
+  ok 34 [tablet] › e2e\lab-04\responsive-visual.spec.ts:182:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.6s)
+  ok 35 [tablet] › e2e\lab-04\responsive-visual.spec.ts:182:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (2.6s)
+  ok 36 [tablet] › e2e\lab-04\responsive-visual.spec.ts:202:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.9s)
+  ok 37 [tablet] › e2e\lab-04\responsive-visual.spec.ts:202:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.5s)
+  ok 38 [tablet] › e2e\lab-04\responsive-visual.spec.ts:202:7 › VISUAL-01 dashboard: admin loading, empty, failure and long text states (3.4s)
+(node:9464) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok 39 [mobile] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (5.1s)
+  ok 40 [mobile] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (4.6s)
+  ok 41 [mobile] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (5.4s)
+  ok 42 [mobile] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.8s)
+  ok 43 [mobile] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.6s)
+  ok 44 [mobile] › e2e\lab-04\keyboard-access.spec.ts:230:7 › A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order (1.8s)
+  ok 45 [mobile] › e2e\lab-04\keyboard-access.spec.ts:230:7 › A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order (1.8s)
+  ok 46 [mobile] › e2e\lab-04\keyboard-access.spec.ts:242:5 › A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss (5.3s)
+  x  47 [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (8.5s)
+(node:30416) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  x  48 [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (9.2s)
+(node:28716) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+  x  49 [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (9.2s)
+(node:14116) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ override existing { override: true }
+  x  50 [mobile] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (6.5s)
+(node:11496) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+  ok 51 [mobile] › e2e\lab-04\responsive-visual.spec.ts:117:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (5.4s)
+  ok 52 [mobile] › e2e\lab-04\responsive-visual.spec.ts:182:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.8s)
+  ok 53 [mobile] › e2e\lab-04\responsive-visual.spec.ts:182:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.4s)
+  ok 54 [mobile] › e2e\lab-04\responsive-visual.spec.ts:182:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (2.3s)
+  ok 55 [mobile] › e2e\lab-04\responsive-visual.spec.ts:202:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (3.2s)
+  ok 56 [mobile] › e2e\lab-04\responsive-visual.spec.ts:202:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.7s)
+  ok 57 [mobile] › e2e\lab-04\responsive-visual.spec.ts:202:7 › VISUAL-01 dashboard: admin loading, empty, failure and long text states (3.7s)
+
+
+  1) [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('Summary', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByLabel('Summary', { exact: true })
+
+
+      77 |     await healthyScreen(destination);
+      78 |     if (role === "requester") {
+    > 79 |       await navigate(page, "Create Ticket");
+         |                                             ^
+      80 |       await expect(page.getByLabel("Summary", { exact: true })).toBeVisible();
+      81 |       await healthyScreen("Create Ticket");
+      82 |     }
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:79:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-26c98--controls-remain-functional-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-26c98--controls-remain-functional-desktop\error-context.md
+
+  2) [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Status history', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Status history', exact: true })
+
+
+      69 |     for (const heading of ["Public Comments", "Attachments", "Actions Taken"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+      70 |     if (role !== "requester") {
+    > 71 |       await page.getByRole("button", { name: "View status history", exact: true }).click();
+         |                                                                                            ^
+      72 |       for (const heading of ["Internal Notes", "Status history"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+      73 |       await expect(page.getByRole("button", { name: "Add Action", exact: true })).toBeEnabled();
+      74 |     }
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:71:139
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-desktop\error-context.md
+
+  3) [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Status history', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Status history', exact: true })
+
+
+      69 |     for (const heading of ["Public Comments", "Attachments", "Actions Taken"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+      70 |     if (role !== "requester") {
+    > 71 |       await page.getByRole("button", { name: "View status history", exact: true }).click();
+         |                                                                                            ^
+      72 |       for (const heading of ["Internal Notes", "Status history"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+      73 |       await expect(page.getByRole("button", { name: "Add Action", exact: true })).toBeEnabled();
+      74 |     }
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:71:139
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-68869--controls-remain-functional-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-68869--controls-remain-functional-desktop\error-context.md
+
+  4) [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+
+    Error: expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= -1
+    Received:    -1.21875
+
+      17 |   expect(bounds!.x).toBeGreaterThanOrEqual(-tolerance);
+      18 |   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + tolerance);
+    > 19 |   expect(bounds!.y).toBeGreaterThanOrEqual(-tolerance);
+         |                     ^
+      20 |   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + tolerance);
+      21 |   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+      22 |     true,
+        at expectControlInViewport (C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\responsive-visual.spec.ts:19:21)
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\responsive-visual.spec.ts:96:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-desktop\error-context.md
+
+  5) [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('Summary', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByLabel('Summary', { exact: true })
+
+
+      77 |     await healthyScreen(destination);
+      78 |     if (role === "requester") {
+    > 79 |       await navigate(page, "Create Ticket");
+         |                                             ^
+      80 |       await expect(page.getByLabel("Summary", { exact: true })).toBeVisible();
+      81 |       await healthyScreen("Create Ticket");
+      82 |     }
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:79:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-26c98--controls-remain-functional-tablet\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-26c98--controls-remain-functional-tablet\error-context.md
+
+  6) [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Status history', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Status history', exact: true })
+
+
+      69 |     for (const heading of ["Public Comments", "Attachments", "Actions Taken"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+      70 |     if (role !== "requester") {
+    > 71 |       await page.getByRole("button", { name: "View status history", exact: true }).click();
+         |                                                                                            ^
+      72 |       for (const heading of ["Internal Notes", "Status history"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+      73 |       await expect(page.getByRole("button", { name: "Add Action", exact: true })).toBeEnabled();
+      74 |     }
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:71:139
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-tablet\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-tablet\error-context.md
+
+  7) [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Status history', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Status history', exact: true })
+
+
+      69 |     for (const heading of ["Public Comments", "Attachments", "Actions Taken"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+      70 |     if (role !== "requester") {
+    > 71 |       await page.getByRole("button", { name: "View status history", exact: true }).click();
+         |                                                                                            ^
+      72 |       for (const heading of ["Internal Notes", "Status history"]) await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+      73 |       await expect(page.getByRole("button", { name: "Add Action", exact: true })).toBeEnabled();
+      74 |     }
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:71:139
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-68869--controls-remain-functional-tablet\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-68869--controls-remain-functional-tablet\error-context.md
+
+  8) [tablet] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      110 |
+      111 |     expect(
+    > 112 |       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+          |       ^
+      113 |     ).toBe(true);
+      114 |
+      115 |     await page.screenshot({ path: screenshot("actions-taken", "staff-actions"), fullPage: true });
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\responsive-visual.spec.ts:112:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-tablet\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-tablet\error-context.md
+
+  9) [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('Summary', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByLabel('Summary', { exact: true })
+
+
+      77 |     await expect(page.getByRole("searchbox", { name: "Search tickets" })).toBeVisible();
+      78 |     await healthyScreen(destination);
+    > 79 |     await page.getByLabel("Search tickets").fill(summary);
+         |                                                           ^
+      80 |     if (role === "requester") await page.getByRole("link", { name: ticketNumber, exact: true }).click();
+      81 |     else await page.getByRole("button", { name: "Open Detail", exact: true }).click();
+      82 |     await expect(page.getByRole("heading", { name: new RegExp(`^${ticketNumber} `) })).toBeVisible();
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:79:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-26c98--controls-remain-functional-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-26c98--controls-remain-functional-mobile\error-context.md
+
+  10) [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Status history', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Status history', exact: true })
+
+
+      69 |     const summary = `Issue 55 ${role} navigation ${Date.now()}`;
+      70 |     const ticketNumber = await createRequesterTicket(page, summary);
+    > 71 |     if (role !== "requester") { await logout(); await signIn(USERS[role].email); }
+         |                                                                                   ^
+      72 |     await navigate(page, "Dashboard");
+      73 |     await expect(page.getByRole("heading", { name: role === "requester" ? "Requester Dashboard" : "Staff Dashboard", exact: true })).toBeVisible();
+      74 |     await healthyScreen("Dashboard");
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:71:139
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-mobile\error-context.md
+
+  11) [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Status history', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Status history', exact: true })
+
+
+      69 |     }
+      70 |     await signIn(USERS.requester.email);
+    > 71 |     const summary = `Issue 55 ${role} navigation ${Date.now()}`;
+         |                                                                 ^
+      72 |     const ticketNumber = await createRequesterTicket(page, summary);
+      73 |     if (role !== "requester") { await logout(); await signIn(USERS[role].email); }
+      74 |     await navigate(page, "Dashboard");
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:71:139
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-68869--controls-remain-functional-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-68869--controls-remain-functional-mobile\error-context.md
+
+  12) [mobile] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+
+    Error: expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= -1
+    Received:    -1.046875
+
+      17 |   expect(bounds).not.toBeNull();
+      18 |   expect(bounds!.x).toBeGreaterThanOrEqual(-tolerance);
+    > 19 |   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + tolerance);
+         |                     ^
+      20 |   expect(bounds!.y).toBeGreaterThanOrEqual(-tolerance);
+      21 |   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + tolerance);
+      22 |   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+        at expectControlInViewport (C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\responsive-visual.spec.ts:19:21)
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\responsive-visual.spec.ts:96:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-mobile\error-context.md
+
+  12 failed
+    [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional 
+    [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+    [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+    [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+    [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional 
+    [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+    [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+    [tablet] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+    [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional 
+    [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+    [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+    [mobile] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+  45 passed (4.5m)

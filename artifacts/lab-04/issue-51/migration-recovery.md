@@ -2,7 +2,14 @@
 
 DB-MIG-01 preserved prior User, Ticket, Attachment, Comment, and InternalNote rows (full-row snapshots) and verified the exact Lab 4 indexes without adding a Ticket index.
 
-DB-MIG-02 injected a late SQL failure, verified rollback, damaged the synthetic attachment store, then restored the paired disposable database and synthetic attachment snapshot together and compared preserved state and attachment hashes.
+DB-MIG-02 injected a real failing Prisma deploy, inspected its unfinished migration record
+(`finished_at` remained null), and recorded whether partial DDL left the probe object behind
+without assuming automatic or complete SQL rollback. With no accepted Lab 4 write, it
+damaged the synthetic attachment store, restored the matching database and attachment
+snapshots into the separate disposable target, then compared preserved state, migration
+rows, indexes and attachment hashes. The restored target contained neither the failed
+migration nor its probe object. This is a synthetic pre-write recovery rehearsal, not
+evidence of a live deployment incident.
 
 DB-MIG-03 rehearsed restore into a separate disposable database, applied the additive migration, accepted an Action write performed by an active IT Staff user, and forward-recovered without restoring the old snapshot while preserving the accepted Action and Lab 3 data.
 

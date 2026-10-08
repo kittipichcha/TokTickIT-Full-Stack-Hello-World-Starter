@@ -1,0 +1,735 @@
+{
+  "recordedAt": "2026-10-08T02:26:21.613Z",
+  "base": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+  "branch": "feature/lab4-integration-release",
+  "files": [
+    {
+      "path": "client/package-lock.json",
+      "sha256": "3e4083c383eeb2ab9369e747d4ac80cdea270d556f450376549fb384ffb52eeb"
+    },
+    {
+      "path": "client/package.json",
+      "sha256": "fa81f5e107416675159486a190d7028d49d841804f8b995143b8d98f93071cac"
+    },
+    {
+      "path": "client/src/ActionForm.tsx",
+      "sha256": "a022540398f1f61eeb214aa7344080aa260d9025fec7c717e41970ae30d6dffa"
+    },
+    {
+      "path": "client/src/ActionsTaken.tsx",
+      "sha256": "be7d37c8a5bed30f7ea4874924bb23bfdbebe47015a9658bb0d4040c403375fb"
+    },
+    {
+      "path": "client/src/AdminUserManagement.tsx",
+      "sha256": "75aff9dd4dad321034ffef85f7aaaa2682691f35f18c5960fa048dee64ff2ffb"
+    },
+    {
+      "path": "client/src/App.css",
+      "sha256": "e7f9e217b12c51050a598843e07823748d84971d8972f3c1f0d92d63c53a9be9"
+    },
+    {
+      "path": "client/src/App.test.tsx",
+      "sha256": "44baba553da70d79aeed1fbe0b66d7a9a43975d4fb41e7dd9d2ee4610ff73bf4"
+    },
+    {
+      "path": "client/src/App.tsx",
+      "sha256": "220a548f89d285f5ef9f37d0dbe367e76ac50e50a8098449e8ffa7819d4387db"
+    },
+    {
+      "path": "client/src/AuthGate.tsx",
+      "sha256": "8b64b35ff14bdb6963804e63cffc29c734f3d5f291ece443302cffb76a825fdc"
+    },
+    {
+      "path": "client/src/ChangePassword.tsx",
+      "sha256": "4a063465d5d89cc04d05fb477b2aeafa558f1c9f2d7fda92124e2910f75bd9b3"
+    },
+    {
+      "path": "client/src/CommentThread.tsx",
+      "sha256": "f3c5a71865c95d45f649d27a0aecc3bf68b48f6aa5d1617e175dda165c6c60f4"
+    },
+    {
+      "path": "client/src/CreateTicket.tsx",
+      "sha256": "a9f72b74f3e2e282a1310654ffaabb0cfe7a3aa3b23c2273715f1f965608f373"
+    },
+    {
+      "path": "client/src/InternalNoteThread.tsx",
+      "sha256": "b49e5e0f9c80e0ffc669a174db9895f382090a223be0ec0633400f5611b0d36c"
+    },
+    {
+      "path": "client/src/Login.tsx",
+      "sha256": "53c76458c3b0b651deca8ca28c1bbff01c8db006281b5a1147e713dce52cbe56"
+    },
+    {
+      "path": "client/src/Modal.tsx",
+      "sha256": "9e3e20d439ba91aaf173d2dae629e42769f22f2fd1d0dfc682ce08e093d9df5e"
+    },
+    {
+      "path": "client/src/MyTickets.tsx",
+      "sha256": "4f01595693e0ad788be73e8b4f451256f7fb685a021cd38df2dcf3bb8222dc5e"
+    },
+    {
+      "path": "client/src/RequesterDashboard.tsx",
+      "sha256": "01cee607b3853a1f437fc094d9301c2b990abb56094ab584be767583417a4ba6"
+    },
+    {
+      "path": "client/src/SelectedDashboardAction.tsx",
+      "sha256": "39638843b2d4a79b8d60560427a4db89874638d3915267de9deb34f6fece7621"
+    },
+    {
+      "path": "client/src/StaffActionCard.tsx",
+      "sha256": "0b02895dd889a4ab390704130ecd581017d06718281eaae5f9cdac264a4bc365"
+    },
+    {
+      "path": "client/src/StaffDashboard.tsx",
+      "sha256": "f97507a54a8efa1e895094d9ae05af3f72e6bee320d6504a14c11d7a6b9df6af"
+    },
+    {
+      "path": "client/src/StaffTicketDetail.tsx",
+      "sha256": "5b005c6795c27adb17dbaa7897418b01426e9b87458147f7de19a33b794540e5"
+    },
+    {
+      "path": "client/src/StaffTicketQueue.tsx",
+      "sha256": "84885d7dcd6e6e290d33d0e4765411e545c26c8ebbd451efd9fa3cadda4c0893"
+    },
+    {
+      "path": "client/src/TicketStatusHistory.tsx",
+      "sha256": "cd6c10d675406b6325b489a09411209624a84d5994194fb32443e9bc5c7fda40"
+    },
+    {
+      "path": "client/src/api-client.ts",
+      "sha256": "aecd7327a49e3b8de31f957454d18619c7ab25840a264ebc55adee6f048805b3"
+    },
+    {
+      "path": "client/src/api.ts",
+      "sha256": "fc51daddc9aa617a836fcb80c80b4b3c6044582b9cf4c1700ec9068a1dbf81a4"
+    },
+    {
+      "path": "client/src/dashboard-api.ts",
+      "sha256": "f2db514c18a6ddac440ae0bf56aa61ed44a417b329eaf651df66a848b9c42b3b"
+    },
+    {
+      "path": "client/src/dashboard-ui.tsx",
+      "sha256": "ab4ab2741d5fe4faf7d0283a636dc86999d069cdc45a1f7351914f54522e3c4f"
+    },
+    {
+      "path": "client/src/format.ts",
+      "sha256": "dd184dd251438560b91aab3bbfac69ec737a948511bb234950fa65b367be0419"
+    },
+    {
+      "path": "client/src/lab-02-tests/AttachmentSection.test.tsx",
+      "sha256": "59cc6c00cfbd17576a1339f41ef2ca8973ee35b21b2a551ac36bf597b03b8f4b"
+    },
+    {
+      "path": "client/src/lab-02-tests/CreateTicket.test.tsx",
+      "sha256": "6e654d6e28f1744ae6f230a5e363d59b33c0284e96209056522094c9e9fe115b"
+    },
+    {
+      "path": "client/src/lab-02-tests/MyTickets.test.tsx",
+      "sha256": "4ea07b18015683e1ae43e9838361788aea42b00e72b976725612e677baf3ae04"
+    },
+    {
+      "path": "client/src/lab-02-tests/RequesterSelection.integration.test.tsx",
+      "sha256": "5cfc6da4b704321308ea4d317b5681f0e351074a169a2da8113780f85f9804e4"
+    },
+    {
+      "path": "client/src/lab-02-tests/RequesterSelection.test.tsx",
+      "sha256": "5e2f451bec4be69c2a10166e7871c73d6147098e7720179161892847739dd39b"
+    },
+    {
+      "path": "client/src/lab-02-tests/UiStyles.test.tsx",
+      "sha256": "bcaa3668a455dfdfa158de41f629c5531ca88f644449db0c6735ad834f7e074f"
+    },
+    {
+      "path": "client/src/lab-02-tests/format.test.ts",
+      "sha256": "469fbf59403c7558e71b27cb844a31b2166e04bf80297da631f2ad684e73462b"
+    },
+    {
+      "path": "client/src/lab-02-tests/helpers/user.ts",
+      "sha256": "76530ea5b1a0d573ce81b2809b925612db8c3ce397baaba46acd00a9f0c82e79"
+    },
+    {
+      "path": "client/src/lab-03-tests/ApiClient.test.ts",
+      "sha256": "8348f93d33e2dad39105efd1e139a0a8ff5ee66c109c32c485297b35e4aa085e"
+    },
+    {
+      "path": "client/src/lab-03-tests/AuthGate.test.tsx",
+      "sha256": "211c14138b0c9e9d9cb38530d29d688c83c653c7dd39a76516a426d239a7712d"
+    },
+    {
+      "path": "client/src/lab-03-tests/ChangePassword.test.tsx",
+      "sha256": "7aafb1af87b4b2b5980339cee04dc261e99ad75f97166f47b044fcc004dacbbd"
+    },
+    {
+      "path": "client/src/lab-03-tests/CommentThread.test.tsx",
+      "sha256": "66944c2d2a0970d69db4af18f77912c53222d696b1f1cbb85aa75fd2b5be5848"
+    },
+    {
+      "path": "client/src/lab-03-tests/InternalNoteThread.test.tsx",
+      "sha256": "d535e0a2102bee033b4e104282deb1f89fd670f1566014a8e7739aeb1c271e51"
+    },
+    {
+      "path": "client/src/lab-03-tests/Login.test.tsx",
+      "sha256": "65f2d0a0d35334c5149be4168e900f3ee7259534f27c1e551601b06170e898c6"
+    },
+    {
+      "path": "client/src/lab-03-tests/StaffTicketDetail.test.tsx",
+      "sha256": "472241fa11d0faa78c2be34c0915837243da8670067c6a0b1fe9c6b44123362d"
+    },
+    {
+      "path": "client/src/lab-03-tests/StaffTicketQueue.test.tsx",
+      "sha256": "fae22e88157b37186441af5c499b85a2d1cfe2dce27729c4d48e98c7cc5b93d5"
+    },
+    {
+      "path": "client/src/lab-03-tests/UiStyles.test.tsx",
+      "sha256": "347282ae9736f5240a4992c64446d048b2579685a8e60239c4f6fc9ab0fa5cf8"
+    },
+    {
+      "path": "client/src/lab-03-tests/UserManagement.test.tsx",
+      "sha256": "b58d19b7f13adc63ae46ad05016b1a956edc8b54753003c1fcc7fde2141a67b8"
+    },
+    {
+      "path": "client/src/lab-04-tests/ActionsTaken.test.tsx",
+      "sha256": "a2b0676e6f68a67a82308578dc8f401f44f4d44f8c6d7cf860a134f5b69c9fed"
+    },
+    {
+      "path": "client/src/lab-04-tests/RequesterDashboard.test.tsx",
+      "sha256": "64ac20c004da530903a8a017e62cab0851e8c044e9943cf08b55a602618473a4"
+    },
+    {
+      "path": "client/src/lab-04-tests/RoleNavigation.test.tsx",
+      "sha256": "32e9b02f791a59d4039773962f1e7892046589b94b211f87bd9b97288664c0f8"
+    },
+    {
+      "path": "client/src/lab-04-tests/StaffDashboard.test.tsx",
+      "sha256": "ab8ded07929b0dc1eeed2a1f9add53b9aff6dc054ebdc101cd243b246db0d650"
+    },
+    {
+      "path": "client/src/lab-04-tests/TicketWorkflow.test.tsx",
+      "sha256": "5c8572eeeea659f22db94200883edc687554dfcfc6096012075929990812b002"
+    },
+    {
+      "path": "client/src/lab-04-tests/dashboard-fixtures.ts",
+      "sha256": "f490a35e6c8243940a3290680d8ded7cbf174e958a8a3a3e3341b78997bd3633"
+    },
+    {
+      "path": "client/src/main.tsx",
+      "sha256": "cfce6cf67dfad26abb1ff1ddb394f52f44bed8f152fbad5969228316cb2f3add"
+    },
+    {
+      "path": "client/src/vite-env.d.ts",
+      "sha256": "424faf9241dd699dda995b367ed36665732da1e6ec1f33b2fd40394488ecac92"
+    },
+    {
+      "path": "client/tsconfig.json",
+      "sha256": "cd44382d54495ed3c468f25efde41f093939ab6e613943920250096890ac8224"
+    },
+    {
+      "path": "client/vite.config.ts",
+      "sha256": "4a6995ee622b07e5a18e5292b05bf9586c7297682920a02e201a47226ce12877"
+    },
+    {
+      "path": "client/vitest.config.ts",
+      "sha256": "ffca190cd728ba7cbb7ecbebe32affd9b6df2386b01e0c8c3e62673af498ecbd"
+    },
+    {
+      "path": "e2e/lab-02/attachment-lifecycle.spec.ts",
+      "sha256": "34fa163e7ea92f74f3999c087dae756b70b77d442c1d2453ac3916a87dda1709"
+    },
+    {
+      "path": "e2e/lab-02/global-setup.ts",
+      "sha256": "af6dc9780267bb3ee9d39800be36fa4d8dd8b498c1cd92b6b1823aef26c22801"
+    },
+    {
+      "path": "e2e/lab-02/helpers.ts",
+      "sha256": "1b6d7c33408ee2e4d2146caf5df4d93556341cd1afe687c353f853448a00deba"
+    },
+    {
+      "path": "e2e/lab-02/keyboard-access.spec.ts",
+      "sha256": "c3ff20054a8e51405e8498e2fe0bcdfd96979b77e5406efad45ac5c12302ffe9"
+    },
+    {
+      "path": "e2e/lab-02/ownership.spec.ts",
+      "sha256": "701efbe8eb16eb3b839639e1ba0640a57f2c1dc3dc15817d007db59585332abc"
+    },
+    {
+      "path": "e2e/lab-02/partial-success-attachment.spec.ts",
+      "sha256": "ed9639daec207a5a05e8fc09bde574e4f836f8842d0226dded3e7d4abdc9ca51"
+    },
+    {
+      "path": "e2e/lab-02/requester-ticket-flow.spec.ts",
+      "sha256": "6684dce302cbabb092947caeb58f2d86503920a39b491cc342928bc2c4234c6d"
+    },
+    {
+      "path": "e2e/lab-02/responsive-visual.spec.ts",
+      "sha256": "fd6a615ac2eaf44e1f0a65f0f1af6f632ccf419629ce4c00bdf55beb55022988"
+    },
+    {
+      "path": "e2e/lab-03/authentication.spec.ts",
+      "sha256": "a45c9923fbc55b5618a8d322b97716d96f3ad35ad211bc211660f5bbe840e8ec"
+    },
+    {
+      "path": "e2e/lab-03/global-setup.ts",
+      "sha256": "629fa51301fac11db543c94fc896b5abd38a3082a50c1b3fd942cd0a9312c475"
+    },
+    {
+      "path": "e2e/lab-03/helpers.ts",
+      "sha256": "ca64c6954583c6a2e3379df19e53bbdb59ae0bd97327996cf28152e7c4d7d9a3"
+    },
+    {
+      "path": "e2e/lab-03/keyboard-access.spec.ts",
+      "sha256": "ab5e12ae5dea59335871773e59178753146796205dd8a296c486f8bd9a4b900f"
+    },
+    {
+      "path": "e2e/lab-03/requester-regression.spec.ts",
+      "sha256": "d647af27c5d6e420e70b1361d6e8f8b98457acda871d78dfd090d963c7ce715a"
+    },
+    {
+      "path": "e2e/lab-03/responsive-visual.spec.ts",
+      "sha256": "5f41c1d4ba02ff179e6339cbed7a7a85991d324f564f044c1df36ef39166ced1"
+    },
+    {
+      "path": "e2e/lab-03/staff-ticket-flow.spec.ts",
+      "sha256": "c1e8781b8948a17ec40bf326d48518ca54b6921ca00653e0bdf1323aee6276e2"
+    },
+    {
+      "path": "e2e/lab-03/user-administration.spec.ts",
+      "sha256": "bbb8a71d1d641a4ed52ec16141dafe69e77b5ff407de075bd1ffd1bc7b062c8a"
+    },
+    {
+      "path": "e2e/lab-04/actions-taken-flow.spec.ts",
+      "sha256": "66088d671f63a51f042fc46e4cd645eab5e24bb2ed6f06ed6662c1cd0aa8e821"
+    },
+    {
+      "path": "e2e/lab-04/dashboards.spec.ts",
+      "sha256": "dfaec154837d596c88aaf4c14b44019aabce3fe5fcf82e05899a370263308d29"
+    },
+    {
+      "path": "e2e/lab-04/keyboard-access.spec.ts",
+      "sha256": "caf06488e067b1fcbb7cb8a1abae0b2824496619c13022f7f1f0bf01fc8d3c45"
+    },
+    {
+      "path": "e2e/lab-04/release-hardening.spec.ts",
+      "sha256": "c549938678be8037b2cf8ece9d30884248da0497a3a3988b976c76e2600d90b3"
+    },
+    {
+      "path": "e2e/lab-04/responsive-visual.spec.ts",
+      "sha256": "1273340de81a89d57402730136feb43c8acf63cfa7925ba4ef3c96050a778fbc"
+    },
+    {
+      "path": "e2e/lab-04/ticket-resolution.spec.ts",
+      "sha256": "32172b5bbf8ffda78aa1fd564de102807f7510e90927b0838382898fcd57ca70"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "ad0291329974ce92162607948d9b54a5ecfecff8ddb20a78d5414e620c416225"
+    },
+    {
+      "path": "package.json",
+      "sha256": "d7ae7c3c0c38de38766fc153c4432def9bd1a10b6abcc7583487235cd260341d"
+    },
+    {
+      "path": "playwright.config.ts",
+      "sha256": "4ce3a941d8500fe46e2407c536c8d6e0b657ea2d9931065a95b11b4a16461233"
+    },
+    {
+      "path": "server/package-lock.json",
+      "sha256": "cf4206ed9554080365638fd1c5697d6bc8ae0d838051ef139340a0b5386edad6"
+    },
+    {
+      "path": "server/package.json",
+      "sha256": "3ce00bda6628cd26336ddb36122b6262d6fafd6e6936a9b10f2b96d326c8a641"
+    },
+    {
+      "path": "server/prisma/migrations/20260808100141_add_cateogory/migration.sql",
+      "sha256": "c928c6e6a76ba1b9f40922000ce9aee4b9bd066c673500bbbb2e9234dbb447a8"
+    },
+    {
+      "path": "server/prisma/migrations/20260823090000_add_dev_requester/migration.sql",
+      "sha256": "96e0a28ca5c3d21e2b11faae2bd8a0598b4ae96720a2ae68af4e90e8e7b81452"
+    },
+    {
+      "path": "server/prisma/migrations/20260823091000_add_is_active_to_category/migration.sql",
+      "sha256": "d01bf97a993abfc7b3865024e41be33b5a228bde1dedddf0692f95a1cbbe73c1"
+    },
+    {
+      "path": "server/prisma/migrations/20260825000000_add_ticket_related_system_attachment/migration.sql",
+      "sha256": "8959ddbc6d4e3984566f353a1802e320ac0fb9b459f6be762c336006585bf868"
+    },
+    {
+      "path": "server/prisma/migrations/20260826000000_add_ticket_indexes_attachment_relations/migration.sql",
+      "sha256": "cd74f284406d86148f721a3cda12b11911af7d6b8c671948091616591258b9d3"
+    },
+    {
+      "path": "server/prisma/migrations/20260917000000_lab3_phase_a_expand/migration.sql",
+      "sha256": "7a17bb630df7d4a1970f93ac863671dca609d265f055c3ca33c1edf60aa413ff"
+    },
+    {
+      "path": "server/prisma/migrations/20260917000001_lab3_phase_c_contract/migration.sql",
+      "sha256": "ae0fd25d3c3ab4bd45e2a32a1084fc30c875d7f66ba09764f4e9941b3d626c3c"
+    },
+    {
+      "path": "server/prisma/migrations/20261001000000_lab4_actions_foundation/migration.sql",
+      "sha256": "f3d7b15ebe7ac1416b479ecf9f767c07b24eba07ece02fd295483193d68ee5cd"
+    },
+    {
+      "path": "server/prisma/migrations/migration_lock.toml",
+      "sha256": "74a9137885ce73d3ff088d79d658f8066e05e680fb51c0800a290c91c0c01d48"
+    },
+    {
+      "path": "server/prisma/schema.prisma",
+      "sha256": "f64a290b89f684019b93718d4ac886a26c698cf847b4b981df2519ff13056876"
+    },
+    {
+      "path": "server/prisma/seed.ts",
+      "sha256": "17cc8afc966f25b79304c09a8ce77399d8017fa6f8e7bff2e205e4770221ecb1"
+    },
+    {
+      "path": "server/src/action-controller.ts",
+      "sha256": "b07768621a36febc577c9a92b5c87cb02dbfe40a6a54cead0b848b3584328e89"
+    },
+    {
+      "path": "server/src/action-idempotency.ts",
+      "sha256": "71bd30d3f78811858883c130de2c85ed571e3e5884786c07f2e6945a6631ca90"
+    },
+    {
+      "path": "server/src/action-service.ts",
+      "sha256": "9bfd098533f832012ea981ce7a094ab8bf1abedb9c322d78abcc8fd189202613"
+    },
+    {
+      "path": "server/src/action-validation.ts",
+      "sha256": "191b148a07aace278f9986e1b109de8208fab40b488ac2f3fcf904f192a07e42"
+    },
+    {
+      "path": "server/src/admin-controller.ts",
+      "sha256": "38619cfd5e3400c2b4492fa1c014583d57e23528a41364411f44f6ab86941973"
+    },
+    {
+      "path": "server/src/admin-service.ts",
+      "sha256": "3677ac34d5239453f6ade0757fe0c609eee7aa1c800c136b83e097c827a2ff2d"
+    },
+    {
+      "path": "server/src/app.ts",
+      "sha256": "797cfd3cff4c0ad6a2fed0a79590e5144338ffe746b7e37c6c75a10eb767133a"
+    },
+    {
+      "path": "server/src/attachment-storage.ts",
+      "sha256": "08a20c89b5dd81ef32407d8b0467bc39426ed2f920279bc944245d95ad4e837b"
+    },
+    {
+      "path": "server/src/auth-service.ts",
+      "sha256": "747304213c3324522146a349c2847a955058534acf6a4f15149b3d234475e6c4"
+    },
+    {
+      "path": "server/src/auth.controller.ts",
+      "sha256": "d4144ec788195fa1530b6cc1b9ba6553c76265509ade744fb2baa563d3a9e11a"
+    },
+    {
+      "path": "server/src/authorization.ts",
+      "sha256": "503a56369fa9620b8778781c344760bd03a1ac3467e150465f7ace7c690a36cc"
+    },
+    {
+      "path": "server/src/config/env.ts",
+      "sha256": "47cd0296b4de8900b405690b2bee23adc3d2ac68714e2ec14ac97b3a272b86f3"
+    },
+    {
+      "path": "server/src/controller.ts",
+      "sha256": "0a7a85b33558fb883916b439e28b8861beef7f19efc7474e074124bdf258c10c"
+    },
+    {
+      "path": "server/src/dashboard-controller.ts",
+      "sha256": "09dd0c1c0e8c93cb158d4edad595aad040f445976d71a49f0a081c9d559ef4c9"
+    },
+    {
+      "path": "server/src/dashboard-service.ts",
+      "sha256": "7ed91865d12942335b39401e9fa65c2d188ea160a48c4c3c813e55d3eb6011d6"
+    },
+    {
+      "path": "server/src/id-domain.ts",
+      "sha256": "1ffabcc8c3658319811b00379d165890a67a97986b102682d173d055755d6ff1"
+    },
+    {
+      "path": "server/src/index.ts",
+      "sha256": "3527b9b25e81b428dad774a55781a7228df0f190120693255b245e990bd1f319"
+    },
+    {
+      "path": "server/src/integer-validation.ts",
+      "sha256": "c440fdf55a07a0554d42fb42c54a59e685d7a90c2888f9573cbdf1fa33705216"
+    },
+    {
+      "path": "server/src/migrate-lab3.ts",
+      "sha256": "7461e15805718516571d9b7ab990f43c0286d7c64cd8d603f51a1077edf2390a"
+    },
+    {
+      "path": "server/src/module.ts",
+      "sha256": "d8c3db722ef7477eeff6cb07d7736c28c6113dc8d2bc84f3c3117d35a1bf9428"
+    },
+    {
+      "path": "server/src/prisma.ts",
+      "sha256": "3f6fa2a055b906903f5262e35a6adb0adffa6836ed3f9bac7288de033d8b11f9"
+    },
+    {
+      "path": "server/src/service.ts",
+      "sha256": "9ef2a65f415fffa71f6814557490202e67d7e3a355ecb4ab833259b4dc92516d"
+    },
+    {
+      "path": "server/src/session.ts",
+      "sha256": "45305be49cdb32c2d6e77de84c62c61523a20b589284704d4d99f155eda006ff"
+    },
+    {
+      "path": "server/src/staff-controller.ts",
+      "sha256": "6feceafb45242ff64f9d562b679ed98c6166c7907a9b6903dac883bd48eb00a6"
+    },
+    {
+      "path": "server/src/test-seams.ts",
+      "sha256": "ee3bfeb4c4161d0ae508cd3389d522c2596237bfdcb15c7fc903fb2d7650ad6c"
+    },
+    {
+      "path": "server/src/ticket-dashboard-filters.ts",
+      "sha256": "a12a942427b84ba4001b90014e7770bed3ebd4b263aea8011dae128029aa5d62"
+    },
+    {
+      "path": "server/src/ticket-number.ts",
+      "sha256": "8ac983461e2cda37d1355c22276d3a1bad53bd2e04ca64fbac4fe340a2fd9b31"
+    },
+    {
+      "path": "server/src/ticket-status.ts",
+      "sha256": "f84ad84a5d4fa1760e0199b017ce5cbf27e6bfdeea2440578847c8cc2089a58e"
+    },
+    {
+      "path": "server/src/ticket-workflow-policy.ts",
+      "sha256": "20bcb2ff7f7b96f2421cd698b7de781485e5a6901616320edc0b6100644592cc"
+    },
+    {
+      "path": "server/src/ticket-workflow-service.ts",
+      "sha256": "c429e04b5411b0aa4dabafd43c4c374de4094270eca83ad9ce5cace432e53980"
+    },
+    {
+      "path": "server/tests/categories.integration.test.ts",
+      "sha256": "9567d03d626c4cffc45fd7690229d5f0e45ca010d61f0c88dceefc54a0fb4256"
+    },
+    {
+      "path": "server/tests/categories.service.test.ts",
+      "sha256": "5191ad6f7407593195c515f521ef1b4189e545d3373101f4249aef330044cd4b"
+    },
+    {
+      "path": "server/tests/categories.test.ts",
+      "sha256": "4587a297d5dd24a2cb389205671122c91eed8bf6a61b5b55595c059231961851"
+    },
+    {
+      "path": "server/tests/fixtures/multi-page-preview.pdf",
+      "sha256": "3e1f4f1b7df72a9e2733a54b83cd03487d0ed7d47494b9ff87a41e1a2e8cf1bc"
+    },
+    {
+      "path": "server/tests/lab-02/api-contract.api.test.ts",
+      "sha256": "72b9c326aef4629cc49b5a72df19067d9d3a719de2d04b1683bbbec25e6d9966"
+    },
+    {
+      "path": "server/tests/lab-02/attachment-concurrency.integration.test.ts",
+      "sha256": "8ab7973788534419f7a2e723c5b0bb548974826b62361d8ec81a8759eac01a9e"
+    },
+    {
+      "path": "server/tests/lab-02/attachment-ownership.integration.test.ts",
+      "sha256": "a06f17a9afbfd121dc39320025e9f19b16a9e0f8f2b6e3ffcdd8b2594bf95626"
+    },
+    {
+      "path": "server/tests/lab-02/attachment-persistence-compensation.integration.test.ts",
+      "sha256": "b47e8938e0f9ff863b8b230f7e1d69a8cb935a8a7ca8ace81cfe41c6b6f030db"
+    },
+    {
+      "path": "server/tests/lab-02/attachment-validation.unit.test.ts",
+      "sha256": "272c78e402c6e038ad607ef4bbe5d27e364e5da151c25741f5cf1832a2d94d20"
+    },
+    {
+      "path": "server/tests/lab-02/attachments.api.test.ts",
+      "sha256": "012d17f8a7cab034fb810d40b20920324bb758ee85dd659ecbc19abaef40948a"
+    },
+    {
+      "path": "server/tests/lab-02/create-ticket-normalization.api.test.ts",
+      "sha256": "7b3cddc9fdbf3e873129a89dad99be0b114f19ca4f2af029d8e54fb1378c7f34"
+    },
+    {
+      "path": "server/tests/lab-02/create-ticket-real-db.integration.test.ts",
+      "sha256": "193055a4e4668c663ecc4a6c74d8099a38f8ff919734ff64d8aeaa7aa0f4048f"
+    },
+    {
+      "path": "server/tests/lab-02/create-ticket-reference-validation.integration.test.ts",
+      "sha256": "c1f42eca433eb51421f2740d05fa187601c125ba686214db09fa51023c6e6a6f"
+    },
+    {
+      "path": "server/tests/lab-02/create-ticket-validation.unit.test.ts",
+      "sha256": "eaf9d1ef3393ab15d540792a2642253d0f9975e814864bd3239d69e3b1d0e167"
+    },
+    {
+      "path": "server/tests/lab-02/create-ticket.api.test.ts",
+      "sha256": "816b991db31cc167ade99081d78864cc0d5b4fa96a22c7a6fc163cafbe950892"
+    },
+    {
+      "path": "server/tests/lab-02/database-migration.integration.test.ts",
+      "sha256": "e2a8bdef3725f3d9f83c4d0d35f2b1c70033b834a0c31cff6a4d786cf84c2de5"
+    },
+    {
+      "path": "server/tests/lab-02/dev-requesters.api.test.ts",
+      "sha256": "281c01a70a3d58a24eaee85d5c3cd78b170a583117e9d18f467010b4e44a09a6"
+    },
+    {
+      "path": "server/tests/lab-02/helpers/identity.ts",
+      "sha256": "c1bbeccec9f9ab3bf168b68e07208c93a7f8f4eb01730474ceb5e9665b985bd9"
+    },
+    {
+      "path": "server/tests/lab-02/integer-validation.api.test.ts",
+      "sha256": "b23d0c1d3acb48a142305ad4fdde0bcab3e21c13ef4811a2061489e0282e5322"
+    },
+    {
+      "path": "server/tests/lab-02/my-tickets-real-db.integration.test.ts",
+      "sha256": "eff98a9d6530663cb5d63f3c49087d46f5e1e215c70ba7b327ce2bc2ff73d80d"
+    },
+    {
+      "path": "server/tests/lab-02/my-tickets.api.test.ts",
+      "sha256": "8a6dfc372db06ae7b4de7b602165d4c8d17d0da7fc996bcabd07f021a4243139"
+    },
+    {
+      "path": "server/tests/lab-02/reference-data.api.test.ts",
+      "sha256": "e2371982d96fe389ff80ffe872d45f9849af2b991ca9ecdc3db8143a3ddd2d0b"
+    },
+    {
+      "path": "server/tests/lab-02/requester-selection.integration.test.ts",
+      "sha256": "c96b462c4b21bd0ea10967c8f0ad5c8cb2d3228c321df2760306dec01c8dede2"
+    },
+    {
+      "path": "server/tests/lab-02/seed.integration.test.ts",
+      "sha256": "6e596445d1083473f30a02d379535d4be8c6bba264984dbbcad304b10aad1ee0"
+    },
+    {
+      "path": "server/tests/lab-02/ticket-detail.api.test.ts",
+      "sha256": "395489cfc9be2db0d3fd1bf9975813833f4d47d269fef3a4ca3fd5e1b9346487"
+    },
+    {
+      "path": "server/tests/lab-02/ticket-number-concurrency.integration.test.ts",
+      "sha256": "7445d62c57e795fbbc797fdbd1418cdf730b04cce7462a3fa638604d9d8a51c7"
+    },
+    {
+      "path": "server/tests/lab-03/auth-error-handling.api.test.ts",
+      "sha256": "faef5e83fa5d33e1511edc6a91b8cf313202fe30b96fa93335f435018d4e2da4"
+    },
+    {
+      "path": "server/tests/lab-03/auth-timing.unit.test.ts",
+      "sha256": "d4239c735af55456a6ed41cfce17223502cde65340b1b1bdec389d8a6dd62a50"
+    },
+    {
+      "path": "server/tests/lab-03/auth.api.test.ts",
+      "sha256": "917a179e40a69cbc5330409e61bdd793ccdf59b5d26c62ba82933bb85f4524a0"
+    },
+    {
+      "path": "server/tests/lab-03/auth.unit.test.ts",
+      "sha256": "7a842ef1eada948db9b2d30059e1f5a5d49a38730d510591e741f47465352b0d"
+    },
+    {
+      "path": "server/tests/lab-03/authorization.api.test.ts",
+      "sha256": "0454bd17d0284987fe6e2d8f3da5e7349ba2352ccdd7f4a4977d6e0efaef040d"
+    },
+    {
+      "path": "server/tests/lab-03/comments-notes.api.test.ts",
+      "sha256": "110e3b3ecbfbbbe192bc98a135932db7d46e3206ea7e30ca591e3f3457a19aba"
+    },
+    {
+      "path": "server/tests/lab-03/comments-notes.unit.test.ts",
+      "sha256": "8dc28f03c208b02274c6eb02b7def7c398ecd9c7f683c8f63c83a8fd885823d7"
+    },
+    {
+      "path": "server/tests/lab-03/fixtures/lab3-final-schema.prisma",
+      "sha256": "7b5c5aceb173a4198731de90d3492d1f38861943099ea1fc5c2c85f6b31b5070"
+    },
+    {
+      "path": "server/tests/lab-03/helpers/auth.ts",
+      "sha256": "e3bd2ef2d265fe8933275b8f010766a3989bad6dbd56faa5c54673a10ccb4d3f"
+    },
+    {
+      "path": "server/tests/lab-03/helpers/historical-migration-context.ts",
+      "sha256": "a3058c22f8b4a7019690ce4e0c1fc3436b0e64d23b228af7eb788d33ee83bd22"
+    },
+    {
+      "path": "server/tests/lab-03/migration.integration.test.ts",
+      "sha256": "dccc6efda2379c73176af88b6c46a35a3cd27ed2babf7469db6f5036dd9ee9ae"
+    },
+    {
+      "path": "server/tests/lab-03/requester.api.test.ts",
+      "sha256": "a283c5689bf2842f7d64b6e5e550ee7ece8a2b1e3ee21c2a4e38877374cf2f78"
+    },
+    {
+      "path": "server/tests/lab-03/seed.integration.test.ts",
+      "sha256": "bc30779ed12d498ab1fcdc32196e43dc74d4a35d03a704058e00cca449203fa9"
+    },
+    {
+      "path": "server/tests/lab-03/session-secret.unit.test.ts",
+      "sha256": "e6131b452dd94fc82851def835400b0703ec6bf9c54b1dfc5b50774236b4650d"
+    },
+    {
+      "path": "server/tests/lab-03/staff-queue.api.test.ts",
+      "sha256": "b7b56619366293e4cd774a95a5687e20ae39f49ea9283ffa8459babe6555a069"
+    },
+    {
+      "path": "server/tests/lab-03/staff-ticket-detail.api.test.ts",
+      "sha256": "adf6b09a2a8cdfbe5b1a1fd77146bbc810c77710960aeb9ad0e25eecb2e8d1b3"
+    },
+    {
+      "path": "server/tests/lab-03/ticket-priority.integration.test.ts",
+      "sha256": "e9d9fd6a927b161cf02c5f022fac077586b0f890da7465353f3f398b308b99e4"
+    },
+    {
+      "path": "server/tests/lab-03/users-admin.api.test.ts",
+      "sha256": "b16bd784d72678d217329dac00437bcd5fc9c39ceb074c748cfe5caf5b7524d2"
+    },
+    {
+      "path": "server/tests/lab-04/actions-taken.api.test.ts",
+      "sha256": "759b8882f9bbbf0b2f33c7ca4678d5b8e7383406cebdb9309dcb2adabf608b13"
+    },
+    {
+      "path": "server/tests/lab-04/dashboard.performance.test.ts",
+      "sha256": "cd67a0393ccdf71a7816df42cdb1e2a31a9f7a9d1024d166a7fcc454904d87db"
+    },
+    {
+      "path": "server/tests/lab-04/helpers/action-fixtures.ts",
+      "sha256": "73ba3054e0b283bc1b95302a68401b3053946795c3169ac4403fd013d3ffdfc8"
+    },
+    {
+      "path": "server/tests/lab-04/helpers/dashboard-fixtures.ts",
+      "sha256": "e7a5a19d7f9f4582451b343e51804a9d57805fd0025224c77bd23f9cd4a611aa"
+    },
+    {
+      "path": "server/tests/lab-04/helpers/migration-fixture.ts",
+      "sha256": "ec87ca96d40c5dbb5805373adc4f27baef1ca53745fd8c56e079e8913cbe36c2"
+    },
+    {
+      "path": "server/tests/lab-04/migration.integration.test.ts",
+      "sha256": "0831eda2829de0defce36e5c2582df3198ea608b9f74f78e6ea4eac94584bb0a"
+    },
+    {
+      "path": "server/tests/lab-04/requester-dashboard.api.test.ts",
+      "sha256": "91386561b3775c6c0779609b6044b8b747482119b2d4c45eca2f8ecd269dac16"
+    },
+    {
+      "path": "server/tests/lab-04/seed.integration.test.ts",
+      "sha256": "b4f9634745170215f3098ea29a963ffe504ab0559ca0ca072ed4cc5b05f3ed7e"
+    },
+    {
+      "path": "server/tests/lab-04/staff-dashboard.api.test.ts",
+      "sha256": "85c35e01859f30eeeb4523b8300157901030ddf304259ad243574d7220a3525c"
+    },
+    {
+      "path": "server/tests/lab-04/ticket-workflow.api.test.ts",
+      "sha256": "5c5a0c399ab745084c0bf5936a50d30c10e15461bdd3b5416dca563b71103148"
+    },
+    {
+      "path": "server/tests/lab-04/ticket-workflow.unit.test.ts",
+      "sha256": "5949bf7515852dfc81a590e751accea2d58ace73094ff373e8a6af2e85ce1300"
+    },
+    {
+      "path": "server/tsconfig.json",
+      "sha256": "71d763230116d9b772d03cd6967eb7901279179c8967acfdeeb833bc9a65f99a"
+    },
+    {
+      "path": "server/vitest.config.ts",
+      "sha256": "b1e013248e6f296cb33d95e3f3409c828921f6a0d8cac83ec462948052bd6c27"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+[WebServer] (node:25164) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:30612) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:11744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ enable debugging { debug: true }
+
+Running 45 tests using 1 worker
+
+(node:18784) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok  1 [desktop] › e2e\lab-04\actions-taken-flow.spec.ts:40:7 › E2E-01 (Actions portion): Actions Taken flow › Staff completes A with a Result, cancels B without one, and Requester sees read-only names (7.3s)
+  ok  2 [desktop] › e2e\lab-04\actions-taken-flow.spec.ts:211:7 › E2E-01 (Actions portion): Actions Taken flow › an assignee deactivated mid-session is rejected by the server with safe 409 feedback and explicit repair (5.3s)
+  ok  3 [desktop] › e2e\lab-04\actions-taken-flow.spec.ts:308:7 › E2E-01 (Actions portion): Actions Taken flow › terminal Ticket shows reopen guidance and hides Add Action (2.5s)
+  ok  4 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (2.7s)
+  ok  5 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (3.3s)
+  ok  6 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (3.4s)
+  ok  7 [desktop] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (7.2s)
+  ok  8 [desktop] › e2e\lab-04\responsive-visual.spec.ts:120:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (5.0s)
+  ok  9 [desktop] › e2e\lab-04\responsive-visual.spec.ts:185:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.9s)
+  ok 10 [desktop] › e2e\lab-04\responsive-visual.spec.ts:185:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.4s)
+  ok 11 [desktop] › e2e\lab-04\responsive-visual.spec.ts:185:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (2.4s)
+  ok 12 [desktop] › e2e\lab-04\responsive-visual.spec.ts:205:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.9s)
+  ok 13 [desktop] › e2e\lab-04\responsive-visual.spec.ts:205:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.7s)
+  ok 14 [desktop] › e2e\lab-04\responsive-visual.spec.ts:205:7 › VISUAL-01 dashboard: admin loading, empty, failure and long text states (3.6s)
+  ok 15 [desktop] › e2e\lab-04\ticket-resolution.spec.ts:20:5 › Pending Actions block resolution until completed or cancelled; Requester remains read-only (13.7s)
+(node:20096) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  ok 16 [tablet] › e2e\lab-04\actions-taken-flow.spec.ts:40:7 › E2E-01 (Actions portion): Actions Taken flow › Staff completes A with a Result, cancels B without one, and Requester sees read-only names (6.7s)
+  ok 17 [tablet] › e2e\lab-04\actions-taken-flow.spec.ts:211:7 › E2E-01 (Actions portion): Actions Taken flow › an assignee deactivated mid-session is rejected by the server with safe 409 feedback and explicit repair (6.0s)
+  ok 18 [tablet] › e2e\lab-04\actions-taken-flow.spec.ts:308:7 › E2E-01 (Actions portion): Actions Taken flow › terminal Ticket shows reopen guidance and hides Add Action (1.8s)
+  ok 19 [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (2.3s)
+  ok 20 [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (3.5s)
+  ok 21 [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (3.3s)
+  ok 22 [tablet] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (7.0s)
+  ok 23 [tablet] › e2e\lab-04\responsive-visual.spec.ts:120:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (6.3s)
+  ok 24 [tablet] › e2e\lab-04\responsive-visual.spec.ts:185:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.6s)
+  ok 25 [tablet] › e2e\lab-04\responsive-visual.spec.ts:185:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (4.0s)
+  ok 26 [tablet] › e2e\lab-04\responsive-visual.spec.ts:185:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (3.8s)
+  ok 27 [tablet] › e2e\lab-04\responsive-visual.spec.ts:205:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (3.8s)
+  ok 28 [tablet] › e2e\lab-04\responsive-visual.spec.ts:205:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.8s)
+  ok 29 [tablet] › e2e\lab-04\responsive-visual.spec.ts:205:7 › VISUAL-01 dashboard: admin loading, empty, failure and long text states (4.8s)
+  ok 30 [tablet] › e2e\lab-04\ticket-resolution.spec.ts:20:5 › Pending Actions block resolution until completed or cancelled; Requester remains read-only (12.2s)
+(node:27996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  ok 31 [mobile] › e2e\lab-04\actions-taken-flow.spec.ts:40:7 › E2E-01 (Actions portion): Actions Taken flow › Staff completes A with a Result, cancels B without one, and Requester sees read-only names (9.0s)
+  ok 32 [mobile] › e2e\lab-04\actions-taken-flow.spec.ts:211:7 › E2E-01 (Actions portion): Actions Taken flow › an assignee deactivated mid-session is rejected by the server with safe 409 feedback and explicit repair (7.2s)
+  ok 33 [mobile] › e2e\lab-04\actions-taken-flow.spec.ts:308:7 › E2E-01 (Actions portion): Actions Taken flow › terminal Ticket shows reopen guidance and hides Add Action (2.6s)
+  ok 34 [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (4.0s)
+  ok 35 [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (4.9s)
+  ok 36 [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (4.9s)
+  ok 37 [mobile] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (8.7s)
+  ok 38 [mobile] › e2e\lab-04\responsive-visual.spec.ts:120:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (5.7s)
+  ok 39 [mobile] › e2e\lab-04\responsive-visual.spec.ts:185:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.2s)
+  ok 40 [mobile] › e2e\lab-04\responsive-visual.spec.ts:185:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.8s)
+  ok 41 [mobile] › e2e\lab-04\responsive-visual.spec.ts:185:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (2.9s)
+  ok 42 [mobile] › e2e\lab-04\responsive-visual.spec.ts:205:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (3.6s)
+  ok 43 [mobile] › e2e\lab-04\responsive-visual.spec.ts:205:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (4.1s)
+  ok 44 [mobile] › e2e\lab-04\responsive-visual.spec.ts:205:7 › VISUAL-01 dashboard: admin loading, empty, failure and long text states (4.5s)
+  ok 45 [mobile] › e2e\lab-04\ticket-resolution.spec.ts:20:5 › Pending Actions block resolution until completed or cancelled; Requester remains read-only (15.9s)
+
+  45 passed (4.0m)

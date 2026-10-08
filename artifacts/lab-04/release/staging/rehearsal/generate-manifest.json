@@ -1,0 +1,10 @@
+{
+  "command": "server/node_modules/.bin/prisma.cmd generate --schema server/prisma/schema.prisma",
+  "cwd": "C:\\Users\\kitti\\CPE334\\issue-55-worktree",
+  "source": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+  "startedUtc": "2026-10-08T01:59:19.5786673Z",
+  "endedUtc": "2026-10-08T01:59:28.4677338Z",
+  "exitCode": 0,
+  "reason": "Explicit normal-schema generation after browser released the in-use Windows query-engine DLL",
+  "historicalSchemaOverride": false
+}

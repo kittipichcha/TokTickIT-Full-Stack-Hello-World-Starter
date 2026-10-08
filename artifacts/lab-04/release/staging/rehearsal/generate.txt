@@ -1,0 +1,5 @@
+Prisma schema loaded from server\prisma\schema.prisma
+Error: 
+EPERM: operation not permitted, rename 'C:\Users\kitti\CPE334\issue-55-worktree\server\node_modules\.prisma\client\query_engine-windows.dll.node.tmp23480' -> 'C:\Users\kitti\CPE334\issue-55-worktree\server\node_modules\.prisma\client\query_engine-windows.dll.node'
+
+

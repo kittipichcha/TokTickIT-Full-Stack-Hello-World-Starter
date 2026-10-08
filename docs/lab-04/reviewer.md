@@ -3,6 +3,23 @@
 **Author:** Kittipich Charoenthanachot — 67070503405 — GitHub: @kittipichcha
 **Peer reviewer:** SUTHANG SUKRUEANGKUN — 67070503477 — GitHub: @oangsa
 
+## Submitted review provenance (refreshed 2026-10-07, Asia/Bangkok)
+
+The submitted GitHub reviews for PR #58–62 were read again during issue #55.
+Approval applies to each review's `commit_id`, not automatically to later fixes or merges.
+Earlier Changes Requested events and responses below remain historical records.
+
+| PR | Human review by @oangsa | Submitted (UTC) | Exact reviewed SHA |
+|---|---|---|---|
+| #58 | [Approved #5377076542](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/58#pullrequestreview-5377076542) | 2026-10-01 08:53:59 | `f6a3538d9a5c5838259302a7c6619616e8e69d14` |
+| #59 | [Approved #5392719697](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/59#pullrequestreview-5392719697) | 2026-10-02 14:02:37 | `debea489a9e8936ac9fc9de5ab8de5311ac5ff16` |
+| #60 | [Approved #5407162076](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/60#pullrequestreview-5407162076) | 2026-10-04 16:29:29 | `210cd6835de428e4c6ea6900ef69ae457f65ab43` |
+| #61 | [Approved with follow-up #5427279665](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/61#pullrequestreview-5427279665) | 2026-10-06 10:53:09 | `04223e069f956c746c14fad769d5ebe7e55b93a0` |
+| #62 | [Approved with follow-up #5443358420](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/62#pullrequestreview-5443358420) | 2026-10-07 13:53:31 | `f83f51f45904daec56a871b41bd690b2536a3b9e` |
+
+Issue #55 and the final staging-to-main release require their own submitted human review.
+Those gates remain pending; agent review is recorded only in `ai-use.md`.
+
 ## Issue #50 contract review
 
 **GitHub review status:** PR #58 received final human approval and was merged into `lab4-staging`. The historical review table below preserves the five earlier Changes Requested events.
@@ -82,9 +99,10 @@ final human approval and merged; automated agent review does not substitute for 
 
 ## Issue #52 / PR #60 review record
 
-**GitHub review status:** PR #60 (Actions Taken Ticket Detail UI, base `lab4-staging`) received a
-`Changes Requested` review from `@oangsa`. **Fixes applied; re-review/approval pending.** No
-`Approved` review exists for PR #60.
+**GitHub review status:** PR #60 initially received Changes Requested from @oangsa,
+then received the submitted `LGTM!` approval #5407162076 on 2026-10-04 at
+`210cd6835de428e4c6ea6900ef69ae457f65ab43`. The following table describes the initial
+review and its response, rather than the current approval state.
 
 | Field | Value |
 |---|---|
@@ -94,7 +112,7 @@ final human approval and merged; automated agent review does not substitute for 
 | Review | [#5400567676](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/60#pullrequestreview-5400567676) |
 | Reviewed head | `31c77b076843d102f61d5925b0cc73591041eef1` |
 | Fixes applied at | `1bdaf8b` (implementation) + `66414ee` (evidence/docs) |
-| State | **Fixes applied; re-review/approval pending** |
+| State | Fixes applied; later approval is recorded in the provenance table above |
 
 ### Response to PR #60 review #5400567676
 
@@ -107,8 +125,34 @@ final human approval and merged; automated agent review does not substitute for 
 
 All four requested changes are implemented and verified on tested implementation SHA `1bdaf8b`
 (client `UI-ACT-01` 52 passed / full client 19 files 304 passed; server 633 passed; Actions E2E
-9 passed; responsive+keyboard 15 passed; affected Lab 3 regression 2 passed). Human re-review of
-the resulting head is pending; this record does **not** claim approval.
+9 passed; responsive+keyboard 15 passed; affected Lab 3 regression 2 passed). Those are
+historical implementation results. The later human approval applies to its exact reviewed
+head in the provenance table, without replacing the initial Changes Requested event.
+
+## Issue #51 / PR #59 review record
+
+@oangsa submitted [Changes Requested #5387674883](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/59#pullrequestreview-5387674883)
+on 2026-10-02 at `edd9e22c61c7375ca6cc460d6ee8a88bb3e9b35d`.
+The review requested unexpired idempotency replay before terminal-Ticket validation,
+zero/one/many Action seed distribution, exact expiry/concurrent/failure/cleanup assertions,
+PATCH CSRF no-mutation checks, and truthful complete-row Test DD statuses.
+
+How I responded: the submitted approval #5392719697 confirms the replay ordering and
+terminal retry regression, per-Ticket seed distribution, expiry/concurrency/cleanup and
+authorization coverage. It cites tested implementation `3997f4e036a9265ed4c01d6264fee97d4d43a414`
+and a subsequent documentation-only reviewed head. Non-blocking notes reserve explicit
+seven-day boundary fixtures for dashboards and keep shared downstream test clauses
+separate from the Actions foundation. Final integrated proof belongs to issue #55;
+approval of the foundation alone does not certify later workflow/dashboard clauses.
+
+## Issue #53 / PR #61 review record
+
+@oangsa approved the exact head in the provenance table with one non-blocking note:
+Resolved, Closed and Cancelled confirmation dialogs should state the target's consequence.
+How I responded: subsequent source includes all three target-specific paragraphs in
+`client/src/StaffTicketDetail.tsx`. Issue #55 verifies those existing paragraphs with
+canonical workflow/keyboard checks. The approval predates the later `2511310` change;
+this record does not claim human approval of that later source.
 
 ## Issue #54 / PR #62 review record
 

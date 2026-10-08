@@ -1,0 +1,6 @@
+Prisma schema loaded from server\prisma\schema.prisma
+Datasource "db": PostgreSQL database "lab4_release_issue55_rehearsal_20261007", schema "public" at "localhost:5432"
+
+8 migrations found in prisma/migrations
+
+Database schema is up to date!

@@ -1,5 +1,89 @@
 # Lab 4 — AI Use and Reflection
 
+## Selected recorded prompts
+
+The ten entries below are summaries of prompts recorded in the chronological
+work log, rather than reconstructed verbatim transcripts. Agent names are retained only
+where that record identifies them; underlying model versions were not recorded.
+
+| Recorded task/date | Agent recorded | Role and prompt summary | Outcome and correction |
+|---|---|---|---|
+| Contract drafting, 2026-09-27 | OpenAI Codex | Specification: complete four Lab 4 contract files from the handout while preserving Lab 3. | Froze Action/workflow/dashboard boundaries and Planned tests; no runtime certification. |
+| Migration continuity, 2026-09-29 | OpenAI Codex | Specification: freeze Lab 3 prerequisite, paired snapshots and recovery across the accepted-write boundary. | Defined pre-write restore and post-write forward recovery; no migration was executed by that drafting task. |
+| Human-review revision, 2026-09-30 | OpenAI Codex | Specification/review: reconcile same-value writes, pagination, expired-key behavior and submitted reviews. | Distinguished accepted owner/priority updates from prohibited same-status writes and fixed evidence wording. |
+| Actions foundation, 2026-10-01 | GitHub Copilot | Coding: implement scoped persistence/API/seed foundation and prepare a staging PR. | Created additive backend modules; later review corrected replay ordering, seed distribution and incomplete assertions. |
+| Actions review-fix pass 3, 2026-10-04 | GitHub Copilot | Coding/review: resolve persistent success feedback, committed snapshot, three distinct identities and token findings. | Moved feedback to the section, preserved committed values after failed refresh, strengthened E2E and reused approved tokens. |
+| Workflow worktree completion, 2026-10-06 | Codex with delegated implementation agent | Coding: compare existing work against the plan and implement missing scoped verification. | Added resolution journey and fixed FK-safe cleanup/dialog interaction; incomplete broad browser output remained explicitly incomplete. |
+| Workflow full regression, 2026-10-06 | Not recorded for this entry | Verification: finish full regression before further publication and include its results. | Recorded 322 client/650 backend/237 browser passes at the stated historical snapshot; corrected the priority-save interaction. |
+| Dashboard review corrections, 2026-10-07 | Codex orchestrator, planning/review, implementation and evidence agents | Review/coding: loop on supplied blockers until none remained. | Corrected deferred focus movement and selected Action mounting, kept failed attempts and exact-source evidence; human approval stayed revision-specific. |
+| Issue #55 orchestration, 2026-10-07 | Codex orchestrator and delegated agents | Coding/release: create a worktree/branch from remote `lab4-staging`, follow the attached plan, use sub-agents for the process, review/fix until no blockers remain, then create a staging PR. | Created `issue-55-worktree` and `feature/lab4-integration-release`; preserved all 27 AC and 41 Test DD IDs; kept final main/submission gates distinct from the authorized feature PR. |
+| Issue #55 steering and continuation, 2026-10-07–08 | Codex team; user instruction summary supplied by the orchestrator | Coordination: reuse the previous issue's environment, match existing worktree/branch naming, use PR #62's format, and continue the pending work. | Reused private localhost configuration with isolated issue databases; matched branch/worktree conventions and PR structure; resumed explicit generation and full verification without inventing a completed overnight backend run. |
+
+## My Reflection
+
+The existing work log supplies these recorded reflections: explicit request/response shapes
+reduce implementation ambiguity; moving success state to the owning section prevents a
+form unmount or failed refresh from erasing a committed result; complete regression must
+be distinguished from a focused or interrupted run; and human approval applies to the
+revision actually reviewed. They are retained as agent-assisted project reflections,
+without rewriting them as a new first-person statement by the author.
+
+An independently authored account of the specification-agent experience, coding-agent
+verification, corrected mistakes and human judgment remains pending author confirmation
+before the final submission. No unrecorded model name or personal experience is inferred.
+
+## Chronological work log
+
+## Issue #55 continued verification and bounded overflow repair (2026-10-08, Asia/Bangkok)
+
+- Prompt summary: continue the authorized work. Earlier steering requested previous-issue
+  environment reuse, naming consistent with the remaining worktrees/branches, and PR #62's
+  format. This is a summary relayed by the orchestrator, not a reconstructed quotation.
+- Work performed: the implementation agent's real long-description edit/save scenario
+  exposed horizontal overflow in the committed Action success snapshot. The independent
+  review agent opened the failed image and traced the missing wrapping to `.success-box`;
+  the bounded approved fix adds one scoped CSS `overflow-wrap: anywhere` rule. It retains
+  the accepted Description and every API/schema/dependency contract. The canonical
+  confirmation component test now covers existing consequences for all three targets.
+- Verified evidence at this point: complete final client suite 366 passed, zero failed/
+  skipped; affected browser slice 45/45 across desktop/tablet/mobile, exit 0. The review
+  agent opened corrected success snapshots at all three widths, plus terminal/conflict/
+  history/modal/dashboard states. These current results are distinct from initial worker,
+  selector, overflow and interrupted backend diagnostics retained in the release bundle.
+- Setup continuation: explicit normal-schema Prisma generation completed exit 0 after
+  the Windows DLL was released. The earlier launch blocked by approval-review usage limits
+  never executed and is not counted as a test pass.
+- Pending at entry creation: the complete 294-case configured browser run and properly
+  seeded full backend run still awaited completion; no completed result is inferred. Their final
+  authoritative results belong in the release runner manifests and summaries. Human
+  review, fresh main execution, board state, independently authored reflection and final
+  submission remain separate pending gates.
+
+## Issue #55 documentation and requirements audit (2026-10-07, Asia/Bangkok)
+
+- Prompt summary: act as orchestrator, create a worktree/branch from remote `lab4-staging`,
+  implement the supplied issue #55 plan using sub-agents, review/fix until no blockers remain,
+  and prepare a PR to `lab4-staging`.
+- Agents used: Codex orchestrator and delegated requirements/documentation agent;
+  underlying model identifier is not asserted.
+- Work performed by the documentation agent: read the supplied plan and checked-in working
+  agreement, mapped all 27 AC and 41 Test DD rows, corrected README tooling/environment and
+  three migration contexts, refreshed submitted human reviews #58–62 through GitHub, and
+  curated existing prompts/reflections while preserving the historical log.
+- Review/fix follow-up: independently reviewed the implementation agent's browser/Test DD
+  changes and the verification agent's three-target confirmation assertions; found weak
+  disabled-control explanations and missing terminal/conflict/history visual evidence.
+  Added bounded captures to the existing Actions/resolution journeys, then requested an
+  independent review of those authored additions. An actual failed long-description image
+  exposed the committed-success snapshot's missing wrapping; the documentation/review agent
+  traced and accepted the scoped CSS fix packet, while implementation and validation remained
+  with the other agents. No automated feedback was attributed to the human reviewer.
+- Verification: documentation inspection and actual GitHub issue/review reads; executable
+  implementation/browser/database results are recorded separately by the implementation
+  agent in `artifacts/lab-04/release/`. This entry does not certify tests or main release.
+- Limits: issue #55 human review, final main verification/board/PDF and an independently
+  authored reflection remain pending until their corresponding real evidence exists.
+
 ## Issue #54 / PR #62 human-review follow-up (2026-10-07, Asia/Bangkok)
 
 - Prompt summary: implement concise empty copy for zero dashboard metrics, update the human review record, commit and push to PR #62.
@@ -255,3 +339,28 @@ Issue #53 confirmation consequence follow-up (2026-10-06)
   tests were run. Human contract review remains pending in `docs/lab-04/reviewer.md`.
 - Reflection: explicit request/response shapes and history rules reduce implementation choices
   that could otherwise diverge between API, UI, and tests.
+
+### Issue #55 completed browser evidence (2026-10-08)
+
+- The final unchanged-source full browser run passed 294/294 across desktop, tablet and
+  mobile, with zero failed, skipped or flaky cases, exit 0, in 31.9 minutes. Raw reports
+  are `artifacts/lab-04/release/staging/playwright.json` and `.txt`.
+- The documentation/review agent independently checked all 105 copied screenshot hashes
+  against their canonical images and inventory, with zero mismatches, and opened the nine
+  final viewport-only confirmation images covering all three targets and widths. No
+  visible blocking defect was found in those images; this is not an all-images claim.
+- Complete fresh backend evidence remains pending. Historical interrupted/unseeded runs
+  are retained separately and are not passing evidence. Human final approval, main
+  verification, board update and PDF submission remain pending.
+
+### Issue #55 final backend and rehearsal reconciliation (2026-10-08)
+
+- The pristine seeded final backend completed 681/681 tests across 47 files, zero failed,
+  skipped or todo cases, in 1444.72 seconds; `server-final-manifest.json` confirms exit 0.
+  Raw log and JSON remain separate from retained incomplete/failed earlier attempts.
+- Independent JSON inspection confirmed all three Lab 4 migration, all 26 Lab 3 migration
+  and all three Lab 4 seed cases passed. Together with empty deploy, seed twice, normal
+  Prisma generation, locked setup, completed client/browser and built startup evidence,
+  all five README procedures are now supported on the staging working diff.
+- Final human approval, main verification, board update and PDF submission remain pending;
+  agent verification is not represented as personal human reflection or release approval.

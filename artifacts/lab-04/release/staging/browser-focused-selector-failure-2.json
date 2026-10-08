@@ -1,0 +1,2512 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/lab-04/release-hardening.spec.ts",
+      "e2e/lab-04/keyboard-access.spec.ts",
+      "e2e/lab-04/responsive-visual.spec.ts",
+      "--workers=1",
+      "--reporter=list,json"
+    ],
+    "configFile": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\playwright.config.ts",
+    "rootDir": "C:/Users/kitti/CPE334/issue-55-worktree/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-03\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/kitti/CPE334/issue-55-worktree/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "C:/Users/kitti/CPE334/issue-55-worktree/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/kitti/CPE334/issue-55-worktree/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet",
+        "name": "tablet",
+        "testDir": "C:/Users/kitti/CPE334/issue-55-worktree/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/kitti/CPE334/issue-55-worktree/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "C:/Users/kitti/CPE334/issue-55-worktree/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "lab-04\\keyboard-access.spec.ts",
+      "file": "lab-04/keyboard-access.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2194,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:09:33.932Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-2f564058b0a5c74f3890",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 192,
+          "column": 5
+        },
+        {
+          "title": "A11Y-01 dashboard: keyboard Retry performs one read and restores cards",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1788,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:09:36.153Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-165232dca48b20d7d923",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 207,
+          "column": 5
+        },
+        {
+          "title": "A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2233,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:09:37.965Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-eb557eb8ffb79bcdb08f",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 230,
+          "column": 7
+        },
+        {
+          "title": "A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2261,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:09:40.226Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-414365d9d0a9569bad42",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 230,
+          "column": 7
+        },
+        {
+          "title": "A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4642,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:09:42.516Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-0157364254c681010088",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 242,
+          "column": 5
+        },
+        {
+          "title": "A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1883,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:10:58.824Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-815a298ecacba9126940",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 192,
+          "column": 5
+        },
+        {
+          "title": "A11Y-01 dashboard: keyboard Retry performs one read and restores cards",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1742,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:00.730Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-90f98495a91a0bee78fe",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 207,
+          "column": 5
+        },
+        {
+          "title": "A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2145,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:02.494Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-76c04f284134ef098bfe",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 230,
+          "column": 7
+        },
+        {
+          "title": "A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2052,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:04.660Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-44ef0b4596800fc45a8a",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 230,
+          "column": 7
+        },
+        {
+          "title": "A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4535,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:06.743Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-0970b2196121c1eb5f5c",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 242,
+          "column": 5
+        },
+        {
+          "title": "A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1831,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:24.668Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-0e4f86456ff23d1ee837",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 192,
+          "column": 5
+        },
+        {
+          "title": "A11Y-01 dashboard: keyboard Retry performs one read and restores cards",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1648,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:26.517Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-ed9b64721787828cffc8",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 207,
+          "column": 5
+        },
+        {
+          "title": "A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1842,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:28.182Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-cd5e00eceb2e55546ccf",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 230,
+          "column": 7
+        },
+        {
+          "title": "A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1840,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:30.045Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-e1df7c2a43e6714d5e0d",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 230,
+          "column": 7
+        },
+        {
+          "title": "A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5292,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:31.905Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0b7547ff7c706486ddab-28769478b08cd69b3f49",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 242,
+          "column": 5
+        }
+      ],
+      "suites": [
+        {
+          "title": "A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior",
+          "file": "lab-04/keyboard-access.spec.ts",
+          "line": 63,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Add Action form fields are label-associated and reachable with visible focus",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5995,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:09:17.471Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0b7547ff7c706486ddab-2db96da927362c9e3218",
+              "file": "lab-04/keyboard-access.spec.ts",
+              "line": 70,
+              "column": 7
+            },
+            {
+              "title": "empty Description submit announces an error linked by aria-describedby",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4843,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:09:23.755Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0b7547ff7c706486ddab-7a69be2f7edeb3e908b1",
+              "file": "lab-04/keyboard-access.spec.ts",
+              "line": 104,
+              "column": 7
+            },
+            {
+              "title": "Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5261,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:09:28.636Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0b7547ff7c706486ddab-5c49ae7c380d27929ea3",
+              "file": "lab-04/keyboard-access.spec.ts",
+              "line": 132,
+              "column": 7
+            },
+            {
+              "title": "Add Action form fields are label-associated and reachable with visible focus",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4173,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:10:45.695Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0b7547ff7c706486ddab-1d2d9433f2f1657057ed",
+              "file": "lab-04/keyboard-access.spec.ts",
+              "line": 70,
+              "column": 7
+            },
+            {
+              "title": "empty Description submit announces an error linked by aria-describedby",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3881,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:10:50.143Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0b7547ff7c706486ddab-fde8e9157dba0fe47b5c",
+              "file": "lab-04/keyboard-access.spec.ts",
+              "line": 104,
+              "column": 7
+            },
+            {
+              "title": "Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4753,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:10:54.048Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0b7547ff7c706486ddab-e477127aac016feec3d6",
+              "file": "lab-04/keyboard-access.spec.ts",
+              "line": 132,
+              "column": 7
+            },
+            {
+              "title": "Add Action form fields are label-associated and reachable with visible focus",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5117,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:12:09.213Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0b7547ff7c706486ddab-ef0d2354046406a7a3d7",
+              "file": "lab-04/keyboard-access.spec.ts",
+              "line": 70,
+              "column": 7
+            },
+            {
+              "title": "empty Description submit announces an error linked by aria-describedby",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4574,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:12:14.601Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0b7547ff7c706486ddab-6bfe2d14736db7eef6ef",
+              "file": "lab-04/keyboard-access.spec.ts",
+              "line": 104,
+              "column": 7
+            },
+            {
+              "title": "Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5440,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:12:19.205Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0b7547ff7c706486ddab-985bf8010317f44c40db",
+              "file": "lab-04/keyboard-access.spec.ts",
+              "line": 132,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "lab-04\\release-hardening.spec.ts",
+      "file": "lab-04/release-hardening.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "HARDEN-01 requester: primary navigation and existing detail controls remain functional",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7559,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByLabel('Summary', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('Summary', { exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByLabel('Summary', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('Summary', { exact: true })\u001b[22m\n\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:79:65",
+                    "location": {
+                      "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                      "column": 65,
+                      "line": 79
+                    },
+                    "snippet": "  77 |     await healthyScreen(destination);\n  78 |     if (role === \"requester\") {\n> 79 |       await navigate(page, \"Create Ticket\");\n     |                                             ^\n  80 |       await expect(page.getByLabel(\"Summary\", { exact: true })).toBeVisible();\n  81 |       await healthyScreen(\"Create Ticket\");\n  82 |     }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                        "column": 65,
+                        "line": 79
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByLabel('Summary', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('Summary', { exact: true })\u001b[22m\n\n\n  77 |     await healthyScreen(destination);\n  78 |     if (role === \"requester\") {\n> 79 |       await navigate(page, \"Create Ticket\");\n     |                                             ^\n  80 |       await expect(page.getByLabel(\"Summary\", { exact: true })).toBeVisible();\n  81 |       await healthyScreen(\"Create Ticket\");\n  82 |     }\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:79:65"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:09:47.197Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-26c98--controls-remain-functional-desktop\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-26c98--controls-remain-functional-desktop\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                    "column": 65,
+                    "line": 79
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-c291f1c970d347bdabbd",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 staff: primary navigation and existing detail controls remain functional",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8401,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139",
+                    "location": {
+                      "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                      "column": 139,
+                      "line": 71
+                    },
+                    "snippet": "  69 |     for (const heading of [\"Public Comments\", \"Attachments\", \"Actions Taken\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  70 |     if (role !== \"requester\") {\n> 71 |       await page.getByRole(\"button\", { name: \"View status history\", exact: true }).click();\n     |                                                                                            ^\n  72 |       for (const heading of [\"Internal Notes\", \"Status history\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  73 |       await expect(page.getByRole(\"button\", { name: \"Add Action\", exact: true })).toBeEnabled();\n  74 |     }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                        "column": 139,
+                        "line": 71
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n\n  69 |     for (const heading of [\"Public Comments\", \"Attachments\", \"Actions Taken\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  70 |     if (role !== \"requester\") {\n> 71 |       await page.getByRole(\"button\", { name: \"View status history\", exact: true }).click();\n     |                                                                                            ^\n  72 |       for (const heading of [\"Internal Notes\", \"Status history\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  73 |       await expect(page.getByRole(\"button\", { name: \"Add Action\", exact: true })).toBeEnabled();\n  74 |     }\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:09:55.951Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-73b35--controls-remain-functional-desktop\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-73b35--controls-remain-functional-desktop\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                    "column": 139,
+                    "line": 71
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-93ecd0f1ab41908c4a73",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 admin: primary navigation and existing detail controls remain functional",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8459,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139",
+                    "location": {
+                      "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                      "column": 139,
+                      "line": 71
+                    },
+                    "snippet": "  69 |     for (const heading of [\"Public Comments\", \"Attachments\", \"Actions Taken\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  70 |     if (role !== \"requester\") {\n> 71 |       await page.getByRole(\"button\", { name: \"View status history\", exact: true }).click();\n     |                                                                                            ^\n  72 |       for (const heading of [\"Internal Notes\", \"Status history\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  73 |       await expect(page.getByRole(\"button\", { name: \"Add Action\", exact: true })).toBeEnabled();\n  74 |     }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                        "column": 139,
+                        "line": 71
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n\n  69 |     for (const heading of [\"Public Comments\", \"Attachments\", \"Actions Taken\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  70 |     if (role !== \"requester\") {\n> 71 |       await page.getByRole(\"button\", { name: \"View status history\", exact: true }).click();\n     |                                                                                            ^\n  72 |       for (const heading of [\"Internal Notes\", \"Status history\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  73 |       await expect(page.getByRole(\"button\", { name: \"Add Action\", exact: true })).toBeEnabled();\n  74 |     }\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:10:05.851Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-68869--controls-remain-functional-desktop\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-68869--controls-remain-functional-desktop\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                    "column": 139,
+                    "line": 71
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-b42b768d95be50e2a629",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 requester: primary navigation and existing detail controls remain functional",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7553,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByLabel('Summary', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('Summary', { exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByLabel('Summary', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('Summary', { exact: true })\u001b[22m\n\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:79:65",
+                    "location": {
+                      "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                      "column": 65,
+                      "line": 79
+                    },
+                    "snippet": "  77 |     await healthyScreen(destination);\n  78 |     if (role === \"requester\") {\n> 79 |       await navigate(page, \"Create Ticket\");\n     |                                             ^\n  80 |       await expect(page.getByLabel(\"Summary\", { exact: true })).toBeVisible();\n  81 |       await healthyScreen(\"Create Ticket\");\n  82 |     }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                        "column": 65,
+                        "line": 79
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByLabel('Summary', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('Summary', { exact: true })\u001b[22m\n\n\n  77 |     await healthyScreen(destination);\n  78 |     if (role === \"requester\") {\n> 79 |       await navigate(page, \"Create Ticket\");\n     |                                             ^\n  80 |       await expect(page.getByLabel(\"Summary\", { exact: true })).toBeVisible();\n  81 |       await healthyScreen(\"Create Ticket\");\n  82 |     }\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:79:65"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:11.315Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-26c98--controls-remain-functional-tablet\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-26c98--controls-remain-functional-tablet\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                    "column": 65,
+                    "line": 79
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-c7f5d46a6fc02c187f67",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 staff: primary navigation and existing detail controls remain functional",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8261,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139",
+                    "location": {
+                      "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                      "column": 139,
+                      "line": 71
+                    },
+                    "snippet": "  69 |     for (const heading of [\"Public Comments\", \"Attachments\", \"Actions Taken\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  70 |     if (role !== \"requester\") {\n> 71 |       await page.getByRole(\"button\", { name: \"View status history\", exact: true }).click();\n     |                                                                                            ^\n  72 |       for (const heading of [\"Internal Notes\", \"Status history\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  73 |       await expect(page.getByRole(\"button\", { name: \"Add Action\", exact: true })).toBeEnabled();\n  74 |     }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                        "column": 139,
+                        "line": 71
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n\n  69 |     for (const heading of [\"Public Comments\", \"Attachments\", \"Actions Taken\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  70 |     if (role !== \"requester\") {\n> 71 |       await page.getByRole(\"button\", { name: \"View status history\", exact: true }).click();\n     |                                                                                            ^\n  72 |       for (const heading of [\"Internal Notes\", \"Status history\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  73 |       await expect(page.getByRole(\"button\", { name: \"Add Action\", exact: true })).toBeEnabled();\n  74 |     }\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:20.047Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-73b35--controls-remain-functional-tablet\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-73b35--controls-remain-functional-tablet\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                    "column": 139,
+                    "line": 71
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-192274584f1111706201",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 admin: primary navigation and existing detail controls remain functional",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8457,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139",
+                    "location": {
+                      "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                      "column": 139,
+                      "line": 71
+                    },
+                    "snippet": "  69 |     for (const heading of [\"Public Comments\", \"Attachments\", \"Actions Taken\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  70 |     if (role !== \"requester\") {\n> 71 |       await page.getByRole(\"button\", { name: \"View status history\", exact: true }).click();\n     |                                                                                            ^\n  72 |       for (const heading of [\"Internal Notes\", \"Status history\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  73 |       await expect(page.getByRole(\"button\", { name: \"Add Action\", exact: true })).toBeEnabled();\n  74 |     }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                        "column": 139,
+                        "line": 71
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n\n  69 |     for (const heading of [\"Public Comments\", \"Attachments\", \"Actions Taken\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  70 |     if (role !== \"requester\") {\n> 71 |       await page.getByRole(\"button\", { name: \"View status history\", exact: true }).click();\n     |                                                                                            ^\n  72 |       for (const heading of [\"Internal Notes\", \"Status history\"]) await expect(page.getByRole(\"heading\", { name: heading, exact: true })).toBeVisible();\n  73 |       await expect(page.getByRole(\"button\", { name: \"Add Action\", exact: true })).toBeEnabled();\n  74 |     }\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:29.623Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-68869--controls-remain-functional-tablet\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-68869--controls-remain-functional-tablet\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                    "column": 139,
+                    "line": 71
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-7cca8701e0babe17d9e9",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 requester: primary navigation and existing detail controls remain functional",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8506,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByLabel('Summary', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('Summary', { exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByLabel('Summary', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('Summary', { exact: true })\u001b[22m\n\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:79:65",
+                    "location": {
+                      "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                      "column": 65,
+                      "line": 79
+                    },
+                    "snippet": "  77 |     await expect(page.getByRole(\"searchbox\", { name: \"Search tickets\" })).toBeVisible();\n  78 |     await healthyScreen(destination);\n> 79 |     await page.getByLabel(\"Search tickets\").fill(summary);\n     |                                                           ^\n  80 |     if (role === \"requester\") await page.getByRole(\"link\", { name: ticketNumber, exact: true }).click();\n  81 |     else await page.getByRole(\"button\", { name: \"Open Detail\", exact: true }).click();\n  82 |     await expect(page.getByRole(\"heading\", { name: new RegExp(`^${ticketNumber} `) })).toBeVisible();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                        "column": 65,
+                        "line": 79
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByLabel('Summary', { exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('Summary', { exact: true })\u001b[22m\n\n\n  77 |     await expect(page.getByRole(\"searchbox\", { name: \"Search tickets\" })).toBeVisible();\n  78 |     await healthyScreen(destination);\n> 79 |     await page.getByLabel(\"Search tickets\").fill(summary);\n     |                                                           ^\n  80 |     if (role === \"requester\") await page.getByRole(\"link\", { name: ticketNumber, exact: true }).click();\n  81 |     else await page.getByRole(\"button\", { name: \"Open Detail\", exact: true }).click();\n  82 |     await expect(page.getByRole(\"heading\", { name: new RegExp(`^${ticketNumber} `) })).toBeVisible();\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:79:65"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:37.234Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-26c98--controls-remain-functional-mobile\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-26c98--controls-remain-functional-mobile\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                    "column": 65,
+                    "line": 79
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-fcb735f8955974bc9101",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 staff: primary navigation and existing detail controls remain functional",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 11,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 9155,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139",
+                    "location": {
+                      "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                      "column": 139,
+                      "line": 71
+                    },
+                    "snippet": "  69 |     const summary = `Issue 55 ${role} navigation ${Date.now()}`;\n  70 |     const ticketNumber = await createRequesterTicket(page, summary);\n> 71 |     if (role !== \"requester\") { await logout(); await signIn(USERS[role].email); }\n     |                                                                                   ^\n  72 |     await navigate(page, \"Dashboard\");\n  73 |     await expect(page.getByRole(\"heading\", { name: role === \"requester\" ? \"Requester Dashboard\" : \"Staff Dashboard\", exact: true })).toBeVisible();\n  74 |     await healthyScreen(\"Dashboard\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                        "column": 139,
+                        "line": 71
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n\n  69 |     const summary = `Issue 55 ${role} navigation ${Date.now()}`;\n  70 |     const ticketNumber = await createRequesterTicket(page, summary);\n> 71 |     if (role !== \"requester\") { await logout(); await signIn(USERS[role].email); }\n     |                                                                                   ^\n  72 |     await navigate(page, \"Dashboard\");\n  73 |     await expect(page.getByRole(\"heading\", { name: role === \"requester\" ? \"Requester Dashboard\" : \"Staff Dashboard\", exact: true })).toBeVisible();\n  74 |     await healthyScreen(\"Dashboard\");\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:46.900Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-73b35--controls-remain-functional-mobile\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-73b35--controls-remain-functional-mobile\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                    "column": 139,
+                    "line": 71
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-a5614eeb0c39be51ac89",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        },
+        {
+          "title": "HARDEN-01 admin: primary navigation and existing detail controls remain functional",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 12,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 9249,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139",
+                    "location": {
+                      "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                      "column": 139,
+                      "line": 71
+                    },
+                    "snippet": "  69 |     }\n  70 |     await signIn(USERS.requester.email);\n> 71 |     const summary = `Issue 55 ${role} navigation ${Date.now()}`;\n     |                                                                 ^\n  72 |     const ticketNumber = await createRequesterTicket(page, summary);\n  73 |     if (role !== \"requester\") { await logout(); await signIn(USERS[role].email); }\n  74 |     await navigate(page, \"Dashboard\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                        "column": 139,
+                        "line": 71
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Status history', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Status history', exact: true })\u001b[22m\n\n\n  69 |     }\n  70 |     await signIn(USERS.requester.email);\n> 71 |     const summary = `Issue 55 ${role} navigation ${Date.now()}`;\n     |                                                                 ^\n  72 |     const ticketNumber = await createRequesterTicket(page, summary);\n  73 |     if (role !== \"requester\") { await logout(); await signIn(USERS[role].email); }\n  74 |     await navigate(page, \"Dashboard\");\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts:71:139"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:57.348Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-68869--controls-remain-functional-mobile\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-release-hardening-H-68869--controls-remain-functional-mobile\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\release-hardening.spec.ts",
+                    "column": 139,
+                    "line": 71
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3e24808aa6081ad94016-e7ac41fa73cedbf45cb9",
+          "file": "lab-04/release-hardening.spec.ts",
+          "line": 6,
+          "column": 7
+        }
+      ]
+    },
+    {
+      "title": "lab-04\\responsive-visual.spec.ts",
+      "file": "lab-04/responsive-visual.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "VISUAL-01 dashboard: requester cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1984,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:10:27.223Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-8f334382271644eed92f",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 182,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2477,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:10:29.231Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-bce93ba490472fa5a8ab",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 182,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2732,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:10:31.728Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-083c1e744ea7cda93f41",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 182,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3010,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:10:34.479Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-e12603df24b69b6757fe",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 202,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3577,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:10:37.514Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-3bc14233aa45cf093f4a",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 202,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3443,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:10:41.114Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-fe1100be03786c11c449",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 202,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1931,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:51.055Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-affbe5227fe26e66e2ef",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 182,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2558,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:53.009Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-8778059809b116d0b5ce",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 182,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2581,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:55.587Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-651a5195aed977b8e51b",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 182,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2922,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:11:58.190Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-47d544c9cb2e29086228",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 202,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3523,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:01.130Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-8bdca1a1c1293c0dd0af",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 202,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3418,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:12:04.669Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-c3fbb024397494d0bff6",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 202,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 14,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1824,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:13:21.369Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-c6fcc8c97f5a5e0dc69d",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 182,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 14,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2410,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:13:23.215Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-79dcba1be5c1a4356179",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 182,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin cards and lists wrap within the viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 14,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2263,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:13:25.646Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-52bce72049c132ffad24",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 182,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: requester loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 14,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3233,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:13:27.927Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-9acd22f339500bf164da",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 202,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: staff loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 14,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3734,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:13:31.178Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-ffdf6c94f354f4622281",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 202,
+          "column": 7
+        },
+        {
+          "title": "VISUAL-01 dashboard: admin loading, empty, failure and long text states",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 14,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3662,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-07T15:13:34.932Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "04c20dc67c1dbeda3230-1476130a951583263ea7",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 202,
+          "column": 7
+        }
+      ],
+      "suites": [
+        {
+          "title": "VISUAL-01 (Actions portion): Actions area responsive layout",
+          "file": "lab-04/responsive-visual.spec.ts",
+          "line": 39,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Staff Actions area keeps section, controls, and cards inside the viewport",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5171,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m-1\u001b[39m\nReceived:    \u001b[31m-1.21875\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m-1\u001b[39m\nReceived:    \u001b[31m-1.21875\u001b[39m\n    at expectControlInViewport (C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:19:21)\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:96:5",
+                        "location": {
+                          "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts",
+                          "column": 21,
+                          "line": 19
+                        },
+                        "snippet": "  17 |   expect(bounds!.x).toBeGreaterThanOrEqual(-tolerance);\n  18 |   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + tolerance);\n> 19 |   expect(bounds!.y).toBeGreaterThanOrEqual(-tolerance);\n     |                     ^\n  20 |   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + tolerance);\n  21 |   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(\n  22 |     true,"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts",
+                            "column": 21,
+                            "line": 19
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m-1\u001b[39m\nReceived:    \u001b[31m-1.21875\u001b[39m\n\n  17 |   expect(bounds!.x).toBeGreaterThanOrEqual(-tolerance);\n  18 |   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + tolerance);\n> 19 |   expect(bounds!.y).toBeGreaterThanOrEqual(-tolerance);\n     |                     ^\n  20 |   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + tolerance);\n  21 |   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(\n  22 |     true,\n    at expectControlInViewport (C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:19:21)\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:96:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:10:15.707Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-desktop\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts",
+                        "column": 21,
+                        "line": 19
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-a9766c3643210b8a9685",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 49,
+              "column": 7
+            },
+            {
+              "title": "Requester read-only Actions area keeps cards inside the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop",
+                  "projectName": "desktop",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4520,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:10:22.427Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-634687995d17a4a116de",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 117,
+              "column": 7
+            },
+            {
+              "title": "Staff Actions area keeps section, controls, and cards inside the viewport",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5217,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:112:7",
+                        "location": {
+                          "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts",
+                          "column": 7,
+                          "line": 112
+                        },
+                        "snippet": "  110 |\n  111 |     expect(\n> 112 |       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),\n      |       ^\n  113 |     ).toBe(true);\n  114 |\n  115 |     await page.screenshot({ path: screenshot(\"actions-taken\", \"staff-actions\"), fullPage: true });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts",
+                            "column": 7,
+                            "line": 112
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  110 |\n  111 |     expect(\n> 112 |       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),\n      |       ^\n  113 |     ).toBe(true);\n  114 |\n  115 |     await page.screenshot({ path: screenshot(\"actions-taken\", \"staff-actions\"), fullPage: true });\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:112:7"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:11:39.458Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-tablet\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-tablet\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts",
+                        "column": 7,
+                        "line": 112
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-0b6e67976e2f70847d07",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 49,
+              "column": 7
+            },
+            {
+              "title": "Requester read-only Actions area keeps cards inside the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet",
+                  "projectName": "tablet",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4691,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:11:46.091Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-1c180e4a629adc8da9a8",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 117,
+              "column": 7
+            },
+            {
+              "title": "Staff Actions area keeps section, controls, and cards inside the viewport",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6456,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m-1\u001b[39m\nReceived:    \u001b[31m-1.046875\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m-1\u001b[39m\nReceived:    \u001b[31m-1.046875\u001b[39m\n    at expectControlInViewport (C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:19:21)\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:96:5",
+                        "location": {
+                          "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts",
+                          "column": 21,
+                          "line": 19
+                        },
+                        "snippet": "  17 |   expect(bounds).not.toBeNull();\n  18 |   expect(bounds!.x).toBeGreaterThanOrEqual(-tolerance);\n> 19 |   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + tolerance);\n     |                     ^\n  20 |   expect(bounds!.y).toBeGreaterThanOrEqual(-tolerance);\n  21 |   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + tolerance);\n  22 |   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe("
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts",
+                            "column": 21,
+                            "line": 19
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m-1\u001b[39m\nReceived:    \u001b[31m-1.046875\u001b[39m\n\n  17 |   expect(bounds).not.toBeNull();\n  18 |   expect(bounds!.x).toBeGreaterThanOrEqual(-tolerance);\n> 19 |   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + tolerance);\n     |                     ^\n  20 |   expect(bounds!.y).toBeGreaterThanOrEqual(-tolerance);\n  21 |   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + tolerance);\n  22 |   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(\n    at expectControlInViewport (C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:19:21)\n    at C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts:96:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:13:07.967Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-mobile\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\test-results\\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-mobile\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\e2e\\lab-04\\responsive-visual.spec.ts",
+                        "column": 21,
+                        "line": 19
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-a91e3f850618029b3a9a",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 49,
+              "column": 7
+            },
+            {
+              "title": "Requester read-only Actions area keeps cards inside the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5379,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-07T15:13:15.738Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "04c20dc67c1dbeda3230-9dcdebefabe47649c20e",
+              "file": "lab-04/responsive-visual.spec.ts",
+              "line": 117,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-07T15:09:06.831Z",
+    "duration": 272700.37100000004,
+    "expected": 45,
+    "skipped": 0,
+    "unexpected": 12,
+    "flaky": 0
+  }
+}
