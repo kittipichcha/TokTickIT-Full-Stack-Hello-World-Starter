@@ -11,7 +11,7 @@ Issue #55 prepares a reviewed staging package. Staging evidence does not certify
 | T5 setup/seed/migration/tests/demo rehearsals | Passed | five separate procedure results; paired DB/files recovery tests |
 | T6 contract/Test DD/docs/human-history/AI reconciliation | Passed | alignment review and factual provenance |
 | Independent agent review and fix loop | Passed | Source, canonical assertions, image provenance and final 681/366/294 aggregate independently reviewed; no blocking finding. See documentation-review.md and documentation-audit.md |
-| Feature PR to lab4-staging | Pending | authorized PR with raw evidence links |
+| Feature PR to lab4-staging | Created | [PR #63](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/63); base `lab4-staging`, head `feature/lab4-integration-release`; immutable evidence links |
 | Human peer review of #55/final release | Pending | actual submitted review on exact head |
 | Staging → main merge and fresh main verification | Pending | separately authorized merge; actual main SHA and complete new runs |
 | Project board completion | Pending | actual authorized board state |
