@@ -1,0 +1,3 @@
+# The pinned historical Lab 3 migration schema is hash-verified by DB-MIG-04.
+# Force LF so a fresh checkout reproduces the exact pinned bytes on every platform.
+server/tests/lab-03/fixtures/lab3-final-schema.prisma text eol=lf

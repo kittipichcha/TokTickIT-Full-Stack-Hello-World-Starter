@@ -1,0 +1,11 @@
+◇ injected env (1) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/server
+
+NOTICE:  database "lab4e2e_issue54_test_20261006_staff_dash_test_24816" does not exist, skipping
+NOTICE:  database "lab4e2e_issue54_test_20261006_requester_dash_test_24800" does not exist, skipping
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  21:53:17
+   Duration  145.96s (transform 950ms, setup 0ms, import 1.48s, tests 143.51s, environment 0ms)

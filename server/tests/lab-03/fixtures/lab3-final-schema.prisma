@@ -1,0 +1,151 @@
+// Prisma schema — datasource and generator are pre-wired.
+// Your DATABASE_URL lives in server/.env (copy it from .env.example).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  tickets   Ticket[]
+}
+
+model RelatedSystem {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  tickets   Ticket[]
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TicketStatus {
+  NEW
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_REQUESTER
+  RESOLVED
+  CLOSED
+  REOPENED
+  CANCELLED
+}
+
+enum Role {
+  REQUESTER
+  IT_STAFF
+  ADMINISTRATOR
+}
+
+model User {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  email              String   @unique
+  role               Role
+  passwordHash       String   @db.VarChar(60)
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(true)
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+
+  requesterTickets   Ticket[]      @relation("TicketRequester")
+  ownedTickets       Ticket[]      @relation("TicketOwner")
+  uploadedAttachments Attachment[] @relation("AttachmentUserUploader")
+  removedAttachments  Attachment[] @relation("AttachmentUserRemover")
+  comments           Comment[]
+  internalNotes      InternalNote[]
+}
+
+model Ticket {
+  id               Int          @id @default(autoincrement())
+  ticketNumber     String       @unique
+  requesterId      Int
+  categoryId       Int
+  relatedSystemId  Int
+  summary          String
+  description      String
+  requestedPriority Priority
+  itPriority       Priority?
+  ticketOwnerId    Int?
+  currentStatus    TicketStatus @default(NEW)
+  appearsResolved  Boolean      @default(false)
+  createdAt        DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime     @updatedAt @db.Timestamptz(3)
+
+  requester      User            @relation("TicketRequester", fields: [requesterId], references: [id])
+  owner          User?           @relation("TicketOwner", fields: [ticketOwnerId], references: [id])
+  category       Category        @relation(fields: [categoryId], references: [id])
+  relatedSystem  RelatedSystem   @relation(fields: [relatedSystemId], references: [id])
+  attachments    Attachment[]
+  comments       Comment[]
+  internalNotes  InternalNote[]
+
+  @@index([requesterId])
+  @@index([currentStatus])
+  @@index([createdAt])
+  @@index([ticketOwnerId])
+}
+
+model Attachment {
+  id                    Int           @id @default(autoincrement())
+  ticketId              Int
+  originalFilename      String
+  storedFilename        String        @unique
+  mimeType              String
+  fileSizeBytes         Int
+  uploaderUserId        Int
+  isRemoved             Boolean       @default(false)
+  removedAt             DateTime?     @db.Timestamptz(3)
+  removalReason         String?
+  removedByUserId       Int?
+  uploadedAt            DateTime      @default(now()) @db.Timestamptz(3)
+
+  ticket            Ticket        @relation(fields: [ticketId], references: [id])
+  uploaderUser      User          @relation("AttachmentUserUploader", fields: [uploaderUserId], references: [id])
+  removedByUser     User?         @relation("AttachmentUserRemover", fields: [removedByUserId], references: [id])
+
+  @@index([ticketId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  content   String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  author User   @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId])
+}
+
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  content   String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  author User   @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId])
+}
+
+model TicketSequence {
+  year     Int @id
+  lastSeq  Int @default(0)
+}

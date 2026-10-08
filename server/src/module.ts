@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { requesterDashboardHandler, staffDashboardHandler } from "./dashboard-controller.js";
 import multer from "multer";
 import {
   getCategoriesHandler,
@@ -34,6 +35,7 @@ import {
 import {
   staffQueueHandler,
   getStaffTicketDetailHandler,
+  listTicketStatusHistoryHandler,
   setOwnerHandler,
   listAssignableOwnersHandler,
   setItPriorityHandler,
@@ -50,8 +52,16 @@ import {
   updateUserHandler,
   setInitialPasswordHandler,
 } from "./admin-controller.js";
+import {
+  listActionsHandler,
+  getActionDetailHandler,
+  createActionHandler,
+  updateActionHandler,
+} from "./action-controller.js";
 
 export const router = Router();
+router.get("/requester/dashboard", requireAuth, requirePasswordChanged, requireRole(["REQUESTER"]), requesterDashboardHandler);
+router.get("/staff/dashboard", requireAuth, requirePasswordChanged, requireRole(["IT_STAFF", "ADMINISTRATOR"]), staffDashboardHandler);
 
 // ---- Lab 3 auth endpoints (Issue #35) ----
 // Gate exemptions (frozen): login public; me/logout/change-password authenticated,
@@ -203,6 +213,14 @@ router.get(
   getStaffTicketDetailHandler,
 );
 
+router.get(
+  "/staff/tickets/:ticketNumber/status-history",
+  requireAuth,
+  requirePasswordChanged,
+  requireRole(["IT_STAFF", "ADMINISTRATOR"]),
+  listTicketStatusHistoryHandler,
+);
+
 // Eligible Ticket owners: IT Staff / Administrator only (api-spec §17a). Read -> no CSRF.
 // Read-only source for the Queue owner filter and the Staff Detail ownership control.
 router.get(
@@ -294,3 +312,37 @@ router.get("/admin/users", requireAuth, requirePasswordChanged, requireRole(["AD
 router.post("/admin/users", requireAuth, requirePasswordChanged, requireCsrf, requireRole(["ADMINISTRATOR"]), createUserHandler);
 router.patch("/admin/users/:userId", requireAuth, requirePasswordChanged, requireCsrf, requireRole(["ADMINISTRATOR"]), updateUserHandler);
 router.post("/admin/users/:userId/initial-password", requireAuth, requirePasswordChanged, requireCsrf, requireRole(["ADMINISTRATOR"]), setInitialPasswordHandler);
+
+// ---- Actions Taken (Issue #51 — Lab 4) ----
+// Reads: owner Requester or IT Staff/Administrator (api-spec §3/§5).
+router.get(
+  "/tickets/:ticketNumber/actions",
+  requireAuth,
+  requirePasswordChanged,
+  requireTicketReadAccess,
+  listActionsHandler,
+);
+router.get(
+  "/tickets/:ticketNumber/actions/:actionId",
+  requireAuth,
+  requirePasswordChanged,
+  requireTicketReadAccess,
+  getActionDetailHandler,
+);
+// Writes: IT Staff/Administrator only; state-changing -> CSRF (api-spec §4/§6).
+router.post(
+  "/tickets/:ticketNumber/actions",
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["IT_STAFF", "ADMINISTRATOR"]),
+  createActionHandler,
+);
+router.patch(
+  "/tickets/:ticketNumber/actions/:actionId",
+  requireAuth,
+  requirePasswordChanged,
+  requireCsrf,
+  requireRole(["IT_STAFF", "ADMINISTRATOR"]),
+  updateActionHandler,
+);

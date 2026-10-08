@@ -1,4 +1,6 @@
 import { getPrisma } from "./prisma.js";
+import { OPEN_TICKET_STATUSES } from "./ticket-status.js";
+import { parseStaffDashboardFilters } from "./ticket-dashboard-filters.js";
 import { allocateTicketNumberWithClient, TicketSequenceExhaustedError } from "./ticket-number.js";
 import { MAX_DATABASE_ID } from "./id-domain.js";
 import type { Role } from "@prisma/client";
@@ -14,7 +16,6 @@ import {
 } from "./attachment-storage.js";
 import { openPdf } from "clawpdf";
 import { testSeams } from "./test-seams.js";
-import { isTransitionAllowed, type TicketStatus } from "./ticket-status.js";
 
 export interface Category {
   id: number;
@@ -389,6 +390,9 @@ export interface MyTicketsResult {
 }
 
 export interface MyTicketsParams {
+  scope?: "open";
+  updatedSince?: Date;
+  resolvedSince?: Date;
   search?: string;
   categoryId?: number;
   requestedPriority?: string;
@@ -439,6 +443,18 @@ export async function getMyTickets(
     paramIndex++;
   }
 
+  if (params.scope === "open") {
+    conditions.push(`t."currentStatus" = ANY($${paramIndex}::"TicketStatus"[])`);
+    filterValues.push([...OPEN_TICKET_STATUSES]); paramIndex++;
+  }
+  for (const [column, instant] of [["updatedAt", params.updatedSince], ["resolvedAt", params.resolvedSince]] as const) {
+    if (instant !== undefined) {
+      conditions.push(`t."${column}" >= $${paramIndex}`);
+      filterValues.push(instant);
+      paramIndex++;
+    }
+  }
+  if (params.resolvedSince !== undefined) conditions.push(`t."currentStatus" = 'RESOLVED' AND t."resolvedAt" IS NOT NULL`);
   const whereClause = conditions.join(" AND ");
 
   // Count filtered results
@@ -593,6 +609,9 @@ export interface StaffQueueResult {
 }
 
 export interface StaffQueueParams {
+  ownerScope?: "me" | "unassigned";
+  openOnly?: boolean;
+  updatedSince?: Date;
   search?: string;
   status?: string;
   priority?: string;
@@ -614,8 +633,8 @@ function firstQueryValue(val: unknown): string | undefined {
  * Parses and validates the Staff Queue query string (api-spec §15).
  *
  * Frozen rule: **invalid query values fall back to safe defaults and never
- * return `400`** — they are treated as absent. This function therefore never
- * throws; every branch returns a usable value.
+ * return `400`** — they are treated as absent. Lab 4 extensions are validated
+ * separately and may throw DashboardFilterError; legacy branches retain defaults.
  *
  * - `search`: trimmed; empty/whitespace-only → absent.
  * - `status` / `priority`: applied only when the value is exactly in the enum;
@@ -630,6 +649,7 @@ function firstQueryValue(val: unknown): string | undefined {
  */
 export function parseQueueQuery(query: unknown): StaffQueueParams {
   const q = (query ?? {}) as Record<string, unknown>;
+  const extensions = parseStaffDashboardFilters(q);
 
   const rawSearch = firstQueryValue(q.search) ?? "";
   const search = rawSearch.trim();
@@ -687,6 +707,7 @@ export function parseQueueQuery(query: unknown): StaffQueueParams {
 
   return {
     search: search.length > 0 ? search : undefined,
+    ...extensions,
     status,
     priority,
     ownerId,
@@ -710,7 +731,7 @@ export function parseQueueQuery(query: unknown): StaffQueueParams {
  * Migrated Lab 2 rows (`ticketOwnerId IS NULL`, `itPriority` backfilled by #35)
  * are returned normally — the queue never hides a ticket because it is unowned.
  */
-export async function getStaffQueue(params: StaffQueueParams): Promise<StaffQueueResult> {
+export async function getStaffQueue(params: StaffQueueParams, actorId?: number): Promise<StaffQueueResult> {
   const prisma = getPrisma();
 
   // Unfiltered total: every ticket in the system (no requester scoping).
@@ -746,6 +767,22 @@ export async function getStaffQueue(params: StaffQueueParams): Promise<StaffQueu
     paramIndex++;
   }
 
+  if (params.ownerScope === "unassigned") conditions.push(`t."ticketOwnerId" IS NULL`);
+  if (params.ownerScope === "me") {
+    if (actorId === undefined) throw new Error("Authenticated Queue actor is required.");
+    conditions.push(`t."ticketOwnerId" = $${paramIndex}`);
+    filterValues.push(actorId);
+    paramIndex++;
+  }
+  if (params.openOnly) {
+    conditions.push(`t."currentStatus" = ANY($${paramIndex}::"TicketStatus"[])`);
+    filterValues.push([...OPEN_TICKET_STATUSES]); paramIndex++;
+  }
+  if (params.updatedSince !== undefined) {
+    conditions.push(`t."updatedAt" >= $${paramIndex}`);
+    filterValues.push(params.updatedSince);
+    paramIndex++;
+  }
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const countRows = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
@@ -1664,6 +1701,7 @@ export interface StaffTicketDetailData {
   appearsResolved: boolean;
   createdAt: Date;
   updatedAt: Date;
+  version: number;
   publicComments: CommentData[];
   internalNotes: CommentData[];
   /**
@@ -1737,6 +1775,7 @@ export async function getStaffTicketDetail(
     appearsResolved: ticket.appearsResolved,
     createdAt: ticket.createdAt,
     updatedAt: ticket.updatedAt,
+    version: ticket.version,
     publicComments: ticket.comments,
     internalNotes: ticket.internalNotes,
     attachments: ticket.attachments.map((a) => ({
@@ -1751,65 +1790,6 @@ export async function getStaffTicketDetail(
       removedByUserId: a.removedByUserId,
     })),
   };
-}
-
-export interface SetOwnerResult {
-  ticketOwnerId: number;
-}
-
-/**
- * `setTicketOwner` — claim/reassign (api-spec §17).
- *
- * Frozen validation order and error split (Revision 7; Rev 9 §17 resolution):
- *   1. Ticket by ticketNumber → missing → `NotFoundError` (404)
- *   2. `ownerId` absent/null/non-integer/malformed → `ValidationError` (400)
- *   3. User lookup → missing → `ConflictError` (409 — a nonexistent User is not
- *      an active IT Staff/Administrator, per §17)
- *   4. Role ∉ {IT_STAFF, ADMINISTRATOR} OR inactive → `ConflictError` (409)
- *   5. Plain UPDATE — last-write-wins, no version column, no unassign operation
- */
-export async function setTicketOwner(
-  ticketNumber: string,
-  rawOwnerId: unknown,
-): Promise<SetOwnerResult> {
-  const prisma = getPrisma();
-
-  const ticket = await prisma.ticket.findUnique({
-    where: { ticketNumber },
-    select: { id: true },
-  });
-  if (!ticket) {
-    throw new NotFoundError("Ticket not found.");
-  }
-
-  if (
-    typeof rawOwnerId !== "number" ||
-    !Number.isInteger(rawOwnerId) ||
-    rawOwnerId <= 0 ||
-    rawOwnerId > MAX_DATABASE_ID
-  ) {
-    throw new ValidationError("Validation failed.", {
-      ownerId: "ownerId must be a valid positive integer.",
-    });
-  }
-
-  const owner = await prisma.user.findUnique({
-    where: { id: rawOwnerId },
-    select: { id: true, role: true, isActive: true },
-  });
-  if (!owner) {
-    throw new ConflictError("The specified owner is not an active IT Staff or Administrator user.");
-  }
-  if (!isStaffRole(owner.role) || !owner.isActive) {
-    throw new ConflictError("The specified owner is not an active IT Staff or Administrator user.");
-  }
-
-  const updated = await prisma.ticket.update({
-    where: { id: ticket.id },
-    data: { ticketOwnerId: owner.id },
-    select: { ticketOwnerId: true },
-  });
-  return { ticketOwnerId: updated.ticketOwnerId as number };
 }
 
 export interface AssignableOwner {
@@ -1847,126 +1827,4 @@ export async function listAssignableOwners(): Promise<AssignableOwner[]> {
     orderBy: [{ name: "asc" }, { id: "asc" }],
   });
   return users.map((u) => ({ id: u.id, name: u.name, role: u.role }));
-}
-
-export interface SetItPriorityResult {
-  itPriority: string;
-}
-
-/**
- * `setItPriority` — set the IT Priority (api-spec §18). Staff/Admin only at the
- * route; this function validates the enum value. Requested Priority is never
- * touched.
- */
-export async function setItPriority(
-  ticketNumber: string,
-  rawPriority: unknown,
-): Promise<SetItPriorityResult> {
-  const prisma = getPrisma();
-  const ticket = await prisma.ticket.findUnique({
-    where: { ticketNumber },
-    select: { id: true },
-  });
-  if (!ticket) {
-    throw new NotFoundError("Ticket not found.");
-  }
-  if (typeof rawPriority !== "string" || !QUEUE_PRIORITIES.includes(rawPriority as never)) {
-    throw new ValidationError("Validation failed.", {
-      itPriority: "itPriority must be one of LOW, MEDIUM, HIGH.",
-    });
-  }
-  const updated = await prisma.ticket.update({
-    where: { id: ticket.id },
-    data: { itPriority: rawPriority as "LOW" | "MEDIUM" | "HIGH" },
-    select: { itPriority: true },
-  });
-  return { itPriority: updated.itPriority as string };
-}
-
-export interface ApplyStatusTransitionResult {
-  currentStatus: string;
-}
-
-/**
- * `applyStatusTransition` — the frozen Status Transition Matrix (api-spec §19,
- * specification.md §7).
- *
- * Steps 4–5 produce precise, user-actionable errors; step 6 makes the matrix
- * hold under concurrency (Revision 10 — atomic conditional UPDATE):
- *   1. Ticket by ticketNumber → missing → `NotFoundError` (404)
- *   2. targetStatus not a valid TicketStatus value → `ValidationError` (400)
- *   3. read currentStatus, ticketOwnerId
- *   4. ticketOwnerId === null → `ConflictError` (409 — must claim first)
- *   5. !isTransitionAllowed(currentStatus, targetStatus) → `ConflictError` (409)
- *   6. atomic `updateMany` guarded on the persisted from-state; `count === 0`
- *      → re-read → classify 404 / 409 (unowned) / 409 (raced)
- *
- * Ownership rule (Issue #38 review fix — B-1): the matrix's validation column
- * reads "Ticket owned", i.e. `ticketOwnerId` is non-null — NOT "owned by the
- * acting user". specification.md §6 grants "Perform permitted status changes"
- * to the whole IT Staff/Administrator group, and §13 decision 14 states only
- * that the Ticket must be claimed first (it never auto-claims). The acting user
- * is therefore not required to be the Ticket's specific owner; any active
- * IT Staff/Administrator may progress a claimed Ticket. The route-level role
- * gate (`requireRole(["IT_STAFF", "ADMINISTRATOR"])`) is the authorization
- * boundary. The atomic guard below is consequently on the persisted from-state
- * only — it must not re-introduce the same-actor restriction.
- */
-export async function applyStatusTransition(
-  ticketNumber: string,
-  rawTargetStatus: unknown,
-): Promise<ApplyStatusTransitionResult> {
-  const prisma = getPrisma();
-
-  const ticket = await prisma.ticket.findUnique({
-    where: { ticketNumber },
-    select: { id: true, currentStatus: true, ticketOwnerId: true },
-  });
-  if (!ticket) {
-    throw new NotFoundError("Ticket not found.");
-  }
-
-  if (
-    typeof rawTargetStatus !== "string" ||
-    !(QUEUE_STATUSES as readonly string[]).includes(rawTargetStatus)
-  ) {
-    throw new ValidationError("Validation failed.", {
-      status: `status must be one of ${QUEUE_STATUSES.join(", ")}.`,
-    });
-  }
-  const targetStatus = rawTargetStatus as TicketStatus;
-
-  if (ticket.ticketOwnerId === null) {
-    throw new ConflictError("The ticket must be claimed before its status can be changed.");
-  }
-
-  const fromStatus = ticket.currentStatus as TicketStatus;
-  if (!isTransitionAllowed(fromStatus, targetStatus)) {
-    throw new ConflictError("This status transition is not permitted.");
-  }
-
-  const updated = await prisma.ticket.updateMany({
-    where: {
-      id: ticket.id,
-      currentStatus: fromStatus,
-    },
-    data: { currentStatus: targetStatus },
-  });
-
-  if (updated.count === 0) {
-    // The persisted from-state changed between the read and the write.
-    const current = await prisma.ticket.findUnique({
-      where: { id: ticket.id },
-      select: { currentStatus: true, ticketOwnerId: true },
-    });
-    if (!current) {
-      throw new NotFoundError("Ticket not found.");
-    }
-    if (current.ticketOwnerId === null) {
-      throw new ConflictError("The ticket must be claimed before its status can be changed.");
-    }
-    throw new ConflictError("This status transition is not permitted.");
-  }
-
-  return { currentStatus: targetStatus };
 }

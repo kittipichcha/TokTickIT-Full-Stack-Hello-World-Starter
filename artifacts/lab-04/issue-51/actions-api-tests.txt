@@ -1,0 +1,23 @@
+Command:
+  npx vitest run tests/lab-04/actions-taken.api.test.ts --reporter=verbose
+
+Branch: feature/lab4-actions-taken-foundation
+Head: 3997f4e036a9265ed4c01d6264fee97d4d43a414
+
+Result: 1 file, 23 tests passed, 0 failed.
+
+Fully passed Issue #51-owned rows:
+  API-ACT-01..07, API-ACT-DETAIL-01, SEC-ACT-01, CONC-ACT-01.
+
+Issue #51-owned clauses executed:
+  API-ACT-08 — terminal-Ticket Action creation rejection.
+  SEC-ACT-02 — Action POST/PATCH authorization and CSRF no-mutation behavior.
+
+API-ACT-08 and SEC-ACT-02 remain Planned as complete Test DD rows because
+their remaining workflow/dashboard clauses are owned by downstream issues.
+
+Includes raw JSON integer grammar (decimal/exponent/overflow), authoritative
+unexpired replay after a Ticket becomes terminal, expired-key revalidation,
+concurrent reuse, and cleanup-race tolerance, exact 24-hour persisted TTL,
+bounded cleanup with a known unexpired row, PATCH bounds/immutability, and
+CSRF/authorization no-mutation.

@@ -1,0 +1,14 @@
+Baseline 3784e9385264ad9db6865e546d03fdb605884c4a + local PR61 fixes; final file hashes in pr61-executable-snapshot.json.
+
+> toktickit-client@1.0.0 build
+> tsc && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 46 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.41 kB │ gzip:  0.27 kB
+dist/assets/index-BX8SjkVl.css  257.46 kB │ gzip: 35.80 kB
+dist/assets/index-DW1-vgyU.js   264.07 kB │ gzip: 72.01 kB
+✓ built in 3.26s

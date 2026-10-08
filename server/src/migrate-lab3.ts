@@ -41,7 +41,7 @@
 import { execSync } from "node:child_process";
 import { readFileSync, existsSync, writeFileSync, rmSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { resolve, dirname } from "node:path";
+import { resolve, dirname, isAbsolute, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import bcrypt from "bcrypt";
@@ -130,6 +130,110 @@ function run(command: string, extraEnv?: Record<string, string>): string {
   } catch (err) {
     throw sanitizeExecError(err);
   }
+}
+
+/**
+ * Test-only historical-migration schema override (Issue #51, DB-MIG-04).
+ *
+ * The Lab 3 migration fixture must run the REAL orchestrator against a copied,
+ * byte-verified historical schema tree instead of the repository schema. When
+ * `MIGRATION_TEST_SCHEMA_PATH` is set, every Prisma CLI invocation must pass an
+ * explicit `--schema` pointing at that verified copy.
+ *
+ * Fail-closed rules (validated BEFORE any Prisma command runs):
+ *   - `NODE_ENV` must be exactly "test".
+ *   - `MIGRATION_TEST_SCHEMA_PATH` must be an absolute path that exists.
+ *   - `MIGRATION_TEST_FIXTURE_ROOT` must be an absolute path that exists.
+ *   - the schema path must resolve inside the fixture root.
+ *   - `DATABASE_URL` must be an explicitly disposable test database.
+ *
+ * Returns the CLI suffix (` --schema "<path>"`) when the override is active, or
+ * "" when it is absent (normal operation, unchanged production behavior).
+ */
+export function resolveMigrationTestSchemaArg(env: NodeJS.ProcessEnv = process.env): string {
+  const override = env.MIGRATION_TEST_SCHEMA_PATH;
+  if (!override) return "";
+
+  if (env.NODE_ENV !== "test") {
+    throw new MigrationStopAndReportError(
+      'MIGRATION_TEST_SCHEMA_PATH is only honored when NODE_ENV is exactly "test".',
+    );
+  }
+  if (!isAbsolute(override)) {
+    throw new MigrationStopAndReportError(
+      "MIGRATION_TEST_SCHEMA_PATH must be an absolute path.",
+    );
+  }
+  const root = env.MIGRATION_TEST_FIXTURE_ROOT;
+  if (!root || !isAbsolute(root)) {
+    throw new MigrationStopAndReportError(
+      "MIGRATION_TEST_FIXTURE_ROOT must be an absolute path when MIGRATION_TEST_SCHEMA_PATH is set.",
+    );
+  }
+
+  const resolvedRoot = resolve(root);
+  const resolvedSchema = resolve(override);
+  if (!existsSync(resolvedRoot)) {
+    throw new MigrationStopAndReportError(
+      `MIGRATION_TEST_FIXTURE_ROOT does not exist: ${resolvedRoot}`,
+    );
+  }
+  if (!existsSync(resolvedSchema)) {
+    throw new MigrationStopAndReportError(
+      `MIGRATION_TEST_SCHEMA_PATH does not exist: ${resolvedSchema}`,
+    );
+  }
+
+  const rel = relative(resolvedRoot, resolvedSchema);
+  if (rel.startsWith("..") || isAbsolute(rel)) {
+    throw new MigrationStopAndReportError(
+      "MIGRATION_TEST_SCHEMA_PATH must resolve inside MIGRATION_TEST_FIXTURE_ROOT.",
+    );
+  }
+
+  assertDisposableDatabaseUrl(env.DATABASE_URL);
+  return ` --schema "${resolvedSchema}"`;
+}
+
+/** Database-name markers that identify an explicitly disposable test database. */
+const DISPOSABLE_DB_MARKERS = ["test", "mig", "e2e", "fixture", "scratch", "tmp"];
+/** Database-name markers that must never be targeted by the migration fixture. */
+const PRODUCTION_DB_MARKERS = ["prod", "production", "live"];
+
+/**
+ * Rejects a missing, production-like, or unmarked database URL before any Prisma
+ * command runs. The migration fixture is destructive (it creates/drops databases),
+ * so it must never target a development or production database.
+ */
+export function assertDisposableDatabaseUrl(url: string | undefined): void {
+  if (!url) {
+    throw new MigrationStopAndReportError(
+      "DATABASE_URL must be set to a disposable test database for the migration fixture.",
+    );
+  }
+  const base = url.split("?")[0];
+  const dbName = base.slice(base.lastIndexOf("/") + 1).toLowerCase();
+  if (PRODUCTION_DB_MARKERS.some((marker) => dbName.includes(marker))) {
+    throw new MigrationStopAndReportError(
+      `Refusing to run the migration fixture against a production-like database: ${dbName}`,
+    );
+  }
+  if (!DISPOSABLE_DB_MARKERS.some((marker) => dbName.includes(marker))) {
+    throw new MigrationStopAndReportError(
+      `DATABASE_URL database name "${dbName}" is not marked disposable; refusing to run.`,
+    );
+  }
+}
+
+/**
+ * Runs a Prisma CLI command, appending the verified test-only `--schema` argument
+ * when the historical-migration override is active. This is the ONLY path the
+ * orchestrator uses to invoke Prisma, so an override can never be silently ignored.
+ */
+function runPrismaCli(args: string, extraEnv?: Record<string, string>): string {
+  const effectiveEnv = extraEnv ? { ...process.env, ...extraEnv } : process.env;
+  const schemaArg = resolveMigrationTestSchemaArg(effectiveEnv);
+  return run(`npx prisma ${args}${schemaArg}`, extraEnv);
 }
 
 function readMigrationSql(dirName: string): string {
@@ -234,7 +338,7 @@ async function applyTrackedMigrationOutOfBand(dirName: string): Promise<void> {
   }
 
   // Record the migration as applied in _prisma_migrations (apply-then-resolve).
-  run(`npx prisma migrate resolve --applied ${dirName}`);
+  runPrismaCli(`migrate resolve --applied ${dirName}`);
 }
 
 /** Reads the legacy DevRequester rows via typed raw SQL (DM-16). */
@@ -737,11 +841,11 @@ async function verifyBackfillWithinTransaction(
 
 /** Post-checks: migrate status clean + final-schema checklist. */
 async function postChecks(): Promise<void> {
-  const status = run("npx prisma migrate status");
+  const status = runPrismaCli("migrate status");
   if (!status.includes("up to date")) {
     throw new MigrationStopAndReportError("migrate status is not clean after Phase C.");
   }
-  const validate = run("npx prisma validate");
+  const validate = runPrismaCli("validate");
   if (!validate.includes("valid")) {
     throw new MigrationStopAndReportError("prisma validate failed on the final schema.");
   }
@@ -770,6 +874,9 @@ async function postChecks(): Promise<void> {
 
 /** Runs the full Lab 3 migration workflow. */
 export async function runLab3Migration(): Promise<void> {
+  // Fail closed on an unsafe test-only schema override BEFORE any Prisma command.
+  resolveMigrationTestSchemaArg();
+
   const prisma = getPrisma();
 
   // Stage 1 preflight (step 0).

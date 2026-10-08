@@ -1,0 +1,328 @@
+◇ injected env (0) from server\.env // tip: ⌘ override existing { override: true }
+[WebServer] (node:27532) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:24432) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:29840) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+Running 57 tests using 1 worker
+
+(node:28772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+  ok  1 [desktop] › e2e\lab-04\keyboard-access.spec.ts:72:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (5.0s)
+  ok  2 [desktop] › e2e\lab-04\keyboard-access.spec.ts:106:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (3.8s)
+  ok  3 [desktop] › e2e\lab-04\keyboard-access.spec.ts:134:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (4.6s)
+  ok  4 [desktop] › e2e\lab-04\keyboard-access.spec.ts:194:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.8s)
+  ok  5 [desktop] › e2e\lab-04\keyboard-access.spec.ts:209:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.8s)
+  ok  6 [desktop] › e2e\lab-04\keyboard-access.spec.ts:232:7 › A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order (1.9s)
+  ok  7 [desktop] › e2e\lab-04\keyboard-access.spec.ts:232:7 › A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order (1.9s)
+  ok  8 [desktop] › e2e\lab-04\keyboard-access.spec.ts:244:5 › A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss (5.3s)
+  ok  9 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (2.7s)
+  x  10 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (3.1s)
+(node:13808) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  x  11 [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (3.1s)
+(node:2904) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  x  12 [desktop] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (7.5s)
+(node:15640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  ok 13 [desktop] › e2e\lab-04\responsive-visual.spec.ts:118:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (5.1s)
+  ok 14 [desktop] › e2e\lab-04\responsive-visual.spec.ts:183:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.8s)
+  ok 15 [desktop] › e2e\lab-04\responsive-visual.spec.ts:183:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.4s)
+  ok 16 [desktop] › e2e\lab-04\responsive-visual.spec.ts:183:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (2.3s)
+  ok 17 [desktop] › e2e\lab-04\responsive-visual.spec.ts:203:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.8s)
+  ok 18 [desktop] › e2e\lab-04\responsive-visual.spec.ts:203:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.4s)
+  ok 19 [desktop] › e2e\lab-04\responsive-visual.spec.ts:203:7 › VISUAL-01 dashboard: admin loading, empty, failure and long text states (3.3s)
+(node:26564) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ override existing { override: true }
+  ok 20 [tablet] › e2e\lab-04\keyboard-access.spec.ts:72:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (4.3s)
+  ok 21 [tablet] › e2e\lab-04\keyboard-access.spec.ts:106:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (3.7s)
+  ok 22 [tablet] › e2e\lab-04\keyboard-access.spec.ts:134:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (4.4s)
+  ok 23 [tablet] › e2e\lab-04\keyboard-access.spec.ts:194:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.9s)
+  ok 24 [tablet] › e2e\lab-04\keyboard-access.spec.ts:209:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.8s)
+  ok 25 [tablet] › e2e\lab-04\keyboard-access.spec.ts:232:7 › A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order (1.9s)
+  ok 26 [tablet] › e2e\lab-04\keyboard-access.spec.ts:232:7 › A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order (2.0s)
+  ok 27 [tablet] › e2e\lab-04\keyboard-access.spec.ts:244:5 › A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss (5.2s)
+  ok 28 [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (2.9s)
+  x  29 [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (3.2s)
+(node:15968) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  x  30 [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (3.2s)
+(node:27788) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  x  31 [tablet] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (6.6s)
+(node:23252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ok 32 [tablet] › e2e\lab-04\responsive-visual.spec.ts:118:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (4.9s)
+  ok 33 [tablet] › e2e\lab-04\responsive-visual.spec.ts:183:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.0s)
+  ok 34 [tablet] › e2e\lab-04\responsive-visual.spec.ts:183:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.4s)
+  ok 35 [tablet] › e2e\lab-04\responsive-visual.spec.ts:183:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (2.3s)
+  ok 36 [tablet] › e2e\lab-04\responsive-visual.spec.ts:203:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (2.8s)
+  ok 37 [tablet] › e2e\lab-04\responsive-visual.spec.ts:203:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.5s)
+  ok 38 [tablet] › e2e\lab-04\responsive-visual.spec.ts:203:7 › VISUAL-01 dashboard: admin loading, empty, failure and long text states (3.4s)
+(node:26232) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ok 39 [mobile] › e2e\lab-04\keyboard-access.spec.ts:72:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (5.1s)
+  ok 40 [mobile] › e2e\lab-04\keyboard-access.spec.ts:106:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (4.6s)
+  ok 41 [mobile] › e2e\lab-04\keyboard-access.spec.ts:134:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (6.3s)
+  ok 42 [mobile] › e2e\lab-04\keyboard-access.spec.ts:194:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (2.1s)
+  ok 43 [mobile] › e2e\lab-04\keyboard-access.spec.ts:209:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.8s)
+  ok 44 [mobile] › e2e\lab-04\keyboard-access.spec.ts:232:7 › A11Y-01 staff: Ticket metrics use keyboard and Action totals stay outside the Tab order (2.2s)
+  ok 45 [mobile] › e2e\lab-04\keyboard-access.spec.ts:232:7 › A11Y-01 admin: Ticket metrics use keyboard and Action totals stay outside the Tab order (2.2s)
+  ok 46 [mobile] › e2e\lab-04\keyboard-access.spec.ts:244:5 › A11Y-01 workflow: Resolved, Closed and Cancelled confirmations trap focus and safely dismiss (6.6s)
+  ok 47 [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 requester: primary navigation and existing detail controls remain functional (3.9s)
+  x  48 [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional (4.2s)
+(node:23344) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  x  49 [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional (4.5s)
+(node:11076) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  x  50 [mobile] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (7.9s)
+(node:19096) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  ok 51 [mobile] › e2e\lab-04\responsive-visual.spec.ts:118:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (6.1s)
+  ok 52 [mobile] › e2e\lab-04\responsive-visual.spec.ts:183:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (2.0s)
+  ok 53 [mobile] › e2e\lab-04\responsive-visual.spec.ts:183:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.7s)
+  ok 54 [mobile] › e2e\lab-04\responsive-visual.spec.ts:183:7 › VISUAL-01 dashboard: admin cards and lists wrap within the viewport (2.4s)
+  ok 55 [mobile] › e2e\lab-04\responsive-visual.spec.ts:203:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (3.3s)
+  ok 56 [mobile] › e2e\lab-04\responsive-visual.spec.ts:203:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (3.7s)
+  ok 57 [mobile] › e2e\lab-04\responsive-visual.spec.ts:203:7 › VISUAL-01 dashboard: admin loading, empty, failure and long text states (3.7s)
+
+
+  1) [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+
+    Error: Unexplained disabled control: Save priority
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not ""
+
+      56 |           return "";
+      57 |         });
+    > 58 |         expect(explanation, `Unexplained disabled control: ${await control.innerText()}`).not.toBe("");
+         |                                                                                               ^
+      59 |       }
+      60 |     }
+      61 |     async function signIn(email: string) {
+        at healthyScreen (C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:58:95)
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:85:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-desktop\error-context.md
+
+  2) [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+
+    Error: Unexplained disabled control: Save priority
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not ""
+
+      56 |           return "";
+      57 |         });
+    > 58 |         expect(explanation, `Unexplained disabled control: ${await control.innerText()}`).not.toBe("");
+         |                                                                                               ^
+      59 |       }
+      60 |     }
+      61 |     async function signIn(email: string) {
+        at healthyScreen (C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:58:95)
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:85:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-68869--controls-remain-functional-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-68869--controls-remain-functional-desktop\error-context.md
+
+  3) [desktop] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      111 |     expect(
+      112 |       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    > 113 |     ).toBe(true);
+          |       ^
+      114 |
+      115 |     await page.screenshot({ path: screenshot("actions-taken", "staff-actions"), fullPage: true });
+      116 |   });
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\responsive-visual.spec.ts:113:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-desktop\error-context.md
+
+  4) [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+
+    Error: Unexplained disabled control: Save priority
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not ""
+
+      56 |           return "";
+      57 |         });
+    > 58 |         expect(explanation, `Unexplained disabled control: ${await control.innerText()}`).not.toBe("");
+         |                                                                                               ^
+      59 |       }
+      60 |     }
+      61 |     async function signIn(email: string) {
+        at healthyScreen (C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:58:95)
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:85:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-tablet\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-tablet\error-context.md
+
+  5) [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+
+    Error: Unexplained disabled control: Save priority
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not ""
+
+      56 |           return "";
+      57 |         });
+    > 58 |         expect(explanation, `Unexplained disabled control: ${await control.innerText()}`).not.toBe("");
+         |                                                                                               ^
+      59 |       }
+      60 |     }
+      61 |     async function signIn(email: string) {
+        at healthyScreen (C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:58:95)
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:85:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-68869--controls-remain-functional-tablet\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-68869--controls-remain-functional-tablet\error-context.md
+
+  6) [tablet] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      111 |     expect(
+      112 |       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    > 113 |     ).toBe(true);
+          |       ^
+      114 |
+      115 |     await page.screenshot({ path: screenshot("actions-taken", "staff-actions"), fullPage: true });
+      116 |   });
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\responsive-visual.spec.ts:113:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-tablet\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-tablet\error-context.md
+
+  7) [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+
+    Error: Unexplained disabled control: Save priority
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not ""
+
+      56 |           return "";
+      57 |         });
+    > 58 |         expect(explanation, `Unexplained disabled control: ${await control.innerText()}`).not.toBe("");
+         |                                                                                               ^
+      59 |       }
+      60 |     }
+      61 |     async function signIn(email: string) {
+        at healthyScreen (C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:58:95)
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:85:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-73b35--controls-remain-functional-mobile\error-context.md
+
+  8) [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+
+    Error: Unexplained disabled control: Save priority
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not ""
+
+      56 |           return "";
+      57 |         });
+    > 58 |         expect(explanation, `Unexplained disabled control: ${await control.innerText()}`).not.toBe("");
+         |                                                                                               ^
+      59 |       }
+      60 |     }
+      61 |     async function signIn(email: string) {
+        at healthyScreen (C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:58:95)
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\release-hardening.spec.ts:85:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-release-hardening-H-68869--controls-remain-functional-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-release-hardening-H-68869--controls-remain-functional-mobile\error-context.md
+
+  9) [mobile] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+
+    Error: expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= -1
+    Received:    -1.046875
+
+      18 |   expect(bounds!.x).toBeGreaterThanOrEqual(-tolerance);
+      19 |   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + tolerance);
+    > 20 |   expect(bounds!.y).toBeGreaterThanOrEqual(-tolerance);
+         |                     ^
+      21 |   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + tolerance);
+      22 |   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+      23 |     true,
+        at expectControlInViewport (C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\responsive-visual.spec.ts:20:21)
+        at C:\Users\kitti\CPE334\issue-55-worktree\e2e\lab-04\responsive-visual.spec.ts:97:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-mobile\error-context.md
+
+  9 failed
+    [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+    [desktop] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+    [desktop] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+    [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+    [tablet] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+    [tablet] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+    [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 staff: primary navigation and existing detail controls remain functional 
+    [mobile] › e2e\lab-04\release-hardening.spec.ts:6:7 › HARDEN-01 admin: primary navigation and existing detail controls remain functional 
+    [mobile] › e2e\lab-04\responsive-visual.spec.ts:50:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport 
+  48 passed (3.8m)

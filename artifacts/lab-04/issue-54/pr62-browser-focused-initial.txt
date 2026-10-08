@@ -1,0 +1,194 @@
+◇ injected env (1) from server\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+[WebServer] (node:25348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:2624) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:29476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+
+Running 48 tests using 1 worker
+
+(node:9420) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok  1 [desktop] › e2e\lab-04\dashboards.spec.ts:108:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (4.7s)
+  ok  2 [desktop] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations (2.5s)
+  ok  3 [desktop] › e2e\lab-04\dashboards.spec.ts:165:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (4.7s)
+  ok  4 [desktop] › e2e\lab-04\dashboards.spec.ts:199:7 › E2E-02: role dashboards and exact destinations › Action21 remains editable when only the paginated Actions list fails and Retry never writes (5.1s)
+  ok  5 [desktop] › e2e\lab-04\dashboards.spec.ts:231:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (3.3s)
+  ok  6 [desktop] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (4.1s)
+  ok  7 [desktop] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (3.8s)
+  ok  8 [desktop] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (4.4s)
+  ok  9 [desktop] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.8s)
+  ok 10 [desktop] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.8s)
+  ok 11 [desktop] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (4.2s)
+  ok 12 [desktop] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (3.6s)
+  x  13 [desktop] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (38.2m)
+(node:30692) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  ok 14 [desktop] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (2.8s)
+  x  15 [desktop] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (6.3s)
+(node:3320) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+  ok 16 [desktop] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (2.2s)
+(node:4744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+  ok 17 [tablet] › e2e\lab-04\dashboards.spec.ts:108:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (2.3s)
+  ok 18 [tablet] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations (1.5s)
+  ok 19 [tablet] › e2e\lab-04\dashboards.spec.ts:165:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (2.6s)
+  ok 20 [tablet] › e2e\lab-04\dashboards.spec.ts:199:7 › E2E-02: role dashboards and exact destinations › Action21 remains editable when only the paginated Actions list fails and Retry never writes (3.7s)
+  ok 21 [tablet] › e2e\lab-04\dashboards.spec.ts:231:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (2.0s)
+  ok 22 [tablet] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (2.6s)
+  ok 23 [tablet] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (2.5s)
+  ok 24 [tablet] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (3.0s)
+  ok 25 [tablet] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (1.2s)
+  ok 26 [tablet] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.1s)
+  ok 27 [tablet] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (2.5s)
+  ok 28 [tablet] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (2.9s)
+  ok 29 [tablet] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.3s)
+  ok 30 [tablet] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (1.9s)
+  ok 31 [tablet] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (1.8s)
+  ok 32 [tablet] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (2.0s)
+(node:30540) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok 33 [mobile] › e2e\lab-04\dashboards.spec.ts:108:7 › E2E-02: role dashboards and exact destinations › Requester server count opens the same complete filtered My Tickets destination (2.7s)
+  ok 34 [mobile] › e2e\lab-04\dashboards.spec.ts:152:7 › E2E-02: role dashboards and exact destinations › Empty Requester dashboard shows zero and safe role-only destinations (1.6s)
+  ok 35 [mobile] › e2e\lab-04\dashboards.spec.ts:165:7 › E2E-02: role dashboards and exact destinations › Staff mine filter matches server totals and Action21 opens current exact detail without writing (3.1s)
+  ok 36 [mobile] › e2e\lab-04\dashboards.spec.ts:199:7 › E2E-02: role dashboards and exact destinations › Action21 remains editable when only the paginated Actions list fails and Retry never writes (4.3s)
+  ok 37 [mobile] › e2e\lab-04\dashboards.spec.ts:231:7 › E2E-02: role dashboards and exact destinations › Administrator reuses staff metrics while retaining User Management navigation (2.0s)
+  ok 38 [mobile] › e2e\lab-04\keyboard-access.spec.ts:70:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Add Action form fields are label-associated and reachable with visible focus (3.3s)
+  ok 39 [mobile] › e2e\lab-04\keyboard-access.spec.ts:104:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › empty Description submit announces an error linked by aria-describedby (3.2s)
+  ok 40 [mobile] › e2e\lab-04\keyboard-access.spec.ts:132:7 › A11Y-01 (Actions portion): Actions Taken keyboard and focus behavior › Follow-up flag reveals a reachable note and status radios sit in a labelled radiogroup (3.6s)
+  x  41 [mobile] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation (610ms)
+(node:27964) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok 42 [mobile] › e2e\lab-04\keyboard-access.spec.ts:207:5 › A11Y-01 dashboard: keyboard Retry performs one read and restores cards (1.3s)
+  x  43 [mobile] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport (905ms)
+(node:15420) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ override existing { override: true }
+  ok 44 [mobile] › e2e\lab-04\responsive-visual.spec.ts:95:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Requester read-only Actions area keeps cards inside the viewport (3.9s)
+  ok 45 [mobile] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport (1.2s)
+  ok 46 [mobile] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: staff cards and lists wrap within the viewport (1.6s)
+  ok 47 [mobile] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states (1.9s)
+  ok 48 [mobile] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: staff loading, empty, failure and long text states (2.8s)
+
+
+  1) [desktop] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.scrollIntoViewIfNeeded: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /Open Tickets/ }).first()
+
+
+       7 | async function expectControlInViewport(page: Page, control: Locator): Promise<void> {
+       8 |   control = control.first();
+    >  9 |   await control.scrollIntoViewIfNeeded();
+         |                 ^
+      10 |   await expect(control).toBeVisible();
+      11 |   const bounds = await control.boundingBox();
+      12 |   const viewport = page.viewportSize()!;
+        at expectControlInViewport (C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\responsive-visual.spec.ts:9:17)
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\responsive-visual.spec.ts:165:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-ad6b6-ts-wrap-within-the-viewport-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-ad6b6-ts-wrap-within-the-viewport-desktop\error-context.md
+
+  2) [desktop] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('status')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for getByRole('status')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      219 |       await expectDashboardGeometry(page);
+      220 |       await page.screenshot({ path: screenshot(`${role}-dashboard`, next), fullPage: true });
+    > 221 |       if (next === "loading") { await expect.poll(() => releaseLoading.length > 0).toBe(true); releaseLoading.splice(0).forEach(resolve => resolve()); await expect(page.getByRole("status")).toHaveCount(0); }
+          |                                                                                                                                                                                               ^
+      222 |     }
+      223 |   });
+      224 | }
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\responsive-visual.spec.ts:221:191
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-1d064-ailure-and-long-text-states-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-1d064-ailure-and-long-text-states-desktop\error-context.md
+
+  3) [mobile] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation
+
+    Error: page.goto: net::ERR_NETWORK_CHANGED at http://localhost:5173/
+    Call log:
+      - navigating to "http://localhost:5173/", waiting until "load"
+
+
+       at lab-03\helpers.ts:134
+
+      132 |   waitFor: "shell" | "change-password" | "none" = "shell",
+      133 | ): Promise<void> {
+    > 134 |   await page.goto("/");
+          |              ^
+      135 |   await page.getByLabel("Email").fill(email);
+      136 |   await page.getByLabel("Password").fill(password);
+      137 |   await page.getByRole("button", { name: "Login" }).click();
+        at login (C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-03\helpers.ts:134:14)
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\keyboard-access.spec.ts:194:14
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-keyboard-access-A11-901cd-es-active-mobile-navigation-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-keyboard-access-A11-901cd-es-active-mobile-navigation-mobile\error-context.md
+
+  4) [mobile] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport
+
+    Error: page.goto: net::ERR_NETWORK_CHANGED at http://localhost:5173/
+    Call log:
+      - navigating to "http://localhost:5173/", waiting until "load"
+
+
+       at lab-03\helpers.ts:134
+
+      132 |   waitFor: "shell" | "change-password" | "none" = "shell",
+      133 | ): Promise<void> {
+    > 134 |   await page.goto("/");
+          |              ^
+      135 |   await page.getByLabel("Email").fill(email);
+      136 |   await page.getByLabel("Password").fill(password);
+      137 |   await page.getByRole("button", { name: "Login" }).click();
+        at login (C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-03\helpers.ts:134:14)
+        at C:\Users\kitti\CPE334\lab4-staging-worktree\e2e\lab-04\responsive-visual.spec.ts:51:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\lab-04-responsive-visual-V-7f20a-d-cards-inside-the-viewport-mobile\error-context.md
+
+  4 failed
+    [desktop] › e2e\lab-04\responsive-visual.spec.ts:160:7 › VISUAL-01 dashboard: requester cards and lists wrap within the viewport
+    [desktop] › e2e\lab-04\responsive-visual.spec.ts:180:7 › VISUAL-01 dashboard: requester loading, empty, failure and long text states
+    [mobile] › e2e\lab-04\keyboard-access.spec.ts:192:5 › A11Y-01 dashboard: keyboard reaches metric cards and preserves active mobile navigation
+    [mobile] › e2e\lab-04\responsive-visual.spec.ts:49:7 › VISUAL-01 (Actions portion): Actions area responsive layout › Staff Actions area keeps section, controls, and cards inside the viewport
+  44 passed (40.7m)

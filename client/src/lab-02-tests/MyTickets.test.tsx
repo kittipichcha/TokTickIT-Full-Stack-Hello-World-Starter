@@ -73,6 +73,8 @@ async function setupAuthenticatedApp() {
   vi.mocked(api.fetchCategories).mockImplementation(async () => [{ id: 1, name: "Hardware" }, { id: 2, name: "Software" }]);
 
   render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
   // Wait for app shell to appear (StrictMode may double-render)
   await screen.findByText("TokTickIT");
@@ -150,6 +152,8 @@ describe("UI-MY-03: Ticket scope is fixed to the authenticated identity", () => 
     );
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     // Wait for the shell and the owned ticket to show.
     await screen.findAllByText("Ticket A");
@@ -179,6 +183,8 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
     vi.mocked(api.fetchMyTickets).mockReturnValue(new Promise(() => undefined));
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     expect(await screen.findByRole("status", { name: "Loading tickets" })).toBeTruthy();
   });
@@ -187,6 +193,8 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
     vi.mocked(api.fetchMyTickets).mockRejectedValue(new Error("Network error"));
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     expect(await screen.findByRole("alert")).toBeTruthy();
     const retryButton = screen.getByRole("button", { name: "Retry" });
@@ -202,6 +210,8 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
     });
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     // Wait for error state to appear
     await screen.findByRole("alert");
@@ -231,6 +241,8 @@ describe("UI-MY-04: Loading skeleton and failure state with manual retry", () =>
     });
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     // Wait for error state
     await screen.findByRole("alert");
@@ -285,6 +297,8 @@ describe("UI-MY-05: Valid out-of-range page does not display Empty or No-Results
     });
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     // Should show tickets from page 1
     await screen.findAllByText("Ticket 1 summary");
@@ -477,6 +491,8 @@ describe("UI-MY-07: Stale-response protection — older request must not overwri
     });
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     // Wait for initial empty state
     await screen.findByText("You haven't created any tickets yet.");

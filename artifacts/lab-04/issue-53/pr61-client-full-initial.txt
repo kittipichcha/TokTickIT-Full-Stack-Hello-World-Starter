@@ -1,0 +1,46 @@
+Baseline: 3784e9385264ad9db6865e546d03fdb605884c4a + uncommitted PR61 fixes
+Node: v24.14.0
+Started UTC: 2026-10-06T07:39:48.730Z
+Command: node node_modules/vitest/vitest.mjs run
+Database: dedicated loopback lab3e2e_pr61_server_20261006; eight existing migrations
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/issue-53-worktree/client
+
+Error: Not implemented: window.open
+    at module.exports (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at onClick (C:/Users/kitti/CPE334/issue-53-worktree/client/src/App.tsx:493:42) undefined
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (C:\Users\kitti\CPE334\issue-53-worktree\client\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at listOnTimeout (node:internal/timers:605:17)
+    at processTimers (node:internal/timers:541:7) undefined
+ ❯ src/lab-02-tests/CreateTicket.test.tsx (17 tests | 1 failed) 26829ms
+     × shows length error when summary exceeds 120 characters 5042ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lab-02-tests/CreateTicket.test.tsx > UI-TKT-02: Summary over 120 chars blocks submit > shows length error when summary exceeds 120 characters
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/lab-02-tests/CreateTicket.test.tsx:83:3
+     81|   });
+     82|
+     83|   it("shows length error when summary exceeds 120 characters", async (…
+       |   ^
+     84|     await setupAuthenticatedApp();
+     85|     await userEvent.click(screen.getByRole("link", { name: "Create Tic…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 19 passed (20)
+      Tests  1 failed | 323 passed (324)
+   Start at  14:39:50
+   Duration  40.56s (transform 33.30s, setup 0ms, import 85.98s, tests 181.91s, environment 98.90s)
+
+
+Exit: 1
+Finished UTC: 2026-10-06T07:40:31.480Z

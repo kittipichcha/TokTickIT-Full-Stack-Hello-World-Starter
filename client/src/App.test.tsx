@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -9,6 +10,17 @@ import type { AuthUser } from "./api-client";
 
 vi.mock("./api");
 vi.mock("./api-client");
+
+// Issue #52 — default the new Actions Taken reads to a successfully loaded,
+// empty list so this pre-existing suite keeps asserting what it always did.
+vi.mocked(api.fetchRequesterActions).mockResolvedValue({
+  data: [],
+  pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+});
+vi.mocked(api.fetchStaffActions).mockResolvedValue({
+  data: [],
+  pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+});
 
 const TEST_ADMIN_USER: AuthUser = {
   id: 3,
@@ -40,6 +52,8 @@ describe("Application Shell", () => {
 
   it("should render header with wordmark and navigation", async () => {
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     expect(await screen.findByText("TokTickIT")).toBeDefined();
     expect(screen.getByRole("navigation", { name: /primary/i })).toBeDefined();
@@ -52,6 +66,8 @@ describe("Application Shell", () => {
 
   it("should render the My Tickets screen for the authenticated user", async () => {
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     expect(await screen.findByText("TokTickIT")).toBeDefined();
     expect(screen.getAllByText("My Tickets").length).toBeGreaterThan(0);
@@ -67,20 +83,22 @@ describe("UI-48-NAV: integrated Administrator role navigation", () => {
 
   afterEach(cleanup);
 
-  it("starts Administrators on Ticket Queue and exposes User Management only to them", async () => {
+  it("starts Administrators on Staff Dashboard and navigates to Ticket Queue and exposes User Management only to them", async () => {
     vi.mocked(api.fetchStaffQueue).mockResolvedValue({
       data: [{ id: 1, ticketNumber: "TKT-2026-000001", summary: "Printer not working", categoryName: "Hardware", currentStatus: "NEW", requestedPriority: "MEDIUM", itPriority: "MEDIUM", ticketOwnerId: null, requesterId: 7, createdAt: "2026-09-10T00:00:00Z", updatedAt: "2026-09-10T00:00:00Z" }],
       pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1, unfilteredTotalItems: 1 },
     });
     vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue({
       id: 1, ticketNumber: "TKT-2026-000001", summary: "Printer not working", description: "Offline",
-      currentStatus: "NEW", requestedPriority: "MEDIUM", itPriority: "MEDIUM", ticketOwnerId: null,
+      currentStatus: "NEW", requestedPriority: "MEDIUM", itPriority: "MEDIUM", ticketOwnerId: null, version: 1,
       requesterId: 7, requesterName: "Ada Lovelace", requesterIsActive: true, categoryId: 1,
       categoryName: "Hardware", relatedSystemId: 1, relatedSystemName: "Office", appearsResolved: false,
       createdAt: "2026-09-10T00:00:00Z", updatedAt: "2026-09-10T00:00:00Z",
       publicComments: [], internalNotes: [], attachments: [],
     });
     render(<App user={TEST_ADMIN_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "Ticket Queue" }));
     expect(await screen.findByRole("heading", { name: /ticket queue/i })).toBeTruthy();
     const nav = screen.getByRole("navigation", { name: /primary/i });
     expect(nav.textContent).toContain("Ticket Queue");
@@ -99,6 +117,8 @@ describe("UI-48-NAV: integrated Administrator role navigation", () => {
 
   it("keeps User Management and Requester destinations out of IT Staff navigation", async () => {
     render(<App user={TEST_STAFF_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "Ticket Queue" }));
     const nav = screen.getByRole("navigation", { name: /primary/i });
     expect(nav.textContent).toContain("Ticket Queue");
     expect(nav.textContent).not.toContain("User Management");
@@ -132,8 +152,10 @@ describe("UI-49-01..05 — role-specific initial navigation (FR-08)", () => {
     cleanup();
   });
 
-  it("UI-49-01 — IT Staff starts on the Ticket Queue, not My Tickets", async () => {
+  it("UI-49-01 — IT Staff starts on Staff Dashboard and can open Ticket Queue", async () => {
     render(<App user={TEST_STAFF_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "Ticket Queue" }));
 
     expect(await screen.findByText("TokTickIT")).toBeDefined();
     // The Staff Queue is the initial screen.
@@ -145,8 +167,10 @@ describe("UI-49-01..05 — role-specific initial navigation (FR-08)", () => {
     expect(api.fetchMyTickets).not.toHaveBeenCalled();
   });
 
-  it("UI-49-02 — Administrator starts on the Ticket Queue, not My Tickets", async () => {
+  it("UI-49-02 — Administrator starts on Staff Dashboard and can open Ticket Queue", async () => {
     render(<App user={TEST_ADMIN_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "Ticket Queue" }));
 
     expect(await screen.findByText("TokTickIT")).toBeDefined();
     expect(await screen.findByRole("heading", { name: /ticket queue/i })).toBeTruthy();
@@ -156,6 +180,8 @@ describe("UI-49-01..05 — role-specific initial navigation (FR-08)", () => {
 
   it("UI-49-03 — IT Staff navigation exposes only staff-authorized destinations", async () => {
     render(<App user={TEST_STAFF_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "Ticket Queue" }));
 
     const nav = await screen.findByRole("navigation", { name: /primary/i });
     expect(nav.textContent).toContain("Ticket Queue");
@@ -165,6 +191,8 @@ describe("UI-49-01..05 — role-specific initial navigation (FR-08)", () => {
 
   it("UI-49-04 — Administrator navigation omits Requester-only destinations", async () => {
     render(<App user={TEST_ADMIN_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "Ticket Queue" }));
 
     const nav = await screen.findByRole("navigation", { name: /primary/i });
     expect(nav.textContent).toContain("Ticket Queue");
@@ -174,6 +202,8 @@ describe("UI-49-01..05 — role-specific initial navigation (FR-08)", () => {
 
   it("UI-49-05 — a Requester-only view is never rendered for Staff/Admin", async () => {
     render(<App user={TEST_STAFF_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "Ticket Queue" }));
 
     await screen.findByText("TokTickIT");
     // No Requester-only screen content is present anywhere in the shell.
@@ -184,6 +214,8 @@ describe("UI-49-01..05 — role-specific initial navigation (FR-08)", () => {
 
   it("keeps the Requester flow unchanged (regression)", async () => {
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
 
     expect(await screen.findByText("TokTickIT")).toBeDefined();
     expect(screen.getAllByText("My Tickets").length).toBeGreaterThan(0);
@@ -238,6 +270,8 @@ describe("UI-49-01..05 — role-specific initial navigation (FR-08)", () => {
     });
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
     await userEvent.click((await screen.findAllByRole("link", { name: "TKT-2026-000001" }))[0]!);
     await screen.findByRole("button", { name: /indicate problem appears resolved/i });
     await userEvent.click(screen.getByRole("button", { name: /indicate problem appears resolved/i }));
@@ -295,6 +329,8 @@ describe("UI-49-01..05 — role-specific initial navigation (FR-08)", () => {
     });
 
     render(<App user={TEST_USER} />);
+    // Issue #54: enter the existing role list from its dashboard landing.
+    fireEvent.click(screen.getByRole("link", { name: "My Tickets" }));
     await userEvent.click((await screen.findAllByRole("link", { name: "TKT-2026-000001" }))[0]!);
     const input = await screen.findByLabelText("Add a comment");
     await userEvent.type(input, "I added more details.");

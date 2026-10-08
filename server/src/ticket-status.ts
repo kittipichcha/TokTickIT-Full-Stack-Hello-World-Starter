@@ -1,8 +1,9 @@
 /**
- * Ticket status transition matrix (Issue #38 — the ONLY authored transition
- * source in the repository).
+ * Ticket status transition matrix (Issue #38 plus the approved Lab 4 additive
+ * extension — the ONLY authored transition source in the repository).
  *
- * Frozen authority: `docs/lab-03/specification.md` §7 (Status Transition Matrix).
+ * Frozen authority: `docs/lab-03/specification.md` §7, extended by
+ * `docs/lab-04/specification.md` §5 to allow REOPENED → IN_PROGRESS.
  *
  * This module is pure: no imports beyond TypeScript types, no I/O, no framework
  * dependencies. The server validates transitions with it; the client renders
@@ -24,6 +25,9 @@ export type TicketStatus =
   | "REOPENED"
   | "CANCELLED";
 
+/** BR-17 dashboard/list open population. */
+export const OPEN_TICKET_STATUSES = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] as const;
+
 /**
  * The frozen transition table (specification.md §7), excluding the
  * "Any non-Cancelled → Cancelled" row which is applied uniformly below.
@@ -38,7 +42,7 @@ const BASE: Readonly<Record<TicketStatus, readonly TicketStatus[]>> = {
   WAITING_FOR_REQUESTER: ["IN_PROGRESS"],
   RESOLVED: ["CLOSED", "REOPENED"],
   CLOSED: ["REOPENED"],
-  REOPENED: [],
+  REOPENED: ["IN_PROGRESS"],
   CANCELLED: [], // terminal
 };
 
@@ -46,8 +50,7 @@ const BASE: Readonly<Record<TicketStatus, readonly TicketStatus[]>> = {
  * Returns the statuses reachable from `from` per the frozen matrix.
  *
  * "Any non-Cancelled → Cancelled" makes CANCELLED reachable from every status
- * except itself — this makes REOPENED → CANCELLED valid while no other row
- * leaves REOPENED.
+ * except itself. The approved Lab 4 extension also permits REOPENED → IN_PROGRESS.
  */
 export function allowedTransitionsFrom(from: TicketStatus): readonly TicketStatus[] {
   return from === "CANCELLED" ? BASE[from] : [...BASE[from], "CANCELLED"];

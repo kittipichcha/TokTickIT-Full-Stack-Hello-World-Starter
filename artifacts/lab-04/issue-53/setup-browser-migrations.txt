@@ -1,0 +1,44 @@
+Baseline: 3784e9385264ad9db6865e546d03fdb605884c4a + uncommitted PR61 fixes
+Node: v24.14.0
+Started UTC: 2026-10-06T07:34:47.874Z
+Command: node node_modules/prisma/build/index.js migrate deploy
+Database: dedicated loopback lab3e2e_pr61_browser_20261006; eight existing migrations
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "lab3e2e_pr61_browser_20261006", schema "public" at "localhost:5432"
+
+8 migrations found in prisma/migrations
+
+Applying migration `20260808100141_add_cateogory`
+Applying migration `20260823090000_add_dev_requester`
+Applying migration `20260823091000_add_is_active_to_category`
+Applying migration `20260825000000_add_ticket_related_system_attachment`
+Applying migration `20260826000000_add_ticket_indexes_attachment_relations`
+Applying migration `20260917000000_lab3_phase_a_expand`
+Applying migration `20260917000001_lab3_phase_c_contract`
+Applying migration `20261001000000_lab4_actions_foundation`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260808100141_add_cateogory/
+    └─ migration.sql
+  └─ 20260823090000_add_dev_requester/
+    └─ migration.sql
+  └─ 20260823091000_add_is_active_to_category/
+    └─ migration.sql
+  └─ 20260825000000_add_ticket_related_system_attachment/
+    └─ migration.sql
+  └─ 20260826000000_add_ticket_indexes_attachment_relations/
+    └─ migration.sql
+  └─ 20260917000000_lab3_phase_a_expand/
+    └─ migration.sql
+  └─ 20260917000001_lab3_phase_c_contract/
+    └─ migration.sql
+  └─ 20261001000000_lab4_actions_foundation/
+    └─ migration.sql
+
+All migrations have been successfully applied.
+
+Exit: 0
+Finished UTC: 2026-10-06T07:34:51.535Z

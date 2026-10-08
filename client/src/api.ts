@@ -58,6 +58,9 @@ export interface MyTicketsResponse {
 }
 
 export interface MyTicketsParams {
+  scope?: "open";
+  updatedSince?: string;
+  resolvedSince?: string;
   search?: string;
   categoryId?: number;
   requestedPriority?: string;
@@ -135,6 +138,9 @@ export async function fetchMyTickets(
 ): Promise<MyTicketsResponse> {
   const url = new URL("/api/tickets", "http://placeholder.invalid");
 
+  if (params.scope !== undefined) url.searchParams.set("scope", String(params.scope));
+  if (params.updatedSince !== undefined) url.searchParams.set("updatedSince", String(params.updatedSince));
+  if (params.resolvedSince !== undefined) url.searchParams.set("resolvedSince", String(params.resolvedSince));
   if (params.search) url.searchParams.set("search", params.search);
   if (params.categoryId !== undefined) url.searchParams.set("categoryId", String(params.categoryId));
   if (params.requestedPriority) url.searchParams.set("requestedPriority", params.requestedPriority);
@@ -374,6 +380,9 @@ export interface StaffQueueResponse {
 }
 
 export interface StaffQueueParams {
+  ownerScope?: "me" | "unassigned";
+  openOnly?: boolean | "true" | "false";
+  updatedSince?: string;
   search?: string;
   status?: string;
   priority?: string;
@@ -389,6 +398,9 @@ export async function fetchStaffQueue(
   params: StaffQueueParams = {},
 ): Promise<StaffQueueResponse> {
   const url = new URL("/api/staff/queue", "http://placeholder.invalid");
+  if (params.ownerScope !== undefined) url.searchParams.set("ownerScope", String(params.ownerScope));
+  if (params.updatedSince !== undefined) url.searchParams.set("updatedSince", String(params.updatedSince));
+  if (params.openOnly !== undefined) url.searchParams.set("openOnly", String(params.openOnly));
   if (params.search) url.searchParams.set("search", params.search);
   if (params.status) url.searchParams.set("status", params.status);
   if (params.priority) url.searchParams.set("priority", params.priority);
@@ -442,6 +454,7 @@ export interface StaffTicketDetail {
   requestedPriority: string;
   itPriority: string | null;
   ticketOwnerId: number | null;
+  version: number;
   requesterId: number;
   requesterName: string;
   requesterIsActive: boolean;
@@ -477,10 +490,11 @@ export async function fetchStaffTicketDetail(
 export async function setTicketOwner(
   ticketNumber: string,
   ownerId: number,
-): Promise<{ ticketOwnerId: number }> {
-  const result = await apiJson<{ data: { ticketOwnerId: number } }>(
+  expectedVersion: number,
+): Promise<{ ticketOwnerId: number; version: number }> {
+  const result = await apiJson<{ data: { ticketOwnerId: number; version: number } }>(
     `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/owner`,
-    { method: "POST", body: { ownerId }, includeCsrf: true, fallbackError: "Failed to set owner." },
+    { method: "POST", body: { ownerId, expectedVersion }, includeCsrf: true, fallbackError: "Failed to set owner." },
   );
   return result.data;
 }
@@ -489,10 +503,11 @@ export async function setTicketOwner(
 export async function setItPriority(
   ticketNumber: string,
   itPriority: string,
-): Promise<{ itPriority: string }> {
-  const result = await apiJson<{ data: { itPriority: string } }>(
+  expectedVersion: number,
+): Promise<{ itPriority: string; version: number }> {
+  const result = await apiJson<{ data: { itPriority: string; version: number } }>(
     `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/priority`,
-    { method: "PATCH", body: { itPriority }, includeCsrf: true, fallbackError: "Failed to set IT priority." },
+    { method: "PATCH", body: { itPriority, expectedVersion }, includeCsrf: true, fallbackError: "Failed to set IT priority." },
   );
   return result.data;
 }
@@ -501,10 +516,11 @@ export async function setItPriority(
 export async function applyStatusTransition(
   ticketNumber: string,
   status: string,
-): Promise<{ currentStatus: string }> {
-  const result = await apiJson<{ data: { currentStatus: string } }>(
+  expectedVersion: number,
+): Promise<{ currentStatus: string; version: number }> {
+  const result = await apiJson<{ data: { currentStatus: string; version: number } }>(
     `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/status`,
-    { method: "PATCH", body: { status }, includeCsrf: true, fallbackError: "Failed to change status." },
+    { method: "PATCH", body: { status, expectedVersion }, includeCsrf: true, fallbackError: "Failed to change status." },
   );
   return result.data;
 }
@@ -564,5 +580,244 @@ export async function postAppearsResolved(
     includeCsrf: true,
     fallbackError: "Failed to update the appears-resolved indicator.",
   });
+  return result.data;
+}
+
+// ---------------------------------------------------------------------------
+// Actions Taken (Issue #52 — Lab 4, api-spec §2–§6)
+// ---------------------------------------------------------------------------
+
+/** Action lifecycle status. New Actions are always created `PENDING` server-side. */
+export type ActionStatus = "PENDING" | "COMPLETED" | "CANCELLED";
+
+/** Action labels used for textual (non-colour-only) status display. */
+export const ACTION_STATUS_LABELS: Record<ActionStatus, string> = {
+  PENDING: "Pending",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+};
+
+/**
+ * Staff/Admin Action projection (api-spec §2).
+ *
+ * Carries the staff-only `version` (optimistic concurrency) plus performer and
+ * assignee IDs. Never render this shape into the Requester surface — use
+ * {@link RequesterActionDto} there instead.
+ */
+export interface StaffActionDto {
+  id: number;
+  ticketNumber: string;
+  description: string;
+  result: string | null;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  status: ActionStatus;
+  performedBy: { id: number; name: string };
+  assignee: { id: number; name: string; role: string } | null;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+/**
+ * Requester Action projection (api-spec §2).
+ *
+ * Deliberately omits performer/assignee IDs, assignee role, and `version` so
+ * the read-only Requester renderer structurally cannot leak staff metadata.
+ */
+export interface RequesterActionDto {
+  id: number;
+  ticketNumber: string;
+  description: string;
+  result: string | null;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  status: ActionStatus;
+  performedBy: { name: string };
+  assignee: { name: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Server pagination envelope for the Action list (api-spec §3). */
+export interface ActionPagination {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface ActionListResponse<T> {
+  data: T[];
+  pagination: ActionPagination;
+}
+
+export interface TicketStatusHistoryEntry {
+  id: number;
+  ticketNumber: string;
+  changedBy: { id: number; name: string };
+  changedAt: string;
+  fromStatus: string;
+  toStatus: string;
+  versionBefore: number;
+  versionAfter: number;
+}
+
+export interface TicketStatusHistoryResponse {
+  data: TicketStatusHistoryEntry[];
+  pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
+}
+
+export const TICKET_STATUS_HISTORY_PAGE_SIZE = 10;
+
+export async function fetchTicketStatusHistory(
+  ticketNumber: string,
+  page = 1,
+  pageSize = TICKET_STATUS_HISTORY_PAGE_SIZE,
+): Promise<TicketStatusHistoryResponse> {
+  const url = new URL(
+    `/api/staff/tickets/${encodeURIComponent(ticketNumber)}/status-history`,
+    "http://placeholder.invalid",
+  );
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("pageSize", String(pageSize));
+  return apiJson<TicketStatusHistoryResponse>(`${url.pathname}${url.search}`, {
+    fallbackError: "Failed to fetch ticket status history.",
+  });
+}
+
+/**
+ * Fixed page size for every Action list (ui-spec §3).
+ *
+ * The contract mandates `pageSize=10` with no page-size selector, so this is a
+ * constant rather than a user-controlled option.
+ */
+export const ACTIONS_PAGE_SIZE = 10;
+
+/** Fields the client may send when creating an Action (api-spec §4). */
+export interface CreateActionPayload {
+  description: string;
+  result: string | null;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  assigneeUserId: number | null;
+}
+
+/** Fields the client may send when editing an Action (api-spec §6). */
+export interface UpdateActionPayload {
+  /** Optimistic-concurrency token; required on every PATCH (BR-24). */
+  expectedVersion: number;
+  description: string;
+  result: string | null;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  assigneeUserId: number | null;
+  status: ActionStatus;
+}
+
+/** Builds the Action list path with fixed-size paging (api-spec §3). */
+function actionsListPath(ticketNumber: string, page: number, pageSize: number): string {
+  const url = new URL(`/api/tickets/${encodeURIComponent(ticketNumber)}/actions`, "http://placeholder.invalid");
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("pageSize", String(pageSize));
+  return `${url.pathname}${url.search}`;
+}
+
+/**
+ * Lists a Ticket's Actions using the Staff/Admin projection (api-spec §3).
+ *
+ * The server orders results by `(createdAt, id)` ascending and ignores any
+ * client-supplied ordering, so the stable order is guaranteed upstream.
+ */
+export async function fetchStaffActions(
+  ticketNumber: string,
+  page = 1,
+  pageSize = ACTIONS_PAGE_SIZE,
+): Promise<ActionListResponse<StaffActionDto>> {
+  return apiJson<ActionListResponse<StaffActionDto>>(actionsListPath(ticketNumber, page, pageSize), {
+    fallbackError: "Failed to fetch Actions.",
+  });
+}
+
+/**
+ * Lists a Ticket's Actions using the restricted Requester projection
+ * (api-spec §3/§5). Read-only; ownership is enforced by the server.
+ */
+export async function fetchRequesterActions(
+  ticketNumber: string,
+  page = 1,
+  pageSize = ACTIONS_PAGE_SIZE,
+): Promise<ActionListResponse<RequesterActionDto>> {
+  return apiJson<ActionListResponse<RequesterActionDto>>(actionsListPath(ticketNumber, page, pageSize), {
+    fallbackError: "Failed to fetch Actions.",
+  });
+}
+
+/**
+ * Fetches the current server state of a single Action (api-spec §5).
+ *
+ * Staff-only edit flow starts from the list DTO; this detail fetch is used
+ * during explicit conflict review so `expectedVersion` and the editable
+ * values are reconciled against the authoritative latest server state.
+ */
+export async function fetchActionDetail(
+  ticketNumber: string,
+  actionId: number,
+): Promise<StaffActionDto> {
+  const result = await apiJson<{ data: StaffActionDto }>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/actions/${actionId}`,
+    { fallbackError: "Failed to fetch the Action." },
+  );
+  return result.data;
+}
+
+/**
+ * Records a new Action (api-spec §4). Staff/Admin only; always `PENDING`.
+ *
+ * `idempotencyKey` is sent as the required `Idempotency-Key` header so an
+ * ambiguous retry replays the original `201` instead of duplicating the
+ * logical Action (BR-25). The header is a custom one, so this uses
+ * `apiRequest()` directly rather than `apiJson()`.
+ */
+export async function createTicketAction(
+  ticketNumber: string,
+  payload: CreateActionPayload,
+  idempotencyKey: string,
+): Promise<StaffActionDto> {
+  const response = await apiRequest(`/api/tickets/${encodeURIComponent(ticketNumber)}/actions`, {
+    method: "POST",
+    body: payload,
+    includeCsrf: true,
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  if (!response.ok) throw await parseApiError(response, "Failed to record the Action.");
+  const body = (await response.json()) as { data: StaffActionDto };
+  return body.data;
+}
+
+/**
+ * Edits a Pending Action (api-spec §6). Staff/Admin only.
+ *
+ * `expectedVersion` makes the write a compare-and-set: a stale version returns
+ * `409` with no mutation, and the caller must never auto-retry it (BR-24).
+ */
+export async function updateTicketAction(
+  ticketNumber: string,
+  actionId: number,
+  payload: UpdateActionPayload,
+): Promise<StaffActionDto> {
+  const result = await apiJson<{ data: StaffActionDto }>(
+    `/api/tickets/${encodeURIComponent(ticketNumber)}/actions/${actionId}`,
+    {
+      method: "PATCH",
+      body: payload,
+      includeCsrf: true,
+      fallbackError: "Failed to save the Action.",
+    },
+  );
   return result.data;
 }

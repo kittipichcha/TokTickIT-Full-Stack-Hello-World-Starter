@@ -1,0 +1,15 @@
+{
+  "implementationCommit": "985fd7be75fc1cf6073e2969f14e59ad1db4182f",
+  "stagingBase": "ed91b191ed44c3cb71de1ae61484f91e32b98e28",
+  "executableFingerprintFile": "executable-fingerprints.json",
+  "mismatchCount": 0,
+  "executableFilesVerified": 182,
+  "runtimeResults": {
+    "exitCodes": 0,
+    "browser": 294,
+    "requiredSkips": 0,
+    "server": 681,
+    "client": 366
+  },
+  "provenance": "Tests ran on the exact implementation working bytes before this commit. Subsequent commits contain release documentation, raw evidence and publication metadata, not executable changes."
+}

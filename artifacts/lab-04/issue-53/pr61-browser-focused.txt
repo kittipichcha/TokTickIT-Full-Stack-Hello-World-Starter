@@ -1,0 +1,33 @@
+Baseline: 3784e9385264ad9db6865e546d03fdb605884c4a + uncommitted PR61 fixes
+Node: v24.14.0
+Started UTC: 2026-10-06T07:39:14.519Z
+Command: node node_modules/@playwright/test/cli.js test e2e/lab-04/ticket-resolution.spec.ts
+Database: dedicated loopback lab3e2e_pr61_browser_20261006; eight existing migrations
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+[WebServer] (node:5284) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:15836) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:14812) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+Running 3 tests using 1 worker
+
+(node:16316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok 1 [desktop] › e2e\lab-04\ticket-resolution.spec.ts:5:5 › Pending Actions block resolution until completed or cancelled; Requester remains read-only (15.2s)
+(node:15460) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok 2 [tablet] › e2e\lab-04\ticket-resolution.spec.ts:5:5 › Pending Actions block resolution until completed or cancelled; Requester remains read-only (16.3s)
+(node:7416) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌁ auth for agents [www.vestauth.com]
+  ok 3 [mobile] › e2e\lab-04\ticket-resolution.spec.ts:5:5 › Pending Actions block resolution until completed or cancelled; Requester remains read-only (17.8s)
+
+  3 passed (1.3m)
+
+Exit: 0
+Finished UTC: 2026-10-06T07:40:36.324Z

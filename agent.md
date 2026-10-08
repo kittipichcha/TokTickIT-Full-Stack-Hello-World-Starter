@@ -1,10 +1,10 @@
-**# TokTickIT Lab 3 Agent Working Agreement**
+**# TokTickIT Lab Agent Working Agreement**
 
-This file defines how the coding agent must operate for Lab 3 work in this repository.
+This file defines how the coding agent must operate for Lab 3 and Lab 4 work in this repository. Use the owning Lab's requirements, records, and integration branch throughout each task.
 
 ## 0. Requirement Primacy and User Prompt Rule
 
-Repository specifications (`docs/lab-03/specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, and issue criteria) are the **top priority** and take precedence over user prompts.
+The owning Lab's repository specifications (`docs/lab-<owning-lab>/{specification,api-spec,ui-spec,tests}.md`) and issue criteria are the **top priority** and take precedence over user prompts. Lab 3 tasks use `docs/lab-03/`; Lab 4 tasks use `docs/lab-04/`.
 
 * If a user prompt requests something that conflicts with or violates the defined requirements, requirements **surpass** the user prompt.
 * If such a conflict occurs, the agent must explicitly **inform the user of the conflict before planning** or executing any changes.
@@ -12,7 +12,7 @@ Repository specifications (`docs/lab-03/specification.md`, `api-spec.md`, `ui-sp
 ## 1. Mandatory Clarification and Approval Gate
 
 Before taking implementation actions, the agent must:
-0. Read the governing requirements and the current issue first — before any planning. The agent must read `docs/lab-03/specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, and the issue text/acceptance criteria, and map the task to FR/BR/AC IDs. Planning must be grounded in these documents, never in memory or assumptions alone.
+0. Read the governing requirements and the current issue first — before any planning. The agent must read the owning Lab's `specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, and the issue text/acceptance criteria, and map the task to FR/BR/AC IDs. Lab 3 tasks use `docs/lab-03/`; Lab 4 tasks use `docs/lab-04/`. Planning must be grounded in these documents, never in memory or assumptions alone.
 
 1. Restate the task in scoped terms.
 2. Present a short plan.
@@ -58,9 +58,10 @@ For any functionally changed behavior:
 
 ### 3.1 Test and `tests.md` Alignment Requirement
 
-The agent must continuously verify that executable test code and `docs/lab-03/tests.md` are strictly aligned:
+The agent must continuously verify that executable test code and the owning Lab's `tests.md` are strictly aligned (`docs/lab-03/tests.md` for Lab 3; `docs/lab-04/tests.md` for Lab 4):
 
-* Exact planned test paths and test IDs specified in `tests.md` and issue contracts must exist and match. The agent must never replace or redirect required test paths in `tests.md` to different files.
+* Exact planned test paths and test IDs specified in `tests.md` and issue contracts must match the canonical paths. The agent must never replace or redirect required test paths in `tests.md` to different files.
+* Test status follows one status-aware rule everywhere: `Planned` reserves the canonical ID/path and may legitimately have no file yet (or an explicitly skipped scaffold); `Implemented` requires the canonical file to exist and execute; `Passed` requires the complete assertion set to execute successfully with evidence.
 * Whenever a test or row is newly created or added to `tests.md`, its initial status MUST be set to `Planned` first. It may only be updated to `Passed` after executable test evidence confirms that it actually passes.
 * Test statuses in `tests.md` (`Planned`, `Implemented`, `Passed`) must accurately reflect executable test evidence.
 * A test status must NOT be marked `Passed` if only a partial matrix is covered or if dependent flows/data do not yet exist.
@@ -82,8 +83,10 @@ The Plan phase does not edit production code. The Act phase does not broaden sco
 
 
 2. **Frontend UI Integration Testing**:
-* UI tests must cover end-to-end component rendering and client storage persistence (`sessionStorage` with `REQUESTER_STORAGE_KEY`).
-* Validate full identity lifecycle: initial requester list fetching, selection persistence, context validation, and switching requesters.
+* UI tests must cover end-to-end component rendering and the current authenticated session flow.
+* Authenticated identity derives from the server session; UI tests use the current credentialed session flow, and mutations follow the current CSRF contract.
+* Role and shell tests derive identity from `/api/auth/me` or the established authenticated fixture.
+* `REQUESTER_STORAGE_KEY`, Dev-Requester list fetching, requester-context selection, and “switch requester” behavior are retired Lab 2 mechanisms and must not be mandatory Lab 3/4 requirements. Legacy Lab 2 files may remain only as adapted regression tests of the authenticated replacement behavior.
 
 
 
@@ -120,7 +123,7 @@ Perform the following checks in parallel (or rapid sequence) across all governin
 | Requirements → Code | `specification.md` FR/BR list | Actual source files | Every implemented FR/BR has corresponding code; no extra behaviors beyond spec |
 | API Spec → Routes | `api-spec.md` endpoints | `server/src/module.ts` routes | Endpoints claimed as implemented for the current issue scope exist and match the contract; implemented routes are documented. Planned/downstream endpoints that belong to future issues are explicitly not required to exist yet and must not cause a gate failure. |
 | API Spec → README | `api-spec.md` endpoints | `README.md` "API Implemented Today" | README lists only implemented endpoints; no stale/removed endpoints documented |
-| Tests.md → Test Files | `tests.md` test IDs and file paths | Actual test files on disk | Every test file path listed in `tests.md` exists on disk. Test files that are not part of the Lab 3 contract matrix (e.g. legacy Lab 1 tests, supporting utilities) are intentionally excluded from this check and do not need to appear in `tests.md`. |
+| Tests.md → Test Files | Owning Lab's `tests.md` test IDs and file paths | Actual test files on disk | Every `Implemented` or `Passed` test file path listed in the owning Lab's `tests.md` exists on disk. A `Planned` row reserves its canonical path and may legitimately have no file yet (or an explicitly skipped scaffold). Test files outside that Lab's contract matrix (e.g. legacy Lab 1 tests, supporting utilities) are intentionally excluded from this check and do not need to appear in the matrix. |
 | Tests.md → Status | `tests.md` Final column | Actual test run output | Every `Passed` row has passing evidence; newly added tests are set to `Planned` before execution and only updated to `Passed` after verified test evidence; no `Planned` row is prematurely marked `Passed`. |
 | UI Spec → CSS | `ui-spec.md` color tokens, styles | `client/src/App.css` | CSS uses only Zen Green tokens; no ad-hoc colors or removed component styles |
 | Issue AC → Evidence | Issue acceptance criteria | grep results, test output, file listings | Every AC is satisfied with concrete evidence |
@@ -131,7 +134,7 @@ Run the full test suite and compare every test result against `tests.md`:
 
 * For each row in `tests.md` marked `Passed`: confirm the test file exists and the test actually passes in the latest run.
 * For each row marked `Implemented`: confirm the test file exists and the test runs (pass or fail).
-* For each row marked `Planned`: confirm the test file does NOT yet exist (or exists but is skipped), and the status is accurate.
+* For each row marked `Planned`: confirm the canonical file does NOT yet exist (or exists but is skipped), and the status is accurate. A `Planned` row with no file is valid and is not a discrepancy.
 * If any discrepancy is found, update `tests.md` to reflect reality — never falsify status.
 
 ### 4.4 Step 4: Cleanup Verification
@@ -173,10 +176,14 @@ Outsider-perspective end-to-end review discipline for plans, code changes, and P
 
 ## 7. Test Logging Requirement
 
-After each completed task, insert the newest result entry at the **top** of the Results Log
-(prepend each completed task result under the Results Log heading — newest first):
+After each completed task, log results in the documentation for the Lab that owns the task.
+Insert the newest result at the top of that Lab's Results Log (newest first):
 
-* `docs/lab-03/tests.md` (Section: Results Log, newest first)
+* Lab 3 tasks: `docs/lab-03/tests.md` (Results Log)
+* Lab 4 tasks: `docs/lab-04/tests.md` (Results Log)
+
+Keep historic Lab 3 test evidence in Lab 3 records. Do not append a Lab 4 task result to a
+Lab 3 log solely because the task touches a shared workflow document.
 
 Each entry must include:
 
@@ -189,9 +196,10 @@ Each entry must include:
 
 ## 8. AI Usage Log Requirement
 
-After each completed task, update:
+After each completed task, update the AI-use log for the Lab that owns the task:
 
-* `docs/lab-03/ai-use.md`
+* Lab 3 tasks: `docs/lab-03/ai-use.md`
+* Lab 4 tasks: `docs/lab-04/ai-use.md`
 
 Format must match Lab 1 style in:
 
@@ -218,15 +226,14 @@ Agent may commit only after explicit user approval.
 
 ## 10. Branch and Worktree Policy
 
-Branching strategy must follow main requirement functions:
+Branching strategy must follow the owning Lab:
 
-* Staging branch: `lab3-staging` is created from the current head of `main` as the integration target.
-* Feature branches branch off and target `lab3-staging`:
-* `feature/lab3-requirement-ai`
-* `feature/lab3-requester-selection`
-* `feature/lab3-ticket-creation`
-* `feature/lab3-my-tickets`
-* `feature/lab3-attachments`
+| Owning task | Requirements | Integration branch | Feature branch examples | PR target |
+| --- | --- | --- | --- | --- |
+| Lab 3 | `docs/lab-03/*` | `lab3-staging` | `feature/lab3-<scope>` | `lab3-staging` |
+| Lab 4 | `docs/lab-04/*` | `lab4-staging` | `feature/lab4-<scope>` | `lab4-staging` |
+
+Create each Lab's staging branch from its approved integration baseline. Feature branches and worktrees must use the owning Lab's integration branch; do not route Lab 4 work through `lab3-staging`.
 
 
 
@@ -234,7 +241,7 @@ Worktree rules:
 
 * One active feature branch per worktree.
 * Do not reuse a dirty worktree for another issue.
-* New worktrees must branch from the latest `lab3-staging` baseline.
+* New worktrees must branch from the latest staging baseline for the owning Lab (`lab3-staging` for Lab 3; `lab4-staging` for Lab 4).
 * Out-of-scope fixes require a separate branch/worktree after explicit approval.
 * Remove completed worktrees only after their branch is merged or intentionally preserved.
 
@@ -250,7 +257,7 @@ When branch scope meets issue acceptance criteria:
 
 1. Summarize completion evidence (including tests).
 2. Check whether all required issue criteria are satisfied and the target behavior is fully implemented.
-3. Ask user approval to open PR targeting `lab3-staging` (all feature PRs go to `lab3-staging`; the final release PR moves `lab3-staging` into `main`).
+3. Ask user approval to open a PR targeting the owning Lab's integration branch (`lab3-staging` for Lab 3; `lab4-staging` for Lab 4). The final release PR moves that Lab's staging branch into `main`.
 4. After PR approval/workflow confirmation, ask user approval to move issue card in Kanban.
 
 The agent is allowed to propose or request a PR once the issue criteria are satisfied and the relevant tests pass. PR creation itself still requires explicit user approval unless the user has already explicitly authorized autonomous PR creation for that repo/task.
@@ -267,13 +274,15 @@ No autonomous PR creation or Kanban state changes without user approval.
 6. Run project formatters and linters (e.g., `npm run lint`, `npm run format`) to ensure code style compliance.
 7. Perform double-check alignment method (Section 4) to verify own work.
 8. Report results and alignment status.
-9. Update `docs/lab-03/tests.md` (newest log entry; set initial status to `Planned` before verification).
-10. Update `docs/lab-03/ai-use.md` in Lab 1 style.
-11. **Update `docs/lab-03/reviewer.md**` — whenever changes are made in response to peer review feedback, you must append it to the review record using this exact format:
+9. Update the owning Lab's `tests.md` Results Log (newest first; initialize new test rows as `Planned`).
+10. Update the owning Lab's `ai-use.md` in Lab 1 style.
+11. **Update the owning Lab's `reviewer.md`** — whenever changes are made in response to peer review feedback, append it to that Lab's review record using its existing format:
+* Lab 3 tasks: `docs/lab-03/reviewer.md`
+* Lab 4 tasks: `docs/lab-04/reviewer.md`
 * **Rule:** Only log feedback if it comes directly from a **human reviewer**. Do NOT log automated comments from CI bots, agents, or unknown sources.
 * **Format:**
 ```md
-# Lab 3 — Peer Review Record  (fill this in)
+# Lab <owning lab number> — Peer Review Record  (fill this in)
 
 **Author:** <Kittipich Charoenthanachot> — <67070503405> — GitHub: @kittipichcha
 **Peer reviewer:** <SUTHANG SUKRUEANGKUN> — <67070503477> — GitHub: @oangsa
@@ -294,7 +303,7 @@ How I responded: [How you addressed the feedback]
 
 12. Report the validated change and request explicit approval to stage, commit, and push.
 13. After approval, stage, commit, and push only the validated changes within scope.
-14. Ask separate approval for a PR targeting `lab3-staging` and for board updates once issue acceptance criteria are satisfied.
+14. Ask separate approval for a PR targeting the owning Lab's integration branch (`lab3-staging` for Lab 3; `lab4-staging` for Lab 4) and for board updates once issue acceptance criteria are satisfied.
 
 ## 13. Stop Conditions
 

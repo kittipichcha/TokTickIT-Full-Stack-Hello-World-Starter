@@ -1,0 +1,29 @@
+◇ injected env (1) from server\.env // tip: ⌘ enable debugging { debug: true }
+[WebServer] (node:2916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:27252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+
+Running 13 tests using 1 worker
+
+(node:3088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from server\.env // tip: ⌘ suppress logs { quiet: true }
+  ok  1 [desktop] › e2e\lab-02\responsive-visual.spec.ts:689:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets no horizontal scroll (8.4s)
+  ok  2 [desktop] › e2e\lab-02\responsive-visual.spec.ts:699:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets table→card representation per breakpoint (8.0s)
+  ok  3 [desktop] › e2e\lab-02\responsive-visual.spec.ts:717:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets mobile touch targets >= 44px (3.2s)
+  ok  4 [desktop] › e2e\lab-02\responsive-visual.spec.ts:730:7 › E2E-06/VISUAL-01: Responsive layout checks › Create Ticket responsive (3.5s)
+  ok  5 [desktop] › e2e\lab-02\responsive-visual.spec.ts:742:7 › E2E-06/VISUAL-01: Responsive layout checks › Create Ticket mobile touch targets >= 44px (1.7s)
+  ok  6 [desktop] › e2e\lab-02\responsive-visual.spec.ts:757:7 › E2E-06/VISUAL-01: Responsive layout checks › Login responsive (3.0s)
+  ok  7 [desktop] › e2e\lab-02\responsive-visual.spec.ts:770:7 › E2E-06/VISUAL-01: Responsive layout checks › Login mobile touch targets >= 44px (1.4s)
+  ok  8 [desktop] › e2e\lab-02\responsive-visual.spec.ts:784:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail responsive (11.3s)
+  ok  9 [desktop] › e2e\lab-02\responsive-visual.spec.ts:801:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail mobile touch targets >= 44px (4.3s)
+  ok 10 [desktop] › e2e\lab-02\responsive-visual.spec.ts:815:7 › E2E-06/VISUAL-01: Responsive layout checks › My Tickets no clipped labels or overlapping controls (13.3s)
+  ok 11 [desktop] › e2e\lab-02\responsive-visual.spec.ts:838:7 › E2E-06/VISUAL-01: Responsive layout checks › Create Ticket no clipped labels or overlapping controls (7.8s)
+  ok 12 [desktop] › e2e\lab-02\responsive-visual.spec.ts:854:7 › E2E-06/VISUAL-01: Responsive layout checks › Login no clipped labels or overlapping controls (4.7s)
+  ok 13 [desktop] › e2e\lab-02\responsive-visual.spec.ts:867:7 › E2E-06/VISUAL-01: Responsive layout checks › Ticket Detail no clipped labels or overlapping controls (12.9s)
+
+  13 passed (1.6m)

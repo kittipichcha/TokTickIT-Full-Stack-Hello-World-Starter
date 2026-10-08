@@ -12,14 +12,12 @@
  */
 
 import { Request, Response } from "express";
+import { DashboardFilterError } from "./ticket-dashboard-filters.js";
 import {
   getStaffQueue,
   parseQueueQuery,
   getStaffTicketDetail,
-  setTicketOwner,
   listAssignableOwners,
-  setItPriority,
-  applyStatusTransition,
   createComment,
   listComments,
   createNote,
@@ -30,6 +28,14 @@ import {
   ConflictError,
   type AccessContext,
 } from "./service.js";
+import { inspectIntegerFields } from "./integer-validation.js";
+import { MAX_DATABASE_ID } from "./id-domain.js";
+import {
+  applyStatusTransition,
+  listTicketStatusHistory,
+  setItPriority,
+  setTicketOwner,
+} from "./ticket-workflow-service.js";
 import type { Role } from "@prisma/client";
 
 const TICKET_NUMBER_PATTERN = /^TKT-\d{4}-\d{6}$/;
@@ -41,6 +47,28 @@ const INTERNAL_ERROR_BODY = {
 const NOT_FOUND_TICKET_BODY = {
   error: { code: "NOT_FOUND", message: "Ticket not found." },
 };
+
+/** Validates expectedVersion's raw JSON integer token while preserving omission compatibility. */
+function validateExpectedVersion(req: Request, res: Response, body: Record<string, unknown>): boolean {
+  if (body.expectedVersion === undefined) return true;
+  const rawBody = (req as unknown as Record<string, unknown>).rawBody as string | undefined;
+  const inspection = inspectIntegerFields(rawBody, ["expectedVersion"]);
+  if (inspection.invalidFields.length === 0 && inspection.outOfRangeFields.length === 0) return true;
+  res.status(400).json({
+    error: {
+      code: "VALIDATION_ERROR",
+      message: "Validation failed.",
+      fields: { expectedVersion: "expectedVersion must be a valid positive integer." },
+    },
+  });
+  return false;
+}
+
+function positiveQueryInteger(raw: unknown): number | null {
+  if (typeof raw !== "string" || !/^[1-9][0-9]*$/.test(raw)) return null;
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value <= MAX_DATABASE_ID ? value : null;
+}
 
 /** Builds the explicit access context from the authenticated identity. */
 function accessContext(res: Response): AccessContext {
@@ -73,9 +101,13 @@ function respondWithError(res: Response, err: unknown): void {
 export async function staffQueueHandler(req: Request, res: Response): Promise<void> {
   try {
     const params = parseQueueQuery(req.query);
-    const result = await getStaffQueue(params);
+    const result = await getStaffQueue(params, res.locals.userId as number);
     res.status(200).json(result);
-  } catch {
+  } catch (err) {
+    if (err instanceof DashboardFilterError) {
+      res.status(400).json({ error: { code: "VALIDATION_ERROR", message: err.message, fields: err.fields } });
+      return;
+    }
     res.status(500).json(INTERNAL_ERROR_BODY);
   }
 }
@@ -118,7 +150,8 @@ export async function setOwnerHandler(req: Request, res: Response): Promise<void
       return;
     }
     const body = (req.body ?? {}) as Record<string, unknown>;
-    const result = await setTicketOwner(ticketNumber, body.ownerId);
+    if (!validateExpectedVersion(req, res, body)) return;
+    const result = await setTicketOwner(ticketNumber, body.ownerId, body.expectedVersion);
     res.status(200).json({ data: result });
   } catch (err) {
     respondWithError(res, err);
@@ -134,7 +167,8 @@ export async function setItPriorityHandler(req: Request, res: Response): Promise
       return;
     }
     const body = (req.body ?? {}) as Record<string, unknown>;
-    const result = await setItPriority(ticketNumber, body.itPriority);
+    if (!validateExpectedVersion(req, res, body)) return;
+    const result = await setItPriority(ticketNumber, body.itPriority, body.expectedVersion);
     res.status(200).json({ data: result });
   } catch (err) {
     respondWithError(res, err);
@@ -150,8 +184,38 @@ export async function applyStatusTransitionHandler(req: Request, res: Response):
       return;
     }
     const body = (req.body ?? {}) as Record<string, unknown>;
-    const result = await applyStatusTransition(ticketNumber, body.status);
+    if (!validateExpectedVersion(req, res, body)) return;
+    const result = await applyStatusTransition(
+      ticketNumber,
+      body.status,
+      body.expectedVersion,
+      res.locals.userId as number,
+    );
     res.status(200).json({ data: result });
+  } catch (err) {
+    respondWithError(res, err);
+  }
+}
+
+/** `GET /api/staff/tickets/:ticketNumber/status-history` (api-spec §9). */
+export async function listTicketStatusHistoryHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const ticketNumber = req.params.ticketNumber;
+    if (!TICKET_NUMBER_PATTERN.test(ticketNumber)) {
+      res.status(404).json(NOT_FOUND_TICKET_BODY);
+      return;
+    }
+    const page = req.query.page === undefined ? 1 : positiveQueryInteger(req.query.page);
+    const pageSize = req.query.pageSize === undefined ? 10 : positiveQueryInteger(req.query.pageSize);
+    const fields: Record<string, string> = {};
+    if (page === null) fields.page = "page must be a positive integer.";
+    if (pageSize === null || pageSize > 50) fields.pageSize = "pageSize must be an integer between 1 and 50.";
+    if (Object.keys(fields).length) {
+      res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields } });
+      return;
+    }
+    const result = await listTicketStatusHistory(ticketNumber, page as number, pageSize as number);
+    res.status(200).json(result);
   } catch (err) {
     respondWithError(res, err);
   }

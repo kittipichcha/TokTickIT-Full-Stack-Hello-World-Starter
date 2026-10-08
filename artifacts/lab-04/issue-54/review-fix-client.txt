@@ -1,0 +1,248 @@
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/client
+
+ ❯ src/lab-04-tests/RoleNavigation.test.tsx (10 tests | 1 failed) 3988ms
+     × shows readable dashboard filters with local dates and clears the notice 194ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lab-04-tests/RoleNavigation.test.tsx > UI-DASH-01 role navigation and credentialed real list transport > shows readable dashboard filters with local dates and clears the notice
+TestingLibraryElementError: Found multiple elements with the role "button" and name "Clear Filters"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<button
+  class="tertiary-button"
+>
+  Clear Filters
+</button>
+
+Ignored nodes: comments, script, style
+<button
+  class="primary-button"
+>
+  Clear Filters
+</button>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell"
+    >
+      <header
+        class="app-header"
+      >
+        <strong>
+          TokTickIT
+        </strong>
+        <button
+          aria-controls="primary-navigation"
+          aria-expanded="false"
+          aria-label="Open navigation menu"
+          class="hamburger"
+          type="button"
+        >
+          <span
+            class="hamburger-bar"
+          />
+          <span
+            class="hamburger-bar"
+          />
+          <span
+            class="hamburger-bar"
+          />
+        </button>
+        <nav
+          aria-label="Primary"
+          class=""
+          id="primary-navigation"
+        >
+          <a
+            class=""
+            href="#dashboard"
+          >
+            Dashboard
+          </a>
+          <a
+            aria-current="page"
+            class="nav-active"
+            href="#my-tickets"
+          >
+            My Tickets
+          </a>
+          <a
+            class=""
+            href="#create-ticket"
+          >
+            Create Ticket
+          </a>
+        </nav>
+      </header>
+      <main
+        class="app-container my-tickets"
+      >
+        <div
+          class="my-tickets-toolbar"
+        >
+          <p
+            aria-label="Active dashboard filters"
+            class="notice"
+          >
+            Open Tickets
+          </p>
+          <div
+            class="toolbar-filters"
+          >
+            <div
+              class="toolbar-search"
+            >
+              <input
+                aria-label="Search tickets"
+                placeholder="Search ticket number or summary..."
+                type="search"
+                value=""
+              />
+            </div>
+            <select
+              aria-label="Filter by category"
+            >
+              <option
+                value=""
+              >
+                All Categories
+              </option>
+            </select>
+            <select
+              aria-label="Filter by priority"
+            >
+              <option
+                value=""
+              >
+                All Priorities
+              </option>
+              <option
+                value="LOW"
+              >
+                Low
+              </option>
+              <option
+                value="MEDIUM"
+              >
+                Medium
+              </option>
+              <option
+                value="HIGH"
+              >
+                High
+              </option>
+            </select>
+            <select
+              aria-label="Filter by status"
+            >
+              <option
+                value=""
+              >
+                All Statuses
+              </option>
+              <option
+                value="NEW"
+              >
+                New
+              </option>
+              <option
+                value="OPEN"
+              >
+                Open
+              </option>
+              <option
+                value="IN_PROGRESS"
+              >
+                In Progress
+              </option>
+              <option
+                value="WAITING_FOR_REQUESTER"
+              >
+                Waiting for Requester
+              </option>
+              <option
+                value="RESOLVED"
+              >
+                Resolved
+              </option>
+              <option
+                value="CLOSED"
+              >
+                Closed
+              </option>
+              <option
+                value="REOPENED"
+              >
+                Reopened
+              </option>
+              <option
+                value="CANCELLED"
+              >
+                Cancelled
+              </option>
+            </select>
+            <button
+              class="tertiary-button"
+            >
+              Clear Filters
+            </button>
+          </div>
+          <button
+            class="primary-button"
+          >
+            Create Ticket
+          </button>
+        </div>
+        <div
+          class="empty-state my-tickets-no-results"
+        >
+          <p>
+            No tickets match your filters.
+          </p>
+          <button
+            class="primary-button"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/lab-04-tests/RoleNavigation.test.tsx:39:32
+     37|   expect(screen.getByLabelText("Active dashboard filters").textContent…
+     38|   expect(screen.queryByText(/scope:|updatedSince|resolvedSince/)).toBe…
+     39|   await userEvent.click(screen.getByRole("button",{name:"Clear Filters…
+       |                                ^
+     40|   await waitFor(()=>expect(screen.queryByLabelText("Active dashboard f…
+     41|   await userEvent.click(screen.getByRole("link",{name:"Dashboard"}));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 108 passed (109)
+   Start at  22:10:05
+   Duration  19.87s (transform 4.06s, setup 0ms, import 9.27s, tests 26.09s, environment 8.89s)
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/client
+
+
+ Test Files  4 passed (4)
+      Tests  109 passed (109)
+   Start at  22:10:56
+   Duration  20.05s (transform 3.53s, setup 0ms, import 9.25s, tests 26.72s, environment 9.60s)

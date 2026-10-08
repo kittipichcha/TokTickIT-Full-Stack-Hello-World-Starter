@@ -1,20 +1,100 @@
 # TokTickIT - Full Stack Hello World Starter
 
-This repository contains the integrated Lab 3 TokTickIT ticketing application. Lab 3 adds
+This repository contains the integrated Lab 4 TokTickIT ticketing application. Lab 3 adds
 session authentication, role-based Requester/IT Staff/Administrator screens, Staff ticket
 operations, Administrator user management, and a data-preserving Lab 2 migration.
 
 ## 1. Current Scope
-The current contract is defined in:
-- `docs/lab-03/specification.md`
-- `docs/lab-03/api-spec.md`
-- `docs/lab-03/ui-spec.md`
-- `docs/lab-03/tests.md`
+The current contract is defined in `docs/lab-04/specification.md`, `api-spec.md`,
+`ui-spec.md`, and `tests.md`. The approved `docs/lab-03/` contracts remain the
+regression baseline for authentication and existing Ticket workflows.
 
 The application supports authenticated Requester ticket and attachment workflows, Staff Queue
 and Ticket Detail operations, Administrator User Management, role/ownership authorization,
 public comments, internal notes, and the Lab 3 migration/seed contract. The Lab 2 requester
 ticket and attachment behavior remains supported under session identity.
+
+Issue #51 adds the Lab 4 Actions Taken backend foundation: additive persistence and migration,
+immutable Action revisions, requester/staff/admin authorization, paginated list/detail/create/
+update APIs, assignment validation, idempotent creation, optimistic concurrency, recovery tests,
+and repeatable Action seed fixtures.
+
+Issue #52 adds the Actions Taken Ticket Detail UI: a dedicated `client/src/ActionsTaken.tsx`
+module exporting separate `StaffActionsTaken` and `RequesterActionsTaken` entry components, a
+Staff-only `client/src/ActionForm.tsx` (create/edit with idempotency-key lifecycle,
+`expectedVersion` conflict recovery, assignee eligibility, and Pending/Completed/Cancelled
+controls), typed Action functions in `client/src/api.ts`, Zen Green responsive/accessibility
+styling, and Lab 4 browser evidence under `e2e/lab-04/`. The existing Staff Ticket Detail
+"Actions" heading was renamed to "Ticket controls" (display label only, no behavior change).
+Issue #53 adds the complete Ticket transition matrix, atomic Pending-Action resolution gate,
+shared Ticket version for owner/priority/status writes, resolution timestamps, and immutable
+paginated status history. Staff controls send `expectedVersion`, retain recoverable inputs on
+conflict, and require a successful refresh before an explicit retry. Issue #54 adds role
+dashboards; final Lab 4 release hardening remains owned by #55.
+
+Issue #54 makes Requester Dashboard the Requester landing screen and Staff Dashboard the
+Staff/Administrator landing screen. Counts come from repeatable-read database snapshots,
+with at most 10 concise rows per summary list. Recent means the last seven rolling 24-hour
+days in UTC; recent resolution uses known `resolvedAt`, never a fabricated legacy date.
+Action count cards are informational; individual Action links open the exact current Action
+on Ticket Detail even when it is beyond the first list page. Existing My Tickets, Create
+Ticket, Queue, and Administrator User Management remain available in primary navigation.
+
+Dashboard routes (authenticated session and completed password change required):
+
+- `GET /api/requester/dashboard` — Requester-only, own Ticket counts and summaries.
+- `GET /api/staff/dashboard` — Staff/Administrator, operational Ticket and caller-specific Action metrics.
+
+My Tickets accepts `scope=open`, `updatedSince`, and `resolvedSince` in addition to its
+existing filters. `scope` and `status` are mutually exclusive. Queue accepts
+`ownerScope=me|unassigned`, `openOnly=true|false`, and `updatedSince`; `ownerScope` and
+`ownerId` are mutually exclusive. New date filters accept valid ISO UTC timestamps (`Z`
+or `+00:00`); malformed extensions return 400. All supplied filters combine with AND.
+Clear Filters clears the complete destination filter; normal list navigation starts unfiltered.
+
+Dashboard demonstration: sign in as each role, open a Ticket count card, inspect the active
+filters, then return to Dashboard. Staff can open an individual Pending/Recently Performed
+Action link to inspect its selected current detail before explicitly choosing Edit or View.
+Seed additions demonstrate Reopened urgent, Cancelled, known recent/old resolution dates,
+and distinct Action performer/assignee identities; repeat seeds preserve existing edits.
+Verification and Issue #55 handoff are recorded in `artifacts/lab-04/issue-54/README.md`.
+
+Issue #53 extends `POST /api/staff/tickets/:ticketNumber/owner`,
+`PATCH /api/staff/tickets/:ticketNumber/priority`, and
+`PATCH /api/staff/tickets/:ticketNumber/status` requests with optional positive integer
+`expectedVersion` (legacy omission remains supported); successful responses include the new
+Ticket `version`. Stale versions return 409 without mutation. Staff/Admin history is available
+at `GET /api/staff/tickets/:ticketNumber/status-history?page=1&pageSize=10`; Requesters cannot
+access formal history. No new migration is required. Verification commands and current results
+are recorded in `artifacts/lab-04/issue-53/README.md`.
+
+Issue #51 API routes:
+- `GET /api/tickets/:ticketNumber/actions`
+- `GET /api/tickets/:ticketNumber/actions/:actionId`
+- `POST /api/tickets/:ticketNumber/actions`
+- `PATCH /api/tickets/:ticketNumber/actions/:actionId`
+
+Issue #51 review-fix verification (2026-10-02, head `3997f4e`): Actions API/security/concurrency
+23 passed, Lab 4 migration/recovery 3 passed, Lab 3 migration plus DB-MIG-04 26 passed, Actions
+seed idempotency 2 passed, and full server regression 42 files / 633 passed / 0 failed. DB-MIG-04
+pins `server/tests/lab-03/fixtures/lab3-final-schema.prisma` (SHA-256
+`7b5c5aceb173a4198731de90d3492d1f38861943099ea1fc5c2c85f6b31b5070`) as the immutable PR #58
+Lab 3 schema.
+
+Run the backend checks from `server/` with a disposable PostgreSQL `DATABASE_URL`:
+
+```bash
+npx prisma validate
+npm run build
+npx vitest run tests/lab-04/migration.integration.test.ts
+npx vitest run tests/lab-04/actions-taken.api.test.ts
+npx vitest run tests/lab-04/seed.integration.test.ts
+npm test
+```
+
+The migration/recovery tests create and drop disposable databases and use temporary attachment
+fixtures. Never point them at a production-like database or commit `.env`, database dumps, or
+attachment snapshots.
 
 ## 2. Verification Status
 
@@ -31,7 +111,9 @@ tests, 210/210 configured Playwright tests, 19/19 REL-12 migration tests, succes
 Prisma validation. Historical browser counts refer to distinct runs: 183/183 full configured,
 27/27 earlier Lab 3, and 42/42 later Lab 3. Human reviewer @oangsa approved PR #56 current head
 `466695c` with `LGTM!` on 2026-09-26. PDF Parts 1–9 and Kanban completion remain user-owned;
-final merge and post-merge verification remain incomplete. See
+PR #56 and the Lab 3 release PR #57 have since merged. Those historical results do
+not certify the current Lab 4 source; its current verification and remaining
+release gates are recorded under `artifacts/lab-04/release/`. See
 `artifacts/lab-03/release/verification-summary.md` for evidence scope.
 
 Historical Lab 2 implementation details follow:
@@ -98,8 +180,19 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |- lab-02/
 |  |  |- release/            # final release verification evidence
 |  |  |- screenshots/        # visual/responsive evidence (regenerated by E2E)
+|  |- lab-03/
+|  |  |- release/            # historical Lab 3 verification
+|  |- lab-04/
+|     |- issue-51/           # Actions API/migration historical evidence
+|     |- issue-52/           # Actions UI historical evidence
+|     |- issue-53/           # workflow historical evidence
+|     |- issue-54/           # dashboard historical evidence
+|     |- release/            # issue #55 source-bound reports and pending release gates
+|     |- screenshots/        # canonical Lab 4 visual evidence
 |- client/
 |  |- src/
+|  |  |- ActionForm.tsx     # Staff-only Action create/edit form (#52)
+|  |  |- ActionsTaken.tsx   # Staff/Requester Actions Taken area (#52)
 |  |  |- api.ts
 |  |  |- App.css
 |  |  |- App.test.tsx
@@ -108,6 +201,11 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |- format.ts
 |  |  |- main.tsx
 |  |  |- MyTickets.tsx
+|  |  |- RequesterDashboard.tsx
+|  |  |- StaffDashboard.tsx
+|  |  |- dashboard-ui.tsx
+|  |  |- TicketStatusHistory.tsx
+|  |  |- StaffTicketDetail.tsx
 |  |  |- vite-env.d.ts
 |  |  |- lab-02-tests/
 |  |  |  |- AttachmentSection.test.tsx
@@ -122,6 +220,12 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |  |- AuthGate.test.tsx
 |  |  |  |- ChangePassword.test.tsx
 |  |  |  |- Login.test.tsx
+|  |  |- lab-04-tests/
+|  |     |- ActionsTaken.test.tsx   # UI-ACT-01 component matrix (#52)
+|  |     |- TicketWorkflow.test.tsx
+|  |     |- RequesterDashboard.test.tsx
+|  |     |- StaffDashboard.test.tsx
+|  |     |- RoleNavigation.test.tsx
 |  |- package.json
 |  |- tsconfig.json
 |  |- vite.config.ts
@@ -136,6 +240,13 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |- tests.md
 |  |  |- ui-spec.md
 |  |- lab-03/
+|  |  |- ai-use.md
+|  |  |- api-spec.md
+|  |  |- reviewer.md
+|  |  |- specification.md
+|  |  |- tests.md
+|  |  |- ui-spec.md
+|  |- lab-04/                # frozen Lab 4 contract (#50) + Test DD
 |     |- ai-use.md
 |     |- api-spec.md
 |     |- reviewer.md
@@ -153,6 +264,13 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |- requester-ticket-flow.spec.ts
 |  |  |- responsive-visual.spec.ts
 |  |- lab-03/                 # owned by #42 (E2E-01..04); not created by #35
+|  |- lab-04/                 # integrated Actions/workflow/dashboard/release checks
+|     |- actions-taken-flow.spec.ts
+|     |- ticket-resolution.spec.ts
+|     |- dashboards.spec.ts
+|     |- keyboard-access.spec.ts
+|     |- responsive-visual.spec.ts
+|     |- release-hardening.spec.ts
 |- server/
 |  |- prisma/
 |  |  |- migrations/
@@ -207,10 +325,21 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 |  |  |  |- ticket-detail.api.test.ts
 |  |  |  |- ticket-number-concurrency.integration.test.ts
 |  |  |- lab-03/
+|  |  |  |- fixtures/
+|  |  |  |  |- lab3-final-schema.prisma  # pinned historical migration schema
 |  |  |  |- auth.api.test.ts
 |  |  |  |- auth.unit.test.ts
 |  |  |  |- migration.integration.test.ts
 |  |  |  |- seed.integration.test.ts
+|  |  |- lab-04/
+|  |     |- actions-taken.api.test.ts
+|  |     |- ticket-workflow.api.test.ts
+|  |     |- ticket-workflow.unit.test.ts
+|  |     |- migration.integration.test.ts
+|  |     |- seed.integration.test.ts
+|  |     |- requester-dashboard.api.test.ts
+|  |     |- staff-dashboard.api.test.ts
+|  |     |- dashboard.performance.test.ts
 |  |- package.json
 |  |- tsconfig.json
 |  |- vitest.config.ts
@@ -220,42 +349,87 @@ Completed in Issue #18 (final integration/release verification) at the authorita
 ```
 
 ## 4. Prerequisites
-- Node.js 18+
-- npm 9+
-- PostgreSQL 12+
+- Node.js 24 LTS and its bundled npm; use the checked-in lockfiles. The locked
+  Vitest 4.1.10 supports Node `^20.0.0 || ^22.0.0 || >=24.0.0`, so Node 18 is unsupported.
+- PostgreSQL with a dedicated disposable backend database and a different disposable
+  browser database. Migration tests require database create/drop privileges and
+  matching-major `psql`, `pg_dump`, and `pg_restore` client tools.
+- Chromium installed through the locked root Playwright package.
 
 ## 5. Setup
 
-### Backend
+### Clean installation (repository root)
 ```bash
-cd server
-npm install
+npm ci
+npm --prefix server ci
+npm --prefix client ci
+npx playwright install chromium
+server/node_modules/.bin/prisma generate --schema server/prisma/schema.prisma
 ```
 
-Create `server/.env` (based on `.env.example` if present) with:
+On Windows use `server/node_modules/.bin/prisma.cmd` for the local Prisma binary.
+Run server scripts with `npm --prefix server` so dotenv reads `server/.env`.
+Root Prisma commands need the same `DATABASE_URL` exported in the terminal.
+Keep environment files ignored by Git. Create `server/.env` with local values:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/toktickit?schema=public"
-E2E_DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/lab3e2e?schema=public"
+E2E_DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/lab4e2e?schema=public"
+SESSION_SECRET="change-me-to-a-long-random-secret-at-least-32-chars"
 PORT=3000
 ```
 
-`E2E_DATABASE_URL` must point to the separate disposable `lab3e2e` database. Playwright does
+Generate a private secret, for example `node -e "console.log(require('node:crypto').randomBytes(48).toString('hex'))"`,
+then paste its value only into the local server environment. The example placeholder is
+not a working secret. `SESSION_SECRET` is server-only; never expose it as a `VITE_` variable.
+
+`E2E_DATABASE_URL` must point to the separate disposable `lab4e2e` database. Playwright does
 not fall back to `DATABASE_URL`; never point E2E tests at a development or production database.
 
-Run migration and seed:
+### Choose the correct migration context
+
+For a **brand-new empty disposable database**, first confirm that it contains no
+application data. Apply the eight checked-in migrations, generate the client, and seed:
 
 ```bash
-cd server
-npm run prisma:migrate
-npm run prisma:seed
+server/node_modules/.bin/prisma migrate deploy --schema server/prisma/schema.prisma
+server/node_modules/.bin/prisma generate --schema server/prisma/schema.prisma
+server/node_modules/.bin/prisma migrate status --schema server/prisma/schema.prisma
+npm --prefix server run prisma:seed
 ```
 
-### Frontend
-```bash
-cd client
-npm install
-```
+For a **populated verified Lab 3 database**, stop writers and verify the seven historical
+migrations and completed identity/attachment/priority backfill. Capture a complete custom
+PostgreSQL dump and matching attachment snapshot, and rehearse restoration into a separate
+empty database before cutover. Compare IDs, values, relations, migration rows and attachment
+hashes/download references. `prisma migrate status` must show only the eighth Lab 4 migration
+pending and no failed prerequisite. Then run the explicit-schema `migrate deploy` and
+`migrate status` commands above; verify preservation and an up-to-date schema before writes.
+Do not rerun the Lab 3 orchestrator on an already converted database or use `migrate dev/reset`
+to repair release history.
+
+For a **populated Lab 2 database**, perform the tracked Phase A/backfill/Phase C procedure
+in §11.1 from the pinned Lab 3 release checkout
+`9fe2bd3ad6a1c80aaa4578f3ad18b1be76aa08d6`, where only seven migrations exist.
+The current Lab 4 checkout includes an additional pending migration that the Lab 3
+orchestrator's global status check would reject. After fully verifying Lab 3, follow the
+populated Lab 3 procedure above. The test-only historical-schema override is not an
+operational migration workaround.
+
+Before accepted Lab 4 writes, recovery restores the verified matching database and attachment
+snapshot together while writers remain stopped. A failed Prisma deploy can leave real
+partial/unfinished state; automatic SQL rollback is not assumed. After any accepted Lab 4
+write, preserve current records and forward-recover; never restore an old snapshot.
+See `artifacts/lab-04/release/migration-recovery.md` and canonical DB-MIG-01–04 tests.
+Keep dumps and private attachment snapshots outside the repository. PostgreSQL client tools
+must use PostgreSQL connection settings without Prisma's `?schema=public` parameter.
+
+Run seed twice only in a disposable rehearsal database; DB-SEED-01 verifies exact
+zero/one/many Action fixtures and preservation. Apply migrations and seed the distinct
+browser database too, with `DATABASE_URL` temporarily bound to `E2E_DATABASE_URL`, then
+restore the backend binding. Do not seed a real database for screenshots.
+
+### Frontend environment
 
 Create `client/.env` with:
 
@@ -299,11 +473,61 @@ End-to-end tests (Playwright, desktop/tablet/mobile):
 npm run test:e2e -- --workers=1
 ```
 
+From the repository root, complete integrated gates are:
+
+```bash
+npm --prefix server test -- --maxWorkers=1
+npm --prefix client test -- --maxWorkers=2 --no-file-parallelism
+npm --prefix server run build
+npm --prefix client run build
+server/node_modules/.bin/prisma validate --schema server/prisma/schema.prisma
+server/node_modules/.bin/prisma migrate status --schema server/prisma/schema.prisma
+npm run test:e2e -- --workers=1
+```
+
+All required database tests must execute, rather than skip for missing `DATABASE_URL`.
+The full backend suite includes PERF-01; a focused performance rehearsal is
+`npm --prefix server test -- tests/lab-04/dashboard.performance.test.ts --maxWorkers=1`.
+It uses 1,000 Tickets/3,000 Actions, five warmups and twenty samples per endpoint,
+p95 below 1,000 ms and every response at most 65,536 UTF-8 bytes.
+Do not overlap a manual server with Playwright's port-3000 server. To rehearse production
+startup after building, run `npm --prefix server start` with a valid secret/disposable DB;
+check API readiness, then stop that process. For the built client, run
+`npm --prefix client run preview` and use the URL it prints.
+If the default ports are occupied by verification, set server `PORT=3045` and use
+`npm --prefix client run preview -- --host 127.0.0.1 --port 4175 --strictPort`.
+The corresponding local entrypoints are `node dist/src/index.js` from `server/`
+and `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4175 --strictPort`
+from `client/`. HTTP readiness alone does not prove role journeys; those require
+the integrated browser checks.
+
+### Lab 4 demonstration and evidence
+
+With synthetic seed accounts, show Requester Dashboard → My Tickets → owned detail →
+Create Ticket, including attachment/comment/advisory behavior. Show Staff Dashboard →
+Queue → detail, owner/priority/internal note, two Actions on the same Ticket (complete one
+with a Result, cancel the other), blocked resolution while any remains Pending, then
+resolution and immutable history. Demonstrate exact metric filters and selected Action
+links; as Administrator also visit User Management and return to Dashboard. Log out.
+Check these journeys at desktop, tablet and mobile widths.
+
+HARDEN-01 requires browser hardening plus five separately evidenced clean-checkout
+procedures: setup, seed, migration, tests and demo. Current commands, source fingerprints,
+results and limitations belong in `artifacts/lab-04/release/clean-checkout-results.md` and
+`verification-summary.md`. Historical issue results retain their original source revision.
+Final main verification, a human release review, final board state and the nine-part
+submission PDF remain separate gates until their actual evidence exists.
+
 Recorded Lab 3 run counts above are historical. Check `docs/lab-03/tests.md` and
 `artifacts/lab-03/release/` for source revisions, raw outputs, and outstanding gates before
 using any result as release evidence.
 
 ## 8. API Implemented Today
+
+Lab 4 role dashboards are `GET /api/requester/dashboard` (Requester) and
+`GET /api/staff/dashboard` (Staff/Administrator). Their exact count, summary and drill-down
+schemas are frozen in `docs/lab-04/api-spec.md` §§10–11. Both are read-only; no reporting
+or export endpoint is added.
 
 > **Superseded in Lab 3 (Issues #35 / #37).** The `X-Dev-Requester-Id` header and the
 > `GET /api/dev-requesters` / `GET /api/requester-context` endpoints were removed.
@@ -410,7 +634,8 @@ omitted/blank, 1–200 chars after trim). A removed attachment returns `409 CONF
 ## 10. Notes
 - The Development Requester selector is historical and was removed in Lab 3.
 - Keep ownership enforcement server-side for all requester-owned resources.
-- Current requirements and verification records live under `docs/lab-03/`.
+- Current requirements and verification records live under `docs/lab-04/`; `docs/lab-03/`
+  preserves the prior regression contract and historical evidence.
 
 ## 11. Lab 3 — Identity, Database Migration & Authentication (Issue #35)
 
@@ -419,8 +644,9 @@ authentication and migrates `DevRequester` → `User`.
 
 ### 11.1 Database migration (two-phase, tracked)
 
-The migration is applied by the orchestrator, never by a plain `prisma migrate deploy`
-with Phase C pending:
+For populated Lab 2 data, apply this historical procedure from the pinned Lab 3
+release checkout identified in §5. Never issue plain `prisma migrate deploy` with
+Phase C pending, or rerun this orchestrator from the current Lab 4 checkout:
 
 ```
 cd server && npm run migrate:lab3 -- run
@@ -520,15 +746,20 @@ CSRF.
 
 | Method | Endpoint | Auth | Notes |
 |---|---|---|---|
-| GET | `/api/staff/queue` | IT Staff / Administrator | Search, status/priority/owner filters, sort, pagination. Invalid query values fall back to safe defaults and never return `400`. |
+| GET | `/api/staff/queue` | IT Staff / Administrator | Search, status/priority/owner filters, sort, pagination. Legacy invalid query values retain safe defaults. Invalid Lab 4 `ownerScope`, `openOnly`, `updatedSince`, or mutually exclusive owner filters return `400`. |
 | GET | `/api/staff/owners` | IT Staff / Administrator | Eligible Ticket-owner set: active IT Staff/Administrators as `{id, name, role}`. Read-only; no credential field. |
 | GET | `/api/staff/tickets/:ticketNumber` | IT Staff / Administrator | Staff Ticket Detail, including Public Comments and Internal Notes. |
-| POST | `/api/staff/tickets/:ticketNumber/owner` | IT Staff / Administrator + CSRF | Claim/assign/reassign. `ownerId` must reference an active IT Staff/Administrator. Last-write-wins; no unassign. |
-| PATCH | `/api/staff/tickets/:ticketNumber/priority` | IT Staff / Administrator + CSRF | Sets IT Priority only; Requested Priority is never touched. |
-| PATCH | `/api/staff/tickets/:ticketNumber/status` | IT Staff / Administrator + CSRF | Permitted transitions only; the Ticket must be owned first. |
+| POST | `/api/staff/tickets/:ticketNumber/owner` | IT Staff / Administrator + CSRF | Claim/assign/reassign; no unassign. `ownerId` must reference an active IT Staff/Administrator. Optional positive-integer body `expectedVersion`; stale versions return `409` without mutation. Successful writes increment the shared Ticket version once, including same-value writes. |
+| PATCH | `/api/staff/tickets/:ticketNumber/priority` | IT Staff / Administrator + CSRF | Sets IT Priority only; Requested Priority is unchanged. Optional body `expectedVersion`; stale versions return `409` without mutation. Success increments the shared Ticket version once, including same-value writes. |
+| PATCH | `/api/staff/tickets/:ticketNumber/status` | IT Staff / Administrator + CSRF | Permitted transitions only; the Ticket must have an owner. Optional body `expectedVersion`; stale, same-status and prohibited transitions return `409` without mutation/history. Success increments the shared Ticket version once and appends one history row; Pending Actions block resolution. |
 | POST/GET | `/api/tickets/:ticketNumber/comments` | owner Requester or IT Staff/Administrator | Public Comments. |
 | POST/GET | `/api/staff/tickets/:ticketNumber/notes` | IT Staff / Administrator | Internal Notes; never reach a Requester payload. |
 | POST | `/api/tickets/:ticketNumber/appears-resolved` | owner Requester + CSRF | Boolean indicator; never changes the formal status. |
+
+Lab 4 extends the original Lab 3 operations with the shared version contract above.
+The UI always sends the current `expectedVersion`; legacy callers may omit it.
+Conflict recovery retains drafts and refreshes server state without replaying mutations.
+If that refresh fails, an explicit successful Refresh is required before retry.
 
 **Eligible-owner lookup (`GET /api/staff/owners`).** Added by Issue #38 under the closed-contract
 edge-case policy (`specification.md` §13 decision 20, `api-spec.md` §17a). The frozen contract
@@ -563,14 +794,18 @@ also pass. Those are historical Issue #38 results. Issue #42 later ran the compl
 integration file on a disposable Lab 2-shaped database: **19/19 passed**, including the deliberate
 collision and recovery cases. See `artifacts/lab-03/release/rel-12-migration.md`.
 
-## 13. Lab 3 integrated browser verification (Issue #42)
+## 13. Integrated browser verification (Lab 3 history and current Lab 4)
 
 Playwright starts its own API and Vite servers and refuses to reuse an existing server. Set
-`E2E_DATABASE_URL` to the disposable `lab3e2e` PostgreSQL database in `server/.env`. This variable
+`E2E_DATABASE_URL` to the separate disposable browser PostgreSQL database (for example
+`lab4e2e`) in `server/.env` or the process environment. This variable
 is required; setting only `DATABASE_URL` does not satisfy Playwright configuration. The suite
-requires the documented Lab 3 schema before it runs and does not fall back to `DATABASE_URL`.
+currently requires all eight checked-in migrations and the current seed as documented in
+§5; the earlier Issue #42 run used only its historical Lab 3 schema. It does not fall back
+to `DATABASE_URL`. Set a valid server-only session secret before its API starts.
 The same URL is passed to
-the Lab 2 requester fixture setup and the API process; no suite should target a development or
+the canonical Lab 3 global fixture setup (which also preserves Lab 2 journeys) and the API
+process; no suite should target a development or
 production database.
 
 Run `npm run test:e2e -- --workers=1` from the repository root. The initial suite is serial across

@@ -1,0 +1,11 @@
+{
+  "sourceFingerprintFile": "executable-fingerprints.json",
+  "report": "server-final-results.json",
+  "command": "npm test -- --reporter=default --reporter=json --outputFile=../artifacts/lab-04/release/server-final-results.json",
+  "exitCode": 0,
+  "log": "server-final-test.log",
+  "database": "lab4_release_issue55_fresh_20261007",
+  "startedAt": "2026-10-08T02:21:49.3409638Z",
+  "endedAt": "2026-10-08T02:45:57.1996280Z",
+  "cwd": "C:\\Users\\kitti\\CPE334\\issue-55-worktree\\server"
+}

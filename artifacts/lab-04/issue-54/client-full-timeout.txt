@@ -1,0 +1,41 @@
+
+> toktickit-client@1.0.0 test
+> vitest run --run
+
+
+ RUN  v4.1.10 C:/Users/kitti/CPE334/lab4-staging-worktree/client
+
+Error: Not implemented: window.open
+    at module.exports (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at onClick (C:/Users/kitti/CPE334/lab4-staging-worktree/client/src/App.tsx:512:42) undefined
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (C:\Users\kitti\CPE334\lab4-staging-worktree\client\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at listOnTimeout (node:internal/timers:605:17)
+    at processTimers (node:internal/timers:541:7) undefined
+ ❯ src/lab-02-tests/CreateTicket.test.tsx (17 tests | 1 failed) 24855ms
+     × shows length error when summary exceeds 120 characters 5022ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lab-02-tests/CreateTicket.test.tsx > UI-TKT-02: Summary over 120 chars blocks submit > shows length error when summary exceeds 120 characters
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/lab-02-tests/CreateTicket.test.tsx:85:3
+     83|   });
+     84|
+     85|   it("shows length error when summary exceeds 120 characters", async (…
+       |   ^
+     86|     await setupAuthenticatedApp();
+     87|     await userEvent.click(screen.getByRole("link", { name: "Create Tic…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 22 passed (23)
+      Tests  1 failed | 357 passed (358)
+   Start at  13:19:32
+   Duration  34.49s (transform 19.32s, setup 0ms, import 64.86s, tests 167.63s, environment 88.36s)

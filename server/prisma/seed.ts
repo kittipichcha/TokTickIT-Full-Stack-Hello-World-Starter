@@ -52,6 +52,8 @@ const RELATED_SYSTEMS = [
  */
 const SEED_MARKER_PREFIX = '[seed:';
 const seedMarker = (key: string): string => `${SEED_MARKER_PREFIX}${key}]`;
+const ACTION_SEED_MARKER_PREFIX = '[seed-action:';
+const actionSeedMarker = (key: string): string => `${ACTION_SEED_MARKER_PREFIX}${key}]`;
 
 /**
  * Creates a predefined account if it does not already exist.
@@ -83,6 +85,7 @@ async function ensureUser(
 }
 
 async function main() {
+  const seedNow = new Date();
   // Categories (preserved; idempotent upserts)
   for (const name of CATEGORIES) {
     await prisma.category.upsert({ where: { name }, update: {}, create: { name } });
@@ -128,6 +131,10 @@ async function main() {
     { key: 'shared-drive', summary: 'Shared drive permission denied', description: 'Cannot write to the shared drive folder for the project.', status: 'NEW', priority: 'LOW', owner: null },
     { key: 'printer-network', summary: 'Printer not detected on network', description: 'The network printer is not visible from the workstation.', status: 'RESOLVED', priority: 'MEDIUM', owner: staffUsers[0] },
     { key: 'hr-portal-loop', summary: 'HR portal login loop', description: 'The HR portal redirects back to login after authenticating.', status: 'CLOSED', priority: 'HIGH', owner: staffUsers[1] },
+    { key: 'dashboard-reopened', summary: 'Reopened urgent network issue', description: 'Connectivity needs further investigation.', status: 'REOPENED', priority: 'HIGH', owner: staffUsers[0] },
+    { key: 'dashboard-cancelled', summary: 'Cancelled duplicate request', description: 'The requester confirmed this duplicate is unnecessary.', status: 'CANCELLED', priority: 'LOW', owner: null },
+    { key: 'dashboard-recent-resolved', summary: 'Recently resolved display issue', description: 'The replacement display was verified.', status: 'RESOLVED', priority: 'MEDIUM', owner: staffUsers[1], resolvedAt: new Date(seedNow.getTime() - 24 * 60 * 60 * 1000) },
+    { key: 'dashboard-old-resolved', summary: 'Older resolved access issue', description: 'Access was restored earlier this month.', status: 'RESOLVED', priority: 'LOW', owner: staffUsers[0], resolvedAt: new Date(seedNow.getTime() - 30 * 24 * 60 * 60 * 1000) },
   ];
 
   const createdTickets = [];
@@ -162,6 +169,7 @@ async function main() {
             ticketOwnerId: t.owner ? t.owner.id : null,
             currentStatus: t.status as 'NEW' | 'OPEN' | 'IN_PROGRESS' | 'WAITING_FOR_REQUESTER' | 'RESOLVED' | 'CLOSED' | 'REOPENED' | 'CANCELLED',
             appearsResolved: t.status === 'RESOLVED' || t.status === 'CLOSED',
+            resolvedAt: 'resolvedAt' in t ? t.resolvedAt : null,
           },
         });
       });
@@ -197,6 +205,102 @@ async function main() {
         data: { ticketId: ticket.id, authorId: staff.id, content: noteContent },
       });
     }
+  }
+
+  // Actions: marker-owned fixtures cover zero/one/many Actions, all lifecycle
+  // states, and distinct performer/assignee identities without claiming real rows.
+  const actionFixtures = [
+    {
+      key: 'pending-unassigned',
+      ticket: createdTickets[0],
+      performer: staffUsers[0],
+      assignee: null,
+      status: 'PENDING' as const,
+      result: null,
+    },
+    {
+      key: 'completed-assigned',
+      ticket: createdTickets[0],
+      performer: staffUsers[1],
+      assignee: staffUsers[2],
+      status: 'COMPLETED' as const,
+      result: 'Replaced the faulty network adapter.',
+    },
+    {
+      key: 'cancelled-admin',
+      ticket: createdTickets[1],
+      performer: staffUsers[2],
+      assignee: adminUsers[0],
+      status: 'CANCELLED' as const,
+      result: null,
+    },
+  ];
+
+  for (const fixture of actionFixtures) {
+    const marker = actionSeedMarker(fixture.key);
+    const existing = await prisma.actionTaken.findFirst({
+      where: { description: { contains: marker } },
+    });
+    if (existing) {
+      if (existing.ticketId !== fixture.ticket.id) {
+        await prisma.actionTaken.update({ where: { id: existing.id }, data: { ticketId: fixture.ticket.id } });
+      }
+      continue;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const action = await tx.actionTaken.create({
+        data: {
+          ticketId: fixture.ticket.id,
+          description: `${marker} ${fixture.key.replaceAll('-', ' ')}`,
+          result: fixture.result,
+          followUpRequired: false,
+          status: fixture.status,
+          performedByUserId: fixture.performer.id,
+          assigneeUserId: fixture.assignee?.id ?? null,
+          version: fixture.status === 'PENDING' ? 1 : 2,
+        },
+      });
+
+      if (fixture.status !== 'PENDING') {
+        await tx.actionTakenRevision.create({
+          data: {
+            actionId: action.id,
+            editedByUserId: fixture.performer.id,
+            versionBefore: 1,
+            versionAfter: 2,
+            beforeSnapshot: {
+              description: action.description,
+              result: null,
+              followUpRequired: false,
+              followUpNote: null,
+              attachmentNotes: null,
+              status: 'PENDING',
+              assigneeUserId: fixture.assignee?.id ?? null,
+            },
+            afterSnapshot: {
+              description: action.description,
+              result: fixture.result,
+              followUpRequired: false,
+              followUpNote: null,
+              attachmentNotes: null,
+              status: fixture.status,
+              assigneeUserId: fixture.assignee?.id ?? null,
+            },
+          },
+        });
+      }
+    });
+  }
+
+  // Additive dashboard example: preserve the three original Action fixtures.
+  const pendingMarker = '[seed-dashboard-action:assigned-pending]';
+  if (!await prisma.actionTaken.findFirst({ where: { description: { contains: pendingMarker } } })) {
+    await prisma.actionTaken.create({ data: {
+      ticketId: createdTickets[6].id, description: `${pendingMarker} Investigate reopened connectivity`,
+      performedByUserId: staffUsers[1].id, assigneeUserId: staffUsers[0].id,
+      status: 'PENDING', followUpRequired: false, createdAt: seedNow,
+    } });
   }
 
   console.log('Seed completed. Users, categories, related systems, tickets, comments, and internal notes inserted/verified.');
