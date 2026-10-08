@@ -3,9 +3,9 @@
 **Author:** Kittipich Charoenthanachot — 67070503405 — GitHub: @kittipichcha
 **Peer reviewer:** SUTHANG SUKRUEANGKUN — 67070503477 — GitHub: @oangsa
 
-## Submitted review provenance (refreshed 2026-10-07, Asia/Bangkok)
+## Submitted review provenance (refreshed 2026-10-08, Asia/Bangkok)
 
-The submitted GitHub reviews for PR #58–62 were read again during issue #55.
+The submitted GitHub reviews for PR #58–63 were verified during issue #55.
 Approval applies to each review's `commit_id`, not automatically to later fixes or merges.
 Earlier Changes Requested events and responses below remain historical records.
 
@@ -16,9 +16,9 @@ Earlier Changes Requested events and responses below remain historical records.
 | #60 | [Approved #5407162076](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/60#pullrequestreview-5407162076) | 2026-10-04 16:29:29 | `210cd6835de428e4c6ea6900ef69ae457f65ab43` |
 | #61 | [Approved with follow-up #5427279665](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/61#pullrequestreview-5427279665) | 2026-10-06 10:53:09 | `04223e069f956c746c14fad769d5ebe7e55b93a0` |
 | #62 | [Approved with follow-up #5443358420](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/62#pullrequestreview-5443358420) | 2026-10-07 13:53:31 | `f83f51f45904daec56a871b41bd690b2536a3b9e` |
+| #63 | [APPROVED #5458574074](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/63#pullrequestreview-5458574074) | 2026-10-08T14:56:58Z | `ad09882afe57439c2d2b94e49a42912e088d7e01` |
 
-Issue #55 and the final staging-to-main release require their own submitted human review.
-Those gates remain pending; agent review is recorded only in `ai-use.md`.
+Issue #55 received submitted human approval at the exact PR #63 SHA above; later documentation commits are not covered by that approval. The final staging-to-main human review and release authorization, fresh main verification, board completion, independently authored reflection, and final nine-part PDF/portal submission remain pending. Agent review is recorded only in `ai-use.md`.
 
 ## Issue #50 contract review
 
@@ -178,3 +178,45 @@ Extended canonical dashboard component and responsive browser assertions for the
 unchanged nonzero presentation, accessible names and layout. Scope: FR-17/18, BR-20,
 AC-17/20/21; UI contract sections 2 and 6. Validation is recorded in the newest
 `tests.md` result and the Issue #54 evidence manifest.
+
+## Issue #55 / PR #63 review record
+
+| PR | Branch | Reviewer verdict | Evidence |
+|---|---|---|---|
+| [#63](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/63) | `feature/lab4-integration-release` | APPROVED at `ad09882afe57439c2d2b94e49a42912e088d7e01` | [Review #5458574074 by @oangsa](https://github.com/kittipichcha/TokTickIT-Full-Stack-Hello-World-Starter/pull/63#pullrequestreview-5458574074), 2026-10-08T14:56:58Z |
+
+**Issue #55**
+
+Reviewer comment I received: @oangsa approved the staging integration and evidence for PR #63, which is OPEN with base `lab4-staging`. The reviewer reported 681 backend, 366 component and 294 browser passes, 41 Test DD rows and 27 AC mappings, with no merge-blocking mismatch. These are reviewer-reported existing results, not new execution or final release certification. The review body mentions current-head human review as pending; that wording is superseded for its exact reviewed SHA by the submitted APPROVED event. The account is GitHub type `User`, association `COLLABORATOR`; account provenance does not prove manual composition or non-AI text.
+
+How I responded: no authored response was found in the supplied evidence. This task records the feedback only; it claims no new fix, test run or response. Approval applies only to `ad09882afe57439c2d2b94e49a42912e088d7e01`, not later documentation commits. Final staging-to-main review/authorization, fresh main verification, board completion, authentic author reflection, and the nine-part PDF/portal submission remain pending.
+
+## Pull Requests I reviewed for my partner
+
+The following submitted events are by @kittipichcha (GitHub account type `User`) on `oangsa/TokTickIT`. All listed PRs target `lab4-staging`. The recorded verdict is preserved even when the body expresses a hold or a later event reverses it. Empty-body approvals are verdict-only evidence; they do not establish a response or resolution of earlier findings. Human-account provenance does not prove manual composition or non-AI text. Partner PG/AC/DATA/RESP identifiers below refer only to the partner's contracts and are not imported into this repository's requirements. No bot/agent review or partner response is inferred.
+
+| PR | Branch | Reviewer | Submitted verdict | Submitted (UTC) | Exact reviewed SHA | Review evidence |
+|---|---|---|---|---|---|---|
+| #84 | `feature/77-lab4-engineering-contract` | @kittipichcha | CHANGES_REQUESTED | 2026-09-30T03:52:08Z | `e268423ba56131cc770b225ca51be05cf769c755` | [#5361269858](https://github.com/oangsa/TokTickIT/pull/84#pullrequestreview-5361269858) |
+| #84 | `feature/77-lab4-engineering-contract` | @kittipichcha | APPROVED | 2026-10-08T14:08:10Z | `bd9e1cfd71ecb1169aed4ba57a9a4c12a8fdc8ec` | [#5457872834](https://github.com/oangsa/TokTickIT/pull/84#pullrequestreview-5457872834) |
+| #85 | `feature/78-lab4-data-foundation-migration` | @kittipichcha | CHANGES_REQUESTED | 2026-10-01T05:13:31Z | `2b560e49817a32048c0ca760b9b5bca8aa849e7e` | [#5375226460](https://github.com/oangsa/TokTickIT/pull/85#pullrequestreview-5375226460) |
+| #85 | `feature/78-lab4-data-foundation-migration` | @kittipichcha | CHANGES_REQUESTED | 2026-10-01T07:20:08Z | `eb65745edb8c9cbccc5effccd25adca544f4573e` | [#5376116219](https://github.com/oangsa/TokTickIT/pull/85#pullrequestreview-5376116219) |
+| #85 | `feature/78-lab4-data-foundation-migration` | @kittipichcha | APPROVED | 2026-10-01T08:16:27Z | `db289c8fea834b1fbe153649ece95936a5cda17c` | [#5376698442](https://github.com/oangsa/TokTickIT/pull/85#pullrequestreview-5376698442) |
+| #86 | `feature/79-actions-taken-backend-api` | @kittipichcha | APPROVED | 2026-10-01T14:27:28Z | `cc5473bd2e3962a4caafd828ea323b7ec1776298` | [#5380711161](https://github.com/oangsa/TokTickIT/pull/86#pullrequestreview-5380711161) |
+| #86 | `feature/79-actions-taken-backend-api` | @kittipichcha | CHANGES_REQUESTED | 2026-10-01T14:28:21Z | `cc5473bd2e3962a4caafd828ea323b7ec1776298` | [#5380722307](https://github.com/oangsa/TokTickIT/pull/86#pullrequestreview-5380722307) |
+| #86 | `feature/79-actions-taken-backend-api` | @kittipichcha | APPROVED | 2026-10-01T14:57:02Z | `8a2f286e78ed4d1c3af99a7e2b2ccdc9d9b21d1f` | [#5381113563](https://github.com/oangsa/TokTickIT/pull/86#pullrequestreview-5381113563) |
+| #87 | `feature/80-actions-taken-ui-global-lookup` | @kittipichcha | APPROVED | 2026-10-02T08:30:46Z | `1ccd27d9145850b0ed3f058f482640494d4b206d` | [#5389733591](https://github.com/oangsa/TokTickIT/pull/87#pullrequestreview-5389733591) |
+| #88 | `feature/81-ticket-workflow-resolution` | @kittipichcha | APPROVED | 2026-10-02T14:05:24Z | `18567066c09567c360df685239e68b688c7e7207` | [#5392749066](https://github.com/oangsa/TokTickIT/pull/88#pullrequestreview-5392749066) |
+| #89 | `feature/82-role-dashboards` | @kittipichcha | APPROVED | 2026-10-03T08:10:51Z | `3113f3b562916bffc9be70c1e899b1c2b520f908` | [#5399665042](https://github.com/oangsa/TokTickIT/pull/89#pullrequestreview-5399665042) |
+| #90 | `feature/83-lab4-final-verification-release` | @kittipichcha | COMMENTED | 2026-10-08T09:44:00Z | `74161965341cf2c182f1384c3a9cd6672a1087a9` | [#5454660524](https://github.com/oangsa/TokTickIT/pull/90#pullrequestreview-5454660524) |
+| #90 | `feature/83-lab4-final-verification-release` | @kittipichcha | APPROVED | 2026-10-08T15:35:42Z | `b4fac10953455db4584f8cc8ba3fba0bebd40fb8` | [#5459152489](https://github.com/oangsa/TokTickIT/pull/90#pullrequestreview-5459152489) |
+
+### Submitted comment summaries and response limits
+
+- **PR #84, review #5361269858:** requested failed/interrupted migration rollback or forward recovery, legacy preservation and exactly-once proof, plus the missing `isMigrated: boolean` list DTO field. Tests were Not Run. Later review #5457872834 has an empty body and records only APPROVED.
+- **PR #85, review #5375226460:** identified removal of the migrated-Action resolution exclusion from frozen PG-02/PG-13/DATA-02 while AC-34 was claimed Passed. Requested restoration or an explicit ownership amendment; reported 72 files/1,065 tests without SHA-inspectable logs. Review #5376116219 noted restored Blocked rows still had circular #77/#78 versus #81 ownership and requested an approved decision synchronized across issue, test and PR records with sanitized proof. Later #5376698442 is an empty-body APPROVED event; no partner response or resolution is inferred.
+- **PR #86:** empty-body approval #5380711161 was followed at the same SHA by CHANGES_REQUESTED #5380722307. That body requested resolving circular PG-10 #79/#81 ownership in #77; non-blocking notes concerned #80 assignable-user first-page coverage, stale CI run `36861468831` attribution/test title, final AI-prompt curation and npm audit triage in #83. Later #5381113563 is an empty-body APPROVED event.
+- **PR #87, review #5389733591:** submitted state is APPROVED despite a B01 hold in the body. The body requested inspectable RESP-03 roles/viewports, screenshots, smoke and keyboard-focus evidence before merge; CI run `36976953622` covered Lab 3 only. The supplied current PR head `a2a7df7d32b46b640cf6d07f24815ea83d28f8fa` differs from reviewed `1ccd27d9145850b0ed3f058f482640494d4b206d`; this record does not claim current-head approval or that the evidence gap was resolved.
+- **PR #88, review #5392749066:** approved staging with no material blocker. It mentioned a nonspecific, low-impact UI race while the backend remained authoritative; no implementation path or fix is invented.
+- **PR #89, review #5399665042:** corrected attribution from old `6e855d0` to `3113f3b` and CI run `37096940836`, without requesting an application fix. Historical reviewer-reported results were 1,448 server, 450 client and 101 browser passes, one #83 skip, builds and PG-12; these are not new proof from this task.
+- **PR #90, review #5454660524:** COMMENTED with a hold and no confirmed code blocker. Requested independent inspection of 69 screenshots; non-blocking notes concerned splitting the large API security test and retaining historical #84/staging release gates. Historical reviewer-reported results were 1,449 server, 455 client and 110 browser passes plus builds. Later #5459152489 is empty-body APPROVED at its own SHA; it supplies no response narrative or proof that earlier notes were resolved.
