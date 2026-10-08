@@ -147,18 +147,28 @@ describe("UI-WF-01/02 — versioned Ticket workflow", () => {
     await waitFor(() => expect(api.applyStatusTransition).toHaveBeenLastCalledWith(ticketNumber, "WAITING_FOR_REQUESTER", 8));
   });
 
-  it("cancels confirmation and Escape without a request, then confirms with current version", async () => {
+  it.each([
+    { target: "RESOLVED", label: "Resolved", source: "IN_PROGRESS", consequence: "This marks the issue as resolved and prevents new Actions until the Ticket is reopened." },
+    { target: "CLOSED", label: "Closed", source: "RESOLVED", consequence: "This closes the Ticket and prevents new Actions." },
+    { target: "CANCELLED", label: "Cancelled", source: "IN_PROGRESS", consequence: "This cancels the Ticket. No further status changes or new Actions will be allowed." },
+  ] as const)("explains $label consequences, cancels without a request, then confirms with current version", async ({ target, label, source, consequence }) => {
     const user = userEvent.setup();
-    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail());
-    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: "RESOLVED", version: 5 });
+    vi.mocked(api.fetchStaffTicketDetail).mockResolvedValue(detail({ currentStatus: source }));
+    vi.mocked(api.applyStatusTransition).mockResolvedValue({ currentStatus: target, version: 5 });
     renderDetail();
     await screen.findByText(ticketNumber);
-    await user.click(screen.getByRole("button", { name: "Resolved" }));
+    await user.click(screen.getByRole("button", { name: label }));
+    const dialog = screen.getByRole("dialog", { name: "Confirm status change" });
+    expect(within(dialog).getByText(consequence)).toBeTruthy();
+    expect(within(dialog).getByText(label, { exact: true })).toBeTruthy();
     await user.keyboard("{Escape}");
     expect(api.applyStatusTransition).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Resolved" }));
+    await user.click(screen.getByRole("button", { name: label }));
+    await user.click(screen.getByRole("button", { name: /^Cancel$/ }));
+    expect(api.applyStatusTransition).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: label }));
     await user.click(screen.getByRole("button", { name: "Confirm" }));
-    await waitFor(() => expect(api.applyStatusTransition).toHaveBeenCalledWith(ticketNumber, "RESOLVED", 4));
+    await waitFor(() => expect(api.applyStatusTransition).toHaveBeenCalledWith(ticketNumber, target, 4));
   });
 
   it("announces committed snapshots before failed refresh and uses each returned version on the next write", async () => {

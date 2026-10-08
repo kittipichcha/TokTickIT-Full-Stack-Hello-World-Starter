@@ -1,8 +1,24 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
+import { mkdirSync } from "node:fs";
+import path from "node:path";
 import { PASSWORD, USERS, createRequesterTicket, login, navigate, resetAccount } from "../lab-03/helpers";
+
+async function captureWorkflowState(page: Page, scope: Locator, state: string) {
+  await scope.scrollIntoViewIfNeeded();
+  await expect(scope).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await scope.locator("button").evaluateAll(nodes => nodes.every(node => {
+    const bounds = node.getBoundingClientRect();
+    return !bounds.width || (bounds.left >= -1 && bounds.right <= window.innerWidth + 1);
+  }))).toBe(true);
+  const directory = path.resolve("artifacts/lab-04/screenshots/workflow");
+  mkdirSync(directory, { recursive: true });
+  await page.screenshot({ path: path.join(directory, `${test.info().project.name}-${state}.png`), fullPage: state !== "resolved-confirmation" });
+}
 
 // E2E-01 workflow portion: exercise the real resolution gate and role projection.
 test("Pending Actions block resolution until completed or cancelled; Requester remains read-only", async ({ page }) => {
+  test.setTimeout(120_000);
   await resetAccount("requester");
   await resetAccount("staff");
   await resetAccount("adminPeer");
@@ -15,6 +31,11 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
   await page.getByLabel("Search tickets").fill(summary);
   await page.getByRole("button", { name: "Open Detail" }).click();
   await expect(page.getByRole("heading", { name: ticketNumber })).toBeVisible();
+  const history = page.getByRole("region", { name: "Ticket status history" });
+  await history.getByRole("button", { name: "View status history" }).click();
+  await expect(history.getByText("No status history.", { exact: true })).toBeVisible();
+  await captureWorkflowState(page, history, "history-empty");
+  await history.getByRole("button", { name: "Hide status history" }).click();
   await page.getByRole("button", { name: "Claim / Reassign to me", exact: true }).click();
   const controls = page.locator("section").filter({ has: page.getByRole("heading", { name: "Ticket controls" }) });
   await controls.getByRole("button", { name: "Open", exact: true }).click();
@@ -60,7 +81,10 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
   }
   const blockedResponse = page.waitForResponse(response => response.url().endsWith(`/staff/tickets/${ticketNumber}/status`) && response.request().method() === "PATCH");
   await controls.getByRole("button", { name: "Resolved", exact: true }).click();
-  await page.getByRole("dialog", { name: "Confirm status change" }).getByRole("button", { name: "Confirm", exact: true }).click();
+  const confirmation = page.getByRole("dialog", { name: "Confirm status change" });
+  await expect(confirmation).toContainText("prevents new Actions until the Ticket is reopened");
+  await captureWorkflowState(page, confirmation, "resolved-confirmation");
+  await confirmation.getByRole("button", { name: "Confirm", exact: true }).click();
   expect((await blockedResponse).status()).toBe(409);
   await expect(page.locator(".error-box").first()).toContainText(/pending/i);
   await expect(page.locator(".status-badge").first()).toHaveText("IN_PROGRESS");
@@ -78,9 +102,9 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
   await controls.getByRole("button", { name: "Resolved", exact: true }).click();
   await page.getByRole("dialog", { name: "Confirm status change" }).getByRole("button", { name: "Confirm", exact: true }).click();
   await expect(page.locator(".status-badge").first()).toHaveText("RESOLVED");
-  const history = page.getByRole("region", { name: "Ticket status history" });
   await history.getByRole("button", { name: "View status history" }).click();
   await expect(history.getByText("Page 1 of 2", { exact: true })).toBeVisible();
+  await captureWorkflowState(page, history, "history-page-1");
   const nextPage = history.getByRole("button", { name: "Next", exact: true });
   let releaseHistory!: () => void;
   const historyBarrier = new Promise<void>(resolve => { releaseHistory = resolve; });
@@ -102,6 +126,7 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
     await expect(pageStatus).toHaveText("Page 2 of 2");
     await expect(pageStatus).toBeFocused();
     await expect(nextPage).toBeDisabled();
+    await captureWorkflowState(page, history, "history-page-2");
     const previousPage = history.getByRole("button", { name: "Previous", exact: true });
     await previousPage.focus();
     await page.keyboard.press("Enter");
@@ -109,6 +134,20 @@ test("Pending Actions block resolution until completed or cancelled; Requester r
     await expect(pageStatus).toBeFocused();
   } finally {
     releaseHistory();
+    await page.unroute(historyRoute);
+  }
+  // A presentation-only injected read failure retains the real previously fetched history.
+  // Persistence and authorized visibility remain proved by the preceding real API journey.
+  await page.route(historyRoute, route => route.fulfill({ status: 500, json: { error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." } } }));
+  try {
+    await nextPage.click();
+    await expect(history.getByRole("alert")).toContainText("Unable to load status history.");
+    await captureWorkflowState(page, history, "history-read-error");
+    await page.unroute(historyRoute);
+    await history.getByRole("button", { name: "Retry", exact: true }).click();
+    await expect(history.getByRole("status", { name: "Status history page" })).toHaveText("Page 2 of 2");
+    await expect(history.getByRole("alert")).toHaveCount(0);
+  } finally {
     await page.unroute(historyRoute);
   }
   await page.getByRole("button", { name: "Logout" }).click();
